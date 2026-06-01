@@ -71,6 +71,7 @@ export default function QuickSwitcher() {
         onClick={e => e.stopPropagation()}
         onKeyDown={onKeyDown}
         role="dialog"
+        aria-modal="true"
         aria-label="Quick switcher"
         data-testid="quick-switcher"
       >
@@ -135,7 +136,6 @@ const styles = {
     background:   'var(--panel)',
     border:       'none',
     borderBottom: '1px solid var(--line)',
-    outline:      'none',
     padding:      '12px 14px',
     boxSizing:    'border-box',
   } as React.CSSProperties,
