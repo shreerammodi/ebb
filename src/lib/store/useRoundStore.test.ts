@@ -5,7 +5,7 @@
  * exposes as static methods on the hook.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useRoundStore } from './useRoundStore';
 import {
   selectSheetNodes,
@@ -150,15 +150,17 @@ describe('addSheet', () => {
   });
 
   it('updates round.updatedAt', () => {
+    vi.useFakeTimers();
     const before = useRoundStore.getState().round!.updatedAt;
+    vi.advanceTimersByTime(1);
     useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
-    expect(useRoundStore.getState().round!.updatedAt).toBeGreaterThanOrEqual(before);
+    expect(useRoundStore.getState().round!.updatedAt).toBeGreaterThan(before);
+    vi.useRealTimers();
   });
 
-  it('is a no-op when round is null', () => {
+  it('throws when round is null', () => {
     useRoundStore.setState(BLANK_STATE);
-    expect(() => useRoundStore.getState().addSheet({ title: 'x', group: 'case' })).not.toThrow();
-    expect(useRoundStore.getState().round).toBeNull();
+    expect(() => useRoundStore.getState().addSheet({ title: 'x', group: 'case' })).toThrow('No active round');
   });
 });
 
@@ -238,6 +240,25 @@ describe('removeSheet', () => {
     useRoundStore.setState(BLANK_STATE);
     expect(() => useRoundStore.getState().removeSheet('x')).not.toThrow();
   });
+
+  it('clears selection when the selected sheet is removed', () => {
+    const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const fmt = useRoundStore.getState().round!.format;
+    const speechId = fmt.speeches[0].id;
+    useRoundStore.getState().setSelection({ sheetId: id, speechId, nodeId: 'n1' });
+    useRoundStore.getState().removeSheet(id);
+    expect(useRoundStore.getState().selection).toBeNull();
+  });
+
+  it('keeps selection when a different sheet is removed', () => {
+    const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
+    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'offcase' });
+    const fmt = useRoundStore.getState().round!.format;
+    const speechId = fmt.speeches[0].id;
+    useRoundStore.getState().setSelection({ sheetId: first, speechId, nodeId: 'n1' });
+    useRoundStore.getState().removeSheet(second);
+    expect(useRoundStore.getState().selection?.sheetId).toBe(first);
+  });
 });
 
 describe('reorderSheet', () => {
@@ -303,15 +324,17 @@ describe('addNode', () => {
   });
 
   it('bumps updatedAt after adding a node', () => {
+    vi.useFakeTimers();
     const before = useRoundStore.getState().round!.updatedAt;
+    vi.advanceTimersByTime(1);
     useRoundStore.getState().addNode({ sheetId, speechId, parentId: null });
-    expect(useRoundStore.getState().round!.updatedAt).toBeGreaterThanOrEqual(before);
+    expect(useRoundStore.getState().round!.updatedAt).toBeGreaterThan(before);
+    vi.useRealTimers();
   });
 
-  it('is no-op when round is null', () => {
+  it('throws when round is null', () => {
     useRoundStore.setState(BLANK_STATE);
-    expect(() => useRoundStore.getState().addNode({ sheetId, speechId, parentId: null })).not.toThrow();
-    expect(useRoundStore.getState().round).toBeNull();
+    expect(() => useRoundStore.getState().addNode({ sheetId, speechId, parentId: null })).toThrow('No active round');
   });
 });
 
@@ -442,14 +465,44 @@ describe('removeNode', () => {
   });
 
   it('bumps updatedAt', () => {
+    vi.useFakeTimers();
     const before = useRoundStore.getState().round!.updatedAt;
+    vi.advanceTimersByTime(1);
     useRoundStore.getState().removeNode(nodeId);
-    expect(useRoundStore.getState().round!.updatedAt).toBeGreaterThanOrEqual(before);
+    expect(useRoundStore.getState().round!.updatedAt).toBeGreaterThan(before);
+    vi.useRealTimers();
   });
 
   it('is no-op when round is null', () => {
     useRoundStore.setState(BLANK_STATE);
     expect(() => useRoundStore.getState().removeNode(nodeId)).not.toThrow();
+  });
+
+  it('re-parents children to grandparent when parent is removed', () => {
+    const parent = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null });
+    const child = useRoundStore.getState().addNode({ sheetId, speechId, parentId: parent });
+    useRoundStore.getState().removeNode(parent);
+    const nodes = useRoundStore.getState().round!.nodes;
+    // parent is gone
+    expect(nodes.find(n => n.id === parent)).toBeUndefined();
+    // child survives and its parentId is now the grandparent (null)
+    const childNode = nodes.find(n => n.id === child);
+    expect(childNode).toBeDefined();
+    expect(childNode!.parentId).toBeNull();
+  });
+
+  it('clears selection when the selected node is removed', () => {
+    useRoundStore.getState().setSelection({ sheetId, speechId, nodeId });
+    expect(useRoundStore.getState().selection?.nodeId).toBe(nodeId);
+    useRoundStore.getState().removeNode(nodeId);
+    expect(useRoundStore.getState().selection).toBeNull();
+  });
+
+  it('keeps selection when a different node is removed', () => {
+    const other = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId, nodeId });
+    useRoundStore.getState().removeNode(other);
+    expect(useRoundStore.getState().selection?.nodeId).toBe(nodeId);
   });
 });
 

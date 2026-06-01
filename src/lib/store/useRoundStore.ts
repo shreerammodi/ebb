@@ -16,7 +16,7 @@ import {
   removeNode as treeRemoveNode,
   moveNode as treeMoveNode,
 } from '@/lib/model/tree';
-import { detectDrops, dropCountForSheet } from '@/lib/model/drops';
+import { detectDrops } from '@/lib/model/drops';
 
 // ─── State shape ──────────────────────────────────────────────────────────────
 
@@ -89,8 +89,8 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
 
   // ── addSheet ───────────────────────────────────────────────────────────────
   addSheet({ title, group }) {
-    const { round } = get();
-    if (!round) return '';
+    const { round, activeSheetId } = get();
+    if (!round) throw new Error('No active round');
 
     const maxOrder =
       round.sheets.length > 0
@@ -111,7 +111,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         sheets: [...round.sheets, sheet],
         updatedAt: Date.now(),
       },
-      activeSheetId: isFirst ? sheet.id : get().activeSheetId,
+      activeSheetId: isFirst ? sheet.id : activeSheetId,
     });
 
     return sheet.id;
@@ -132,7 +132,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
 
   // ── removeSheet ────────────────────────────────────────────────────────────
   removeSheet(sheetId) {
-    const { round, activeSheetId } = get();
+    const { round, activeSheetId, selection } = get();
     if (!round) return;
 
     const remaining = round.sheets.filter(s => s.id !== sheetId);
@@ -151,10 +151,15 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         updatedAt: Date.now(),
       },
       activeSheetId: newActiveSheetId,
+      selection: selection?.sheetId === sheetId ? null : selection,
     });
   },
 
   // ── reorderSheet ───────────────────────────────────────────────────────────
+  /**
+   * Assigns a raw `order` value to the sheet. Callers are responsible for
+   * avoiding collisions — e.g. pass fractional or pre-spaced order values.
+   */
   reorderSheet(sheetId, newOrder) {
     const { round } = get();
     if (!round) return;
@@ -177,7 +182,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── addNode ────────────────────────────────────────────────────────────────
   addNode(input) {
     const { round } = get();
-    if (!round) return '';
+    if (!round) throw new Error('No active round');
 
     const { nodes, node } = treeAddNode(round.nodes, input);
     set({
@@ -231,7 +236,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
 
   // ── removeNode ─────────────────────────────────────────────────────────────
   removeNode(nodeId) {
-    const { round } = get();
+    const { round, selection } = get();
     if (!round) return;
     set({
       round: {
@@ -239,6 +244,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         nodes: treeRemoveNode(round.nodes, nodeId),
         updatedAt: Date.now(),
       },
+      selection: selection?.nodeId === nodeId ? null : selection,
     });
   },
 
@@ -282,8 +288,7 @@ export function selectDrops(round: Round | null, sheetId: string): string[] {
 
 /** Returns the count of dropped nodes on the given sheet, or 0 if round is null. */
 export function selectSheetDropCount(round: Round | null, sheetId: string): number {
-  if (!round) return 0;
-  return dropCountForSheet(round.nodes, round.format, sheetId);
+  return selectDrops(round, sheetId).length;
 }
 
 /** Returns sheets belonging to a group, sorted ascending by order. */
