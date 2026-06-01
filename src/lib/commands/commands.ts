@@ -7,7 +7,7 @@
  */
 
 import { useRoundStore } from '@/lib/store/useRoundStore';
-import type { ArgumentNode, Sheet } from '@/lib/model/types';
+import type { Sheet } from '@/lib/model/types';
 import {
   parentOf,
   firstChildOf,
@@ -22,10 +22,10 @@ function sortedSheets(sheets: Sheet[]): Sheet[] {
   return sheets.slice().sort((a, b) => a.order - b.order);
 }
 
-/** Selects an existing node by id and switches to insert mode. */
-function selectNodeInsert(node: ArgumentNode): void {
+/** Selects a node by its ids and switches to insert mode. */
+function selectNodeInsert(ids: { sheetId: string; speechId: string; nodeId: string }): void {
   const { setSelection, setMode } = useRoundStore.getState();
-  setSelection({ sheetId: node.sheetId, speechId: node.speechId, nodeId: node.id });
+  setSelection(ids);
   setMode('insert');
 }
 
@@ -104,8 +104,7 @@ export function executeCommand(id: CommandId): void {
         speechId: node.speechId,
         parentId: node.parentId,
       });
-      const created = useRoundStore.getState().round!.nodes.find(n => n.id === newId)!;
-      selectNodeInsert(created);
+      selectNodeInsert({ sheetId: node.sheetId, speechId: node.speechId, nodeId: newId });
       return;
     }
 
@@ -122,8 +121,7 @@ export function executeCommand(id: CommandId): void {
         speechId: targetSpeech.id,
         parentId: node.id,
       });
-      const created = useRoundStore.getState().round!.nodes.find(n => n.id === newId)!;
-      selectNodeInsert(created);
+      selectNodeInsert({ sheetId: node.sheetId, speechId: targetSpeech.id, nodeId: newId });
       return;
     }
 
@@ -135,8 +133,7 @@ export function executeCommand(id: CommandId): void {
       const speechId = sel?.speechId ?? round.format.speeches[0]?.id;
       if (!speechId) return;
       const newId = state.addNode({ sheetId, speechId, parentId: null });
-      const created = useRoundStore.getState().round!.nodes.find(n => n.id === newId)!;
-      selectNodeInsert(created);
+      selectNodeInsert({ sheetId, speechId, nodeId: newId });
       return;
     }
 

@@ -9,7 +9,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { makeFormatByKey } from '@/lib/format/presets';
 import { executeCommand } from './commands';
-import type { Speech } from '@/lib/model/types';
 
 const BLANK_STATE = {
   round: null,
@@ -371,6 +370,3 @@ describe('modal flags', () => {
   });
 });
 
-// Keep Speech import referenced for type-only sanity.
-const _typeProbe: Speech | null = null;
-void _typeProbe;
