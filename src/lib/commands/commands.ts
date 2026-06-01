@@ -7,7 +7,7 @@
  */
 
 import { useRoundStore } from '@/lib/store/useRoundStore';
-import type { Sheet } from '@/lib/model/types';
+import type { Sheet, ArgumentNode } from '@/lib/model/types';
 import {
   parentOf,
   firstChildOf,
