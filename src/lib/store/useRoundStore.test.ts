@@ -647,3 +647,36 @@ describe('selectSheetsByGroup', () => {
     expect(offcase[0].order).toBeLessThanOrEqual(offcase[1].order);
   });
 });
+
+// ─── keymap / modal flags ────────────────────────────────────────────────────
+
+describe('keymap and modal flags', () => {
+  beforeEach(resetStore);
+
+  it('defaults keymapName to vim and modal flags to false', () => {
+    expect(useRoundStore.getState().keymapName).toBe('vim');
+    expect(useRoundStore.getState().quickSwitcherOpen).toBe(false);
+    expect(useRoundStore.getState().settingsOpen).toBe(false);
+  });
+
+  it('setKeymapName updates the keymap', () => {
+    useRoundStore.getState().setKeymapName('excel');
+    expect(useRoundStore.getState().keymapName).toBe('excel');
+  });
+
+  it('setQuickSwitcherOpen / setSettingsOpen toggle the flags', () => {
+    useRoundStore.getState().setQuickSwitcherOpen(true);
+    expect(useRoundStore.getState().quickSwitcherOpen).toBe(true);
+    useRoundStore.getState().setSettingsOpen(true);
+    expect(useRoundStore.getState().settingsOpen).toBe(true);
+  });
+
+  it('createRound resets modal flags', () => {
+    useRoundStore.getState().setQuickSwitcherOpen(true);
+    useRoundStore.getState().setSettingsOpen(true);
+    const fmt = makeFormatByKey('policy');
+    useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
+    expect(useRoundStore.getState().quickSwitcherOpen).toBe(false);
+    expect(useRoundStore.getState().settingsOpen).toBe(false);
+  });
+});

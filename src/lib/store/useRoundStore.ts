@@ -25,6 +25,9 @@ export interface RoundState {
   activeSheetId: string | null;
   mode: 'normal' | 'insert';
   selection: { sheetId: string; speechId: string; nodeId: string } | null;
+  keymapName: 'vim' | 'excel' | 'basic';
+  quickSwitcherOpen: boolean;
+  settingsOpen: boolean;
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -47,6 +50,10 @@ export interface RoundActions {
 
   setMode(mode: 'normal' | 'insert'): void;
   setSelection(selection: { sheetId: string; speechId: string; nodeId: string } | null): void;
+
+  setKeymapName(name: 'vim' | 'excel' | 'basic'): void;
+  setQuickSwitcherOpen(open: boolean): void;
+  setSettingsOpen(open: boolean): void;
 }
 
 export type RoundStore = RoundState & RoundActions;
@@ -59,6 +66,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   activeSheetId: null,
   mode: 'normal',
   selection: null,
+  keymapName: 'vim',
+  quickSwitcherOpen: false,
+  settingsOpen: false,
 
   // ── createRound ────────────────────────────────────────────────────────────
   createRound({ role, format, meta, topic }) {
@@ -84,7 +94,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         prepRunning: null,
       },
     };
-    set({ round, activeSheetId: null, mode: 'normal', selection: null });
+    set({
+      round,
+      activeSheetId: null,
+      mode: 'normal',
+      selection: null,
+      quickSwitcherOpen: false,
+      settingsOpen: false,
+    });
   },
 
   // ── addSheet ───────────────────────────────────────────────────────────────
@@ -269,6 +286,21 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setSelection ───────────────────────────────────────────────────────────
   setSelection(selection) {
     set({ selection });
+  },
+
+  // ── setKeymapName ──────────────────────────────────────────────────────────
+  setKeymapName(name) {
+    set({ keymapName: name });
+  },
+
+  // ── setQuickSwitcherOpen ───────────────────────────────────────────────────
+  setQuickSwitcherOpen(open) {
+    set({ quickSwitcherOpen: open });
+  },
+
+  // ── setSettingsOpen ────────────────────────────────────────────────────────
+  setSettingsOpen(open) {
+    set({ settingsOpen: open });
   },
 }));
 
