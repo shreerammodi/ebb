@@ -274,7 +274,7 @@ const styles = {
     border:       '1px solid var(--line)',
     borderRadius: '6px',
     padding:      '6px 10px',
-    outline:      'none',
+
     width:        '100%',
   } as React.CSSProperties,
 
