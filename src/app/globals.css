@@ -1,0 +1,19 @@
+:root {
+  --bg: #f6f7f9;
+  --panel: #fff;
+  --ink: #1f2328;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --aff: #1d4ed8;
+  --neg: #c0271f;
+  --sel: #7c3aed;
+  --warn: #b45309;
+  --good: #047857;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+}
