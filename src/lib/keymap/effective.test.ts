@@ -32,3 +32,33 @@ describe('effectiveKeymap', () => {
     expect(effectiveKeymap('excel', {}).name).toBe('excel+overrides');
   });
 });
+
+describe('COMMON_NORMAL bindings after aff/neg/rename additions', () => {
+  it('Meta+a → sheet.newAff in all presets', () => {
+    for (const name of ['vim', 'excel', 'basic'] as const) {
+      const km = effectiveKeymap(name, {});
+      expect(km.bindings.normal['Meta+a']).toBe('sheet.newAff');
+    }
+  });
+
+  it('Meta+n → sheet.newNeg (not sheet.new) in all presets', () => {
+    for (const name of ['vim', 'excel', 'basic'] as const) {
+      const km = effectiveKeymap(name, {});
+      expect(km.bindings.normal['Meta+n']).toBe('sheet.newNeg');
+    }
+  });
+
+  it('Meta+r → sheet.rename in all presets', () => {
+    for (const name of ['vim', 'excel', 'basic'] as const) {
+      const km = effectiveKeymap(name, {});
+      expect(km.bindings.normal['Meta+r']).toBe('sheet.rename');
+    }
+  });
+
+  it('"g r" → sheet.rename in vim only', () => {
+    const vim = effectiveKeymap('vim', {});
+    expect(vim.bindings.normal['g r']).toBe('sheet.rename');
+    const excel = effectiveKeymap('excel', {});
+    expect(excel.bindings.normal['g r']).toBeUndefined();
+  });
+});
