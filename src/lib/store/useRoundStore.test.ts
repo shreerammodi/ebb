@@ -684,15 +684,15 @@ describe('renamingSheetId', () => {
 describe('keymap and modal flags', () => {
   beforeEach(resetStore);
 
-  it('defaults keymapName to vim and modal flags to false', () => {
-    expect(useRoundStore.getState().keymapName).toBe('vim');
+  it('defaults keymapName to default and modal flags to false', () => {
+    expect(useRoundStore.getState().keymapName).toBe('default');
     expect(useRoundStore.getState().quickSwitcherOpen).toBe(false);
     expect(useRoundStore.getState().settingsOpen).toBe(false);
   });
 
   it('setKeymapName updates the keymap', () => {
-    useRoundStore.getState().setKeymapName('excel');
-    expect(useRoundStore.getState().keymapName).toBe('excel');
+    useRoundStore.getState().setKeymapName('vim');
+    expect(useRoundStore.getState().keymapName).toBe('vim');
   });
 
   it('setQuickSwitcherOpen / setSettingsOpen toggle the flags', () => {

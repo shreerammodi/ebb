@@ -58,10 +58,10 @@ describe('SettingsPanel', () => {
     const user = userEvent.setup();
     render(<SettingsPanel />);
 
-    await user.click(screen.getByTestId('preset-excel'));
+    await user.click(screen.getByTestId('preset-default'));
 
-    expect(useRoundStore.getState().keymapName).toBe('excel');
-    // Excel binds move.down to ArrowDown.
+    expect(useRoundStore.getState().keymapName).toBe('default');
+    // Default binds move.down to ArrowDown.
     expect(screen.getByTestId('chord-move.down').textContent).toBe('ArrowDown');
   });
 
@@ -70,7 +70,7 @@ describe('SettingsPanel', () => {
     useRoundStore.getState().setKeymapOverride('move.down', 'Meta+j');
     render(<SettingsPanel />);
 
-    await user.click(screen.getByTestId('preset-basic'));
+    await user.click(screen.getByTestId('preset-default'));
 
     expect(useRoundStore.getState().keymapOverrides).toEqual({});
   });

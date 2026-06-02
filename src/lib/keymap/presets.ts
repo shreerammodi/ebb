@@ -1,5 +1,5 @@
 /**
- * Built-in keymap presets: vim, excel, basic.
+ * Built-in keymap presets: default, vim.
  *
  * Chord strings are canonical (see resolve.ts / eventToChord).
  */
@@ -36,8 +36,27 @@ const COMMON_NORMAL: Record<Chord, CommandId> = {
   ...SHEET_JUMPS,
 };
 
-const INSERT_EXIT: Record<Chord, CommandId> = {
-  Escape: 'edit.exit',
+// ─── DEFAULT ──────────────────────────────────────────────────────────────────
+//
+// Always-insert mode: cells are editable immediately on selection, no modality.
+// Arrow keys navigate between cells even while a cell is focused.
+// Meta+ shortcuts work from anywhere.
+
+export const DEFAULT_KEYMAP: Keymap = {
+  name: 'default',
+  bindings: {
+    normal: {
+      ArrowLeft: 'move.left',
+      ArrowDown: 'move.down',
+      ArrowUp: 'move.up',
+      ArrowRight: 'move.right',
+      Tab: 'node.answerAcross',
+      'Alt+Enter': 'arg.newRoot',
+      Delete: 'node.delete',
+      ...COMMON_NORMAL,
+    },
+    insert: {},
+  },
 };
 
 // ─── VIM ──────────────────────────────────────────────────────────────────────
@@ -61,57 +80,17 @@ export const VIM_KEYMAP: Keymap = {
       'g r': 'sheet.rename',
       ...COMMON_NORMAL,
     },
-    insert: { ...INSERT_EXIT },
-  },
-};
-
-// ─── EXCEL ────────────────────────────────────────────────────────────────────
-
-export const EXCEL_KEYMAP: Keymap = {
-  name: 'excel',
-  bindings: {
-    normal: {
-      ArrowLeft: 'move.left',
-      ArrowDown: 'move.down',
-      ArrowUp: 'move.up',
-      ArrowRight: 'move.right',
-      Enter: 'edit.enter',
-      F2: 'edit.enter',
-      Tab: 'node.answerAcross',
-      'Alt+Enter': 'arg.newRoot',
-      Delete: 'node.delete',
-      ...COMMON_NORMAL,
-    },
-    insert: { ...INSERT_EXIT },
-  },
-};
-
-// ─── BASIC ────────────────────────────────────────────────────────────────────
-
-export const BASIC_KEYMAP: Keymap = {
-  name: 'basic',
-  bindings: {
-    normal: {
-      ArrowLeft: 'move.left',
-      ArrowDown: 'move.down',
-      ArrowUp: 'move.up',
-      ArrowRight: 'move.right',
-      Enter: 'edit.enter',
-      Delete: 'node.delete',
-      ...COMMON_NORMAL,
-    },
-    insert: { ...INSERT_EXIT },
+    insert: { Escape: 'edit.exit' },
   },
 };
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
-export type KeymapName = 'vim' | 'excel' | 'basic';
+export type KeymapName = 'default' | 'vim';
 
 export const KEYMAPS: Record<KeymapName, Keymap> = {
+  default: DEFAULT_KEYMAP,
   vim: VIM_KEYMAP,
-  excel: EXCEL_KEYMAP,
-  basic: BASIC_KEYMAP,
 };
 
 /** Returns the preset keymap for a name. */

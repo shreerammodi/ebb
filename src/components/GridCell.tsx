@@ -32,6 +32,7 @@ export default function GridCell({
 }: GridCellProps) {
   const selection = useRoundStore(s => s.selection);
   const mode = useRoundStore(s => s.mode);
+  const keymapName = useRoundStore(s => s.keymapName);
   const setSelection = useRoundStore(s => s.setSelection);
   const updateNodeText = useRoundStore(s => s.updateNodeText);
   const setMode = useRoundStore(s => s.setMode);
@@ -41,7 +42,8 @@ export default function GridCell({
     selection?.speechId === speechId &&
     selection?.nodeId === node.id;
 
-  const isInsertMode = isSelected && mode === 'insert';
+  // Default keymap: always editable when selected (no modal insert mode).
+  const isInsertMode = isSelected && (mode === 'insert' || keymapName === 'default');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

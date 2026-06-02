@@ -22,6 +22,7 @@ const BLANK_STATE = {
   activeSheetId: null,
   mode: 'normal' as const,
   selection: null,
+  keymapName: 'vim' as const,
 };
 
 function resetStore() {

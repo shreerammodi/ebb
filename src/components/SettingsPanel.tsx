@@ -18,10 +18,9 @@ import { COMMANDS, type CommandId } from '@/lib/commands/registry';
 import { effectiveKeymap } from '@/lib/keymap/effective';
 import { eventToChord } from '@/lib/keymap/resolve';
 
-const PRESETS: { name: 'vim' | 'excel' | 'basic'; label: string }[] = [
+const PRESETS: { name: 'default' | 'vim'; label: string }[] = [
+  { name: 'default', label: 'Default' },
   { name: 'vim', label: 'Vim' },
-  { name: 'excel', label: 'Excel' },
-  { name: 'basic', label: 'Basic' },
 ];
 
 const COMMAND_LIST = Object.values(COMMANDS);
@@ -69,7 +68,7 @@ export default function SettingsPanel() {
     setSettingsOpen(false);
   }
 
-  function selectPreset(name: 'vim' | 'excel' | 'basic') {
+  function selectPreset(name: 'default' | 'vim') {
     // Clear every override, then switch preset.
     for (const commandId of Object.keys(keymapOverrides)) {
       clearKeymapOverride(commandId as CommandId);

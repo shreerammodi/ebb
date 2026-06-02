@@ -30,11 +30,19 @@ export function useKeymap(): void {
       const { mode } = useRoundStore.getState();
 
       const editable = isEditableTarget(e.target);
-      // In an editable field, only allow Escape (edit.exit) through.
-      // Also clear any pending chord prefix so it doesn't get stuck.
       if (editable) {
         pendingPrefix = null;
-        if (e.key !== 'Escape') return;
+        const { keymapName } = useRoundStore.getState();
+        if (keymapName === 'default') {
+          // Allow arrow-key navigation and modifier chords (Meta+k etc.) through.
+          // Everything else is regular typing and should not be intercepted.
+          const isNavKey = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'].includes(e.key);
+          const isModifierChord = e.metaKey || e.ctrlKey || e.altKey;
+          if (!isNavKey && !isModifierChord) return;
+        } else {
+          // Vim: only allow Escape (edit.exit) through.
+          if (e.key !== 'Escape') return;
+        }
       }
 
       const chord = eventToChord({ key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey });

@@ -26,7 +26,7 @@ export interface RoundState {
   activeSheetId: string | null;
   mode: 'normal' | 'insert';
   selection: { sheetId: string; speechId: string; nodeId: string } | null;
-  keymapName: 'vim' | 'excel' | 'basic';
+  keymapName: 'default' | 'vim';
   /** CommandId → custom chord (normal mode), overriding the preset binding. */
   keymapOverrides: Record<string, string>;
   quickSwitcherOpen: boolean;
@@ -56,7 +56,7 @@ export interface RoundActions {
   setMode(mode: 'normal' | 'insert'): void;
   setSelection(selection: { sheetId: string; speechId: string; nodeId: string } | null): void;
 
-  setKeymapName(name: 'vim' | 'excel' | 'basic'): void;
+  setKeymapName(name: 'default' | 'vim'): void;
   setKeymapOverride(commandId: CommandId, chord: string): void;
   clearKeymapOverride(commandId: CommandId): void;
   setQuickSwitcherOpen(open: boolean): void;
@@ -78,19 +78,19 @@ export type RoundStore = RoundState & RoundActions;
 const KEYMAP_SETTINGS_KEY = 'df-keymap-settings';
 
 interface KeymapSettings {
-  keymapName: 'vim' | 'excel' | 'basic';
+  keymapName: 'default' | 'vim';
   keymapOverrides: Record<string, string>;
 }
 
 /** Loads persisted keymap settings from localStorage (SSR-safe). */
 function loadKeymapSettings(): KeymapSettings {
-  const fallback: KeymapSettings = { keymapName: 'vim', keymapOverrides: {} };
+  const fallback: KeymapSettings = { keymapName: 'default', keymapOverrides: {} };
   if (typeof window === 'undefined') return fallback;
   try {
     const raw = window.localStorage.getItem(KEYMAP_SETTINGS_KEY);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<KeymapSettings>;
-    const validPresets = ['vim', 'excel', 'basic'] as const;
+    const validPresets = ['default', 'vim'] as const;
     const keymapName = validPresets.includes(parsed.keymapName as typeof validPresets[number])
       ? (parsed.keymapName as typeof validPresets[number])
       : fallback.keymapName;

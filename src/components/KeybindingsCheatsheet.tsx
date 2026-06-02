@@ -167,11 +167,12 @@ export default function KeybindingsCheatsheet() {
               <div style={styles.rows}>
                 {group.rows.map(({ commandId, insertMode }) => {
                   const chord = chordFor[commandId];
-                  // For jump commands show a condensed range label
                   const isJumpAnchor = commandId === 'sheet.jump1';
+                  // Hide commands that have no binding in the current keymap.
+                  if (!chord && !isJumpAnchor) return null;
                   const displayChord = isJumpAnchor
                     ? prettyChord(chord ?? 'Meta+1').replace('1', '1–9')
-                    : chord ? prettyChord(chord) : '—';
+                    : prettyChord(chord!);
                   const label = isJumpAnchor
                     ? 'Jump to sheet 1–9'
                     : COMMANDS[commandId].label;
