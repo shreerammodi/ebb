@@ -84,20 +84,86 @@ describe('Sidebar', () => {
     expect(useRoundStore.getState().activeSheetId).toBe(caseId);
   });
 
-  it('"+ Add sheet" button adds an off-case sheet', async () => {
+  it('shows "+ Aff" and "+ Neg" buttons, not "+ Add sheet"', () => {
+    setupRound();
+    render(<Sidebar />);
+    expect(screen.queryByTestId('add-sheet')).toBeNull();
+    expect(screen.getByTestId('add-aff')).toBeInTheDocument();
+    expect(screen.getByTestId('add-neg')).toBeInTheDocument();
+  });
+
+  it('"+ Aff" button adds an aff sheet and makes it active', async () => {
     const user = userEvent.setup();
     setupRound();
-
-    const before = useRoundStore.getState().round!.sheets.length;
+    const beforeCount = useRoundStore.getState().round!.sheets.length;
 
     render(<Sidebar />);
-    await user.click(screen.getByTestId('add-sheet'));
+    await user.click(screen.getByTestId('add-aff'));
 
-    const after = useRoundStore.getState().round!;
-    expect(after.sheets).toHaveLength(before + 1);
+    const state = useRoundStore.getState();
+    const sheets = state.round!.sheets;
+    expect(sheets).toHaveLength(beforeCount + 1);
+    const newest = sheets[sheets.length - 1];
+    expect(newest.group).toBe('aff');
+    expect(state.activeSheetId).toBe(newest.id);
+  });
 
-    const newest = after.sheets[after.sheets.length - 1];
-    expect(newest.title).toBe('Untitled');
+  it('"+ Neg" button adds a neg sheet and makes it active', async () => {
+    const user = userEvent.setup();
+    setupRound();
+    const beforeCount = useRoundStore.getState().round!.sheets.length;
+
+    render(<Sidebar />);
+    await user.click(screen.getByTestId('add-neg'));
+
+    const state = useRoundStore.getState();
+    const sheets = state.round!.sheets;
+    expect(sheets).toHaveLength(beforeCount + 1);
+    const newest = sheets[sheets.length - 1];
     expect(newest.group).toBe('neg');
+    expect(state.activeSheetId).toBe(newest.id);
+  });
+
+  it('double-clicking a sheet title shows a rename input', async () => {
+    const user = userEvent.setup();
+    const { caseId } = setupRound();
+
+    render(<Sidebar />);
+    const sheetBtn = screen.getByTestId(`sheet-${caseId}`);
+    await user.dblClick(sheetBtn);
+
+    expect(screen.getByTestId(`rename-input-${caseId}`)).toBeInTheDocument();
+  });
+
+  it('pressing Enter in rename input commits the new name', async () => {
+    const user = userEvent.setup();
+    const { caseId } = setupRound();
+
+    render(<Sidebar />);
+    await user.dblClick(screen.getByTestId(`sheet-${caseId}`));
+
+    const input = screen.getByTestId(`rename-input-${caseId}`);
+    await user.clear(input);
+    await user.type(input, 'New Name{Enter}');
+
+    expect(useRoundStore.getState().round!.sheets.find(s => s.id === caseId)!.title).toBe('New Name');
+    expect(screen.queryByTestId(`rename-input-${caseId}`)).toBeNull();
+  });
+
+  it('pressing Escape in rename input cancels without renaming', async () => {
+    const user = userEvent.setup();
+    const { caseId } = setupRound();
+    const originalTitle = useRoundStore.getState().round!.sheets.find(s => s.id === caseId)!.title;
+
+    render(<Sidebar />);
+    await user.dblClick(screen.getByTestId(`sheet-${caseId}`));
+
+    const input = screen.getByTestId(`rename-input-${caseId}`);
+    await user.clear(input);
+    await user.type(input, 'Changed');
+    await user.keyboard('{Escape}');
+
+    expect(useRoundStore.getState().round!.sheets.find(s => s.id === caseId)!.title).toBe(originalTitle);
+    expect(screen.queryByTestId(`rename-input-${caseId}`)).toBeNull();
   });
 });

@@ -1,15 +1,8 @@
 'use client';
 
-/**
- * Sidebar — left sheet list.
- *
- * Groups sheets into "Case" first, then "Off-case". Each sheet shows its title
- * and, if it has dropped arguments, a `.badge-drop` count. Clicking a sheet
- * makes it active; the active sheet is highlighted. An "+ Add sheet" button at
- * the bottom appends a new off-case sheet.
- */
-
+import { useRef, useState, useEffect } from 'react';
 import { useRoundStore, selectSheetsByGroup, selectSheetDropCount } from '@/lib/store/useRoundStore';
+import { executeCommand } from '@/lib/commands/commands';
 import type { Sheet } from '@/lib/model/types';
 
 interface GroupConfig {
@@ -23,10 +16,11 @@ const GROUPS: GroupConfig[] = [
 ];
 
 export default function Sidebar() {
-  const round          = useRoundStore(s => s.round);
-  const activeSheetId  = useRoundStore(s => s.activeSheetId);
-  const setActiveSheet = useRoundStore(s => s.setActiveSheet);
-  const addSheet       = useRoundStore(s => s.addSheet);
+  const round            = useRoundStore(s => s.round);
+  const activeSheetId    = useRoundStore(s => s.activeSheetId);
+  const setActiveSheet   = useRoundStore(s => s.setActiveSheet);
+  const renamingSheetId  = useRoundStore(s => s.renamingSheetId);
+  const setRenamingSheet = useRoundStore(s => s.setRenamingSheet);
 
   if (!round) return null;
 
@@ -48,6 +42,8 @@ export default function Sidebar() {
                     dropCount={selectSheetDropCount(round, sheet.id)}
                     active={sheet.id === activeSheetId}
                     onSelect={() => setActiveSheet(sheet.id)}
+                    isRenaming={sheet.id === renamingSheetId}
+                    onStartRename={() => setRenamingSheet(sheet.id)}
                   />
                 ))
               )}
@@ -56,15 +52,26 @@ export default function Sidebar() {
         })}
       </div>
 
-      <button
-        type="button"
-        className="btn"
-        style={styles.addBtn}
-        onClick={() => addSheet({ title: 'Untitled', group: 'neg' })}
-        data-testid="add-sheet"
-      >
-        + Add sheet
-      </button>
+      <div style={styles.addBtns}>
+        <button
+          type="button"
+          className="btn"
+          style={styles.addBtn}
+          onClick={() => executeCommand('sheet.newAff')}
+          data-testid="add-aff"
+        >
+          + Aff
+        </button>
+        <button
+          type="button"
+          className="btn"
+          style={styles.addBtn}
+          onClick={() => executeCommand('sheet.newNeg')}
+          data-testid="add-neg"
+        >
+          + Neg
+        </button>
+      </div>
     </nav>
   );
 }
@@ -76,19 +83,67 @@ interface SheetRowProps {
   dropCount: number;
   active: boolean;
   onSelect: () => void;
+  isRenaming: boolean;
+  onStartRename: () => void;
 }
 
-function SheetRow({ sheet, dropCount, active, onSelect }: SheetRowProps) {
+function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRename }: SheetRowProps) {
+  const renameSheet      = useRoundStore(s => s.renameSheet);
+  const setRenamingSheet = useRoundStore(s => s.setRenamingSheet);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState(sheet.title);
+
+  useEffect(() => {
+    if (isRenaming) {
+      setValue(sheet.title);
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      });
+    }
+  }, [isRenaming, sheet.title]);
+
+  function commit() {
+    renameSheet(sheet.id, value.trim() || sheet.title);
+    setRenamingSheet(null);
+  }
+
+  function cancel() {
+    setRenamingSheet(null);
+  }
+
+  const rowStyle = {
+    ...styles.sheetRow,
+    ...(active ? styles.sheetRowActive : null),
+  };
+
+  if (isRenaming) {
+    return (
+      <div style={rowStyle}>
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.stopPropagation(); commit(); }
+            if (e.key === 'Escape') { e.stopPropagation(); cancel(); }
+          }}
+          onBlur={commit}
+          style={styles.renameInput}
+          data-testid={`rename-input-${sheet.id}`}
+        />
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={onSelect}
+      onDoubleClick={onStartRename}
       aria-current={active ? 'true' : undefined}
       data-testid={`sheet-${sheet.id}`}
-      style={{
-        ...styles.sheetRow,
-        ...(active ? styles.sheetRowActive : null),
-      }}
+      style={rowStyle}
     >
       <span style={styles.sheetTitle}>{sheet.title}</span>
       {dropCount > 0 && (
@@ -161,8 +216,27 @@ const styles = {
     whiteSpace:   'nowrap',
   } as React.CSSProperties,
 
+  renameInput: {
+    flex:         '1 1 auto',
+    font:         'inherit',
+    fontSize:     '13px',
+    color:        'var(--ink)',
+    background:   'transparent',
+    border:       'none',
+    outline:      '1px solid var(--aff)',
+    borderRadius: '3px',
+    padding:      '0 2px',
+    width:        '100%',
+  } as React.CSSProperties,
+
+  addBtns: {
+    display: 'flex',
+    gap:     '4px',
+    margin:  '8px',
+    flex:    '0 0 auto',
+  } as React.CSSProperties,
+
   addBtn: {
-    margin: '8px',
-    flex:   '0 0 auto',
+    flex: '1 1 0',
   } as React.CSSProperties,
 } as const;
