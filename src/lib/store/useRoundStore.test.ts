@@ -110,6 +110,13 @@ describe('createRound', () => {
     expect(state.mode).toBe('normal');
     expect(state.selection).toBeNull();
   });
+
+  it('resets renamingSheetId to null', () => {
+    useRoundStore.setState({ renamingSheetId: 'sheet_old' });
+    const fmt = makeFormatByKey('policy');
+    useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
+    expect(useRoundStore.getState().renamingSheetId).toBeNull();
+  });
 });
 
 // ─── addSheet ────────────────────────────────────────────────────────────────

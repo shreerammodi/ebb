@@ -162,6 +162,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       quickSwitcherOpen: false,
       settingsOpen: false,
       cheatsheetOpen: false,
+      renamingSheetId: null,
     });
   },
 
