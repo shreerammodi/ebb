@@ -34,24 +34,24 @@ describe('effectiveKeymap', () => {
 });
 
 describe('COMMON_NORMAL bindings after aff/neg/rename additions', () => {
-  it('Meta+a → sheet.newAff in all presets', () => {
+  it('Ctrl+a → sheet.newAff in all presets', () => {
     for (const name of ['vim', 'default'] as const) {
       const km = effectiveKeymap(name, {});
-      expect(km.bindings.normal['Meta+a']).toBe('sheet.newAff');
+      expect(km.bindings.normal['Ctrl+a']).toBe('sheet.newAff');
     }
   });
 
-  it('Meta+n → sheet.newNeg in all presets', () => {
+  it('Ctrl+n → sheet.newNeg in all presets', () => {
     for (const name of ['vim', 'default'] as const) {
       const km = effectiveKeymap(name, {});
-      expect(km.bindings.normal['Meta+n']).toBe('sheet.newNeg');
+      expect(km.bindings.normal['Ctrl+n']).toBe('sheet.newNeg');
     }
   });
 
-  it('Meta+r → sheet.rename in all presets', () => {
+  it('Ctrl+r → sheet.rename in all presets', () => {
     for (const name of ['vim', 'default'] as const) {
       const km = effectiveKeymap(name, {});
-      expect(km.bindings.normal['Meta+r']).toBe('sheet.rename');
+      expect(km.bindings.normal['Ctrl+r']).toBe('sheet.rename');
     }
   });
 

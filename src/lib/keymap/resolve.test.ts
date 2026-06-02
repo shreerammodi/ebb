@@ -67,9 +67,9 @@ describe('resolveCommand (vim)', () => {
     expect(resolveCommand(VIM_KEYMAP, 'insert', ev('Escape'))).toBe('edit.exit');
   });
 
-  it('Meta+k in normal mode → sheet.quickSwitch', () => {
+  it('Ctrl+k in normal mode → sheet.quickSwitch', () => {
     expect(
-      resolveCommand(VIM_KEYMAP, 'normal', ev('k', { metaKey: true })),
+      resolveCommand(VIM_KEYMAP, 'normal', ev('k', { ctrlKey: true })),
     ).toBe('sheet.quickSwitch');
   });
 
