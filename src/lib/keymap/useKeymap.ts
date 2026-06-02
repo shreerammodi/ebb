@@ -36,7 +36,7 @@ export function useKeymap(): void {
         if (keymapName === 'default') {
           // Allow arrow-key navigation and modifier chords (Meta+k etc.) through.
           // Everything else is regular typing and should not be intercepted.
-          const isNavKey = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'].includes(e.key);
+          const isNavKey = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Enter'].includes(e.key);
           const isModifierChord = e.metaKey || e.ctrlKey || e.altKey;
           if (!isNavKey && !isModifierChord) return;
         } else {
