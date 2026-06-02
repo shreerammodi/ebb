@@ -20,6 +20,14 @@ class DebateFlowDB extends Dexie {
        */
       rounds: 'id, updatedAt',
     });
+    this.version(2).upgrade(tx =>
+      tx.table('rounds').toCollection().modify((r: { sheets: Array<{ group: string }> }) => {
+        r.sheets = r.sheets.map(s => ({
+          ...s,
+          group: s.group === 'case' ? 'aff' : s.group === 'offcase' ? 'neg' : s.group,
+        }));
+      }),
+    );
   }
 }
 
