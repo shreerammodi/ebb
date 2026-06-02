@@ -103,6 +103,7 @@ export function executeCommand(id: CommandId): void {
         sheetId: node.sheetId,
         speechId: node.speechId,
         parentId: node.parentId,
+        insertAfterOrder: node.order,
       });
       selectNodeInsert({ sheetId: node.sheetId, speechId: node.speechId, nodeId: newId });
       return;
@@ -132,7 +133,9 @@ export function executeCommand(id: CommandId): void {
       if (!sheetId) return;
       const speechId = sel?.speechId ?? round.format.speeches[0]?.id;
       if (!speechId) return;
-      const newId = state.addNode({ sheetId, speechId, parentId: null });
+      const selNode = sel?.nodeId ? round.nodes.find(n => n.id === sel.nodeId) : undefined;
+      const insertAfterOrder = selNode?.speechId === speechId ? selNode.order : undefined;
+      const newId = state.addNode({ sheetId, speechId, parentId: null, insertAfterOrder });
       selectNodeInsert({ sheetId, speechId, nodeId: newId });
       return;
     }

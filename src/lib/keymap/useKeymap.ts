@@ -46,7 +46,11 @@ export function useKeymap(): void {
       }
 
       const chord = eventToChord({ key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey });
-      const modeBindings = keymap.bindings[mode] ?? {};
+      // Default keymap is always-insert: navigation bindings only exist in 'normal'.
+      // Using the raw `mode` here would silently drop all commands when mode='insert'.
+      const { keymapName } = useRoundStore.getState();
+      const effectiveMode = keymapName === 'default' ? 'normal' : mode;
+      const modeBindings = keymap.bindings[effectiveMode] ?? {};
 
       // ── Two-key chord resolution ─────────────────────────────────────────────
       if (pendingPrefix !== null) {

@@ -46,7 +46,7 @@ export interface RoundActions {
   reorderSheet(sheetId: string, newOrder: number): void;
   setActiveSheet(sheetId: string): void;
 
-  addNode(input: { sheetId: string; speechId: string; parentId: string | null; text?: string }): string;
+  addNode(input: { sheetId: string; speechId: string; parentId: string | null; text?: string; insertAfterOrder?: number }): string;
   updateNodeText(nodeId: string, text: string): void;
   toggleNodeStatus(nodeId: string, status: NodeStatus): void;
   setNodeParent(nodeId: string, parentId: string | null): void;

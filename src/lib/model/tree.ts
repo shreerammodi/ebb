@@ -40,8 +40,9 @@ export function rootsOf(
  * Creates a new ArgumentNode and returns the updated nodes array alongside
  * the created node.
  *
- * Order is computed as (max order among nodes in the same sheet+speech column) + 1,
- * or 0 if none exist.
+ * If `insertAfterOrder` is provided, the new node is inserted immediately after
+ * that position and all nodes in the same column with a higher order are shifted
+ * up by one. Otherwise the node is appended at the end of the column.
  */
 export function addNode(
   nodes: ArgumentNode[],
@@ -50,25 +51,40 @@ export function addNode(
     speechId: string;
     parentId: string | null;
     text?: string;
+    insertAfterOrder?: number;
   },
 ): { nodes: ArgumentNode[]; node: ArgumentNode } {
   const column = nodes.filter(
     n => n.sheetId === input.sheetId && n.speechId === input.speechId,
   );
-  const maxOrder = column.length > 0 ? Math.max(...column.map(n => n.order)) : -1;
+
+  let newOrder: number;
+  let updatedNodes: ArgumentNode[];
+
+  if (input.insertAfterOrder !== undefined) {
+    newOrder = input.insertAfterOrder + 1;
+    updatedNodes = nodes.map(n =>
+      n.sheetId === input.sheetId && n.speechId === input.speechId && n.order >= newOrder
+        ? { ...n, order: n.order + 1 }
+        : n,
+    );
+  } else {
+    newOrder = column.length > 0 ? Math.max(...column.map(n => n.order)) + 1 : 0;
+    updatedNodes = [...nodes];
+  }
 
   const node: ArgumentNode = {
     id: uid('node'),
     sheetId: input.sheetId,
     speechId: input.speechId,
     parentId: input.parentId,
-    order: maxOrder + 1,
+    order: newOrder,
     text: input.text ?? '',
     statuses: [],
     numberOverride: null,
   };
 
-  return { nodes: [...nodes, node], node };
+  return { nodes: [...updatedNodes, node], node };
 }
 
 /**
