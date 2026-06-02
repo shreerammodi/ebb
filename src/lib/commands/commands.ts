@@ -177,6 +177,8 @@ export function executeCommand(id: CommandId): void {
       if (!round) return;
       const newSheetId = state.addSheet({ title: 'Untitled', group: 'aff' });
       state.setActiveSheet(newSheetId);
+      // Selection not pre-set for aff (by design) — newNeg sets selection because
+      // the user lands on an empty neg sheet and needs a column focused to start typing.
       return;
     }
 
