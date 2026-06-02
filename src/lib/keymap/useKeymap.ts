@@ -74,7 +74,11 @@ export function useKeymap(): void {
       }
 
       // ── Single-chord resolution ──────────────────────────────────────────────
-      const commandId = resolveCommand(keymap, mode, {
+      // Use effectiveMode (not raw mode) for the same reason as the prefix path:
+      // the default keymap is always-insert, so its navigation bindings live in
+      // 'normal'. Passing raw 'insert' here would drop every command after a
+      // cell is created (which sets mode='insert').
+      const commandId = resolveCommand(keymap, effectiveMode, {
         key: e.key,
         metaKey: e.metaKey,
         ctrlKey: e.ctrlKey,

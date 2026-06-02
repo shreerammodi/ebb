@@ -70,6 +70,31 @@ describe('useKeymap', () => {
   });
 });
 
+describe('default keymap (always-insert)', () => {
+  beforeEach(resetStore);
+
+  it('arrow keys navigate between cells even while mode is "insert"', () => {
+    // Repro: after pressing Enter to create a cell, the store is in 'insert'
+    // mode. Navigation bindings live only in 'normal', so resolution must use
+    // the effective (normal) mode for the default keymap, not the raw mode.
+    const fmt = makeFormatByKey('policy');
+    const store = useRoundStore.getState();
+    store.createRound({ role: 'aff', format: fmt, meta: {} });
+    useRoundStore.setState({ keymapName: 'default' });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
+    const sp = fmt.speeches[1].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: a });
+    useRoundStore.getState().setMode('insert');
+
+    render(<Harness />);
+    dispatchKey('ArrowDown');
+
+    expect(useRoundStore.getState().selection?.nodeId).toBe(b);
+  });
+});
+
 describe('two-key chord sequences', () => {
   beforeEach(resetStore);
 
