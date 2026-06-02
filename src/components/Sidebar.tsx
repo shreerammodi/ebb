@@ -31,7 +31,7 @@ export default function Sidebar() {
   if (!round) return null;
 
   return (
-    <nav style={styles.sidebar} aria-label="Sheets" data-testid="sidebar">
+    <nav style={styles.sidebar} aria-label="Sheets" data-testid="sidebar" className="no-print">
       <div style={styles.scroll}>
         {GROUPS.map(({ group, label }) => {
           const sheets = selectSheetsByGroup(round, group);

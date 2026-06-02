@@ -82,7 +82,7 @@ export default function Timers() {
   }
 
   return (
-    <div className="timers">
+    <div className="timers no-print">
       {/* Speech timer */}
       <div className="timers__speech">
         {activeSpeech && (

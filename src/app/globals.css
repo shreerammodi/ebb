@@ -289,10 +289,21 @@ body {
 /* ------------------------------------------------------------
    7. PRINT
    ------------------------------------------------------------ */
+
+/* Hidden on screen; visible only during print */
+.print-only {
+  display: none;
+}
+
 @media print {
   /* Hide chrome; print on white */
   .no-print {
     display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
   }
 
   body {
@@ -305,5 +316,8 @@ body {
     border:     1px solid #ccc;
   }
 
-  /* Expand future print-specific flow styles here */
+  /* Full-width layout for print */
+  .flow {
+    width: 100%;
+  }
 }
