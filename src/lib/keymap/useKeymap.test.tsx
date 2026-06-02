@@ -69,3 +69,46 @@ describe('useKeymap', () => {
     expect(useRoundStore.getState().selection?.nodeId).toBe(a);
   });
 });
+
+describe('two-key chord sequences', () => {
+  beforeEach(resetStore);
+
+  function setupWithSheet() {
+    const fmt = makeFormatByKey('policy');
+    const store = useRoundStore.getState();
+    store.createRound({ role: 'aff', format: fmt, meta: {} });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    useRoundStore.setState({ activeSheetId: sheetId, renamingSheetId: null });
+    return sheetId;
+  }
+
+  it('"g" then "r" fires sheet.rename (sets renamingSheetId)', () => {
+    const sheetId = setupWithSheet();
+    render(<Harness />);
+
+    dispatchKey('g');
+    expect(useRoundStore.getState().renamingSheetId).toBeNull(); // not yet
+
+    dispatchKey('r');
+    expect(useRoundStore.getState().renamingSheetId).toBe(sheetId);
+  });
+
+  it('"g" then an unbound key clears the prefix without firing', () => {
+    setupWithSheet();
+    render(<Harness />);
+
+    dispatchKey('g');
+    dispatchKey('x'); // 'g x' is not bound; 'x' alone is node.delete, no-ops (no selection)
+    expect(useRoundStore.getState().renamingSheetId).toBeNull();
+  });
+
+  it('"g" alone does not fire any command', () => {
+    setupWithSheet();
+    render(<Harness />);
+
+    dispatchKey('g');
+    expect(useRoundStore.getState().renamingSheetId).toBeNull();
+    // mode is unchanged
+    expect(useRoundStore.getState().mode).toBe('normal');
+  });
+});
