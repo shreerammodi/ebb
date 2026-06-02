@@ -13,6 +13,7 @@ const BLANK_STATE = {
   keymapName: 'vim' as const,
   quickSwitcherOpen: false,
   settingsOpen: false,
+  keymapOverrides: {} as Record<string, string>,
 };
 
 function resetStore() {

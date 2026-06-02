@@ -12,7 +12,7 @@
  * Escape or the close button dismisses the panel.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { COMMANDS, type CommandId } from '@/lib/commands/registry';
 import { effectiveKeymap } from '@/lib/keymap/effective';
@@ -46,10 +46,16 @@ export default function SettingsPanel() {
   const setSettingsOpen    = useRoundStore(s => s.setSettingsOpen);
 
   const [recording, setRecording] = useState<CommandId | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Stop recording whenever the panel closes.
   useEffect(() => {
     if (!open) setRecording(null);
+  }, [open]);
+
+  // Focus the panel when it opens so Escape keydown fires on the panel.
+  useEffect(() => {
+    if (open) panelRef.current?.focus();
   }, [open]);
 
   const chordByCommand = useMemo(() => {
@@ -110,6 +116,7 @@ export default function SettingsPanel() {
       data-testid="settings-overlay"
     >
       <div
+        ref={panelRef}
         className="panel"
         style={styles.modal}
         onClick={e => e.stopPropagation()}

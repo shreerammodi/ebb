@@ -86,8 +86,12 @@ function loadKeymapSettings(): KeymapSettings {
     const raw = window.localStorage.getItem(KEYMAP_SETTINGS_KEY);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<KeymapSettings>;
+    const validPresets = ['vim', 'excel', 'basic'] as const;
+    const keymapName = validPresets.includes(parsed.keymapName as typeof validPresets[number])
+      ? (parsed.keymapName as typeof validPresets[number])
+      : fallback.keymapName;
     return {
-      keymapName: parsed.keymapName ?? fallback.keymapName,
+      keymapName,
       keymapOverrides: parsed.keymapOverrides ?? fallback.keymapOverrides,
     };
   } catch {
