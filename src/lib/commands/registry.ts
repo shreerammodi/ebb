@@ -11,7 +11,7 @@ export type CommandId =
   | 'node.addAnswer' | 'node.answerAcross' | 'arg.newRoot'
   | 'node.delete'
   | 'status.toggleConceded' | 'status.toggleExtended'
-  | 'sheet.next' | 'sheet.prev' | 'sheet.new' | 'sheet.quickSwitch'
+  | 'sheet.next' | 'sheet.prev' | 'sheet.newAff' | 'sheet.newNeg' | 'sheet.rename' | 'sheet.quickSwitch'
   | 'sheet.jump1' | 'sheet.jump2' | 'sheet.jump3' | 'sheet.jump4' | 'sheet.jump5'
   | 'sheet.jump6' | 'sheet.jump7' | 'sheet.jump8' | 'sheet.jump9'
   | 'settings.open'
@@ -40,7 +40,9 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
   'status.toggleExtended': { id: 'status.toggleExtended', label: 'Toggle extended' },
   'sheet.next': { id: 'sheet.next', label: 'Next sheet' },
   'sheet.prev': { id: 'sheet.prev', label: 'Previous sheet' },
-  'sheet.new': { id: 'sheet.new', label: 'New sheet' },
+  'sheet.newAff': { id: 'sheet.newAff', label: 'New aff sheet' },
+  'sheet.newNeg': { id: 'sheet.newNeg', label: 'New neg sheet' },
+  'sheet.rename': { id: 'sheet.rename', label: 'Rename active sheet' },
   'sheet.quickSwitch': { id: 'sheet.quickSwitch', label: 'Quick switch sheet' },
   'sheet.jump1': { id: 'sheet.jump1', label: 'Jump to sheet 1' },
   'sheet.jump2': { id: 'sheet.jump2', label: 'Jump to sheet 2' },

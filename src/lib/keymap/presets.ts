@@ -25,7 +25,7 @@ const COMMON_NORMAL: Record<Chord, CommandId> = {
   ']': 'sheet.next',
   '[': 'sheet.prev',
   'Meta+k': 'sheet.quickSwitch',
-  'Meta+n': 'sheet.new',
+  'Meta+n': 'sheet.newNeg',
   'Meta+,': 'settings.open',
   s: 'timer.toggleSpeech',
   p: 'timer.togglePrepAff',

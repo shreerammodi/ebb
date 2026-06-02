@@ -173,13 +173,6 @@ export function executeCommand(id: CommandId): void {
       return;
     }
 
-    case 'sheet.new': {
-      if (!round) return;
-      const newSheetId = state.addSheet({ title: 'Untitled', group: 'neg' });
-      state.setActiveSheet(newSheetId);
-      return;
-    }
-
     case 'sheet.quickSwitch': {
       state.setQuickSwitcherOpen(true);
       return;

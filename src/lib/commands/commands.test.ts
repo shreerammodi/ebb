@@ -342,16 +342,6 @@ describe('sheet navigation', () => {
     expect(useRoundStore.getState().activeSheetId).toBe(sheets[0].id);
   });
 
-  it('sheet.new adds a sheet and activates it', () => {
-    threeSheets();
-    const before = useRoundStore.getState().round!.sheets.length;
-    executeCommand('sheet.new');
-    const st = useRoundStore.getState();
-    expect(st.round!.sheets.length).toBe(before + 1);
-    expect(st.activeSheetId).toBe(
-      st.round!.sheets.find(s => s.title === 'Untitled')?.id,
-    );
-  });
 });
 
 describe('modal flags', () => {
