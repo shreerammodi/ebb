@@ -12,7 +12,7 @@ export interface AddResult {
   newId: string;
 }
 
-/** Add an empty-content sibling next to `id`. dir 1 = below, -1 (or 0) = at id's index. */
+/** Add an empty-content sibling next to `id`. dir 1 = below, -1 = at id's index. */
 export function addSiblingBundle(boxes: Boxes, id: string, dir: 1 | -1): AddResult | null {
   const node = boxes[id];
   if (!node || node.parentId === null) return null; // can't add a sibling to a root

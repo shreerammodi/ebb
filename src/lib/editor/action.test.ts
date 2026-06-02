@@ -95,6 +95,18 @@ describe('applyAction: move', () => {
     b.d = { value: newBox(), parentId: 'root', children: [] };
     expect(roundTrips(b, { tag: 'move', id: 'b', newParentId: 'root', newIndex: 3 })).toBe(true);
   });
+  it('refuses to move a node into its own descendant (identity, no mutation)', () => {
+    const b = base();
+    b.a.children = ['a1'];
+    b.a1 = { value: newBox(), parentId: 'a', children: [] };
+    const before = structuredClone(b);
+    expect(applyAction(b, { tag: 'move', id: 'a', newParentId: 'a1', newIndex: 0 })).toEqual({ tag: 'identity' });
+    expect(b).toEqual(before); // unchanged
+  });
+  it('refuses to move a node into itself (identity)', () => {
+    const b = base();
+    expect(applyAction(b, { tag: 'move', id: 'a', newParentId: 'a', newIndex: 0 })).toEqual({ tag: 'identity' });
+  });
 });
 
 describe('applyActionBundle', () => {

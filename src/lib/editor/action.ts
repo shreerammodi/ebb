@@ -4,6 +4,7 @@
  * This is the foundation of undo/redo.
  */
 import type { Box, Boxes } from '@/lib/editor/types';
+import { descendants } from '@/lib/editor/boxes';
 
 export type Action =
   | { tag: 'add'; parentId: string; id: string; index: number; value: Box; children?: string[] }
@@ -34,6 +35,9 @@ export function applyAction(boxes: Boxes, action: Action): Action {
       return { tag: 'delete', id: action.id };
     }
     case 'delete': {
+      // Single-node primitive: deletes only this node. To remove a node WITH its
+      // subtree, use decorate.deleteBoxBundle (deepest-first) — a bare parent
+      // delete here would orphan its children in the map.
       const node = boxes[action.id];
       if (!node || node.parentId === null) return { tag: 'identity' }; // never delete a root
       const parent = boxes[node.parentId];
@@ -62,6 +66,10 @@ export function applyAction(boxes: Boxes, action: Action): Action {
     case 'move': {
       const node = boxes[action.id];
       if (!node || node.parentId === null) return { tag: 'identity' };
+      // Reject moves that would create a cycle (into self or own descendant).
+      if (action.newParentId === action.id || descendants(boxes, action.id).includes(action.newParentId)) {
+        return { tag: 'identity' };
+      }
       const oldParent = boxes[node.parentId];
       if (!oldParent) return { tag: 'identity' };
       const oldIndex = oldParent.children.indexOf(action.id);
