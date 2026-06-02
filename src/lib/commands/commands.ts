@@ -173,6 +173,31 @@ export function executeCommand(id: CommandId): void {
       return;
     }
 
+    case 'sheet.newAff': {
+      if (!round) return;
+      const newSheetId = state.addSheet({ title: 'Untitled', group: 'aff' });
+      state.setActiveSheet(newSheetId);
+      return;
+    }
+
+    case 'sheet.newNeg': {
+      if (!round) return;
+      const newSheetId = state.addSheet({ title: 'Untitled', group: 'neg' });
+      state.setActiveSheet(newSheetId);
+      const firstNegSpeech = round.format.speeches.find(s => s.side === 'neg');
+      if (firstNegSpeech) {
+        state.setSelection({ sheetId: newSheetId, speechId: firstNegSpeech.id, nodeId: '' });
+      }
+      return;
+    }
+
+    case 'sheet.rename': {
+      const { activeSheetId } = state;
+      if (!activeSheetId) return;
+      state.setRenamingSheet(activeSheetId);
+      return;
+    }
+
     case 'sheet.quickSwitch': {
       state.setQuickSwitcherOpen(true);
       return;

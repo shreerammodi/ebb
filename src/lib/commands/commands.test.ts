@@ -361,3 +361,74 @@ describe('modal flags', () => {
   });
 });
 
+describe('sheet.newAff', () => {
+  beforeEach(resetStore);
+
+  it('adds an aff sheet and makes it active', () => {
+    setupRound();
+    const before = useRoundStore.getState().round!.sheets.length;
+    executeCommand('sheet.newAff');
+    const state = useRoundStore.getState();
+    const sheets = state.round!.sheets;
+    expect(sheets).toHaveLength(before + 1);
+    const newest = sheets[sheets.length - 1];
+    expect(newest.group).toBe('aff');
+    expect(state.activeSheetId).toBe(newest.id);
+  });
+
+  it('no-ops when round is null', () => {
+    executeCommand('sheet.newAff');
+    expect(useRoundStore.getState().round).toBeNull();
+  });
+});
+
+describe('sheet.newNeg', () => {
+  beforeEach(resetStore);
+
+  it('adds a neg sheet and makes it active', () => {
+    setupRound();
+    executeCommand('sheet.newNeg');
+    const state = useRoundStore.getState();
+    const newest = state.round!.sheets[state.round!.sheets.length - 1];
+    expect(newest.group).toBe('neg');
+    expect(state.activeSheetId).toBe(newest.id);
+  });
+
+  it('sets selection to the first neg speech', () => {
+    setupRound();
+    executeCommand('sheet.newNeg');
+    const state = useRoundStore.getState();
+    const fmt = state.round!.format;
+    const firstNegSpeech = fmt.speeches.find(s => s.side === 'neg')!;
+    const newest = state.round!.sheets[state.round!.sheets.length - 1];
+    expect(state.selection).toEqual({
+      sheetId: newest.id,
+      speechId: firstNegSpeech.id,
+      nodeId: '',
+    });
+  });
+
+  it('no-ops when round is null', () => {
+    executeCommand('sheet.newNeg');
+    expect(useRoundStore.getState().round).toBeNull();
+  });
+});
+
+describe('sheet.rename', () => {
+  beforeEach(resetStore);
+
+  it('sets renamingSheetId to the active sheet id', () => {
+    const { sheetId } = setupRound();
+    useRoundStore.getState().setActiveSheet(sheetId);
+    executeCommand('sheet.rename');
+    expect(useRoundStore.getState().renamingSheetId).toBe(sheetId);
+  });
+
+  it('no-ops when there is no active sheet', () => {
+    setupRound();
+    useRoundStore.setState({ activeSheetId: null });
+    executeCommand('sheet.rename');
+    expect(useRoundStore.getState().renamingSheetId).toBeNull();
+  });
+});
+
