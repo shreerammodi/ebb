@@ -56,9 +56,9 @@ export default function RoundHeader() {
     if (!file) return;
     try {
       const imported = await readRoundFile(file);
-      useRoundStore.setState({ round: imported });
+      useRoundStore.setState({ round: imported, activeSheetId: null, selection: null, mode: 'normal' });
     } catch {
-      // silently ignore import errors — file was invalid
+      alert('Failed to import: file may be invalid or from an incompatible version.');
     }
     // Reset so the same file can be re-imported
     e.target.value = '';
@@ -76,6 +76,7 @@ export default function RoundHeader() {
           ref={fileInputRef}
           type="file"
           accept=".json"
+          aria-label="Import round file"
           style={{ display: 'none' }}
           onChange={handleImportChange}
           data-testid="import-file-input"

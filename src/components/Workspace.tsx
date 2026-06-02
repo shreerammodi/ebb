@@ -15,6 +15,7 @@ import Sidebar from './Sidebar';
 import QuickSwitcher from './QuickSwitcher';
 import SettingsPanel from './SettingsPanel';
 import FlowGrid from './FlowGrid';
+import PrintView from './PrintView';
 
 export default function Workspace() {
   useKeymap();
@@ -38,6 +39,7 @@ export default function Workspace() {
       </div>
       <QuickSwitcher />
       <SettingsPanel />
+      <PrintView />
     </div>
   );
 }

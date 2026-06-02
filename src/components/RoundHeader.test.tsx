@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { makeFormatByKey } from '@/lib/format/presets';
 import type { Role, RoundMeta } from '@/lib/model/types';
@@ -74,5 +74,42 @@ describe('RoundHeader', () => {
     render(<RoundHeader />);
     fireEvent.click(screen.getByTestId('export-btn'));
     expect(downloadRoundFile).toHaveBeenCalled();
+  });
+
+  it('updates store round and resets activeSheetId/selection/mode when a valid file is imported', async () => {
+    const { readRoundFile } = await import('@/lib/persistence/io');
+
+    // Set up an initial round
+    setupRound('aff', { opponent: 'Smith/Jones' });
+    // Simulate stale selection state
+    useRoundStore.setState({ activeSheetId: 'stale-sheet', selection: { sheetId: 'stale-sheet', speechId: 's1', nodeId: 'n1' }, mode: 'insert' });
+
+    // Build a different round to return from the mock
+    useRoundStore.getState().createRound({
+      role: 'neg',
+      format: makeFormatByKey('policy'),
+      meta: { affName: 'Alpha', negName: 'Beta' },
+    });
+    const importedRound = useRoundStore.getState().round!;
+
+    // Reset store back to original so we can observe the change
+    setupRound('aff', { opponent: 'Smith/Jones' });
+    useRoundStore.setState({ activeSheetId: 'stale-sheet', selection: { sheetId: 'stale-sheet', speechId: 's1', nodeId: 'n1' }, mode: 'insert' });
+
+    vi.mocked(readRoundFile).mockResolvedValueOnce(importedRound);
+
+    render(<RoundHeader />);
+
+    const fileInput = screen.getByTestId('import-file-input');
+    const fakeFile = new File(['{}'], 'round.json', { type: 'application/json' });
+    fireEvent.change(fileInput, { target: { files: [fakeFile] } });
+
+    await waitFor(() => {
+      const state = useRoundStore.getState();
+      expect(state.round).toBe(importedRound);
+      expect(state.activeSheetId).toBeNull();
+      expect(state.selection).toBeNull();
+      expect(state.mode).toBe('normal');
+    });
   });
 });
