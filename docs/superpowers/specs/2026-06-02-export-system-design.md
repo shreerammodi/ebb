@@ -46,8 +46,9 @@ Relevant shapes (`src/lib/model/types.ts`):
 - `Round { meta: RoundMeta; format: Format; sheets: Sheet[]; nodes: ArgumentNode[]; createdAt; ... }`
 - `Sheet { id; title; group: 'aff'|'neg'; order }`
 - `ArgumentNode { id; sheetId; speechId; parentId; order; text; statuses: ('conceded'|'extended')[]; numberOverride? }`
-- `Speech { id; name; side; seconds; group? }` — `group` is the shared column label for consecutive
-  speeches (e.g. `2NC`+`1NR` → the **Block** column).
+- `Speech { id; name; side; seconds; group? }`. The policy preset models the neg block as a single
+  speech **named `Block`** (no `2NC`/`1NR` split, no `group` used), so the speech→column mapping is a
+  direct **name match** to the template headers.
 - `RoundMeta { tournament?; roundLabel?; judge?; affName?; negName?; opponent? }`
 
 ## The `Flow.xltm` template (verified)
@@ -98,10 +99,11 @@ place nodes identically to the on-screen grid. `PlacedNode` carries `{ node, sta
 
 ### Speech → template column mapping
 
-A pure helper maps the app's `format.speeches` onto the template's fixed column headers by name and
-`group` (so the `2NC`+`1NR` speeches both resolve to the **Block** column). AFF sheets use the
-7-column header set, NEG sheets the 6-column set. This mapping is total (policy-only app), but the
-helper still returns a clear error if a speech fails to resolve, surfaced via the standard alert.
+A pure helper maps each app speech onto the template's fixed column headers by **name** (e.g. `Block`
+is one speech matching the `Block` column). AFF sheets use the 7-column header set
+(`1AC,1NC,2AC,Block,1AR,2NR,2AR`), NEG sheets the 6-column set (`1NC,2AC,Block,1AR,2NR,2AR`). For a
+policy round this mapping is total; the helper returns a clear error if a speech name fails to resolve
+(e.g. a non-policy round), surfaced via the standard alert.
 
 ### Excel exporter (`exportXlsx.ts`)
 
