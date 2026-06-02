@@ -641,10 +641,10 @@ describe('selectSheetsByGroup', () => {
     useRoundStore.getState().addSheet({ title: 'K', group: 'neg' });
 
     const round = useRoundStore.getState().round;
-    const offcase = selectSheetsByGroup(round, 'neg');
-    expect(offcase).toHaveLength(2);
-    expect(offcase.every(s => s.group === 'neg')).toBe(true);
-    expect(offcase[0].order).toBeLessThanOrEqual(offcase[1].order);
+    const negSheets = selectSheetsByGroup(round, 'neg');
+    expect(negSheets).toHaveLength(2);
+    expect(negSheets.every(s => s.group === 'neg')).toBe(true);
+    expect(negSheets[0].order).toBeLessThanOrEqual(negSheets[1].order);
   });
 });
 

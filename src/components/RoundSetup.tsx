@@ -51,7 +51,7 @@ export default function RoundSetup() {
       topic: topic.trim() || undefined,
     });
 
-    // Bootstrap default Case sheet; addSheet auto-sets it active for first sheet
+    // Bootstrap default Aff sheet; addSheet auto-sets it active for first sheet
     addSheet({ title: 'Aff', group: 'aff' });
   }
 
