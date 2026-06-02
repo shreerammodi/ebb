@@ -206,6 +206,12 @@ export function executeCommand(id: CommandId): void {
       return;
     }
 
+    // ── Help ─────────────────────────────────────────────────────────────────
+    case 'help.open': {
+      state.setCheatsheetOpen(!state.cheatsheetOpen);
+      return;
+    }
+
     // ── Timers ────────────────────────────────────────────────────────────────
     case 'timer.toggleSpeech': {
       if (!round) return;

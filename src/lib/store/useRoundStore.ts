@@ -31,6 +31,7 @@ export interface RoundState {
   keymapOverrides: Record<string, string>;
   quickSwitcherOpen: boolean;
   settingsOpen: boolean;
+  cheatsheetOpen: boolean;
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -59,6 +60,7 @@ export interface RoundActions {
   clearKeymapOverride(commandId: CommandId): void;
   setQuickSwitcherOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
+  setCheatsheetOpen(open: boolean): void;
 
   startSpeech(speechId: string): void;
   tickSpeech(): void;
@@ -123,6 +125,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   keymapOverrides: initialKeymapSettings.keymapOverrides,
   quickSwitcherOpen: false,
   settingsOpen: false,
+  cheatsheetOpen: false,
 
   // ── createRound ────────────────────────────────────────────────────────────
   createRound({ role, format, meta, topic }) {
@@ -155,6 +158,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       selection: null,
       quickSwitcherOpen: false,
       settingsOpen: false,
+      cheatsheetOpen: false,
     });
   },
 
@@ -371,6 +375,11 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setSettingsOpen ────────────────────────────────────────────────────────
   setSettingsOpen(open) {
     set({ settingsOpen: open });
+  },
+
+  // ── setCheatsheetOpen ──────────────────────────────────────────────────────
+  setCheatsheetOpen(open) {
+    set({ cheatsheetOpen: open });
   },
 
   // ── startSpeech ────────────────────────────────────────────────────────────

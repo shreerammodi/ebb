@@ -26,7 +26,10 @@ export default function AppRoot() {
 
     loadLastRound()
       .then(r => {
-        if (mounted && r) useRoundStore.setState({ round: r });
+        if (mounted && r) {
+          const firstSheet = [...r.sheets].sort((a, b) => a.order - b.order)[0];
+          useRoundStore.setState({ round: r, activeSheetId: firstSheet?.id ?? null });
+        }
       })
       .catch(() => {
         // IndexedDB unavailable — start fresh

@@ -17,7 +17,8 @@ export type CommandId =
   | 'settings.open'
   | 'timer.toggleSpeech'
   | 'timer.togglePrepAff'
-  | 'timer.togglePrepNeg';
+  | 'timer.togglePrepNeg'
+  | 'help.open';
 
 export interface CommandDef {
   id: CommandId;
@@ -54,4 +55,5 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
   'timer.toggleSpeech': { id: 'timer.toggleSpeech', label: 'Toggle speech timer' },
   'timer.togglePrepAff': { id: 'timer.togglePrepAff', label: 'Toggle aff prep timer' },
   'timer.togglePrepNeg': { id: 'timer.togglePrepNeg', label: 'Toggle neg prep timer' },
+  'help.open': { id: 'help.open', label: 'Show keybindings' },
 };

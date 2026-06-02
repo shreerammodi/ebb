@@ -30,6 +30,7 @@ const COMMON_NORMAL: Record<Chord, CommandId> = {
   s: 'timer.toggleSpeech',
   p: 'timer.togglePrepAff',
   P: 'timer.togglePrepNeg',
+  '?': 'help.open',
   ...SHEET_JUMPS,
 };
 
