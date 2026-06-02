@@ -44,11 +44,21 @@ export default function GridCell({
 
   // Default keymap: always editable when selected (no modal insert mode).
   const isInsertMode = isSelected && (mode === 'insert' || keymapName === 'default');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Grow the textarea to fit its content so it occupies the same space the
+  // rendered text would — the cell itself is the only visible box.
+  const autoHeight = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = '0px';
+    el.style.height = `${el.scrollHeight}px`;
+  };
 
   useEffect(() => {
     if (isInsertMode && inputRef.current) {
       inputRef.current.focus();
+      autoHeight();
     }
   }, [isInsertMode]);
 
@@ -62,14 +72,23 @@ export default function GridCell({
 
   if (isInsertMode) {
     return (
-      <input
+      <textarea
         ref={inputRef}
         className="cell-input"
+        rows={1}
+        spellCheck={false}
         value={node.text}
-        onChange={e => updateNodeText(node.id, e.target.value)}
+        onChange={e => {
+          updateNodeText(node.id, e.target.value);
+          autoHeight();
+        }}
         onBlur={() => setMode('normal')}
         onKeyDown={e => {
-          if (e.key === 'Enter') setMode('normal');
+          // Enter commits the edit rather than inserting a newline.
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            setMode('normal');
+          }
         }}
       />
     );

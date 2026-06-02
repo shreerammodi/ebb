@@ -177,15 +177,30 @@ body {
   font-weight: 700;
 }
 
-/* Inline cell input — borderless, fills cell */
+/* Inline cell editor — borderless textarea that IS the cell.
+   No border/outline/background/padding of its own: the cell's own border
+   and selection outline are the only visible box. Matches the rendered
+   text's font + line-height so editing causes no layout shift. */
 .cell-input {
-  width:      100%;
-  font:       inherit;
-  color:      inherit;
-  background: transparent;
-  border:     none;
-  padding:    0;
-  resize:     none;
+  display:        block;
+  box-sizing:     border-box;
+  width:          100%;
+  margin:         0;
+  padding:        0;
+  border:         none;
+  outline:        none;
+  background:     transparent;
+  resize:         none;
+  overflow:       hidden;
+  font:           inherit;
+  line-height:    1.35;
+  color:          inherit;
+  white-space:    pre-wrap;
+  overflow-wrap:  break-word;
+}
+
+.cell-input::-webkit-scrollbar {
+  display: none;
 }
 
 /* Em-dash placeholder */
