@@ -14,6 +14,7 @@ const BLANK_STATE = {
   quickSwitcherOpen: false,
   settingsOpen: false,
   keymapOverrides: {} as Record<string, string>,
+  renamingSheetId: null,
 };
 
 function resetStore() {

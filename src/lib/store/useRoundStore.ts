@@ -32,6 +32,7 @@ export interface RoundState {
   quickSwitcherOpen: boolean;
   settingsOpen: boolean;
   cheatsheetOpen: boolean;
+  renamingSheetId: string | null;
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -61,6 +62,7 @@ export interface RoundActions {
   setQuickSwitcherOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
   setCheatsheetOpen(open: boolean): void;
+  setRenamingSheet(id: string | null): void;
 
   startSpeech(speechId: string): void;
   tickSpeech(): void;
@@ -126,6 +128,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   quickSwitcherOpen: false,
   settingsOpen: false,
   cheatsheetOpen: false,
+  renamingSheetId: null,
 
   // ── createRound ────────────────────────────────────────────────────────────
   createRound({ role, format, meta, topic }) {
@@ -380,6 +383,11 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setCheatsheetOpen ──────────────────────────────────────────────────────
   setCheatsheetOpen(open) {
     set({ cheatsheetOpen: open });
+  },
+
+  // ── setRenamingSheet ───────────────────────────────────────────────────────
+  setRenamingSheet(id) {
+    set({ renamingSheetId: id });
   },
 
   // ── startSpeech ────────────────────────────────────────────────────────────

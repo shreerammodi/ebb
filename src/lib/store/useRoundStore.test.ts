@@ -23,6 +23,7 @@ const BLANK_STATE = {
   activeSheetId: null,
   mode: 'normal' as const,
   selection: null,
+  renamingSheetId: null,
 };
 
 function resetStore() {
@@ -645,6 +646,29 @@ describe('selectSheetsByGroup', () => {
     expect(negSheets).toHaveLength(2);
     expect(negSheets.every(s => s.group === 'neg')).toBe(true);
     expect(negSheets[0].order).toBeLessThanOrEqual(negSheets[1].order);
+  });
+});
+
+// ─── renamingSheetId ─────────────────────────────────────────────────────────
+
+describe('renamingSheetId', () => {
+  beforeEach(() => {
+    useRoundStore.setState({ ...BLANK_STATE, renamingSheetId: null });
+  });
+
+  it('starts as null', () => {
+    expect(useRoundStore.getState().renamingSheetId).toBeNull();
+  });
+
+  it('setRenamingSheet sets the id', () => {
+    useRoundStore.getState().setRenamingSheet('sheet_abc');
+    expect(useRoundStore.getState().renamingSheetId).toBe('sheet_abc');
+  });
+
+  it('setRenamingSheet(null) clears the id', () => {
+    useRoundStore.getState().setRenamingSheet('sheet_abc');
+    useRoundStore.getState().setRenamingSheet(null);
+    expect(useRoundStore.getState().renamingSheetId).toBeNull();
   });
 });
 

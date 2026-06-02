@@ -18,6 +18,7 @@ const BLANK_STATE = {
   keymapName: 'vim' as const,
   quickSwitcherOpen: false,
   settingsOpen: false,
+  renamingSheetId: null,
 };
 
 function resetStore() {
