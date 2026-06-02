@@ -15,12 +15,13 @@
 import { useEffect } from 'react';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { executeCommand } from '@/lib/commands/commands';
-import { getPresetKeymap } from './presets';
+import { effectiveKeymap as computeEffectiveKeymap } from './effective';
 import { resolveCommand } from './resolve';
 
-/** Returns the keymap currently in effect (presets only for now; Task 17 adds overrides). */
+/** Returns the keymap currently in effect: preset merged with user overrides. */
 export function effectiveKeymap() {
-  return getPresetKeymap(useRoundStore.getState().keymapName);
+  const { keymapName, keymapOverrides } = useRoundStore.getState();
+  return computeEffectiveKeymap(keymapName, keymapOverrides);
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {

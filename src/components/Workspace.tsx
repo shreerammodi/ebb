@@ -13,6 +13,7 @@ import { useKeymap } from '@/lib/keymap/useKeymap';
 import RoundHeader from './RoundHeader';
 import Sidebar from './Sidebar';
 import QuickSwitcher from './QuickSwitcher';
+import SettingsPanel from './SettingsPanel';
 import FlowGrid from './FlowGrid';
 
 export default function Workspace() {
@@ -36,6 +37,7 @@ export default function Workspace() {
         </main>
       </div>
       <QuickSwitcher />
+      <SettingsPanel />
     </div>
   );
 }

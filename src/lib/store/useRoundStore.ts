@@ -6,6 +6,7 @@
  */
 
 import { create } from 'zustand';
+import type { CommandId } from '@/lib/commands/registry';
 import type { Round, Sheet, ArgumentNode, Format, Role, Side, RoundMeta, NodeStatus } from '@/lib/model/types';
 import { uid } from '@/lib/model/ids';
 import {
@@ -26,6 +27,8 @@ export interface RoundState {
   mode: 'normal' | 'insert';
   selection: { sheetId: string; speechId: string; nodeId: string } | null;
   keymapName: 'vim' | 'excel' | 'basic';
+  /** CommandId → custom chord (normal mode), overriding the preset binding. */
+  keymapOverrides: Record<string, string>;
   quickSwitcherOpen: boolean;
   settingsOpen: boolean;
 }
@@ -52,6 +55,8 @@ export interface RoundActions {
   setSelection(selection: { sheetId: string; speechId: string; nodeId: string } | null): void;
 
   setKeymapName(name: 'vim' | 'excel' | 'basic'): void;
+  setKeymapOverride(commandId: CommandId, chord: string): void;
+  clearKeymapOverride(commandId: CommandId): void;
   setQuickSwitcherOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
 
@@ -64,7 +69,45 @@ export interface RoundActions {
 
 export type RoundStore = RoundState & RoundActions;
 
+// ─── Keymap settings persistence ────────────────────────────────────────────
+
+const KEYMAP_SETTINGS_KEY = 'df-keymap-settings';
+
+interface KeymapSettings {
+  keymapName: 'vim' | 'excel' | 'basic';
+  keymapOverrides: Record<string, string>;
+}
+
+/** Loads persisted keymap settings from localStorage (SSR-safe). */
+function loadKeymapSettings(): KeymapSettings {
+  const fallback: KeymapSettings = { keymapName: 'vim', keymapOverrides: {} };
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = window.localStorage.getItem(KEYMAP_SETTINGS_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<KeymapSettings>;
+    return {
+      keymapName: parsed.keymapName ?? fallback.keymapName,
+      keymapOverrides: parsed.keymapOverrides ?? fallback.keymapOverrides,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+/** Persists keymap settings to localStorage (SSR-safe; failures ignored). */
+function saveKeymapSettings(settings: KeymapSettings): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(KEYMAP_SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // localStorage unavailable (private mode, quota) — ignore.
+  }
+}
+
 // ─── Store ────────────────────────────────────────────────────────────────────
+
+const initialKeymapSettings = loadKeymapSettings();
 
 export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── Initial state ──────────────────────────────────────────────────────────
@@ -72,7 +115,8 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   activeSheetId: null,
   mode: 'normal',
   selection: null,
-  keymapName: 'vim',
+  keymapName: initialKeymapSettings.keymapName,
+  keymapOverrides: initialKeymapSettings.keymapOverrides,
   quickSwitcherOpen: false,
   settingsOpen: false,
 
@@ -297,6 +341,22 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setKeymapName ──────────────────────────────────────────────────────────
   setKeymapName(name) {
     set({ keymapName: name });
+    saveKeymapSettings({ keymapName: name, keymapOverrides: get().keymapOverrides });
+  },
+
+  // ── setKeymapOverride ──────────────────────────────────────────────────────
+  setKeymapOverride(commandId, chord) {
+    const overrides = { ...get().keymapOverrides, [commandId]: chord };
+    set({ keymapOverrides: overrides });
+    saveKeymapSettings({ keymapName: get().keymapName, keymapOverrides: overrides });
+  },
+
+  // ── clearKeymapOverride ────────────────────────────────────────────────────
+  clearKeymapOverride(commandId) {
+    const overrides = { ...get().keymapOverrides };
+    delete overrides[commandId];
+    set({ keymapOverrides: overrides });
+    saveKeymapSettings({ keymapName: get().keymapName, keymapOverrides: overrides });
   },
 
   // ── setQuickSwitcherOpen ───────────────────────────────────────────────────
