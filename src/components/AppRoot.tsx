@@ -21,14 +21,24 @@ export default function AppRoot() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     const unsubscribe = attachAutosave(useRoundStore);
 
-    loadLastRound().then(r => {
-      if (r) useRoundStore.setState({ round: r });
-      setLoaded(true);
-    });
+    loadLastRound()
+      .then(r => {
+        if (mounted && r) useRoundStore.setState({ round: r });
+      })
+      .catch(() => {
+        // IndexedDB unavailable — start fresh
+      })
+      .finally(() => {
+        if (mounted) setLoaded(true);
+      });
 
-    return unsubscribe;
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   if (!loaded) return null;
