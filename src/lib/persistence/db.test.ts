@@ -5,6 +5,7 @@ import 'fake-indexeddb/auto';
 
 import Dexie from 'dexie';
 import { describe, it, expect } from 'vitest';
+import { DebateFlowDB } from './db';
 
 describe('IndexedDB v1→v2 migration', () => {
   it('remaps case→aff and offcase→neg on all sheet groups', async () => {
@@ -29,21 +30,12 @@ describe('IndexedDB v1→v2 migration', () => {
     });
     await v1.close();
 
-    // Open at v2 with the same upgrade logic used in db.ts.
-    const v2 = new Dexie(DB_NAME);
-    v2.version(1).stores({ rounds: 'id, updatedAt' });
-    v2.version(2).upgrade(tx =>
-      tx.table('rounds').toCollection().modify((r: { sheets: Array<{ group: string }> }) => {
-        r.sheets = r.sheets.map(s => ({
-          ...s,
-          group: s.group === 'case' ? 'aff' : s.group === 'offcase' ? 'neg' : s.group,
-        }));
-      }),
-    );
-
-    const migrated = await v2.table('rounds').get('round_mig') as { sheets: Array<{ group: string }> };
-    expect(migrated.sheets[0].group).toBe('aff');
-    expect(migrated.sheets[1].group).toBe('neg');
+    // Open using the production DebateFlowDB class so the actual upgrade runs.
+    const v2 = new DebateFlowDB(DB_NAME);
+    const migrated = await v2.rounds.get('round_mig');
+    expect(migrated!.sheets).toHaveLength(2);
+    expect(migrated!.sheets[0].group).toBe('aff');
+    expect(migrated!.sheets[1].group).toBe('neg');
     await v2.close();
   });
 });

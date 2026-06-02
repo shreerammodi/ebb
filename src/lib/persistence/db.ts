@@ -8,11 +8,11 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Round } from '@/lib/model/types';
 
-class DebateFlowDB extends Dexie {
+export class DebateFlowDB extends Dexie {
   rounds!: EntityTable<Round, 'id'>;
 
-  constructor() {
-    super('debateflow');
+  constructor(name = 'debateflow') {
+    super(name);
     this.version(1).stores({
       /**
        * Primary key:  id
