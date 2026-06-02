@@ -10,8 +10,8 @@ import {
 // ─── POLICY_PRESET ─────────────────────────────────────────────────────────
 
 describe('POLICY_PRESET', () => {
-  it('has 8 speeches', () => {
-    expect(POLICY_PRESET.speeches).toHaveLength(8);
+  it('has 7 speeches', () => {
+    expect(POLICY_PRESET.speeches).toHaveLength(7);
   });
 
   it('lists speeches in the exact order with correct names and sides', () => {
@@ -19,8 +19,7 @@ describe('POLICY_PRESET', () => {
       { name: '1AC', side: 'aff' },
       { name: '1NC', side: 'neg' },
       { name: '2AC', side: 'aff' },
-      { name: '2NC', side: 'neg' },
-      { name: '1NR', side: 'neg' },
+      { name: 'Block', side: 'neg' },
       { name: '1AR', side: 'aff' },
       { name: '2NR', side: 'neg' },
       { name: '2AR', side: 'aff' },
@@ -32,24 +31,14 @@ describe('POLICY_PRESET', () => {
   });
 
   it('has correct seconds for each speech', () => {
-    const expectedSeconds = [480, 480, 480, 480, 300, 300, 300, 300];
+    const expectedSeconds = [480, 480, 480, 780, 300, 300, 300];
     POLICY_PRESET.speeches.forEach((s, i) => {
       expect(s.seconds).toBe(expectedSeconds[i]);
     });
   });
 
-  it('2NC and 1NR share group "Neg block"', () => {
-    const twoNC = POLICY_PRESET.speeches.find((s) => s.name === '2NC');
-    const oneNR = POLICY_PRESET.speeches.find((s) => s.name === '1NR');
-    expect(twoNC?.group).toBe('Neg block');
-    expect(oneNR?.group).toBe('Neg block');
-  });
-
-  it('speeches other than 2NC and 1NR have no group', () => {
-    const others = POLICY_PRESET.speeches.filter(
-      (s) => s.name !== '2NC' && s.name !== '1NR',
-    );
-    others.forEach((s) => {
+  it('no speech has a group', () => {
+    POLICY_PRESET.speeches.forEach((s) => {
       expect(s.group).toBeUndefined();
     });
   });
@@ -166,12 +155,12 @@ describe('makeFormat', () => {
     expect(overlap).toHaveLength(0);
   });
 
-  it('preserves speech name, side, seconds, and group from the preset', () => {
+  it('preserves speech name, side, and seconds from the preset', () => {
     const fmt = makeFormat(POLICY_PRESET);
-    const twoNC = fmt.speeches.find((s) => s.name === '2NC');
-    expect(twoNC?.side).toBe('neg');
-    expect(twoNC?.seconds).toBe(480);
-    expect(twoNC?.group).toBe('Neg block');
+    const block = fmt.speeches.find((s) => s.name === 'Block');
+    expect(block?.side).toBe('neg');
+    expect(block?.seconds).toBe(780);
+    expect(block?.group).toBeUndefined();
   });
 
   it('preserves prepSeconds from the preset', () => {
@@ -187,7 +176,7 @@ describe('makeFormatByKey', () => {
   it('returns a Policy format for key "policy"', () => {
     const fmt = makeFormatByKey('policy');
     expect(fmt.name).toBe('Policy');
-    expect(fmt.speeches).toHaveLength(8);
+    expect(fmt.speeches).toHaveLength(7);
   });
 
   it('returns an LD format for key "ld"', () => {

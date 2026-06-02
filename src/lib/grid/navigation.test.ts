@@ -122,7 +122,7 @@ describe('nodeBelowInColumn', () => {
 describe('nextOpposingSpeech', () => {
   it('returns the first speech after speechId on the opposite side', () => {
     const fmt: Format = makeFormatByKey('policy');
-    // speeches: 1AC(aff) 1NC(neg) 2AC(aff) 2NC(neg) 1NR(neg) 1AR(aff) 2NR(neg) 2AR(aff)
+    // speeches: 1AC(aff) 1NC(neg) 2AC(aff) Block(neg) 1AR(aff) 2NR(neg) 2AR(aff)
     const ac1 = fmt.speeches[0]; // 1AC aff
     const next = nextOpposingSpeech(fmt, ac1.id);
     expect(next?.id).toBe(fmt.speeches[1].id); // 1NC

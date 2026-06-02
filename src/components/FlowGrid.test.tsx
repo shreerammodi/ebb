@@ -2,10 +2,10 @@
  * FlowGrid + GridCell render tests (TDD-first).
  *
  * Setup:
- *   - Policy format (1AC, 1NC, 2AC, 2NC/1NR[Neg block], 1AR, 2NR, 2AR)
+ *   - Policy format (1AC, 1NC, 2AC, Block, 1AR, 2NR, 2AR)
  *   - One sheet
  *   - 1NC root arg  →  three 2AC children (#1, #2, #3)
- *   - 2NC answers #1 and #2 but NOT #3  (so #3 is dropped)
+ *   - Block answers #1 and #2 but NOT #3  (so #3 is dropped)
  *   - Selection set to the #2 cell
  */
 
@@ -36,8 +36,8 @@ interface TestContext {
   ac1Id: string;  // 2AC child #1
   ac2Id: string;  // 2AC child #2
   ac3Id: string;  // 2AC child #3 (dropped)
-  nc2Id: string;  // 2NC answer to ac1
-  nc3Id: string;  // 2NC answer to ac2
+  nc2Id: string;  // Block answer to ac1
+  nc3Id: string;  // Block answer to ac2
 }
 
 function setupScenario(): TestContext {
@@ -46,10 +46,10 @@ function setupScenario(): TestContext {
   const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'case' });
 
   const speeches = fmt.speeches;
-  // Policy order: 1AC[0], 1NC[1], 2AC[2], 2NC[3], 1NR[4], 1AR[5], 2NR[6], 2AR[7]
+  // Policy order: 1AC[0], 1NC[1], 2AC[2], Block[3], 1AR[4], 2NR[5], 2AR[6]
   const s1NC = speeches[1].id;
   const s2AC = speeches[2].id;
-  const s2NC = speeches[3].id;
+  const s2NC = speeches[3].id; // Block
 
   // 1NC root argument
   const ncId = useRoundStore.getState().addNode({
@@ -79,18 +79,18 @@ function setupScenario(): TestContext {
     text: 'Standards',
   });
 
-  // 2NC answers ac1 and ac2 but NOT ac3 → ac3 is dropped
+  // Block answers ac1 and ac2 but NOT ac3 → ac3 is dropped
   const nc2Id = useRoundStore.getState().addNode({
     sheetId,
     speechId: s2NC,
     parentId: ac1Id,
-    text: '2NC answer to we meet',
+    text: 'Block answer to we meet',
   });
   const nc3Id = useRoundStore.getState().addNode({
     sheetId,
     speechId: s2NC,
     parentId: ac2Id,
-    text: '2NC answer to counter-interp',
+    text: 'Block answer to counter-interp',
   });
 
   return { sheetId, ncId, ac1Id, ac2Id, ac3Id, nc2Id, nc3Id };
@@ -107,7 +107,7 @@ describe('FlowGrid', () => {
     const { sheetId } = setupScenario();
     render(<FlowGrid sheetId={sheetId} />);
 
-    // All 8 policy speeches should appear as headers (in the bottom header row)
+    // All 7 policy speeches should appear as headers (in the bottom header row)
     expect(screen.getAllByRole('columnheader').some(h => h.textContent?.includes('1NC'))).toBe(true);
     expect(screen.getAllByRole('columnheader').some(h => h.textContent?.includes('2AC'))).toBe(true);
   });
@@ -128,15 +128,14 @@ describe('FlowGrid', () => {
 
   // ── Group header row ───────────────────────────────────────────────────────
 
-  it('renders a group header row labelling "Neg block" over the 2NC/1NR columns', () => {
+  it('renders a "Block" column header', () => {
     const { sheetId } = setupScenario();
     render(<FlowGrid sheetId={sheetId} />);
 
-    // "Neg block" should appear as a colSpan header
     const headers = screen.getAllByRole('columnheader');
-    const negBlockHeader = headers.find(h => h.textContent === 'Neg block');
-    expect(negBlockHeader).toBeDefined();
-    expect(negBlockHeader!.getAttribute('colspan') ?? negBlockHeader!.getAttribute('colSpan')).toBe('2');
+    const blockHeader = headers.find(h => h.textContent === 'Block');
+    expect(blockHeader).toBeDefined();
+    expect(blockHeader!.classList.contains('side-neg')).toBe(true);
   });
 
   // ── rowSpan for parent node ────────────────────────────────────────────────

@@ -14,7 +14,7 @@ export interface Speech {
   side: Side;
   /** Allocated speaking time in seconds. */
   seconds: number;
-  /** Optional grouping label (e.g. "Neg block" shared by 2NC and 1NR). */
+  /** Optional grouping label for consecutive speeches that share a column header. */
   group?: string;
 }
 
