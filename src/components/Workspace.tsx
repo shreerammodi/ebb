@@ -1,13 +1,5 @@
 'use client';
 
-/**
- * Workspace — main layout shell for an active round.
- *
- * Composes the header (top), sidebar (left) and the FlowGrid for the active
- * sheet (right). The QuickSwitcher overlay and the modal keymap hook are
- * mounted here too. The FlowGrid is only rendered when a sheet is active.
- */
-
 import { useEffect } from 'react';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { useKeymap } from '@/lib/keymap/useKeymap';
@@ -24,7 +16,6 @@ export default function Workspace() {
 
   const activeSheetId = useRoundStore(s => s.activeSheetId);
 
-  // Auto-select the first node when switching sheets, so movement keys work immediately.
   useEffect(() => {
     const { round, selection, mode } = useRoundStore.getState();
     if (!activeSheetId || !round || mode === 'insert') return;
@@ -40,28 +31,22 @@ export default function Workspace() {
 
     if (sheetNodes.length > 0) {
       const first = sheetNodes[0];
-      useRoundStore.getState().setSelection({
-        sheetId: first.sheetId,
-        speechId: first.speechId,
-        nodeId: first.id,
-      });
+      useRoundStore.getState().setSelection({ sheetId: first.sheetId, speechId: first.speechId, nodeId: first.id });
     } else {
       useRoundStore.getState().setSelection(null);
     }
   }, [activeSheetId]);
 
   return (
-    <div style={styles.root} data-testid="workspace">
+    <div className="flex flex-col h-screen bg-zinc-50" data-testid="workspace">
       <RoundHeader />
-      <div style={styles.body}>
+      <div className="flex flex-1 min-h-0">
         <Sidebar />
-        <main style={styles.content} data-testid="workspace-content">
+        <main className="flex-1 min-w-0 overflow-auto p-4" data-testid="workspace-content">
           {activeSheetId ? (
             <FlowGrid sheetId={activeSheetId} />
           ) : (
-            <div className="muted" style={styles.empty}>
-              No sheet selected
-            </div>
+            <div className="text-zinc-400 text-[13px] p-6">No sheet selected</div>
           )}
         </main>
       </div>
@@ -72,32 +57,3 @@ export default function Workspace() {
     </div>
   );
 }
-
-// ─── Inline styles ────────────────────────────────────────────────────────────
-
-const styles = {
-  root: {
-    display:       'flex',
-    flexDirection: 'column',
-    height:        '100vh',
-    background:    'var(--bg)',
-  } as React.CSSProperties,
-
-  body: {
-    display:  'flex',
-    flex:     '1 1 auto',
-    minHeight: 0,
-  } as React.CSSProperties,
-
-  content: {
-    flex:      '1 1 auto',
-    minWidth:  0,
-    overflow:  'auto',
-    padding:   '16px',
-  } as React.CSSProperties,
-
-  empty: {
-    padding:  '24px',
-    fontSize: '13px',
-  } as React.CSSProperties,
-} as const;
