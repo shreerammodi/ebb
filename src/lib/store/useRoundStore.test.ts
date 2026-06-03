@@ -751,6 +751,26 @@ describe('undo/redo', () => {
     useRoundStore.getState().setSelection({ sheetId: 'a', speechId: 'b', nodeId: '' });
     expect(useRoundStore.getState().past.length).toBe(depthBefore);
   });
+
+  it('discards the redo stack when a new edit happens after undo', () => {
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'a' });
+    useRoundStore.getState().undo();              // future now has 1 entry
+    expect(useRoundStore.getState().future.length).toBeGreaterThan(0);
+    useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'b' }); // new edit
+    expect(useRoundStore.getState().future.length).toBe(0);
+  });
+
+  it('caps the undo history at UNDO_DEPTH (50) entries', () => {
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    // addSheet already pushed 1 entry; do many more distinct (non-coalescing) commits.
+    for (let i = 0; i < 80; i++) {
+      useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: `n${i}` });
+    }
+    expect(useRoundStore.getState().past.length).toBeLessThanOrEqual(50);
+  });
 });
 
 describe('keymap and modal flags', () => {

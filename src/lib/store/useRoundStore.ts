@@ -62,6 +62,7 @@ export interface RoundActions {
 
   undo(): void;
   redo(): void;
+  /** @internal `_commit` and `_reconcileAfterHistory` are store-private plumbing — do not call them outside the store's own action implementations. */
   /** Internal: snapshot the current round, then replace it via `producer`. */
   _commit(coalesceKey: string | null, producer: (round: Round) => Round): void;
   /** Internal: drop selection/activeSheet if they point at something now gone. */
@@ -205,7 +206,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     const isFirst = round.sheets.length === 0;
     get()._commit(null, r => ({ ...r, sheets: [...r.sheets, sheet] }));
     if (isFirst) set({ activeSheetId: sheet.id });
-    else set({ activeSheetId });
 
     return sheet.id;
   },
