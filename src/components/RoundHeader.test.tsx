@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { makeFormatByKey } from '@/lib/format/presets';
 import type { Role, RoundMeta } from '@/lib/model/types';
@@ -66,6 +67,14 @@ describe('RoundHeader', () => {
     expect(screen.getByTestId('import-btn')).toBeInTheDocument();
     expect(screen.getByTestId('new-round-btn')).toBeInTheDocument();
     expect(screen.queryByTestId('print-btn')).not.toBeInTheDocument();
+  });
+
+  it('opens settings when the settings button is clicked', async () => {
+    setupRound('aff', { opponent: 'Smith/Jones' });
+    render(<RoundHeader />);
+    const btn = screen.getByTestId('settings-btn');
+    await userEvent.click(btn);
+    expect(useRoundStore.getState().settingsOpen).toBe(true);
   });
 
   it('updates store round and resets activeSheetId/selection/mode when a valid file is imported', async () => {

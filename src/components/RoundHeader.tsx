@@ -61,6 +61,15 @@ export default function RoundHeader() {
           onChange={handleImportChange}
           data-testid="import-file-input"
         />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => useRoundStore.getState().setSettingsOpen(true)}
+          aria-label="Settings"
+          data-testid="settings-btn"
+        >
+          ⚙
+        </Button>
         <ExportMenu />
         <Button
           variant="outline"
