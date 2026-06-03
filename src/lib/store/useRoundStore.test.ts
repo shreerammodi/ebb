@@ -681,6 +681,78 @@ describe('renamingSheetId', () => {
 
 // ─── keymap / modal flags ────────────────────────────────────────────────────
 
+// ─── undo/redo ───────────────────────────────────────────────────────────────
+
+function freshRound() {
+  useRoundStore.getState().createRound({ role: 'aff', format: makeFormatByKey('policy'), meta: {} });
+}
+
+describe('undo/redo', () => {
+  beforeEach(() => {
+    useRoundStore.setState({ round: null, past: [], future: [], selection: null, mode: 'normal' });
+    freshRound();
+  });
+
+  it('undoes a node addition', () => {
+    const s = useRoundStore.getState();
+    const sheetId = s.addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'x' });
+    expect(useRoundStore.getState().round!.nodes.length).toBe(1);
+
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.nodes.length).toBe(0);
+
+    useRoundStore.getState().redo();
+    expect(useRoundStore.getState().round!.nodes.length).toBe(1);
+  });
+
+  it('undoes a sheet deletion, restoring its nodes', () => {
+    const s = useRoundStore.getState();
+    const sheetId = s.addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'x' });
+
+    useRoundStore.getState().removeSheet(sheetId);
+    expect(useRoundStore.getState().round!.sheets.find(x => x.id === sheetId)).toBeUndefined();
+
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.sheets.find(x => x.id === sheetId)).toBeDefined();
+    expect(useRoundStore.getState().round!.nodes.length).toBe(1);
+  });
+
+  it('coalesces consecutive text edits to the same node into one undo step', () => {
+    const s = useRoundStore.getState();
+    const sheetId = s.addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    const nodeId = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: '' });
+
+    useRoundStore.getState().updateNodeText(nodeId, 'a');
+    useRoundStore.getState().updateNodeText(nodeId, 'ab');
+    useRoundStore.getState().updateNodeText(nodeId, 'abc');
+
+    // One undo reverts ALL the coalesced text edits back to the post-add value ('').
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.nodes.find(n => n.id === nodeId)!.text).toBe('');
+  });
+
+  it('does not create undo entries for timer ticks', () => {
+    const s = useRoundStore.getState();
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    s.startSpeech(speechId);
+    const depthBefore = useRoundStore.getState().past.length;
+    useRoundStore.getState().tickSpeech();
+    useRoundStore.getState().tickSpeech();
+    expect(useRoundStore.getState().past.length).toBe(depthBefore);
+  });
+
+  it('does not create undo entries for selection changes', () => {
+    const depthBefore = useRoundStore.getState().past.length;
+    useRoundStore.getState().setSelection({ sheetId: 'a', speechId: 'b', nodeId: '' });
+    expect(useRoundStore.getState().past.length).toBe(depthBefore);
+  });
+});
+
 describe('keymap and modal flags', () => {
   beforeEach(resetStore);
 
