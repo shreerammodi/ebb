@@ -3,6 +3,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { useRoundStore, selectSheetsByGroup, selectSheetDropCount } from '@/lib/store/useRoundStore';
 import { executeCommand } from '@/lib/commands/commands';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { Sheet } from '@/lib/model/types';
 
 interface GroupConfig {
@@ -25,15 +27,21 @@ export default function Sidebar() {
   if (!round) return null;
 
   return (
-    <nav style={styles.sidebar} aria-label="Sheets" data-testid="sidebar" className="no-print">
-      <div style={styles.scroll}>
+    <nav
+      className="no-print flex flex-col w-[220px] shrink-0 h-full bg-card border-r border-border"
+      aria-label="Sheets"
+      data-testid="sidebar"
+    >
+      <div className="flex-1 overflow-y-auto p-2">
         {GROUPS.map(({ group, label }) => {
           const sheets = selectSheetsByGroup(round, group);
           return (
-            <div key={group} style={styles.group}>
-              <div className="label" style={styles.groupHeader}>{label}</div>
+            <div key={group} className="mb-3">
+              <div className="font-mono text-[9px] font-bold uppercase tracking-widest text-zinc-400 px-2 pb-1">
+                {label}
+              </div>
               {sheets.length === 0 ? (
-                <div className="muted" style={styles.empty}>No sheets</div>
+                <div className="text-zinc-400 text-xs px-2 py-1">No sheets</div>
               ) : (
                 sheets.map(sheet => (
                   <SheetRow
@@ -52,31 +60,31 @@ export default function Sidebar() {
         })}
       </div>
 
-      <div style={styles.addBtns}>
-        <button
+      <div className="flex gap-1 p-2 shrink-0">
+        <Button
           type="button"
-          className="btn"
-          style={styles.addBtn}
+          variant="outline"
+          size="sm"
+          className="flex-1"
           onClick={() => executeCommand('sheet.newAff')}
           data-testid="add-aff"
         >
           + Aff
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="btn"
-          style={styles.addBtn}
+          variant="outline"
+          size="sm"
+          className="flex-1"
           onClick={() => executeCommand('sheet.newNeg')}
           data-testid="add-neg"
         >
           + Neg
-        </button>
+        </Button>
       </div>
     </nav>
   );
 }
-
-// ─── Sheet row ────────────────────────────────────────────────────────────────
 
 interface SheetRowProps {
   sheet: Sheet;
@@ -112,14 +120,12 @@ function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRenam
     setRenamingSheet(null);
   }
 
-  const rowStyle = {
-    ...styles.sheetRow,
-    ...(active ? styles.sheetRowActive : null),
-  };
-
   if (isRenaming) {
     return (
-      <div style={rowStyle}>
+      <div className={cn(
+        'flex items-center gap-1.5 w-full px-2 py-1.5 rounded-md border',
+        active ? 'bg-zinc-100 border-zinc-200 font-semibold' : 'border-transparent',
+      )}>
         <input
           ref={inputRef}
           value={value}
@@ -129,7 +135,7 @@ function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRenam
             if (e.key === 'Escape') { e.stopPropagation(); cancel(); }
           }}
           onBlur={commit}
-          style={styles.renameInput}
+          className="flex-1 text-[13px] text-zinc-900 bg-transparent border-none outline outline-1 outline-aff rounded-sm px-0.5 font-[inherit]"
           data-testid={`rename-input-${sheet.id}`}
         />
       </div>
@@ -143,9 +149,14 @@ function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRenam
       onDoubleClick={onStartRename}
       aria-current={active ? 'true' : undefined}
       data-testid={`sheet-${sheet.id}`}
-      style={rowStyle}
+      className={cn(
+        'flex items-center justify-between gap-1.5 w-full text-left text-[13px] text-zinc-700 px-2 py-1.5 rounded-md border transition-colors',
+        active
+          ? 'bg-zinc-100 border-zinc-200 font-semibold text-zinc-900'
+          : 'border-transparent hover:bg-zinc-50',
+      )}
     >
-      <span style={styles.sheetTitle}>{sheet.title}</span>
+      <span className="overflow-hidden text-ellipsis whitespace-nowrap">{sheet.title}</span>
       {dropCount > 0 && (
         <span className="badge-drop" data-testid={`drop-badge-${sheet.id}`}>
           {dropCount}
@@ -154,91 +165,3 @@ function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRenam
     </button>
   );
 }
-
-// ─── Inline styles ────────────────────────────────────────────────────────────
-
-const styles = {
-  sidebar: {
-    display:       'flex',
-    flexDirection: 'column',
-    width:         '220px',
-    flex:          '0 0 220px',
-    height:        '100%',
-    background:    'var(--panel)',
-    borderRight:   '1px solid var(--line)',
-  } as React.CSSProperties,
-
-  scroll: {
-    flex:      '1 1 auto',
-    overflowY: 'auto',
-    padding:   '8px',
-  } as React.CSSProperties,
-
-  group: {
-    marginBottom: '12px',
-  } as React.CSSProperties,
-
-  groupHeader: {
-    padding: '6px 8px 4px',
-  } as React.CSSProperties,
-
-  empty: {
-    padding:  '4px 8px',
-    fontSize: '12px',
-  } as React.CSSProperties,
-
-  sheetRow: {
-    display:        'flex',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-    gap:            '6px',
-    width:          '100%',
-    textAlign:      'left',
-    font:           'inherit',
-    fontSize:       '13px',
-    color:          'var(--ink)',
-    background:     'transparent',
-    borderWidth:    '1px',
-    borderStyle:    'solid',
-    borderColor:    'transparent',
-    borderRadius:   '6px',
-    padding:        '6px 8px',
-    cursor:         'pointer',
-  } as React.CSSProperties,
-
-  sheetRowActive: {
-    background:  'var(--bg)',
-    borderColor: 'var(--line)',
-    fontWeight:  600,
-  } as React.CSSProperties,
-
-  sheetTitle: {
-    overflow:     'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace:   'nowrap',
-  } as React.CSSProperties,
-
-  renameInput: {
-    flex:         '1 1 auto',
-    font:         'inherit',
-    fontSize:     '13px',
-    color:        'var(--ink)',
-    background:   'transparent',
-    border:       'none',
-    outline:      '1px solid var(--aff)',
-    borderRadius: '3px',
-    padding:      '0 2px',
-    width:        '100%',
-  } as React.CSSProperties,
-
-  addBtns: {
-    display: 'flex',
-    gap:     '4px',
-    margin:  '8px',
-    flex:    '0 0 auto',
-  } as React.CSSProperties,
-
-  addBtn: {
-    flex: '1 1 0',
-  } as React.CSSProperties,
-} as const;
