@@ -40,6 +40,7 @@ export interface RoundState {
   settingsOpen: boolean;
   cheatsheetOpen: boolean;
   renamingSheetId: string | null;
+  infoOpen: boolean;
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -80,6 +81,7 @@ export interface RoundActions {
   setSettingsOpen(open: boolean): void;
   setCheatsheetOpen(open: boolean): void;
   setRenamingSheet(id: string | null): void;
+  setInfoOpen(open: boolean): void;
 
   setScouting(patch: Partial<Scouting>): void;
 
@@ -182,6 +184,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   settingsOpen: false,
   cheatsheetOpen: false,
   renamingSheetId: null,
+  infoOpen: false,
 
   // ── createRound ────────────────────────────────────────────────────────────
   createRound({ role, format, meta }) {
@@ -220,6 +223,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       settingsOpen: false,
       cheatsheetOpen: false,
       renamingSheetId: null,
+      infoOpen: false,
     });
   },
 
@@ -443,6 +447,11 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setRenamingSheet ───────────────────────────────────────────────────────
   setRenamingSheet(id) {
     set({ renamingSheetId: id });
+  },
+
+  // ── setInfoOpen ────────────────────────────────────────────────────────────
+  setInfoOpen(open) {
+    set({ infoOpen: open });
   },
 
   // ── setScouting ────────────────────────────────────────────────────────────

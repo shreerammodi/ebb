@@ -239,6 +239,12 @@ export function executeCommand(id: CommandId): void {
       return;
     }
 
+    // ── Info ──────────────────────────────────────────────────────────────────
+    case 'info.open': {
+      state.setInfoOpen(true);
+      return;
+    }
+
     // ── Help ─────────────────────────────────────────────────────────────────
     case 'help.open': {
       state.setCheatsheetOpen(!state.cheatsheetOpen);

@@ -7,6 +7,7 @@ import RoundHeader from './RoundHeader';
 import Sidebar from './Sidebar';
 import QuickSwitcher from './QuickSwitcher';
 import SettingsPanel from './SettingsPanel';
+import InfoPanel from './InfoPanel';
 import KeybindingsCheatsheet from './KeybindingsCheatsheet';
 import FlowGrid from './FlowGrid';
 import PrintView from './PrintView';
@@ -52,6 +53,7 @@ export default function Workspace() {
       </div>
       <QuickSwitcher />
       <SettingsPanel />
+      <InfoPanel />
       <KeybindingsCheatsheet />
       <PrintView />
     </div>
