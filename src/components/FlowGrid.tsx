@@ -179,7 +179,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                     setSelection({ sheetId, speechId: speech.id, nodeId: '' })
                   }
                 >
-                  <span className="dash">—</span>
+                  <span className="cell-empty" />
                 </td>
               );
             })}

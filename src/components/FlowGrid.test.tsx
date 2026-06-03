@@ -243,6 +243,35 @@ describe('FlowGrid', () => {
     expect(() => render(<FlowGrid sheetId={sheetId} />)).not.toThrow();
   });
 
+  // ── Empty cells — no em-dash ──────────────────────────────────────────────
+
+  it('renders empty cells without an em-dash but still clickable', async () => {
+    const { sheetId } = setupScenario();
+    render(<FlowGrid sheetId={sheetId} />);
+
+    // No em-dash text node should exist anywhere
+    expect(screen.queryByText('—')).toBeNull();
+
+    // Find an empty data cell (one with no node text — click it and check selection)
+    // The 1AC column has no nodes in our scenario, so it will have empty cells
+    const fmt = useRoundStore.getState().round!.format;
+    const s1AC = fmt.speeches[0].id;
+
+    // Get all tds in the side-aff column for 1AC — these should be empty cells
+    // We can find a td that is side-aff but contains no .arg-num (i.e. no node)
+    const allTds = document.querySelectorAll('td');
+    const emptyTd = Array.from(allTds).find(td => {
+      return !td.querySelector('.arg-num') && !td.querySelector('.cell-input') && td.textContent?.trim() === '';
+    });
+    expect(emptyTd).toBeDefined();
+
+    // Click it
+    emptyTd!.click();
+
+    // Selection should have nodeId === ''
+    expect(useRoundStore.getState().selection?.nodeId).toBe('');
+  });
+
   // ── Group header side class ────────────────────────────────────────────────
 
   it('applies side-aff class to a group header spanning aff speeches', () => {

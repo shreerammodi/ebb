@@ -123,9 +123,9 @@ body {
 }
 
 .flow th {
-  text-align:     left;
-  font-size:      9px;
-  font-weight:    700;
+  text-align:     center;
+  font-size:      0.9rem;
+  font-weight:    600;
   text-transform: uppercase;
   letter-spacing: .06em;
   color:          var(--muted);
@@ -226,10 +226,11 @@ body {
   display: none;
 }
 
-/* Em-dash placeholder */
-.dash {
-  color:   var(--muted);
-  opacity: .6;
+/* Empty cell spacer */
+.cell-empty {
+  display:    block;
+  width:      100%;
+  min-height: 1.4em;
 }
 
 /* ------------------------------------------------------------
