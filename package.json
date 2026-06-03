@@ -11,12 +11,17 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dexie": "^4.0.10",
     "fflate": "^0.8.3",
+    "lucide-react": "^1.17.0",
     "next": "^15.3.3",
     "pdf-lib": "^1.17.1",
+    "radix-ui": "^1.4.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
     "zustand": "^5.0.5"
   },
