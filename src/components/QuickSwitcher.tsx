@@ -1,41 +1,29 @@
 'use client';
 
-/**
- * QuickSwitcher — modal overlay for jumping between sheets.
- *
- * Opens when `quickSwitcherOpen` is true. A text input fuzzy-filters sheets by
- * title (case-insensitive substring). Selecting a sheet (click or Enter) sets it
- * active and closes; Escape closes without selecting.
- */
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 
 export default function QuickSwitcher() {
-  const open             = useRoundStore(s => s.quickSwitcherOpen);
-  const round            = useRoundStore(s => s.round);
-  const setActiveSheet   = useRoundStore(s => s.setActiveSheet);
-  const setOpen          = useRoundStore(s => s.setQuickSwitcherOpen);
+  const open           = useRoundStore(s => s.quickSwitcherOpen);
+  const round          = useRoundStore(s => s.round);
+  const setActiveSheet = useRoundStore(s => s.setActiveSheet);
+  const setOpen        = useRoundStore(s => s.setQuickSwitcherOpen);
 
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset the query and focus the input each time the switcher opens.
   useEffect(() => {
     if (open) {
       setQuery('');
-      // Focus after paint so the input is mounted.
       inputRef.current?.focus();
     }
   }, [open]);
 
-  const sheets = round?.sheets;
-
   const filtered = useMemo(() => {
-    const all = sheets ?? [];
+    const all = round?.sheets ?? [];
     const q = query.trim().toLowerCase();
     return q ? all.filter(s => s.title.toLowerCase().includes(q)) : all;
-  }, [sheets, query]);
+  }, [round?.sheets, query]);
 
   if (!open) return null;
 
@@ -45,12 +33,7 @@ export default function QuickSwitcher() {
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      setOpen(false);
-      return;
-    }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setOpen(false); return; }
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
@@ -61,13 +44,12 @@ export default function QuickSwitcher() {
 
   return (
     <div
-      style={styles.overlay}
+      className="fixed inset-0 flex items-start justify-center pt-[12vh] bg-black/30 z-[100]"
       onClick={() => setOpen(false)}
       data-testid="quick-switcher-overlay"
     >
       <div
-        className="panel"
-        style={styles.modal}
+        className="w-full max-w-[420px] overflow-hidden bg-card border border-border rounded-[var(--radius)] shadow-lg"
         onClick={e => e.stopPropagation()}
         onKeyDown={onKeyDown}
         role="dialog"
@@ -81,19 +63,19 @@ export default function QuickSwitcher() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Jump to sheet…"
-          style={styles.input}
+          className="w-full text-[14px] text-zinc-900 bg-card border-none border-b border-border px-3.5 py-3 focus:outline-none box-border"
           data-testid="quick-switcher-input"
           aria-label="Filter sheets"
         />
-        <ul style={styles.list}>
+        <ul className="list-none m-0 p-1.5 max-h-[50vh] overflow-y-auto">
           {filtered.length === 0 ? (
-            <li className="muted" style={styles.empty}>No matching sheets</li>
+            <li className="text-zinc-400 text-[13px] px-2.5 py-2">No matching sheets</li>
           ) : (
             filtered.map(sheet => (
               <li key={sheet.id}>
                 <button
                   type="button"
-                  style={styles.item}
+                  className="block w-full text-left text-[13px] text-zinc-900 bg-transparent border-none rounded-md px-2.5 py-2 cursor-pointer hover:bg-zinc-50"
                   onClick={() => select(sheet.id)}
                   data-testid={`qs-sheet-${sheet.id}`}
                 >
@@ -107,63 +89,3 @@ export default function QuickSwitcher() {
     </div>
   );
 }
-
-// ─── Inline styles ────────────────────────────────────────────────────────────
-
-const styles = {
-  overlay: {
-    position:       'fixed',
-    inset:          0,
-    display:        'flex',
-    alignItems:     'flex-start',
-    justifyContent: 'center',
-    paddingTop:     '12vh',
-    background:     'rgba(0, 0, 0, 0.3)',
-    zIndex:         100,
-  } as React.CSSProperties,
-
-  modal: {
-    width:    '100%',
-    maxWidth: '420px',
-    overflow: 'hidden',
-  } as React.CSSProperties,
-
-  input: {
-    width:        '100%',
-    font:         'inherit',
-    fontSize:     '14px',
-    color:        'var(--ink)',
-    background:   'var(--panel)',
-    border:       'none',
-    borderBottom: '1px solid var(--line)',
-    padding:      '12px 14px',
-    boxSizing:    'border-box',
-  } as React.CSSProperties,
-
-  list: {
-    listStyle: 'none',
-    margin:    0,
-    padding:   '6px',
-    maxHeight: '50vh',
-    overflowY: 'auto',
-  } as React.CSSProperties,
-
-  empty: {
-    padding:  '8px 10px',
-    fontSize: '13px',
-  } as React.CSSProperties,
-
-  item: {
-    display:      'block',
-    width:        '100%',
-    textAlign:    'left',
-    font:         'inherit',
-    fontSize:     '13px',
-    color:        'var(--ink)',
-    background:   'transparent',
-    border:       'none',
-    borderRadius: '6px',
-    padding:      '8px 10px',
-    cursor:       'pointer',
-  } as React.CSSProperties,
-} as const;
