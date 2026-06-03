@@ -75,7 +75,9 @@ export default function KeybindingsCheatsheet() {
                 {group.label}
               </div>
               <div className="flex flex-col gap-0.5">
-                {group.rows.map(({ commandId, insertMode }) => {
+                {group.rows.map((row) => {
+                  const { commandId } = row;
+                  const insertMode = 'insertMode' in row ? row.insertMode : undefined;
                   const chord = chordFor[commandId];
                   const isJumpAnchor = commandId === 'sheet.jump1';
                   if (!chord && !isJumpAnchor) return null;
