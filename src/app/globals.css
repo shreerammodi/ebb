@@ -1,6 +1,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@theme {
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-dm-mono);
+
+  --color-aff:  #1d4ed8;
+  --color-neg:  #c0271f;
+  --color-sel:  #7c3aed;
+  --color-warn: #b45309;
+  --color-good: #047857;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================
