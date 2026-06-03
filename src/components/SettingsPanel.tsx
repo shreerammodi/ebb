@@ -31,6 +31,10 @@ export default function SettingsPanel() {
   const setKeymapOverride  = useRoundStore(s => s.setKeymapOverride);
   const clearKeymapOverride = useRoundStore(s => s.clearKeymapOverride);
   const setSettingsOpen    = useRoundStore(s => s.setSettingsOpen);
+  const autoNumber         = useRoundStore(s => s.autoNumber);
+  const labelDrops         = useRoundStore(s => s.labelDrops);
+  const setAutoNumber      = useRoundStore(s => s.setAutoNumber);
+  const setLabelDrops      = useRoundStore(s => s.setLabelDrops);
 
   const [recording, setRecording] = useState<CommandId | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -98,6 +102,21 @@ export default function SettingsPanel() {
           >
             ✕
           </button>
+        </div>
+
+        {/* Display section */}
+        <div className="px-3.5 py-2.5 border-b border-border shrink-0">
+          <div className="font-mono text-[9px] font-bold uppercase tracking-widest text-zinc-400 pb-2">Display</div>
+          <label className="flex items-center justify-between py-1 text-[13px] text-zinc-900">
+            Auto-number arguments
+            <input type="checkbox" checked={autoNumber}
+              onChange={e => setAutoNumber(e.target.checked)} data-testid="toggle-autoNumber" />
+          </label>
+          <label className="flex items-center justify-between py-1 text-[13px] text-zinc-900">
+            Label drops
+            <input type="checkbox" checked={labelDrops}
+              onChange={e => setLabelDrops(e.target.checked)} data-testid="toggle-labelDrops" />
+          </label>
         </div>
 
         {/* Preset switcher */}

@@ -36,6 +36,8 @@ export default function GridCell({
   const setSelection = useRoundStore(s => s.setSelection);
   const updateNodeText = useRoundStore(s => s.updateNodeText);
   const setMode = useRoundStore(s => s.setMode);
+  const autoNumber = useRoundStore(s => s.autoNumber);
+  const labelDrops = useRoundStore(s => s.labelDrops);
 
   const isSelected =
     selection?.sheetId === sheetId &&
@@ -99,9 +101,9 @@ export default function GridCell({
       onClick={handleClick}
       style={{ display: 'block', width: '100%', cursor: 'pointer' }}
     >
-      {num !== null && <span className="arg-num">{num}.</span>}
+      {autoNumber && num !== null && <span className="arg-num">{num}.</span>}
       <span className={hasChildren ? 'arg-parent' : undefined}>{node.text}</span>
-      {isDropped && <> <span className="badge-drop">⚠ dropped</span></>}
+      {labelDrops && isDropped && <> <span className="badge-drop">⚠ dropped</span></>}
       {showConceded && <> <span className="status-good">✓ conceded</span></>}
       {showExtended && <> <span className="status-good">✓ extended</span></>}
     </span>

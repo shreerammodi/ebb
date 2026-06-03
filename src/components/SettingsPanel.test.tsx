@@ -134,6 +134,16 @@ describe('SettingsPanel', () => {
     expect(useRoundStore.getState().settingsOpen).toBe(false);
   });
 
+  it('toggles autoNumber via the display switch', async () => {
+    useRoundStore.getState().setSettingsOpen(true);
+    render(<SettingsPanel />);
+    const sw = screen.getByTestId('toggle-autoNumber');
+    await userEvent.click(sw);
+    expect(useRoundStore.getState().autoNumber).toBe(false);
+    // Reset so other tests aren't affected
+    useRoundStore.getState().setAutoNumber(true);
+  });
+
   it('persists overrides to localStorage and effectiveKeymap uses them', async () => {
     const user = userEvent.setup();
     render(<SettingsPanel />);

@@ -272,6 +272,17 @@ describe('FlowGrid', () => {
     expect(useRoundStore.getState().selection?.nodeId).toBe('');
   });
 
+  // ── autoNumber toggle ─────────────────────────────────────────────────────
+
+  it('hides argument numbers when autoNumber is off', () => {
+    useRoundStore.getState().setAutoNumber(false);
+    const { sheetId } = setupScenario();
+    render(<FlowGrid sheetId={sheetId} />);
+    // "1." prefix should not appear in DOM when autoNumber is disabled
+    expect(screen.queryByText('1.')).toBeNull();
+    useRoundStore.getState().setAutoNumber(true);
+  });
+
   // ── Group header side class ────────────────────────────────────────────────
 
   it('applies side-aff class to a group header spanning aff speeches', () => {
