@@ -33,6 +33,8 @@ export interface RoundState {
   keymapName: 'default' | 'vim';
   /** CommandId → custom chord (normal mode), overriding the preset binding. */
   keymapOverrides: Record<string, string>;
+  autoNumber: boolean;
+  labelDrops: boolean;
   quickSwitcherOpen: boolean;
   settingsOpen: boolean;
   cheatsheetOpen: boolean;
@@ -71,6 +73,8 @@ export interface RoundActions {
   setKeymapName(name: 'default' | 'vim'): void;
   setKeymapOverride(commandId: CommandId, chord: string): void;
   clearKeymapOverride(commandId: CommandId): void;
+  setAutoNumber(v: boolean): void;
+  setLabelDrops(v: boolean): void;
   setQuickSwitcherOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
   setCheatsheetOpen(open: boolean): void;
@@ -125,6 +129,33 @@ function saveKeymapSettings(settings: KeymapSettings): void {
   }
 }
 
+// ─── Display settings persistence ───────────────────────────────────────────
+
+const DISPLAY_SETTINGS_KEY = 'df-display-settings';
+
+interface DisplaySettings { autoNumber: boolean; labelDrops: boolean }
+
+function loadDisplaySettings(): DisplaySettings {
+  const fallback: DisplaySettings = { autoNumber: true, labelDrops: true };
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = window.localStorage.getItem(DISPLAY_SETTINGS_KEY);
+    if (!raw) return fallback;
+    const p = JSON.parse(raw) as Partial<DisplaySettings>;
+    return {
+      autoNumber: typeof p.autoNumber === 'boolean' ? p.autoNumber : true,
+      labelDrops: typeof p.labelDrops === 'boolean' ? p.labelDrops : true,
+    };
+  } catch { return fallback; }
+}
+
+function saveDisplaySettings(s: DisplaySettings): void {
+  if (typeof window === 'undefined') return;
+  try { window.localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
+
+const initialDisplaySettings = loadDisplaySettings();
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 const UNDO_DEPTH = 50;
@@ -142,6 +173,8 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   selection: null,
   keymapName: initialKeymapSettings.keymapName,
   keymapOverrides: initialKeymapSettings.keymapOverrides,
+  autoNumber: initialDisplaySettings.autoNumber,
+  labelDrops: initialDisplaySettings.labelDrops,
   quickSwitcherOpen: false,
   settingsOpen: false,
   cheatsheetOpen: false,
@@ -374,6 +407,18 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     delete overrides[commandId];
     set({ keymapOverrides: overrides });
     saveKeymapSettings({ keymapName: get().keymapName, keymapOverrides: overrides });
+  },
+
+  // ── setAutoNumber ──────────────────────────────────────────────────────────
+  setAutoNumber(v) {
+    set({ autoNumber: v });
+    saveDisplaySettings({ autoNumber: v, labelDrops: get().labelDrops });
+  },
+
+  // ── setLabelDrops ──────────────────────────────────────────────────────────
+  setLabelDrops(v) {
+    set({ labelDrops: v });
+    saveDisplaySettings({ autoNumber: get().autoNumber, labelDrops: v });
   },
 
   // ── setQuickSwitcherOpen ───────────────────────────────────────────────────

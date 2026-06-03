@@ -773,6 +773,21 @@ describe('undo/redo', () => {
   });
 });
 
+describe('display settings', () => {
+  it('defaults autoNumber and labelDrops to true', () => {
+    expect(useRoundStore.getState().autoNumber).toBe(true);
+    expect(useRoundStore.getState().labelDrops).toBe(true);
+  });
+  it('setters update state', () => {
+    useRoundStore.getState().setAutoNumber(false);
+    expect(useRoundStore.getState().autoNumber).toBe(false);
+    useRoundStore.getState().setLabelDrops(false);
+    expect(useRoundStore.getState().labelDrops).toBe(false);
+    useRoundStore.getState().setAutoNumber(true);
+    useRoundStore.getState().setLabelDrops(true);
+  });
+});
+
 describe('keymap and modal flags', () => {
   beforeEach(resetStore);
 
