@@ -242,6 +242,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       title,
       group,
       order: maxOrder + 1,
+      kind: 'flow',
     };
 
     const isFirstFlow = round.sheets.filter(s => s.kind !== 'cx').length === 0;
