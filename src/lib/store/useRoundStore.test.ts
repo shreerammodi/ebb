@@ -835,3 +835,23 @@ describe('setScouting', () => {
     expect(useRoundStore.getState().round!.scouting.negSchool).toBe('Lincoln');
   });
 });
+
+describe('cx actions', () => {
+  beforeEach(() => {
+    useRoundStore.getState().createRound({ role: 'aff', format: makeFormatByKey('policy'), meta: {} });
+  });
+  it('adds, updates, and removes a CX row', () => {
+    const id = useRoundStore.getState().addCxRow('1AC');
+    expect(useRoundStore.getState().round!.cx['1AC'].length).toBe(1);
+    useRoundStore.getState().updateCxRow('1AC', id, { question: 'Why?' });
+    expect(useRoundStore.getState().round!.cx['1AC'][0].question).toBe('Why?');
+    useRoundStore.getState().removeCxRow('1AC', id);
+    expect(useRoundStore.getState().round!.cx['1AC'].length).toBe(0);
+  });
+  it('row edits are undoable', () => {
+    const id = useRoundStore.getState().addCxRow('1NC');
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.cx['1NC'].length).toBe(0);
+    void id;
+  });
+});
