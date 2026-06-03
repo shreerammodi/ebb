@@ -10,16 +10,21 @@ import SettingsPanel from './SettingsPanel';
 import InfoPanel from './InfoPanel';
 import KeybindingsCheatsheet from './KeybindingsCheatsheet';
 import FlowGrid from './FlowGrid';
+import CxSheet from './CxSheet';
 import PrintView from './PrintView';
 
 export default function Workspace() {
   useKeymap();
 
   const activeSheetId = useRoundStore(s => s.activeSheetId);
+  const round = useRoundStore(s => s.round);
+  const activeSheet = round?.sheets.find(s => s.id === activeSheetId) ?? null;
 
   useEffect(() => {
     const { round, selection, mode } = useRoundStore.getState();
     if (!activeSheetId || !round || mode === 'insert') return;
+    const sheet = round.sheets.find(s => s.id === activeSheetId);
+    if (sheet?.kind === 'cx') return;
     if (selection?.sheetId === activeSheetId && selection.nodeId !== '') return;
 
     const sheetNodes = round.nodes
@@ -44,7 +49,9 @@ export default function Workspace() {
       <div className="flex flex-1 min-h-0">
         <Sidebar />
         <main className="flex-1 min-w-0 overflow-auto p-4" data-testid="workspace-content">
-          {activeSheetId ? (
+          {activeSheet?.kind === 'cx' ? (
+            <CxSheet />
+          ) : activeSheetId ? (
             <FlowGrid sheetId={activeSheetId} />
           ) : (
             <div className="text-zinc-400 text-[13px] p-6">No sheet selected</div>
