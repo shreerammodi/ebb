@@ -40,4 +40,13 @@ describe('ExportMenu', () => {
     await user.click(screen.getByTestId('export-excel'));
     expect(downloadXlsx).toHaveBeenCalled();
   });
+
+  it('PDF item invokes downloadPdf', async () => {
+    const user = userEvent.setup();
+    const { downloadPdf } = await import('@/lib/export/pdf');
+    render(<ExportMenu />);
+    await user.click(screen.getByTestId('export-btn'));
+    await user.click(screen.getByTestId('export-pdf'));
+    expect(downloadPdf).toHaveBeenCalled();
+  });
 });
