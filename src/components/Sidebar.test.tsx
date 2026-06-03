@@ -166,4 +166,24 @@ describe('Sidebar', () => {
     expect(useRoundStore.getState().round!.sheets.find(s => s.id === caseId)!.title).toBe(originalTitle);
     expect(screen.queryByTestId(`rename-input-${caseId}`)).toBeNull();
   });
+
+  it('pins the CX sheet above the aff/neg groups', () => {
+    setupRound();
+    render(<Sidebar />);
+    expect(screen.getByTestId('cx-sheet-row')).toBeTruthy();
+  });
+
+  it('deletes a flow sheet when its × is clicked, and it is undoable', async () => {
+    const user = userEvent.setup();
+    setupRound();
+    const id = useRoundStore.getState().addSheet({ title: 'Case2', group: 'aff' });
+
+    render(<Sidebar />);
+
+    await user.click(screen.getByTestId(`delete-sheet-${id}`));
+    expect(useRoundStore.getState().round!.sheets.some(s => s.id === id)).toBe(false);
+
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.sheets.some(s => s.id === id)).toBe(true);
+  });
 });

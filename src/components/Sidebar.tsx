@@ -24,8 +24,11 @@ export default function Sidebar() {
   const renamingSheetId  = useRoundStore(s => s.renamingSheetId);
   const setRenamingSheet = useRoundStore(s => s.setRenamingSheet);
   const labelDrops       = useRoundStore(s => s.labelDrops);
+  const removeSheet      = useRoundStore(s => s.removeSheet);
 
   if (!round) return null;
+
+  const cxSheet = round.sheets.find(s => s.kind === 'cx') ?? null;
 
   return (
     <nav
@@ -34,8 +37,24 @@ export default function Sidebar() {
       data-testid="sidebar"
     >
       <div className="flex-1 overflow-y-auto p-2">
+        {cxSheet && (
+          <button
+            type="button"
+            onClick={() => setActiveSheet(cxSheet.id)}
+            aria-current={cxSheet.id === activeSheetId ? 'true' : undefined}
+            data-testid="cx-sheet-row"
+            className={cn(
+              'flex items-center w-full text-left text-[13px] px-2 py-1.5 mb-3 rounded-md border',
+              cxSheet.id === activeSheetId
+                ? 'bg-zinc-100 border-zinc-200 font-semibold text-zinc-900'
+                : 'border-transparent hover:bg-zinc-50 text-zinc-700',
+            )}
+          >
+            {cxSheet.title}
+          </button>
+        )}
         {GROUPS.map(({ group, label }) => {
-          const sheets = selectSheetsByGroup(round, group);
+          const sheets = selectSheetsByGroup(round, group).filter(s => s.kind !== 'cx');
           return (
             <div key={group} className="mb-3">
               <div className="font-mono text-[9px] font-bold uppercase tracking-widest text-zinc-400 px-2 pb-1">
@@ -53,6 +72,7 @@ export default function Sidebar() {
                     onSelect={() => setActiveSheet(sheet.id)}
                     isRenaming={sheet.id === renamingSheetId}
                     onStartRename={() => setRenamingSheet(sheet.id)}
+                    onDelete={() => removeSheet(sheet.id)}
                   />
                 ))
               )}
@@ -94,9 +114,10 @@ interface SheetRowProps {
   onSelect: () => void;
   isRenaming: boolean;
   onStartRename: () => void;
+  onDelete: () => void;
 }
 
-function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRename }: SheetRowProps) {
+function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRename, onDelete }: SheetRowProps) {
   const renameSheet      = useRoundStore(s => s.renameSheet);
   const setRenamingSheet = useRoundStore(s => s.setRenamingSheet);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -144,25 +165,38 @@ function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRenam
   }
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      onDoubleClick={onStartRename}
-      aria-current={active ? 'true' : undefined}
-      data-testid={`sheet-${sheet.id}`}
-      className={cn(
-        'flex items-center justify-between gap-1.5 w-full text-left text-[13px] text-zinc-700 px-2 py-1.5 rounded-md border transition-colors',
-        active
-          ? 'bg-zinc-100 border-zinc-200 font-semibold text-zinc-900'
-          : 'border-transparent hover:bg-zinc-50',
-      )}
-    >
-      <span className="overflow-hidden text-ellipsis whitespace-nowrap">{sheet.title}</span>
-      {dropCount > 0 && (
-        <span className="badge-drop" data-testid={`drop-badge-${sheet.id}`}>
-          {dropCount}
-        </span>
-      )}
-    </button>
+    <div className="group flex items-center">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onDoubleClick={onStartRename}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onSelect(); }}
+        aria-current={active ? 'true' : undefined}
+        data-testid={`sheet-${sheet.id}`}
+        className={cn(
+          'flex flex-1 items-center justify-between gap-1.5 w-full text-left text-[13px] text-zinc-700 px-2 py-1.5 rounded-md border transition-colors cursor-pointer',
+          active
+            ? 'bg-zinc-100 border-zinc-200 font-semibold text-zinc-900'
+            : 'border-transparent hover:bg-zinc-50',
+        )}
+      >
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap">{sheet.title}</span>
+        {dropCount > 0 && (
+          <span className="badge-drop" data-testid={`drop-badge-${sheet.id}`}>
+            {dropCount}
+          </span>
+        )}
+      </div>
+      <span
+        role="button"
+        aria-label="Delete sheet"
+        data-testid={`delete-sheet-${sheet.id}`}
+        onClick={e => { e.stopPropagation(); onDelete(); }}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onDelete(); } }}
+        tabIndex={0}
+        className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 px-1 cursor-pointer"
+      >×</span>
+    </div>
   );
 }
