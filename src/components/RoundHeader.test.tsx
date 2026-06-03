@@ -45,6 +45,12 @@ describe('RoundHeader', () => {
     expect(screen.getByText('Aff vs Smith/Jones')).toBeInTheDocument();
   });
 
+  it('renders "Neg vs <opponent>" for role=neg', () => {
+    setupRound('neg', { opponent: 'Smith/Jones' });
+    render(<RoundHeader />);
+    expect(screen.getByText('Neg vs Smith/Jones')).toBeInTheDocument();
+  });
+
   it('renders "<affName> (Aff) vs <negName> (Neg)" for role=judge', () => {
     setupRound('judge', { affName: 'Team Alpha', negName: 'Team Beta' });
     render(<RoundHeader />);

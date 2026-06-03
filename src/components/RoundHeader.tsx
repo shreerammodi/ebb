@@ -21,7 +21,8 @@ export default function RoundHeader() {
     participants = `${aff} (Aff) vs ${neg} (Neg)`;
   } else {
     const opponent = meta.opponent?.trim() || 'Opponent';
-    participants = `Aff vs ${opponent}`;
+    const side = role === 'neg' ? 'Neg' : 'Aff';
+    participants = `${side} vs ${opponent}`;
   }
 
   function handleNewRound() {
