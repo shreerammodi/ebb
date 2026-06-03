@@ -1,19 +1,9 @@
 'use client';
 
-/**
- * RoundHeader — top header bar.
- *
- * Shows the round participants based on the user's role:
- *   - aff / neg: "Aff vs <opponent>"
- *   - judge:     "<affName> (Aff) vs <negName> (Neg)"
- *
- * Includes a "New round" button that resets the store to RoundSetup.
- * Also includes ExportMenu (JSON/Excel/PDF) and Import.
- */
-
 import { useRef } from 'react';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { readRoundFile } from '@/lib/persistence/io';
+import { Button } from '@/components/ui/button';
 import ExportMenu from './ExportMenu';
 
 export default function RoundHeader() {
@@ -35,12 +25,7 @@ export default function RoundHeader() {
   }
 
   function handleNewRound() {
-    useRoundStore.setState({
-      round: null,
-      activeSheetId: null,
-      selection: null,
-      mode: 'normal',
-    });
+    useRoundStore.setState({ round: null, activeSheetId: null, selection: null, mode: 'normal' });
   }
 
   function handleImportClick() {
@@ -56,88 +41,43 @@ export default function RoundHeader() {
     } catch {
       alert('Failed to import: file may be invalid or from an incompatible version.');
     }
-    // Reset so the same file can be re-imported
     e.target.value = '';
   }
 
   return (
-    <header style={styles.header} data-testid="round-header">
-      <span style={styles.participants}>{participants}</span>
-      <div className="no-print" style={styles.controls}>
+    <header
+      className="flex items-center justify-between h-12 px-4 bg-card border-b border-border flex-none"
+      data-testid="round-header"
+    >
+      <span className="text-sm font-semibold text-zinc-900">{participants}</span>
+      <div className="no-print flex items-center gap-2">
         <input
           ref={fileInputRef}
           type="file"
           accept=".json"
           aria-label="Import round file"
-          style={{ display: 'none' }}
+          className="hidden"
           onChange={handleImportChange}
           data-testid="import-file-input"
         />
         <ExportMenu />
-        <button
-          style={styles.actionBtn}
+        <Button
+          variant="outline"
+          size="sm"
           onClick={handleImportClick}
           data-testid="import-btn"
         >
           Import
-        </button>
-        <button
-          style={styles.newRoundBtn}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleNewRound}
           data-testid="new-round-btn"
         >
           New round
-        </button>
+        </Button>
       </div>
     </header>
   );
 }
-
-// ─── Inline styles ────────────────────────────────────────────────────────────
-
-const styles = {
-  header: {
-    display:        'flex',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-    height:         '48px',
-    padding:        '0 16px',
-    background:     'var(--panel)',
-    borderBottom:   '1px solid var(--line)',
-    flex:           '0 0 auto',
-  } as React.CSSProperties,
-
-  participants: {
-    fontSize:   '14px',
-    fontWeight: 600,
-    color:      'var(--ink)',
-  } as React.CSSProperties,
-
-  controls: {
-    display:    'flex',
-    alignItems: 'center',
-    gap:        '8px',
-  } as React.CSSProperties,
-
-  actionBtn: {
-    fontSize:     '12px',
-    fontWeight:   500,
-    color:        'var(--muted)',
-    background:   'transparent',
-    border:       '1px solid var(--line)',
-    borderRadius: '4px',
-    padding:      '4px 10px',
-    cursor:       'pointer',
-  } as React.CSSProperties,
-
-  newRoundBtn: {
-    fontSize:     '12px',
-    fontWeight:   500,
-    color:        'var(--muted)',
-    background:   'transparent',
-    border:       '1px solid var(--line)',
-    borderRadius: '4px',
-    padding:      '4px 10px',
-    cursor:       'pointer',
-  } as React.CSSProperties,
-} as const;
