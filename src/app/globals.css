@@ -19,30 +19,7 @@
    Light-mode only. Blue = Aff, Red = Neg — reserved colors.
    ============================================================ */
 
-/* ------------------------------------------------------------
-   1. DESIGN TOKENS
-   ------------------------------------------------------------ */
 :root {
-  --bg:     #f6f7f9;
-  --panel:  #fff;
-  --ink:    #1f2328;
-  --muted:  #6b7280;
-  --line:   #e5e7eb;
-
-  /* Side colors — reserved, use ONLY for Aff / Neg side labels */
-  --aff:    #1d4ed8;   /* indigo-blue */
-  --neg:    #c0271f;   /* brick-red   */
-
-  /* Semantic accents */
-  --sel:    #7c3aed;   /* selection = violet       */
-  --warn:   #b45309;   /* drop/warning = amber     */
-  --good:   #047857;   /* conceded/extended = green */
-
-  --radius: 10px;
-
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --background:     oklch(1 0 0);
   --foreground:     oklch(0.141 0.005 285.823);
   --card:     oklch(1 0 0);
@@ -73,6 +50,23 @@
   --sidebar-accent-foreground:     oklch(0.21 0.006 285.885);
   --sidebar-border:     oklch(0.92 0.004 286.32);
   --sidebar-ring:     oklch(0.705 0.015 286.067);
+  --radius: 0.625rem;
+}
+
+/* Legacy aliases — consumed by .flow and .cell-* rules; do not remove */
+:root {
+  --bg:    var(--background);
+  --panel: var(--card);
+  --ink:   var(--foreground);
+  --muted: var(--muted-foreground);
+  --line:  var(--border);
+
+  /* Semantic color aliases — consumed by .side-aff/.side-neg, .badge-drop, .cell-drop, etc. */
+  --aff:  #1d4ed8;
+  --neg:  #c0271f;
+  --sel:  #7c3aed;
+  --warn: #b45309;
+  --good: #047857;
 }
 
 /* ------------------------------------------------------------
@@ -87,7 +81,7 @@
 body {
   background:  var(--bg);
   color:       var(--ink);
-  font-family: var(--font);
+  font-family: var(--font-sans);
   font-size:   14px;
   line-height: 1.5;
   margin:      0;
@@ -116,22 +110,6 @@ body {
 /* ------------------------------------------------------------
    3. PANEL / SURFACE
    ------------------------------------------------------------ */
-.panel {
-  background:    var(--panel);
-  border:        1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow:    0 1px 3px rgb(0 0 0 / .06), 0 1px 2px rgb(0 0 0 / .04);
-}
-
-.panel-header {
-  font-size:      10px;
-  font-weight:    700;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color:          var(--muted);
-  padding:        8px 12px;
-  border-bottom:  1px solid var(--line);
-}
 
 /* ------------------------------------------------------------
    4. FLOW GRID (core flowing table)
@@ -140,7 +118,7 @@ body {
   border-collapse: collapse;
   font-size:       12.5px;
   width:           100%;
-  font-family:     var(--font);
+  font-family:     var(--font-sans);
 }
 
 .flow th {
@@ -153,6 +131,7 @@ body {
   padding:        6px 8px 5px;
   border-bottom:  2px solid var(--line);
   white-space:    nowrap;
+  font-family:    var(--font-mono);
 }
 
 .flow td {
@@ -255,90 +234,10 @@ body {
 /* ------------------------------------------------------------
    5. SIDEBAR / HEADER HELPERS
    ------------------------------------------------------------ */
-.muted {
-  color: var(--muted);
-}
-
-.label {
-  font-size:      9px;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color:          var(--muted);
-  font-weight:    700;
-}
-
-/* Pill / chip — for explicit side labels only */
-.pill {
-  display:       inline-flex;
-  align-items:   center;
-  font-size:     10px;
-  font-weight:   700;
-  line-height:   1;
-  border-radius: 999px;
-  padding:       2px 8px;
-  border:        1px solid var(--line);
-  background:    var(--panel);
-  color:         var(--ink);
-}
-
-/* Side-tinted pills — subtle, for explicit Aff/Neg labels only */
-.pill.aff {
-  color:      var(--aff);
-  background: color-mix(in srgb, var(--aff) 8%, white);
-  border-color: color-mix(in srgb, var(--aff) 25%, transparent);
-}
-
-.pill.neg {
-  color:      var(--neg);
-  background: color-mix(in srgb, var(--neg) 8%, white);
-  border-color: color-mix(in srgb, var(--neg) 25%, transparent);
-}
 
 /* ------------------------------------------------------------
    6. BUTTONS
    ------------------------------------------------------------ */
-.btn {
-  display:       inline-flex;
-  align-items:   center;
-  gap:           6px;
-  font:          inherit;
-  font-size:     13px;
-  font-weight:   500;
-  color:         var(--ink);
-  background:    var(--panel);
-  border:        1px solid var(--line);
-  border-radius: 6px;
-  padding:       5px 12px;
-  cursor:        pointer;
-  user-select:   none;
-  transition:    background .1s, border-color .1s;
-}
-
-.btn:hover {
-  background:   #f3f4f6;
-  border-color: #d1d5db;
-}
-
-.btn:active {
-  background: #e9eaec;
-}
-
-/* Primary action — violet, no Aff/Neg colors on buttons */
-.btn-primary {
-  background:   var(--sel);
-  border-color: var(--sel);
-  color:        #fff;
-}
-
-.btn-primary:hover {
-  background:   color-mix(in srgb, var(--sel) 88%, black);
-  border-color: color-mix(in srgb, var(--sel) 88%, black);
-}
-
-.btn-primary:active {
-  background:   color-mix(in srgb, var(--sel) 78%, black);
-  border-color: color-mix(in srgb, var(--sel) 78%, black);
-}
 
 /* ------------------------------------------------------------
    7. PRINT
@@ -363,11 +262,6 @@ body {
   body {
     background: #fff;
     color:      #000;
-  }
-
-  .panel {
-    box-shadow: none;
-    border:     1px solid #ccc;
   }
 
   /* Full-width layout for print */
