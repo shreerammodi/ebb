@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import ExportMenu from './ExportMenu';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { makeFormatByKey } from '@/lib/format/presets';
@@ -13,27 +14,30 @@ beforeEach(() => {
 });
 
 describe('ExportMenu', () => {
-  it('opens on click and exposes the three formats', () => {
+  it('opens on click and exposes the three formats', async () => {
+    const user = userEvent.setup();
     render(<ExportMenu />);
-    fireEvent.click(screen.getByTestId('export-btn'));
+    await user.click(screen.getByTestId('export-btn'));
     expect(screen.getByTestId('export-json')).toBeInTheDocument();
     expect(screen.getByTestId('export-excel')).toBeInTheDocument();
     expect(screen.getByTestId('export-pdf')).toBeInTheDocument();
   });
 
   it('JSON item invokes downloadRoundFile', async () => {
+    const user = userEvent.setup();
     const { downloadRoundFile } = await import('@/lib/persistence/io');
     render(<ExportMenu />);
-    fireEvent.click(screen.getByTestId('export-btn'));
-    fireEvent.click(screen.getByTestId('export-json'));
+    await user.click(screen.getByTestId('export-btn'));
+    await user.click(screen.getByTestId('export-json'));
     expect(downloadRoundFile).toHaveBeenCalled();
   });
 
   it('Excel item invokes downloadXlsx', async () => {
+    const user = userEvent.setup();
     const { downloadXlsx } = await import('@/lib/export/xlsx');
     render(<ExportMenu />);
-    fireEvent.click(screen.getByTestId('export-btn'));
-    fireEvent.click(screen.getByTestId('export-excel'));
+    await user.click(screen.getByTestId('export-btn'));
+    await user.click(screen.getByTestId('export-excel'));
     expect(downloadXlsx).toHaveBeenCalled();
   });
 });

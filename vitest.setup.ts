@@ -29,3 +29,10 @@ if (typeof window !== 'undefined' && window.localStorage == null) {
     writable: true,
   });
 }
+
+// Radix UI components (DropdownMenu, Dialog) dispatch PointerEvents.
+// jsdom doesn't implement PointerEvent; alias it to MouseEvent so Radix
+// event handlers fire correctly under test.
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).PointerEvent = window.MouseEvent;
+}
