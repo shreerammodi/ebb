@@ -85,6 +85,6 @@ export async function downloadXlsx(round: Round): Promise<void> {
   if (!res.ok) throw new Error('Could not load the Excel template');
   const templateBytes = new Uint8Array(await res.arrayBuffer());
   const bytes = buildXlsx(round, templateBytes);
-  const blob = new Blob([bytes], { type: 'application/vnd.ms-excel.sheet.macroEnabled.12' });
+  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/vnd.ms-excel.sheet.macroEnabled.12' });
   downloadBlob(blob, exportFilename(round.role, round.createdAt, 'xlsm'));
 }

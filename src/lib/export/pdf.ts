@@ -97,6 +97,6 @@ export async function buildPdf(round: Round): Promise<Uint8Array> {
 
 export async function downloadPdf(round: Round): Promise<void> {
   const bytes = await buildPdf(round);
-  const blob = new Blob([bytes], { type: 'application/pdf' });
+  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' });
   downloadBlob(blob, exportFilename(round.role, round.createdAt, 'pdf'));
 }

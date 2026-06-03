@@ -8,12 +8,13 @@
  *   - judge:     "<affName> (Aff) vs <negName> (Neg)"
  *
  * Includes a "New round" button that resets the store to RoundSetup.
- * Also includes Export, Import, and Print buttons (Task 18).
+ * Also includes ExportMenu (JSON/Excel/PDF) and Import.
  */
 
 import { useRef } from 'react';
 import { useRoundStore } from '@/lib/store/useRoundStore';
-import { downloadRoundFile, readRoundFile } from '@/lib/persistence/io';
+import { readRoundFile } from '@/lib/persistence/io';
+import ExportMenu from './ExportMenu';
 
 export default function RoundHeader() {
   const round = useRoundStore(s => s.round);
@@ -42,11 +43,6 @@ export default function RoundHeader() {
     });
   }
 
-  function handleExport() {
-    const r = useRoundStore.getState().round;
-    if (r) downloadRoundFile(r);
-  }
-
   function handleImportClick() {
     fileInputRef.current?.click();
   }
@@ -64,10 +60,6 @@ export default function RoundHeader() {
     e.target.value = '';
   }
 
-  function handlePrint() {
-    window.print();
-  }
-
   return (
     <header style={styles.header} data-testid="round-header">
       <span style={styles.participants}>{participants}</span>
@@ -81,26 +73,13 @@ export default function RoundHeader() {
           onChange={handleImportChange}
           data-testid="import-file-input"
         />
-        <button
-          style={styles.actionBtn}
-          onClick={handleExport}
-          data-testid="export-btn"
-        >
-          Export
-        </button>
+        <ExportMenu />
         <button
           style={styles.actionBtn}
           onClick={handleImportClick}
           data-testid="import-btn"
         >
           Import
-        </button>
-        <button
-          style={styles.actionBtn}
-          onClick={handlePrint}
-          data-testid="print-btn"
-        >
-          Print
         </button>
         <button
           style={styles.newRoundBtn}

@@ -16,6 +16,8 @@ vi.mock('@/lib/persistence/io', () => ({
   downloadRoundFile: vi.fn(),
   readRoundFile: vi.fn(),
 }));
+vi.mock('@/lib/export/xlsx', () => ({ downloadXlsx: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('@/lib/export/pdf', () => ({ downloadPdf: vi.fn().mockResolvedValue(undefined) }));
 
 function setupRound(role: Role, meta: RoundMeta) {
   useRoundStore.getState().createRound({
@@ -51,29 +53,13 @@ describe('RoundHeader', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders Export, Import, and Print buttons', () => {
+  it('renders the export menu, Import, and New round buttons', () => {
     setupRound('aff', { opponent: 'Smith/Jones' });
     render(<RoundHeader />);
     expect(screen.getByTestId('export-btn')).toBeInTheDocument();
     expect(screen.getByTestId('import-btn')).toBeInTheDocument();
-    expect(screen.getByTestId('print-btn')).toBeInTheDocument();
-  });
-
-  it('calls window.print when Print button is clicked', () => {
-    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
-    setupRound('aff', { opponent: 'Smith/Jones' });
-    render(<RoundHeader />);
-    fireEvent.click(screen.getByTestId('print-btn'));
-    expect(printSpy).toHaveBeenCalledOnce();
-    printSpy.mockRestore();
-  });
-
-  it('calls downloadRoundFile when Export button is clicked', async () => {
-    const { downloadRoundFile } = await import('@/lib/persistence/io');
-    setupRound('aff', { opponent: 'Smith/Jones' });
-    render(<RoundHeader />);
-    fireEvent.click(screen.getByTestId('export-btn'));
-    expect(downloadRoundFile).toHaveBeenCalled();
+    expect(screen.getByTestId('new-round-btn')).toBeInTheDocument();
+    expect(screen.queryByTestId('print-btn')).not.toBeInTheDocument();
   });
 
   it('updates store round and resets activeSheetId/selection/mode when a valid file is imported', async () => {
