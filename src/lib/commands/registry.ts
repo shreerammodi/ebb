@@ -7,7 +7,7 @@
 
 export type CommandId =
   | 'move.left' | 'move.down' | 'move.up' | 'move.right'
-  | 'edit.enter' | 'edit.exit'
+  | 'edit.enter' | 'edit.exit' | 'edit.undo' | 'edit.redo'
   | 'node.addAnswer' | 'node.answerAcross' | 'arg.newRoot'
   | 'node.delete'
   | 'status.toggleConceded' | 'status.toggleExtended'
@@ -32,6 +32,8 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
   'move.right': { id: 'move.right', label: 'Move right (to child)' },
   'edit.enter': { id: 'edit.enter', label: 'Edit cell' },
   'edit.exit': { id: 'edit.exit', label: 'Exit edit' },
+  'edit.undo': { id: 'edit.undo', label: 'Undo' },
+  'edit.redo': { id: 'edit.redo', label: 'Redo' },
   'node.addAnswer': { id: 'node.addAnswer', label: 'Add answer (sibling)' },
   'node.answerAcross': { id: 'node.answerAcross', label: 'Answer across (next speech)' },
   'arg.newRoot': { id: 'arg.newRoot', label: 'New root argument' },

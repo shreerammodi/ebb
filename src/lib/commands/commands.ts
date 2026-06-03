@@ -92,6 +92,16 @@ export function executeCommand(id: CommandId): void {
       return;
     }
 
+    case 'edit.undo': {
+      useRoundStore.getState().undo();
+      return;
+    }
+
+    case 'edit.redo': {
+      useRoundStore.getState().redo();
+      return;
+    }
+
     // ── Node creation ────────────────────────────────────────────────────────
     case 'node.addAnswer': {
       if (!round) return;

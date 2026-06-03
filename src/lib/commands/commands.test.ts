@@ -414,6 +414,29 @@ describe('sheet.newNeg', () => {
   });
 });
 
+describe('edit.undo / edit.redo', () => {
+  beforeEach(resetStore);
+
+  it('undo restores a deleted node; redo removes it again', () => {
+    const { sheetId, speeches } = setupRound();
+    const sp = speeches[1].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: a });
+
+    // delete the node
+    executeCommand('node.delete');
+    expect(useRoundStore.getState().round!.nodes.length).toBe(0);
+
+    // undo restores it
+    executeCommand('edit.undo');
+    expect(useRoundStore.getState().round!.nodes.length).toBe(1);
+
+    // redo removes it again
+    executeCommand('edit.redo');
+    expect(useRoundStore.getState().round!.nodes.length).toBe(0);
+  });
+});
+
 describe('sheet.rename', () => {
   beforeEach(resetStore);
 
