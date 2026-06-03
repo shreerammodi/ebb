@@ -6,7 +6,7 @@ import { buildXlsx } from './xlsx';
 import type { Round } from '@/lib/model/types';
 
 const template = new Uint8Array(
-  readFileSync(resolve(process.cwd(), 'public/templates/Flow.xltm')),
+  readFileSync(resolve(process.cwd(), 'public/templates/Flow.xlsx')),
 );
 
 function round(): Round {
@@ -33,12 +33,10 @@ describe('buildXlsx', () => {
     const bytes = buildXlsx(round(), template);
     const files = unzipSync(bytes);
 
-    // VBA preserved.
-    expect(files['xl/vbaProject.bin']).toBeDefined();
     // calcChain dropped.
     expect(files['xl/calcChain.xml']).toBeUndefined();
-    // Content type flipped to macro workbook.
-    expect(strFromU8(files['[Content_Types].xml'])).toContain('sheet.macroEnabled.main+xml');
+    // Content type stays as standard xlsx.
+    expect(strFromU8(files['[Content_Types].xml'])).toContain('spreadsheetml.sheet.main+xml');
     // New worksheet exists and contains the node text + sheet title.
     const newSheet = strFromU8(files['xl/worksheets/sheet6.xml']);
     expect(newSheet).toContain('Uniqueness');
@@ -52,6 +50,6 @@ describe('buildXlsx', () => {
     // No duplicate xr:uid on the cloned sheet — prevents Excel corruption.
     expect(newSheet).not.toContain('xr:uid=');
     // Body cells carry the column style index from the template.
-    expect(newSheet).toContain('s="41"');
+    expect(newSheet).toContain('s="35"');
   });
 });

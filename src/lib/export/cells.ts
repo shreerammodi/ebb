@@ -50,6 +50,7 @@ export function buildExportSheets(round: Round): ExportSheet[] {
           extended: p.node.statuses.includes('extended'),
         };
       });
+
       return { sheet, cells, rowCount: totalRows };
     });
 }

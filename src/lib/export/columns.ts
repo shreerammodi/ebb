@@ -1,5 +1,5 @@
 /**
- * Maps the app's policy speech names onto the Flow.xltm template columns.
+ * Maps the app's policy speech names onto the Flow.xlsx template columns.
  * The AFF flow sheet has all 7 speech columns; the NEG flow sheet drops 1AC.
  */
 

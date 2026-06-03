@@ -140,22 +140,14 @@ export function removeCalcChainFromRels(relsXml: string): string {
   return relsXml.replace(/<Relationship[^>]*calcChain[^>]*\/>/, '');
 }
 
-/** Add worksheet content-type overrides; drop calcChain override; flip workbook main type. */
+/** Add worksheet content-type overrides and drop the calcChain override. */
 export function registerSheetsInContentTypes(ctXml: string, sheets: NewSheet[]): string {
   const entries = sheets
     .map(s => `<Override PartName="/xl/worksheets/${s.partName}" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)
     .join('');
   let out = ctXml.replace('</Types>', `${entries}</Types>`);
   out = out.replace(/<Override PartName="\/xl\/calcChain\.xml"[^>]*\/>/, '');
-  return toWorkbookContentType(out);
-}
-
-/** Flip the macro-template main content type to the macro-workbook main type. */
-export function toWorkbookContentType(ctXml: string): string {
-  return ctXml.replace(
-    'application/vnd.ms-excel.template.macroEnabled.main+xml',
-    'application/vnd.ms-excel.sheet.macroEnabled.main+xml',
-  );
+  return out;
 }
 
 /** Convenience: combined helper used by the test re-export. */
@@ -164,3 +156,4 @@ export const registerSheets = {
   rels: registerSheetsInRels,
   contentTypes: registerSheetsInContentTypes,
 };
+

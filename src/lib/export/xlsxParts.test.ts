@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   escXml, inlineCell, buildBodyRow, setCellInline,
-  buildFlowSheetXml, registerSheets, toWorkbookContentType,
+  buildFlowSheetXml, registerSheets,
   parseColStyles, removeCalcChainFromRels,
 } from './xlsxParts';
 import type { ExportSheet } from './cells';
@@ -68,13 +68,6 @@ describe('setCellInline', () => {
   it('replaces a self-closing cell with an inline-string cell, keeping its style', () => {
     const out = setCellInline('<c r="D11" s="83"/>', 'D11', 'Tourney');
     expect(out).toBe('<c r="D11" s="83" t="inlineStr"><is><t xml:space="preserve">Tourney</t></is></c>');
-  });
-});
-
-describe('toWorkbookContentType', () => {
-  it('flips the macro template main type to the macro workbook type', () => {
-    const ct = '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.ms-excel.template.macroEnabled.main+xml"/>';
-    expect(toWorkbookContentType(ct)).toContain('application/vnd.ms-excel.sheet.macroEnabled.main+xml');
   });
 });
 
