@@ -97,13 +97,20 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
 
 function patchInfo(infoXml: string, round: Round): string {
   let xml = infoXml;
-  const m = round.meta;
-  if (m.tournament) xml = setCellInline(xml, 'D11', m.tournament);
-  if (m.roundLabel) xml = setCellInline(xml, 'D12', m.roundLabel);
-  xml = setCellInline(xml, 'D13', isoDate(round.createdAt));
-  if (m.affName) xml = setCellInline(xml, 'D8', m.affName);
-  if (m.negName) xml = setCellInline(xml, 'H8', m.negName);
-  if (m.judge) xml = setCellInline(xml, 'D16', m.judge);
+  const sc = round.scouting;
+  const set = (ref: string, v?: string) => { if (v && v.trim()) xml = setCellInline(xml, ref, v); };
+
+  set('D5', sc.affSchool);
+  set('H5', sc.negSchool);
+  set('D8', sc.aff.first.first);  set('E8', sc.aff.first.last);
+  set('D9', sc.aff.second.first); set('E9', sc.aff.second.last);
+  set('H8', sc.neg.first.first);  set('I8', sc.neg.first.last);
+  set('H9', sc.neg.second.first); set('I9', sc.neg.second.last);
+  set('D11', sc.tournament);
+  set('D12', sc.judge);
+  set('D13', sc.date || isoDate(round.createdAt));
+  if (sc.decision?.vote) set('F16', sc.decision.vote.toUpperCase());
+  set('D32', sc.decision?.rfd);
   return xml;
 }
 
