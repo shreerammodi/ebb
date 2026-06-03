@@ -40,24 +40,28 @@ describe('RoundHeader', () => {
     });
   });
 
-  it('renders "Aff vs <opponent>" for role=aff', () => {
-    setupRound('aff', { opponent: 'Smith/Jones' });
+  it('renders "Aff vs Neg" fallback for role=aff with empty scouting', () => {
+    setupRound('aff', {});
     render(<RoundHeader />);
-    expect(screen.getByText('Aff vs Smith/Jones')).toBeInTheDocument();
+    expect(screen.getByText('Aff vs Neg')).toBeInTheDocument();
   });
 
-  it('renders "Neg vs <opponent>" for role=neg', () => {
-    setupRound('neg', { opponent: 'Smith/Jones' });
+  it('renders "Neg vs Aff" fallback for role=neg with empty scouting', () => {
+    setupRound('neg', {});
     render(<RoundHeader />);
-    expect(screen.getByText('Neg vs Smith/Jones')).toBeInTheDocument();
+    expect(screen.getByText('Neg vs Aff')).toBeInTheDocument();
   });
 
-  it('renders "<affName> (Aff) vs <negName> (Neg)" for role=judge', () => {
-    setupRound('judge', { affName: 'Team Alpha', negName: 'Team Beta' });
+  it('renders "<affCode> (Aff) vs <negCode> (Neg)" for role=judge with scouting', () => {
+    setupRound('judge', {});
+    useRoundStore.getState().setScouting({
+      affSchool: 'Alpha',
+      aff: { first: { first: 'T', last: 'A' }, second: { first: '', last: '' } },
+      negSchool: 'Beta',
+      neg: { first: { first: 'T', last: 'B' }, second: { first: '', last: '' } },
+    });
     render(<RoundHeader />);
-    expect(
-      screen.getByText('Team Alpha (Aff) vs Team Beta (Neg)'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Alpha TA (Aff) vs Beta TB (Neg)')).toBeInTheDocument();
   });
 
   it('renders the export menu, Import, and New round buttons', () => {
@@ -75,6 +79,16 @@ describe('RoundHeader', () => {
     const btn = screen.getByTestId('settings-btn');
     await userEvent.click(btn);
     expect(useRoundStore.getState().settingsOpen).toBe(true);
+  });
+
+  it('shows team codes from scouting', () => {
+    useRoundStore.getState().createRound({ role: 'aff', format: makeFormatByKey('policy'), meta: {} });
+    useRoundStore.getState().setScouting({
+      affSchool: 'Westwood',
+      aff: { first: { first: 'Al', last: 'Smith' }, second: { first: 'Bo', last: 'Jones' } },
+    });
+    render(<RoundHeader />);
+    expect(screen.getByTestId('round-header').textContent).toContain('Westwood JS');
   });
 
   it('updates store round and resets activeSheetId/selection/mode when a valid file is imported', async () => {

@@ -5,6 +5,7 @@ import { useRoundStore } from '@/lib/store/useRoundStore';
 import { readRoundFile } from '@/lib/persistence/io';
 import { Button } from '@/components/ui/button';
 import ExportMenu from './ExportMenu';
+import { teamCode } from '@/lib/model/teamCode';
 
 export default function RoundHeader() {
   const round = useRoundStore(s => s.round);
@@ -12,18 +13,14 @@ export default function RoundHeader() {
 
   if (!round) return null;
 
-  const { role, meta } = round;
+  const { role, scouting } = round;
 
-  let participants: string;
-  if (role === 'judge') {
-    const aff = meta.affName?.trim() || 'Aff';
-    const neg = meta.negName?.trim() || 'Neg';
-    participants = `${aff} (Aff) vs ${neg} (Neg)`;
-  } else {
-    const opponent = meta.opponent?.trim() || 'Opponent';
-    const side = role === 'neg' ? 'Neg' : 'Aff';
-    participants = `${side} vs ${opponent}`;
-  }
+  const affCode = teamCode(scouting.affSchool ?? '', scouting.aff.first, scouting.aff.second) || 'Aff';
+  const negCode = teamCode(scouting.negSchool ?? '', scouting.neg.first, scouting.neg.second) || 'Neg';
+  const participants =
+    role === 'judge' ? `${affCode} (Aff) vs ${negCode} (Neg)`
+    : role === 'neg' ? `${negCode} vs ${affCode}`
+    : `${affCode} vs ${negCode}`;
 
   function handleNewRound() {
     useRoundStore.setState({ round: null, activeSheetId: null, selection: null, mode: 'normal' });
