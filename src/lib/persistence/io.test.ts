@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FILE_VERSION, exportRoundJSON, importRoundJSON } from './io';
 import { makeFormatByKey } from '@/lib/format/presets';
+import { emptyScouting, emptyCx } from '@/lib/model/normalize';
 import type { Round } from '@/lib/model/types';
 
 // ─── Fixture ──────────────────────────────────────────────────────────────────
@@ -14,8 +15,10 @@ function makeRound(overrides: Partial<Round> = {}): Round {
     role: 'aff',
     format: makeFormatByKey('policy'),
     meta: { tournament: 'Nationals', roundLabel: 'Round 1' },
+    scouting: emptyScouting(),
     sheets: [
-      { id: 'sheet_001', title: 'Case', group: 'aff', order: 0 },
+      { id: 'sheet_cx', title: 'CX', group: 'aff', order: -1, kind: 'cx' },
+      { id: 'sheet_001', title: 'Case', group: 'aff', order: 0, kind: 'flow' },
     ],
     nodes: [
       {
@@ -28,6 +31,7 @@ function makeRound(overrides: Partial<Round> = {}): Round {
         statuses: [],
       },
     ],
+    cx: emptyCx(),
     timers: {
       activeSpeechId: null,
       speechRemaining: null,

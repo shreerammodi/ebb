@@ -1,4 +1,5 @@
 import type { Round } from '@/lib/model/types';
+import { normalizeRound } from '@/lib/model/normalize';
 
 // ─── Version ──────────────────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ export function importRoundJSON(text: string): Round {
     throw new Error('Invalid round file');
   }
 
-  return round as Round;
+  return normalizeRound(round as Round);
 }
 
 // ─── Browser helpers ──────────────────────────────────────────────────────────

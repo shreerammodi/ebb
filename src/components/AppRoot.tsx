@@ -27,7 +27,8 @@ export default function AppRoot() {
     loadLastRound()
       .then(r => {
         if (mounted && r) {
-          const firstSheet = [...r.sheets].sort((a, b) => a.order - b.order)[0];
+          const flowSheets = [...r.sheets].filter(s => s.kind !== 'cx').sort((a, b) => a.order - b.order);
+          const firstSheet = flowSheets[0] ?? [...r.sheets].sort((a, b) => a.order - b.order)[0];
           useRoundStore.setState({ round: r, activeSheetId: firstSheet?.id ?? null });
         }
       })

@@ -33,7 +33,7 @@ export default function RoundSetup() {
           tournament: tournament.trim() || undefined, roundLabel: roundLabel.trim() || undefined }
       : { opponent: opponent.trim() || undefined, tournament: tournament.trim() || undefined,
           roundLabel: roundLabel.trim() || undefined, judge: judge.trim() || undefined };
-    createRound({ role, format: makeFormatByKey(formatKey), meta, topic: topic.trim() || undefined });
+    createRound({ role, format: makeFormatByKey(formatKey), meta });
     addSheet({ title: 'Aff', group: 'aff' });
   }
 

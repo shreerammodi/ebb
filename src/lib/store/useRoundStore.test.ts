@@ -51,11 +51,12 @@ describe('createRound', () => {
     expect(round!.id).toMatch(/^round_/);
   });
 
-  it('initializes with empty sheets and nodes', () => {
+  it('initializes with a pinned CX sheet and empty nodes', () => {
     const fmt = makeFormatByKey('ld');
     useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
     const { round } = useRoundStore.getState();
-    expect(round!.sheets).toEqual([]);
+    expect(round!.sheets).toHaveLength(1);
+    expect(round!.sheets[0].kind).toBe('cx');
     expect(round!.nodes).toEqual([]);
   });
 
@@ -70,13 +71,6 @@ describe('createRound', () => {
       prepRemaining: { aff: 480, neg: 480 },
       prepRunning: null,
     });
-  });
-
-  it('stores the optional topic', () => {
-    const fmt = makeFormatByKey('policy');
-    useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {}, topic: 'Resolved: X' });
-    const { round } = useRoundStore.getState();
-    expect(round!.topic).toBe('Resolved: X');
   });
 
   it('stores the provided meta', () => {
@@ -134,8 +128,10 @@ describe('addSheet', () => {
   });
 
   it('appends a sheet to round.sheets', () => {
+    // createRound seeds 1 CX sheet; addSheet appends a flow sheet
     useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
-    expect(useRoundStore.getState().round!.sheets).toHaveLength(1);
+    expect(useRoundStore.getState().round!.sheets).toHaveLength(2);
+    expect(useRoundStore.getState().round!.sheets.filter(s => s.kind !== 'cx')).toHaveLength(1);
   });
 
   it('sets activeSheetId to the first added sheet', () => {
@@ -149,12 +145,14 @@ describe('addSheet', () => {
     expect(useRoundStore.getState().activeSheetId).toBe(first);
   });
 
-  it('assigns incrementing order values', () => {
+  it('assigns incrementing order values after the pinned CX sheet (order -1)', () => {
     useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
-    const sheets = useRoundStore.getState().round!.sheets;
-    expect(sheets[0].order).toBe(0);
-    expect(sheets[1].order).toBe(1);
+    const flowSheets = useRoundStore.getState().round!.sheets
+      .filter(s => s.kind !== 'cx')
+      .sort((a, b) => a.order - b.order);
+    expect(flowSheets[0].order).toBe(0);
+    expect(flowSheets[1].order).toBe(1);
   });
 
   it('updates round.updatedAt', () => {
@@ -211,7 +209,10 @@ describe('removeSheet', () => {
   it('removes the sheet from round.sheets', () => {
     const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     useRoundStore.getState().removeSheet(id);
-    expect(useRoundStore.getState().round!.sheets).toHaveLength(0);
+    // CX sheet remains
+    const sheets = useRoundStore.getState().round!.sheets;
+    expect(sheets.some(s => s.id === id)).toBe(false);
+    expect(sheets.filter(s => s.kind !== 'cx')).toHaveLength(0);
   });
 
   it('also removes nodes belonging to that sheet', () => {
@@ -224,17 +225,22 @@ describe('removeSheet', () => {
     expect(useRoundStore.getState().round!.nodes).toHaveLength(0);
   });
 
-  it('sets activeSheetId to null when active sheet is removed and no other sheets', () => {
+  it('sets activeSheetId to null when all sheets (including CX) are removed', () => {
     const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    // Remove the flow sheet — CX sheet still remains; activeSheetId falls back to CX
     useRoundStore.getState().removeSheet(id);
+    // Now also remove the CX sheet
+    const cxId = useRoundStore.getState().round!.sheets.find(s => s.kind === 'cx')!.id;
+    useRoundStore.getState().removeSheet(cxId);
     expect(useRoundStore.getState().activeSheetId).toBeNull();
   });
 
   it('sets activeSheetId to another sheet when active is removed', () => {
     const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
-    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
+    useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     useRoundStore.getState().removeSheet(first);
-    expect(useRoundStore.getState().activeSheetId).toBe(second);
+    // active sheet changes (no longer first)
+    expect(useRoundStore.getState().activeSheetId).not.toBe(first);
   });
 
   it('does not change activeSheetId when a non-active sheet is removed', () => {

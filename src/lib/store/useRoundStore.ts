@@ -9,6 +9,7 @@ import { create } from 'zustand';
 import type { CommandId } from '@/lib/commands/registry';
 import type { Round, Sheet, ArgumentNode, Format, Role, Side, RoundMeta, NodeStatus } from '@/lib/model/types';
 import { uid } from '@/lib/model/ids';
+import { emptyScouting, emptyCx, makeCxSheet } from '@/lib/model/normalize';
 import {
   addNode as treeAddNode,
   updateText,
@@ -44,7 +45,7 @@ export interface RoundState {
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export interface RoundActions {
-  createRound(input: { role: Role; format: Format; meta: RoundMeta; topic?: string }): void;
+  createRound(input: { role: Role; format: Format; meta: RoundMeta }): void;
 
   addSheet(input: { title: string; group: 'aff' | 'neg' }): string;
   renameSheet(sheetId: string, title: string): void;
@@ -181,7 +182,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   renamingSheetId: null,
 
   // ── createRound ────────────────────────────────────────────────────────────
-  createRound({ role, format, meta, topic }) {
+  createRound({ role, format, meta }) {
     const now = Date.now();
     const round: Round = {
       id: uid('round'),
@@ -189,10 +190,11 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       updatedAt: now,
       role,
       format,
-      topic,
       meta,
-      sheets: [],
+      scouting: emptyScouting(),
+      sheets: [makeCxSheet()],
       nodes: [],
+      cx: emptyCx(),
       timers: {
         activeSpeechId: null,
         speechRemaining: null,
@@ -236,9 +238,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       order: maxOrder + 1,
     };
 
-    const isFirst = round.sheets.length === 0;
+    const isFirstFlow = round.sheets.filter(s => s.kind !== 'cx').length === 0;
     get()._commit(null, r => ({ ...r, sheets: [...r.sheets, sheet] }));
-    if (isFirst) set({ activeSheetId: sheet.id });
+    if (isFirstFlow) set({ activeSheetId: sheet.id });
 
     return sheet.id;
   },
