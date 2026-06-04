@@ -161,8 +161,9 @@ export default function SearchPalette() {
     }
   }
 
-  // Flat index of a row, used to mark the active row across both sections.
-  const indexOf = (row: Row) => rows.indexOf(row);
+  // Sheets render first, so a sheet row's flat index is its own position and a
+  // node row's is offset by the number of sheet rows.
+  const nodeOffset = sheetRows.length;
 
   return (
     <div
@@ -185,7 +186,7 @@ export default function SearchPalette() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search sheets and arguments…"
-          className="box-border w-full border-b border-none border-border bg-card px-3.5 py-3 text-[14px] text-zinc-900 focus:outline-none"
+          className="box-border w-full border-b border-border bg-card px-3.5 py-3 text-[14px] text-zinc-900 focus:outline-none"
           data-testid="search-palette-input"
           aria-label="Search flow"
         />
@@ -196,10 +197,10 @@ export default function SearchPalette() {
             <>
               {sheetRows.length > 0 && (
                 <Section label="Sheets">
-                  {sheetRows.map((row) => (
+                  {sheetRows.map((row, i) => (
                     <RowButton
                       key={row.sheetId}
-                      active={indexOf(row) === selectedIndex}
+                      active={i === selectedIndex}
                       onClick={() => select(row)}
                       testId={`sp-sheet-${row.sheetId}`}
                     >
@@ -210,11 +211,11 @@ export default function SearchPalette() {
               )}
               {nodeRows.length > 0 && (
                 <Section label="Arguments">
-                  {nodeRows.map((row) =>
+                  {nodeRows.map((row, i) =>
                     row.kind === "node" ? (
                       <RowButton
                         key={row.nodeId}
-                        active={indexOf(row) === selectedIndex}
+                        active={nodeOffset + i === selectedIndex}
                         onClick={() => select(row)}
                         testId={`sp-node-${row.nodeId}`}
                       >
