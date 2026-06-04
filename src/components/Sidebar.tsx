@@ -38,20 +38,28 @@ export default function Sidebar() {
     >
       <div className="flex-1 overflow-y-auto p-2">
         {cxSheet && (
-          <button
-            type="button"
-            onClick={() => setActiveSheet(cxSheet.id)}
-            aria-current={cxSheet.id === activeSheetId ? 'true' : undefined}
-            data-testid="cx-sheet-row"
-            className={cn(
-              'flex items-center w-full text-left text-[13px] px-2 py-1.5 mb-3 rounded-md border',
-              cxSheet.id === activeSheetId
-                ? 'bg-zinc-100 border-zinc-200 font-semibold text-zinc-900'
-                : 'border-transparent hover:bg-zinc-50 text-zinc-700',
-            )}
-          >
-            {cxSheet.title}
-          </button>
+          <div className="mb-3">
+            <div
+              data-testid="cx-section-label"
+              className="font-mono text-[9px] font-bold uppercase tracking-widest text-zinc-400 px-2 pb-1"
+            >
+              CX
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveSheet(cxSheet.id)}
+              aria-current={cxSheet.id === activeSheetId ? 'true' : undefined}
+              data-testid="cx-sheet-row"
+              className={cn(
+                'flex items-center w-full text-left text-[13px] px-2 py-1.5 rounded-md border transition-colors',
+                cxSheet.id === activeSheetId
+                  ? 'bg-zinc-100 border-zinc-200 font-semibold text-zinc-900'
+                  : 'border-transparent hover:bg-zinc-50 text-zinc-700',
+              )}
+            >
+              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{cxSheet.title}</span>
+            </button>
+          </div>
         )}
         {GROUPS.map(({ group, label }) => {
           const sheets = selectSheetsByGroup(round, group).filter(s => s.kind !== 'cx');

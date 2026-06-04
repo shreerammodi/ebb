@@ -167,10 +167,35 @@ describe('Sidebar', () => {
     expect(screen.queryByTestId(`rename-input-${caseId}`)).toBeNull();
   });
 
-  it('pins the CX sheet above the aff/neg groups', () => {
+  it('renders a CX section labeled above the Aff section', () => {
     setupRound();
     render(<Sidebar />);
-    expect(screen.getByTestId('cx-sheet-row')).toBeTruthy();
+    // The CX section label is a standalone div (not inside the cx-sheet-row button)
+    const cxSheetRow = screen.getByTestId('cx-sheet-row');
+    const cxLabel = screen.getByTestId('cx-section-label');
+    const affLabel = screen.getByText('Aff');
+    // CX label appears before Aff label in document order
+    expect(cxLabel.compareDocumentPosition(affLabel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // CX section label is NOT inside the cx-sheet-row button
+    expect(cxSheetRow.contains(cxLabel)).toBe(false);
+    // the CX sheet row is still present + clickable
+    expect(cxSheetRow).toBeTruthy();
+  });
+
+  it('activates the CX sheet when its row is clicked', async () => {
+    const user = userEvent.setup();
+    setupRound();
+    render(<Sidebar />);
+    const cxId = useRoundStore.getState().round!.sheets.find(s => s.kind === 'cx')!.id;
+    await user.click(screen.getByTestId('cx-sheet-row'));
+    expect(useRoundStore.getState().activeSheetId).toBe(cxId);
+  });
+
+  it('CX sheet row has no delete affordance', () => {
+    setupRound();
+    render(<Sidebar />);
+    const cxId = useRoundStore.getState().round!.sheets.find(s => s.kind === 'cx')!.id;
+    expect(screen.queryByTestId(`delete-sheet-${cxId}`)).toBeNull();
   });
 
   it('deletes a flow sheet when its × is clicked, and it is undoable', async () => {
