@@ -272,6 +272,51 @@ describe('FlowGrid', () => {
     expect(useRoundStore.getState().selection?.nodeId).toBe('');
   });
 
+  // ── Inaccessible empty cells — no gridlines ───────────────────────────────
+
+  it('marks empty cells with no reachable parent as inaccessible (cell-void)', () => {
+    // Empty flow: only the first column (where roots originate) is reachable.
+    // Later columns have nothing to their left to respond to → inaccessible.
+    const fmt = makeFormatByKey('policy');
+    useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const row0 = document.querySelector('tbody tr')!;
+    const cells = row0.querySelectorAll('td');
+
+    // 1AC (col 0) — roots start here, stays accessible (keeps gridlines)
+    expect(cells[0].classList.contains('cell-void')).toBe(false);
+    // 1NC (col 1) — no 1AC argument to respond to → inaccessible
+    expect(cells[1].classList.contains('cell-void')).toBe(true);
+  });
+
+  it('keeps the cell directly right of an argument accessible, but not further', () => {
+    const fmt = makeFormatByKey('policy');
+    useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {} });
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    // Root argument in 1AC (col 0), no children
+    useRoundStore.getState().addNode({
+      sheetId,
+      speechId: fmt.speeches[0].id,
+      parentId: null,
+      text: 'Contention 1',
+    });
+
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const row0 = document.querySelector('tbody tr')!;
+    const cells = row0.querySelectorAll('td');
+
+    // col 0 is the placed node (has text)
+    expect(cells[0].textContent).toContain('Contention 1');
+    // 1NC (col 1) — directly right of the argument → accessible
+    expect(cells[1].classList.contains('cell-void')).toBe(false);
+    // 2AC (col 2) — nothing to its immediate left → inaccessible
+    expect(cells[2].classList.contains('cell-void')).toBe(true);
+  });
+
   // ── autoNumber toggle ─────────────────────────────────────────────────────
 
   it('hides argument numbers when autoNumber is off', () => {

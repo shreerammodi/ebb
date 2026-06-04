@@ -157,6 +157,15 @@ body {
     border-left: 2px solid var(--neg);
 }
 
+/* Inaccessible empty cell — no argument can be placed here (no parent to its
+   left, and not the first/originating column). Render it blank: drop every
+   gridline, including the side-coloured left edge. With border-collapse, an
+   accessible neighbour's solid border still wins the shared edge, so reachable
+   cells keep a full box and the unreachable region reads as empty space. */
+.flow td.cell-void {
+    border-style: none;
+}
+
 /* Selected cell */
 .cell-sel {
     outline: 2px solid var(--sel);

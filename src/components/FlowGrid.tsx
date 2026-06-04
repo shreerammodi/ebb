@@ -167,13 +167,24 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                 );
               }
 
-              // Empty cell — dash placeholder, clickable to start a new arg
+              // Empty cell — clickable to start a new arg.
+              // A cell is "accessible" (keeps its gridlines) only where an
+              // argument can actually go: the first column, where roots
+              // originate, or a cell whose immediate left neighbour holds an
+              // argument to respond to. Everything else is unreachable — e.g.
+              // 1NC cells when there are no 1AC arguments — and renders blank.
+              const isAccessible = col === 0 || cellMap.has(`${row},${col - 1}`);
+
               const isSelected =
                 selection?.sheetId === sheetId &&
                 selection?.speechId === speech.id &&
                 selection?.nodeId === '';
 
-              const classes = [sideClass, isSelected ? 'cell-sel' : '']
+              const classes = [
+                sideClass,
+                isAccessible ? '' : 'cell-void',
+                isSelected ? 'cell-sel' : '',
+              ]
                 .filter(Boolean)
                 .join(' ');
 
