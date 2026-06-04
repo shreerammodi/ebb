@@ -96,6 +96,8 @@ export function setCellInline(xml: string, ref: string, value: string): string {
  * generated rows; strips codeName and the duplicate xr:uid; updates the dimension.
  * Body cells carry the column style index so they inherit the template's alternating
  * background/border formatting from styles.xml.
+ * Also strips revision identifiers (xr:uid, xr:revisionPtr) to prevent Excel's
+ * "corrupt file" warning about conflicting document revision pointers.
  */
 export function buildFlowSheetXml(templateXml: string, es: ExportSheet): string {
   const side = es.sheet.group;

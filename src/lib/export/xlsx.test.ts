@@ -74,6 +74,47 @@ describe('buildXlsx', () => {
     expect(newSheet).toContain('s="35"');
   });
 
+  it('emits a well-formed workbook.xml root tag', () => {
+    const bytes = buildXlsx(round(), template);
+    const workbookXml = strFromU8(unzipSync(bytes)['xl/workbook.xml']);
+    // The <workbook> start tag must be closed with ">" before any child element.
+    const startTag = workbookXml.match(/<workbook\b[^>]*>/)?.[0] ?? '';
+    expect(startTag).not.toBe('');
+    expect(startTag).not.toContain('<fileVersion');
+    // No xr: prefixed attribute — xmlns:xr is not declared on the rebuilt root.
+    expect(startTag).not.toContain('xr:');
+    // First child element appears outside the start tag.
+    expect(workbookXml).toContain('><fileVersion');
+  });
+
+  it('produces case-insensitively unique sheet names and never duplicates the CX tab', () => {
+    const r = round();
+    // A dedicated CX sheet (written into the template CX sheet, not appended as a flow tab).
+    r.sheets.push({ id: 'cx', title: 'CX', group: 'aff', order: -1, kind: 'cx' });
+    // A flow sheet whose title collides case-insensitively with the hidden "AFF" scaffolding.
+    r.sheets.push({ id: 'a2', title: 'Aff', group: 'aff', order: 1 });
+
+    const wb = strFromU8(unzipSync(buildXlsx(r, template))['xl/workbook.xml']);
+    const names = [...wb.matchAll(/<sheet name="([^"]*)"/g)].map(m => m[1].toLowerCase());
+
+    // Every tab name is unique (Excel treats names case-insensitively).
+    expect(new Set(names).size).toBe(names.length);
+    // CX appears exactly once — the dedicated CX sheet, not also appended as a flow tab.
+    expect(names.filter(n => n === 'cx')).toHaveLength(1);
+  });
+
+  it('sanitizes illegal characters and the 31-char limit in appended tab names', () => {
+    const r = round();
+    r.sheets = [{ id: 'sh', title: 'Plan: T/L [Politics] *DA* — a very very long title here', group: 'aff', order: 0 }];
+    r.nodes = [{ id: 'p', sheetId: 'sh', speechId: 's0', parentId: null, order: 0, text: 'x', statuses: [] }];
+    const wb = strFromU8(unzipSync(buildXlsx(r, template))['xl/workbook.xml']);
+    const appended = [...wb.matchAll(/<sheet name="([^"]*)"/g)]
+      .map(m => m[1])
+      .find(n => !['Info', 'AFF', 'NEG', 'Decisions', 'CX'].includes(n))!;
+    expect(appended.length).toBeLessThanOrEqual(31);
+    expect(appended).not.toMatch(/[:\\/?*\[\]]/);
+  });
+
   it('writes scouting fields into the Info sheet', () => {
     const r = round();
     r.scouting = {
