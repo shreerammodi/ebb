@@ -44,33 +44,49 @@ A flow is a **per-sheet tree of cells** where:
 Decoupling column from depth is the crux. It yields free placement, alignment-across, auto-growing
 bands, drop detection, and numbering, while reading and feeling like paper rather than an outline.
 
+### Reality check: the substrate already exists
+
+This model is **already what the live `ArgumentNode` model is.** `ArgumentNode` carries `speechId`
+(column = speech), `parentId` (alignment-only, null = root), and `order`; `buildLayout`
+(`src/lib/grid/layout.ts`) already places `col = speech index`, `rowSpan = leafCount`, and pushes
+root bands down. The store (`useRoundStore`) already has coalesced snapshot undo/redo and the pure
+tree ops (`model/tree.ts`: `addNode`, `setParent`, `updateText`, `toggleStatus`, `removeNode`,
+`moveNode`). The command registry already has `node.addAnswer`, `node.answerAcross`, `arg.newRoot`,
+the moves, status toggles, and undo/redo.
+
+So we **extend the live model**, we do not rebuild it. The genuinely-missing pieces are: a `bold`
+decoration + a decoration *display* overhaul (line-through / arrow / bold, replacing today's
+"✓ conceded" text badges), the `Enter`/`Shift+Enter` create semantics, free-placement typing,
+drag-to-move, per-sheet columns, groups, and cross-apps.
+
 ### Data model (`src/lib/model/types.ts`)
 
-```ts
-Sheet { id, title, side: 'aff' | 'neg', order, columns: Speech[] }
-// columns = the contiguous run of format speeches from the argument's introduction onward.
+`ArgumentNode` is **kept and extended** — one new field:
 
-Cell {
+```ts
+ArgumentNode {
   id, sheetId,
-  column: number,             // index into the sheet's columns (a speech). Free — any column.
-  parentId: string | null,    // the cell this answers. null = a fresh argument ("root").
-  order: number,              // vertical sort key — among siblings under a parent, and among
-                              // roots it sets the band's top-to-bottom position on the sheet
-  content: string,            // text; tag + cite expressed with line breaks
-  crossed: boolean,           // conceded (line-through)
-  bold: boolean,              // emphasis
-  isExtension: boolean,       // extension arrow (↳) node
+  speechId,                   // column = the speech. Free — any column. (unchanged)
+  parentId: string | null,    // the arg this answers; null = a root/band start. (unchanged)
+  order,                      // vertical sort key within (sheet, speech, parent). (unchanged)
+  text,                       // tag + cite via line breaks. (unchanged)
+  statuses: NodeStatus[],     // 'conceded' → line-through, 'extended' → arrow. (unchanged)
+  bold: boolean,              // NEW — emphasis decoration
+  numberOverride?,            // manual-numbering break point (kept — "manual numbering preserved")
 }
 ```
 
-- **`parentId = null` in any column** → a fresh argument that starts its own **band** (off-case in
-  1NC, a new block sub-point, a 2AR overview). No spacers, no forced parents.
-- **`parentId = X`** → this cell shares X's band and renders across the page from X.
-- Validity: a parent's column ≤ the child's column (you answer earlier-or-same speeches). Same-column
-  children are allowed (sub-points within a speech) and stack vertically.
+`conceded`/`extended` stay the semantic source of truth; only their **rendering** changes
+(line-through and ↳ arrow instead of badge text). `Format`, `Speech`, `Round`, `TimerState`,
+`RoundMeta`, `Scouting` are retained unchanged.
 
-`ArgumentNode`, `NodeStatus`, and `numberOverride` are removed. `Format`, `Speech`, `Round`,
-`TimerState`, `RoundMeta` are retained.
+`Sheet` gains an optional **`startSpeechId?`** — the leftmost speech column the sheet shows
+(an aff case sheet → `1AC`; a neg off-case → `1NC`). Absent = derive from the sheet's side
+(aff → first speech; neg → first neg speech). Columns are then the contiguous run of
+`format.speeches` from `startSpeechId` to the end.
+
+`Round` gains two overlay collections, **`groups: ArgGroup[]`** and **`links: CrossApp[]`**,
+defined in their own follow-on plans (see "Plan decomposition"). They default to `[]`.
 
 ## Layout — band model on the existing elastic grid
 
@@ -124,37 +140,56 @@ arrow (`isExtension`).
 Numbering, drops, cross-apps, and groups are all overlays/annotations on top of the tree — they
 assist and never block freeform placement.
 
-## Persistence & engine salvage
+## Persistence & dead-code removal
 
-- **Clean break.** Bump the Dexie schema (`src/lib/persistence/db.ts`); no migration. New
-  tree-shaped JSON for export/import (`src/lib/persistence/io.ts`). Autosave infra reused.
-- **Engine salvage.** The already-built, 56-test engine under `src/lib/editor/`
-  (`action` + exact inverse, `history` undo/redo, `pending` coalesced edits, `decorate` bundles) is
-  **re-pointed, not discarded** — those layers are agnostic to the column rule. What changes: add
-  `column` and free roots to the box/cell shape; rewrite `navigation` and placement for
-  column = speech (not depth); drop the spacer concept.
-- `PrintView` and the export system (`src/lib/export/`) re-point at the new tree; both consume the
-  shared `buildLayout` so grid / PDF / Excel place cells identically.
+- **Additive persistence, not a rebuild.** The store and `buildLayout` already drive the tree, so
+  there is no clean break. Add the `bold` field (and later `groups`/`links`) with a Dexie version
+  bump whose `upgrade` defaults the new fields on existing rounds (`bold: false`, `groups: []`,
+  `links: []`). JSON export/import (`src/lib/persistence/io.ts`) round-trips the new fields.
+- **Delete the dead box engine.** `src/lib/editor/*` (`types`, `boxes`, `action`, `history`,
+  `pending`, `navigation`, `decorate` + their 56 tests) has **no importers outside itself** — it is
+  the retired depth=column design. Remove it. The live store's snapshot undo/redo and `model/tree.ts`
+  already provide reversible, coalesced edits, so nothing is "salvaged" or re-pointed.
+- `PrintView` and the export system (`src/lib/export/`) already consume the shared `buildLayout`;
+  they only need the decoration-display update (line-through / arrow / bold) to match the grid.
 
 ## Build order (for the implementation plan)
 
-1. **Model + engine** — `types` (Cell/Sheet), tree ops, re-pointed action/history/pending/decorate,
-   column=speech navigation. Pure, fully unit-tested, no UI.
-2. **Renderer + editing UI** — `FlowGrid` (column from `cell.column`, free roots, bands),
-   `GridCell` (modeless edit, decorations, focus wiring), drag-to-move override.
-3. **Commands + keymap** — respond / new-line / navigation / decorations / delete / undo-redo on
-   the remappable registry; modeless default, vim-modal alternate.
-4. **Overlays + persistence** — numbering, drops, cross-app links, groups; Dexie bump; tree JSON
-   export/import; print + export re-point.
+This spec is delivered as **three independently-shippable plans** (see "Plan decomposition"). Within
+the first (core) plan the order is:
+
+1. **Model + cleanup** — add `bold` to `ArgumentNode` + `tree.ts` helper; add `Sheet.startSpeechId`
+   + a pure column-derivation helper; delete the dead `src/lib/editor/*` engine. Pure, unit-tested.
+2. **Display overhaul** — `GridCell` decorations (line-through / bold / ↳ arrow, replacing badges);
+   `FlowGrid` renders only the sheet's columns (`startSpeechId` onward).
+3. **Create / edit semantics** — `Enter` = new line below in column, `Shift+Enter` = answer-across;
+   free-placement typing in an empty cell; `format.toggleBold` command; drag-to-move reparent.
+4. **Persistence** — Dexie bump defaulting `bold`; JSON round-trip; autosave reused.
+
+## Plan decomposition
+
+Three independently-shippable plans, each producing working/testable software on its own:
+
+1. **Cell display & editing overhaul** (this is the user's core request — written first): `bold`
+   field; decoration-display overhaul; per-sheet columns; `Enter`/`Shift+Enter` create semantics;
+   free-placement typing; drag-to-move; delete the dead engine; additive persistence for `bold`.
+2. **Groups** (standalone overlay): `ArgGroup` collection, bracket rendering, bundle operations,
+   respond-to-group; its own persistence + JSON fields.
+3. **Cross-applications** (standalone overlay): `CrossApp` link collection, chip rendering,
+   create/navigate; its own persistence + JSON fields.
+
+Groups and cross-apps are pure additive overlays on the tree, so they layer cleanly onto plan 1 in
+any order.
 
 ## Testing
 
-- Engine: each action's apply + inverse round-trip; undo/redo; pending-edit coalescing; navigation
-  edge cases (blanks, column edges, free roots in non-zero columns, single cell).
-- Layout: band height = subtree leaf-count; push-down preserves alignment; blank cells across bands;
-  desynced column lengths (the Christianity DA shape).
-- Overlays: drop detection over the tree; cross-app link round-trip; group bracket + respond-to-group.
-- Persistence: export → import equals original tree; fresh-store schema bump.
+- Pure model: `bold` round-trips through `tree.ts`/store/JSON; column-derivation helper for aff vs
+  neg `startSpeechId`; existing `buildLayout`, `drops`, `numbering` tests stay green.
+- Layout/display: decoration rendering (line-through / arrow / bold); `FlowGrid` shows only the
+  sheet's columns; band height = subtree leaf-count (already covered).
+- Editing: `Enter` adds a sibling line below and focuses it; `Shift+Enter` answers across into the
+  next column; typing in an empty selected cell creates a node; drag reparents.
+- Persistence: Dexie upgrade defaults `bold` on old rounds; JSON export → import equals original.
 
 The demo flows in `docs/demo-flows/` are the fidelity fixtures — the renderer must reproduce their
 shape (free vertical placement, intentional whitespace, desynced columns, manual numbering).
