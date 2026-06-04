@@ -247,7 +247,7 @@ describe('arg.newRoot', () => {
 describe('node.delete', () => {
   beforeEach(resetStore);
 
-  it('removes the selected node and clears selection', () => {
+  it('removes the selected node and keeps the cursor on the now-empty cell', () => {
     const { sheetId, speeches } = setupRound();
     const sp = speeches[1].id;
     const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
@@ -256,7 +256,21 @@ describe('node.delete', () => {
     executeCommand('node.delete');
     const st = useRoundStore.getState();
     expect(st.round!.nodes.find(n => n.id === a)).toBeUndefined();
-    expect(st.selection).toBeNull();
+    // Cursor stays in the flow on the empty cell in the same column, not null.
+    expect(st.selection).toEqual({ sheetId, speechId: sp, nodeId: '' });
+  });
+
+  it('moves the cursor to the neighbor above after deleting a stacked node', () => {
+    const { sheetId, speeches } = setupRound();
+    const sp = speeches[1].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null, insertAfterOrder: 0 });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: b });
+
+    executeCommand('node.delete');
+    const st = useRoundStore.getState();
+    expect(st.round!.nodes.find(n => n.id === b)).toBeUndefined();
+    expect(st.selection).toEqual({ sheetId, speechId: sp, nodeId: a });
   });
 });
 

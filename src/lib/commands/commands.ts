@@ -166,7 +166,21 @@ export function executeCommand(id: CommandId): void {
       if (!round) return;
       const sel = state.selection;
       if (!sel || sel.nodeId === '') return;
+      const node = round.nodes.find(n => n.id === sel.nodeId);
+      if (!node) return;
+      // Pick a neighbor so the cursor stays in the flow after deletion.
+      // above/below/parent are never descendants of `node`, so they survive removal.
+      const neighbor =
+        nodeAboveInColumn(round.nodes, node) ??
+        nodeBelowInColumn(round.nodes, node) ??
+        parentOf(round.nodes, node.id);
       state.removeNode(sel.nodeId);
+      if (neighbor) {
+        state.setSelection({ sheetId: neighbor.sheetId, speechId: neighbor.speechId, nodeId: neighbor.id });
+      } else {
+        // No neighbor — keep the cursor on the now-empty cell in the same column.
+        state.setSelection({ sheetId: node.sheetId, speechId: node.speechId, nodeId: '' });
+      }
       return;
     }
 
