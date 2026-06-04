@@ -6,7 +6,7 @@ import { useKeymap } from "@/lib/keymap/useKeymap";
 import { CX_COLUMNS } from "@/lib/model/cxColumns";
 import RoundHeader from "./RoundHeader";
 import Sidebar from "./Sidebar";
-import QuickSwitcher from "./QuickSwitcher";
+import SearchPalette from "./SearchPalette";
 import SettingsPanel from "./SettingsPanel";
 import InfoPanel from "./InfoPanel";
 import KeybindingsCheatsheet from "./KeybindingsCheatsheet";
@@ -56,7 +56,7 @@ export default function Workspace() {
           )}
         </main>
       </div>
-      <QuickSwitcher />
+      <SearchPalette />
       <SettingsPanel />
       <InfoPanel />
       <KeybindingsCheatsheet />
