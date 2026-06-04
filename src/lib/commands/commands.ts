@@ -15,7 +15,7 @@ import {
   nodeBelowInColumn,
   nextOpposingSpeech,
 } from '@/lib/grid/navigation';
-import { responseColumnFor } from '@/lib/model/cxColumns';
+import { responseColumnFor, CX_COLUMNS } from '@/lib/model/cxColumns';
 import type { CommandId } from './registry';
 
 /** Sheets sorted ascending by order. */
@@ -152,7 +152,8 @@ export function executeCommand(id: CommandId): void {
       const sel = state.selection;
       const sheetId = sel?.sheetId ?? state.activeSheetId;
       if (!sheetId) return;
-      const speechId = sel?.speechId ?? round.format.speeches[0]?.id;
+      const onCx = isCxSheet(round, sheetId);
+      const speechId = sel?.speechId ?? (onCx ? CX_COLUMNS[0].id : round.format.speeches[0]?.id);
       if (!speechId) return;
       const selNode = sel?.nodeId ? round.nodes.find(n => n.id === sel.nodeId) : undefined;
       const insertAfterOrder = selNode?.speechId === speechId ? selNode.order : undefined;

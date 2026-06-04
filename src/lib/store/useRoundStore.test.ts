@@ -833,6 +833,11 @@ describe('setScouting', () => {
     useRoundStore.getState().setScouting({ negSchool: 'Lincoln' });
     expect(useRoundStore.getState().round!.scouting.affSchool).toBe('Westwood');
     expect(useRoundStore.getState().round!.scouting.negSchool).toBe('Lincoln');
+    // Both setScouting calls coalesce under the same key ('scouting'), so one undo
+    // reverts both back to the initial empty scouting state.
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.scouting.affSchool).toBeUndefined();
+    expect(useRoundStore.getState().round!.scouting.negSchool).toBeUndefined();
   });
 });
 

@@ -271,7 +271,10 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       sheets: remaining,
       nodes: r.nodes.filter(n => n.sheetId !== sheetId),
     }));
-    if (activeSheetId === sheetId) set({ activeSheetId: remaining[0]?.id ?? null });
+    if (activeSheetId === sheetId) {
+      const nextActive = remaining.find(s => s.kind !== 'cx') ?? remaining[0] ?? null;
+      set({ activeSheetId: nextActive?.id ?? null });
+    }
     if (selection?.sheetId === sheetId) set({ selection: null });
   },
 
@@ -389,7 +392,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     const { round, activeSheetId, selection } = get();
     if (!round) return;
     const sheetExists = (id: string | null) => !!id && round.sheets.some(s => s.id === id);
-    const nextActive = sheetExists(activeSheetId) ? activeSheetId : (round.sheets[0]?.id ?? null);
+    const nextActive = sheetExists(activeSheetId)
+      ? activeSheetId
+      : (round.sheets.find(s => s.kind !== 'cx')?.id ?? round.sheets[0]?.id ?? null);
     const selValid = selection
       && round.sheets.some(s => s.id === selection.sheetId)
       && (selection.nodeId === '' || round.nodes.some(n => n.id === selection.nodeId));
