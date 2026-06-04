@@ -177,7 +177,9 @@ export default function SettingsPanel() {
                         ) : (
                             <div className="flex flex-col gap-3">
                                 {/* Preset switcher */}
-                                <div className="flex gap-1.5" role="group" aria-label="Keymap preset">
+                                <div className="flex items-center gap-2.5">
+                                    <span className="text-[13px] text-zinc-500">Preset</span>
+                                    <div className="flex gap-1.5" role="group" aria-label="Keymap preset">
                                     {PRESETS.map(p => {
                                         const active = p.name === keymapName;
                                         return (
@@ -194,6 +196,7 @@ export default function SettingsPanel() {
                                             </Button>
                                         );
                                     })}
+                                    </div>
                                 </div>
 
                                 {/* Filter */}
