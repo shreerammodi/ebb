@@ -15,11 +15,17 @@ import {
   nodeBelowInColumn,
   nextOpposingSpeech,
 } from '@/lib/grid/navigation';
+import { responseColumnFor } from '@/lib/model/cxColumns';
 import type { CommandId } from './registry';
 
 /** Sheets sorted ascending by order. */
 function sortedSheets(sheets: Sheet[]): Sheet[] {
   return sheets.slice().sort((a, b) => a.order - b.order);
+}
+
+/** Returns true when the given sheet is a CX sheet. */
+function isCxSheet(round: { sheets: { id: string; kind?: string }[] }, sheetId: string): boolean {
+  return round.sheets.find(s => s.id === sheetId)?.kind === 'cx';
 }
 
 /** Selects a node by its ids and switches to insert mode. */
@@ -29,11 +35,11 @@ function selectNodeInsert(ids: { sheetId: string; speechId: string; nodeId: stri
   setMode('insert');
 }
 
-/** Jumps to the Nth (1-indexed, order-sorted) sheet, no-op if out of range. */
+/** Jumps to the Nth (1-indexed, order-sorted) flow sheet, no-op if out of range. */
 function jumpToSheet(n: number): void {
   const { round, setActiveSheet } = useRoundStore.getState();
   if (!round) return;
-  const sheets = sortedSheets(round.sheets);
+  const sheets = sortedSheets(round.sheets.filter(s => s.kind !== 'cx'));
   const target = sheets[n - 1];
   if (target) setActiveSheet(target.id);
 }
@@ -125,14 +131,19 @@ export function executeCommand(id: CommandId): void {
       if (!sel || sel.nodeId === '') return;
       const node = round.nodes.find(n => n.id === sel.nodeId);
       if (!node) return;
-      const targetSpeech = nextOpposingSpeech(round.format, node.speechId);
-      if (!targetSpeech) return;
+      let targetSpeechId: string | null;
+      if (isCxSheet(round, node.sheetId)) {
+        targetSpeechId = responseColumnFor(node.speechId); // Q → its Response column
+      } else {
+        targetSpeechId = nextOpposingSpeech(round.format, node.speechId)?.id ?? null;
+      }
+      if (!targetSpeechId) return;
       const newId = state.addNode({
         sheetId: node.sheetId,
-        speechId: targetSpeech.id,
+        speechId: targetSpeechId,
         parentId: node.id,
       });
-      selectNodeInsert({ sheetId: node.sheetId, speechId: targetSpeech.id, nodeId: newId });
+      selectNodeInsert({ sheetId: node.sheetId, speechId: targetSpeechId, nodeId: newId });
       return;
     }
 
@@ -164,6 +175,7 @@ export function executeCommand(id: CommandId): void {
       if (!round) return;
       const sel = state.selection;
       if (!sel || sel.nodeId === '') return;
+      if (isCxSheet(round, sel.sheetId)) return;
       state.toggleNodeStatus(
         sel.nodeId,
         id === 'status.toggleConceded' ? 'conceded' : 'extended',
@@ -175,7 +187,7 @@ export function executeCommand(id: CommandId): void {
     case 'sheet.next':
     case 'sheet.prev': {
       if (!round) return;
-      const sheets = sortedSheets(round.sheets);
+      const sheets = sortedSheets(round.sheets.filter(s => s.kind !== 'cx'));
       if (sheets.length === 0) return;
       const idx = sheets.findIndex(s => s.id === state.activeSheetId);
       const base = idx === -1 ? 0 : idx;
