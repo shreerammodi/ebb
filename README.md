@@ -11,7 +11,7 @@ accounts. All data stays on your device.
 - **Drop detection** — highlights arguments with no answer in the next opposing speech
 - **Status marks** — conceded (green) and extended (green) annotations
 - **Timers** — speech countdown and per-side prep clocks
-- **Quick switcher** — ⌘K fuzzy sheet picker
+- **Fuzzy search** — ⌘K palette finds any sheet or argument across the flow
 - **Keymap settings** — per-command chord override, persisted to localStorage
 - **Export / Import** — round-trip JSON files
 - **Print / PDF** — clean `window.print()` layout
@@ -42,7 +42,7 @@ npm run test:watch
 | `s`            | Toggle speech timer                           |
 | `p` / `P`      | Toggle Aff / Neg prep                         |
 | `]` / `[`      | Next / prev sheet                             |
-| `⌘K`           | Quick switcher                                |
+| `⌘K`           | Fuzzy search (sheets + arguments)             |
 | `⌘N`           | New sheet                                     |
 | `⌘,`           | Keymap settings                               |
 | `⌘1–9`         | Jump to sheet 1–9                             |
