@@ -20,6 +20,7 @@ function makeNode(
     order: 0,
     text: "",
     statuses: [],
+    bold: false,
     ...overrides,
   };
 }

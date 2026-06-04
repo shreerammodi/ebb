@@ -35,6 +35,7 @@ function round(): Round {
         order: 0,
         text: "Uniqueness",
         statuses: [],
+        bold: false,
       },
     ],
     timers: {
@@ -64,6 +65,7 @@ describe("buildXlsx", () => {
         order: 0,
         text: "Why plan?",
         statuses: [],
+        bold: false,
       },
       {
         id: "r1",
@@ -73,6 +75,7 @@ describe("buildXlsx", () => {
         order: 0,
         text: "Because.",
         statuses: [],
+        bold: false,
       },
     );
     const bytes = buildXlsx(r, template);
@@ -147,7 +150,16 @@ describe("buildXlsx", () => {
       },
     ];
     r.nodes = [
-      { id: "p", sheetId: "sh", speechId: "s0", parentId: null, order: 0, text: "x", statuses: [] },
+      {
+        id: "p",
+        sheetId: "sh",
+        speechId: "s0",
+        parentId: null,
+        order: 0,
+        text: "x",
+        statuses: [],
+        bold: false,
+      },
     ];
     const wb = strFromU8(unzipSync(buildXlsx(r, template))["xl/workbook.xml"]);
     const appended = [...wb.matchAll(/<sheet name="([^"]*)"/g)]

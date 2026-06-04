@@ -29,6 +29,7 @@ function makeRound(overrides: Partial<Round> = {}): Round {
         order: 0,
         text: "Solvency",
         statuses: [],
+        bold: false,
       },
     ],
     timers: {
@@ -72,6 +73,37 @@ describe("importRoundJSON", () => {
     const json = exportRoundJSON(round);
     const imported = importRoundJSON(json);
     expect(imported).toEqual(round);
+  });
+
+  it("preserves bold through export → import", () => {
+    const round = makeRound({
+      nodes: [
+        {
+          id: "node_001",
+          sheetId: "sheet_001",
+          speechId: "speech_001",
+          parentId: null,
+          order: 0,
+          text: "Bold arg",
+          statuses: [],
+          bold: true,
+        },
+      ],
+    });
+    const back = importRoundJSON(exportRoundJSON(round));
+    expect(back.nodes[0].bold).toBe(true);
+  });
+
+  it("defaults bold to false for a node missing it (legacy file)", () => {
+    const legacy = makeRound();
+    const legacyNode = { ...legacy.nodes[0] };
+    delete (legacyNode as { bold?: boolean }).bold;
+    const payload = JSON.stringify({
+      version: FILE_VERSION,
+      round: { ...legacy, nodes: [legacyNode] },
+    });
+    const back = importRoundJSON(payload);
+    expect(back.nodes[0].bold).toBe(false);
   });
 
   it('throws "Invalid JSON" on garbage input', () => {

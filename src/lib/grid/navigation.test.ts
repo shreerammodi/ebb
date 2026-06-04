@@ -19,6 +19,7 @@ function makeNode(overrides: Partial<ArgumentNode> & { id: string }): ArgumentNo
     order: 0,
     text: "",
     statuses: [],
+    bold: false,
     numberOverride: null,
     ...overrides,
   };

@@ -30,6 +30,7 @@ function round(): Round {
         order: 0,
         text: "Root",
         statuses: [],
+        bold: false,
       },
       {
         id: "c",

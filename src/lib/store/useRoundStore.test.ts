@@ -432,6 +432,22 @@ describe("toggleNodeStatus", () => {
   });
 });
 
+describe("toggleNodeBold", () => {
+  it("toggleNodeBold flips bold and is undoable", () => {
+    resetStore();
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+    const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
+    const speechId = useRoundStore.getState().round!.format.speeches.find((s) => s.side === "neg")!
+      .id;
+    const id = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null });
+    useRoundStore.getState().toggleNodeBold(id);
+    expect(useRoundStore.getState().round!.nodes.find((n) => n.id === id)!.bold).toBe(true);
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.nodes.find((n) => n.id === id)!.bold).toBe(false);
+  });
+});
+
 // ─── setNodeParent ────────────────────────────────────────────────────────────
 
 describe("setNodeParent", () => {

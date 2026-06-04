@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { makeFormatByKey, makeFormat } from "@/lib/format/presets";
 import FlowGrid from "./FlowGrid";
@@ -376,6 +376,64 @@ describe("FlowGrid", () => {
   });
 
   // ── Group header side class ────────────────────────────────────────────────
+
+  it("typing in a selected empty cell creates a node with that text", () => {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "neg", format: fmt, meta: {} });
+    const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
+    const s1NC = fmt.speeches.find((s) => s.side === "neg")!.id;
+
+    useRoundStore.getState().setSelection({ sheetId, speechId: s1NC, nodeId: "" });
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.change(ta, { target: { value: "topicality" } });
+    const created = useRoundStore.getState().round!.nodes.find((n) => n.text === "topicality");
+    expect(created).toBeTruthy();
+    expect(created!.speechId).toBe(s1NC);
+    expect(created!.parentId).toBeNull();
+  });
+
+  it("dropping a node onto another sets the dragged node's parent to the target", () => {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+    const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+    const s1AC = fmt.speeches[0].id;
+    const s1NC = fmt.speeches[1].id;
+
+    const idA = useRoundStore.getState().addNode({
+      sheetId,
+      speechId: s1AC,
+      parentId: null,
+      text: "A-text",
+    });
+    const idB = useRoundStore.getState().addNode({
+      sheetId,
+      speechId: s1NC,
+      parentId: null,
+      text: "B-text",
+    });
+
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const dropEl = screen.getByText("B-text").closest("[draggable]")!;
+    const dragEl = screen.getByText("A-text").closest("[draggable]")!;
+    const store: Record<string, string> = {};
+    const dataTransfer = {
+      effectAllowed: "move",
+      setData(type: string, value: string) {
+        store[type] = value;
+      },
+      getData(type: string) {
+        return store[type] ?? "";
+      },
+    };
+    fireEvent.dragStart(dragEl, { dataTransfer });
+    fireEvent.dragOver(dropEl, { dataTransfer });
+    fireEvent.drop(dropEl, { dataTransfer });
+
+    expect(useRoundStore.getState().round!.nodes.find((n) => n.id === idA)!.parentId).toBe(idB);
+  });
 
   it("applies side-aff class to a group header spanning aff speeches", () => {
     // Build a custom format with two adjacent aff speeches sharing a group

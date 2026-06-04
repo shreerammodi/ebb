@@ -20,6 +20,7 @@ export type CommandId =
   | "node.delete"
   | "status.toggleConceded"
   | "status.toggleExtended"
+  | "format.toggleBold"
   | "sheet.next"
   | "sheet.prev"
   | "sheet.newAff"
@@ -62,6 +63,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
   "node.delete": { id: "node.delete", label: "Delete node" },
   "status.toggleConceded": { id: "status.toggleConceded", label: "Toggle conceded" },
   "status.toggleExtended": { id: "status.toggleExtended", label: "Toggle extended" },
+  "format.toggleBold": { id: "format.toggleBold", label: "Toggle bold" },
   "sheet.next": { id: "sheet.next", label: "Next sheet" },
   "sheet.prev": { id: "sheet.prev", label: "Previous sheet" },
   "sheet.newAff": { id: "sheet.newAff", label: "New aff sheet" },

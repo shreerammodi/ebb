@@ -188,14 +188,19 @@ export function executeCommand(id: CommandId): void {
       return;
     }
 
-    // ── Status ───────────────────────────────────────────────────────────────
+    // ── Status / format ────────────────────────────────────────────────────────
     case "status.toggleConceded":
-    case "status.toggleExtended": {
+    case "status.toggleExtended":
+    case "format.toggleBold": {
       if (!round) return;
       const sel = state.selection;
       if (!sel || sel.nodeId === "") return;
       if (isCxSheet(round, sel.sheetId)) return;
-      state.toggleNodeStatus(sel.nodeId, id === "status.toggleConceded" ? "conceded" : "extended");
+      if (id === "format.toggleBold") {
+        state.toggleNodeBold(sel.nodeId);
+      } else {
+        state.toggleNodeStatus(sel.nodeId, id === "status.toggleConceded" ? "conceded" : "extended");
+      }
       return;
     }
 

@@ -36,6 +36,7 @@ function round(sheets: number): Round {
         order: 0,
         text: "Hello",
         statuses: [],
+        bold: false,
       },
     ],
     timers: {

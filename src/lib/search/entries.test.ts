@@ -28,9 +28,9 @@ function makeRound(): Round {
       { id: "s2", title: "Case", group: "aff", order: 1, kind: "flow" },
     ],
     nodes: [
-      { id: "n1", sheetId: "s1", speechId: "1nc", parentId: null, order: 0, text: "Plan not topical", statuses: [] },
-      { id: "n2", sheetId: "s2", speechId: "1ac", parentId: null, order: 0, text: "Line one\nline two", statuses: [] },
-      { id: "n3", sheetId: "s2", speechId: "1ac", parentId: null, order: 1, text: "   ", statuses: [] },
+      { id: "n1", sheetId: "s1", speechId: "1nc", parentId: null, order: 0, text: "Plan not topical", statuses: [], bold: false },
+      { id: "n2", sheetId: "s2", speechId: "1ac", parentId: null, order: 0, text: "Line one\nline two", statuses: [], bold: false },
+      { id: "n3", sheetId: "s2", speechId: "1ac", parentId: null, order: 1, text: "   ", statuses: [], bold: false },
     ],
     timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 0, neg: 0 }, prepRunning: null },
   };

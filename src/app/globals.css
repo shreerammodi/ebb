@@ -208,6 +208,21 @@ body {
   font-weight: 700;
 }
 
+.arg-crossed {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  opacity: 0.6;
+}
+
+.arg-bold {
+  font-weight: 700;
+}
+
+.arg-ext {
+  margin-right: 3px;
+  font-weight: 700;
+}
+
 /* Inline cell editor — borderless textarea that IS the cell.
    No border/outline/background/padding of its own: the cell's own border
    and selection outline are the only visible box. Matches the rendered

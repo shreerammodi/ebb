@@ -7,8 +7,10 @@ import {
   setParent,
   updateText,
   toggleStatus,
+  toggleBold,
   removeNode,
   moveNode,
+  rehomeNode,
 } from "@/lib/model/tree";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -21,10 +23,40 @@ function makeNode(overrides: Partial<ArgumentNode> & { id: string }): ArgumentNo
     order: 0,
     text: "",
     statuses: [],
+    bold: false,
     numberOverride: null,
     ...overrides,
   };
 }
+
+// ─── bold ─────────────────────────────────────────────────────────────────────
+
+describe("bold", () => {
+  it("addNode defaults bold to false", () => {
+    const { node } = addNode([], { sheetId: "s1", speechId: "1ac", parentId: null });
+    expect(node.bold).toBe(false);
+  });
+
+  it("toggleBold flips bold and is pure", () => {
+    const { nodes, node } = addNode([], { sheetId: "s1", speechId: "1ac", parentId: null });
+    const on = toggleBold(nodes, node.id);
+    expect(on.find((n) => n.id === node.id)!.bold).toBe(true);
+    expect(nodes.find((n) => n.id === node.id)!.bold).toBe(false);
+    const off = toggleBold(on, node.id);
+    expect(off.find((n) => n.id === node.id)!.bold).toBe(false);
+  });
+});
+
+describe("rehomeNode", () => {
+  it("rehomeNode moves a node to a new column as a root", () => {
+    const a = addNode([], { sheetId: "s", speechId: "1ac", parentId: null });
+    const b = addNode(a.nodes, { sheetId: "s", speechId: "1ac", parentId: a.node.id });
+    const moved = rehomeNode(b.nodes, b.node.id, "2ac", null);
+    const n = moved.find((x) => x.id === b.node.id)!;
+    expect(n.speechId).toBe("2ac");
+    expect(n.parentId).toBeNull();
+  });
+});
 
 // ─── childrenOf ─────────────────────────────────────────────────────────────
 

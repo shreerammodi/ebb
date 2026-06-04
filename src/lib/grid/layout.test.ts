@@ -8,7 +8,7 @@ const speeches: Speech[] = [
 ];
 
 function node(p: Partial<ArgumentNode> & { id: string; speechId: string }): ArgumentNode {
-  return { sheetId: "sh", parentId: null, order: 0, text: "", statuses: [], ...p };
+  return { sheetId: "sh", parentId: null, order: 0, text: "", statuses: [], bold: false, ...p };
 }
 
 describe("buildLayout", () => {

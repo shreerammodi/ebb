@@ -75,6 +75,7 @@ export function addNode(
     order: newOrder,
     text: input.text ?? "",
     statuses: [],
+    bold: false,
     numberOverride: null,
   };
 
@@ -137,4 +138,29 @@ export function removeNode(nodes: ArgumentNode[], nodeId: string): ArgumentNode[
  */
 export function moveNode(nodes: ArgumentNode[], nodeId: string, newOrder: number): ArgumentNode[] {
   return nodes.map((n) => (n.id === nodeId ? { ...n, order: newOrder } : n));
+}
+
+/**
+ * Toggles the bold decoration on the target node.
+ */
+export function toggleBold(nodes: ArgumentNode[], nodeId: string): ArgumentNode[] {
+  return nodes.map((n) => (n.id === nodeId ? { ...n, bold: !n.bold } : n));
+}
+
+/**
+ * Moves a node to a different column (speechId) and parent, appending it at the
+ * end of the destination column. Used by drag-to-move.
+ */
+export function rehomeNode(
+  nodes: ArgumentNode[],
+  nodeId: string,
+  speechId: string,
+  parentId: string | null,
+): ArgumentNode[] {
+  const column = nodes.filter((n) => {
+    const target = nodes.find((x) => x.id === nodeId);
+    return target && n.sheetId === target.sheetId && n.speechId === speechId && n.id !== nodeId;
+  });
+  const newOrder = column.length > 0 ? Math.max(...column.map((n) => n.order)) + 1 : 0;
+  return nodes.map((n) => (n.id === nodeId ? { ...n, speechId, parentId, order: newOrder } : n));
 }

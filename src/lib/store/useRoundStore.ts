@@ -24,9 +24,11 @@ import {
   addNode as treeAddNode,
   updateText,
   toggleStatus,
+  toggleBold,
   setParent,
   removeNode as treeRemoveNode,
   moveNode as treeMoveNode,
+  rehomeNode as treeRehomeNode,
 } from "@/lib/model/tree";
 import { detectDrops } from "@/lib/model/drops";
 
@@ -73,7 +75,9 @@ export interface RoundActions {
   }): string;
   updateNodeText(nodeId: string, text: string): void;
   toggleNodeStatus(nodeId: string, status: NodeStatus): void;
+  toggleNodeBold(nodeId: string): void;
   setNodeParent(nodeId: string, parentId: string | null): void;
+  rehomeNode(nodeId: string, speechId: string, parentId: string | null): void;
   removeNode(nodeId: string): void;
   moveNode(nodeId: string, newOrder: number): void;
 
@@ -258,12 +262,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
 
     const maxOrder = round.sheets.length > 0 ? Math.max(...round.sheets.map((s) => s.order)) : -1;
 
+    const firstNeg = round.format.speeches.find((s) => s.side === "neg")?.id;
     const sheet: Sheet = {
       id: uid("sheet"),
       title,
       group,
       order: maxOrder + 1,
       kind: "flow",
+      startSpeechId: group === "neg" ? firstNeg : round.format.speeches[0]?.id,
     };
 
     const isFirstFlow = round.sheets.filter((s) => s.kind !== "cx").length === 0;
@@ -340,6 +346,12 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     get()._commit(null, (r) => ({ ...r, nodes: toggleStatus(r.nodes, nodeId, status) }));
   },
 
+  // ── toggleNodeBold ─────────────────────────────────────────────────────────
+  toggleNodeBold(nodeId) {
+    if (!get().round) return;
+    get()._commit(null, (r) => ({ ...r, nodes: toggleBold(r.nodes, nodeId) }));
+  },
+
   // ── setNodeParent ──────────────────────────────────────────────────────────
   setNodeParent(nodeId, parentId) {
     if (!get().round) return;
@@ -358,6 +370,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   moveNode(nodeId, newOrder) {
     if (!get().round) return;
     get()._commit(null, (r) => ({ ...r, nodes: treeMoveNode(r.nodes, nodeId, newOrder) }));
+  },
+
+  rehomeNode(nodeId, speechId, parentId) {
+    if (!get().round) return;
+    get()._commit(null, (r) => ({
+      ...r,
+      nodes: treeRehomeNode(r.nodes, nodeId, speechId, parentId),
+    }));
   },
 
   // ── setMode ────────────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ function makeNode(overrides: Partial<ArgumentNode> & { id: string }): ArgumentNo
     order: 0,
     text: "",
     statuses: [],
+    bold: false,
     numberOverride: null,
     ...overrides,
   };
@@ -112,6 +113,7 @@ describe("numberFor", () => {
       order: 0,
       text: "",
       statuses: [],
+    bold: false,
       // numberOverride intentionally omitted (undefined)
     };
     expect(numberFor([node], "a")).toBe(1);

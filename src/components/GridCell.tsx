@@ -72,7 +72,6 @@ export default function GridCell({
   };
 
   const num = numberFor(sheetNodes, node.id);
-  const showConceded = node.statuses.includes("conceded");
   const showExtended = node.statuses.includes("extended");
 
   if (isInsertMode) {
@@ -89,36 +88,59 @@ export default function GridCell({
         }}
         onBlur={() => setMode("normal")}
         onKeyDown={(e) => {
-          // Enter commits the edit rather than inserting a newline.
-          if (e.key === "Enter") {
+          // Ctrl/Cmd+Enter inserts a literal newline (tag ⏎ cite) within the cell.
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
-            setMode("normal");
+            const el = e.currentTarget;
+            const { selectionStart, selectionEnd, value } = el;
+            const next = value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd);
+            updateNodeText(node.id, next);
+            requestAnimationFrame(() => {
+              el.selectionStart = el.selectionEnd = selectionStart + 1;
+              autoHeight();
+            });
+            return;
           }
+          // Plain Enter / Shift+Enter are left for the global keymap layer
+          // (node.addAnswer / node.answerAcross). Do not intercept them here.
         }}
       />
     );
   }
 
+  const classes = [
+    node.statuses.includes("conceded") ? "arg-crossed" : "",
+    node.bold ? "arg-bold" : "",
+    hasChildren ? "arg-parent" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <span onClick={handleClick} style={{ display: "block", width: "100%", cursor: "pointer" }}>
+    <span
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/df-node", node.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        const dragged = e.dataTransfer.getData("text/df-node");
+        if (dragged && dragged !== node.id) {
+          useRoundStore.getState().setNodeParent(dragged, node.id);
+        }
+      }}
+      onClick={handleClick}
+      style={{ display: "block", width: "100%", cursor: "pointer" }}
+    >
       {!isCx && autoNumber && num !== null && <span className="arg-num">{num}.</span>}
-      <span className={hasChildren ? "arg-parent" : undefined}>{node.text}</span>
+      {!isCx && showExtended && <span className="arg-ext">↳</span>}
+      <span className={classes || undefined}>{node.text}</span>
       {!isCx && labelDrops && isDropped && (
         <>
           {" "}
           <span className="badge-drop">⚠ dropped</span>
-        </>
-      )}
-      {!isCx && showConceded && (
-        <>
-          {" "}
-          <span className="status-good">✓ conceded</span>
-        </>
-      )}
-      {!isCx && showExtended && (
-        <>
-          {" "}
-          <span className="status-good">✓ extended</span>
         </>
       )}
     </span>

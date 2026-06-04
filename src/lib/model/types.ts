@@ -39,6 +39,8 @@ export interface ArgumentNode {
   order: number;
   text: string;
   statuses: NodeStatus[];
+  /** Emphasis decoration (renders bold). */
+  bold: boolean;
   /** Override the auto-generated display number for this node. */
   numberOverride?: number | null;
 }
@@ -52,6 +54,8 @@ export interface Sheet {
   order: number;
   /** Sheet variety. Absent / 'flow' = the normal argument grid. 'cx' = the cross-ex sheet. */
   kind?: "flow" | "cx";
+  /** Leftmost speech column shown (absent = derive from side). */
+  startSpeechId?: string;
 }
 
 /** Live timer state for the current round. */

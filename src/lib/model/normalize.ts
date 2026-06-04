@@ -25,6 +25,9 @@ export function normalizeRound(raw: Round): Round {
   delete r.cx;
   if (!r.scouting) r.scouting = emptyScouting();
   r.sheets = r.sheets.map((s) => ({ ...s, kind: s.kind ?? "flow" }));
+  if (Array.isArray(r.nodes)) {
+    r.nodes = r.nodes.map((n) => ({ ...n, bold: n.bold ?? false }));
+  }
   if (!r.sheets.some((s) => s.kind === "cx")) {
     r.sheets = [makeCxSheet(), ...r.sheets];
   }

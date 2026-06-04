@@ -307,6 +307,17 @@ describe("status toggles", () => {
       "extended",
     );
   });
+
+  it("format.toggleBold toggles bold on the selected node", () => {
+    const { sheetId, speeches } = setupRound();
+    const sp = speeches[1].id;
+    const nodeId = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId });
+
+    executeCommand("format.toggleBold");
+    const node = useRoundStore.getState().round!.nodes.find((n) => n.id === nodeId)!;
+    expect(node.bold).toBe(true);
+  });
 });
 
 describe("sheet navigation", () => {

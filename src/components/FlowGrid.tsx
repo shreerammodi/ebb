@@ -17,7 +17,9 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 import { detectDrops } from "@/lib/model/drops";
 import { CX_COLUMNS } from "@/lib/model/cxColumns";
 import GridCell from "./GridCell";
+import EmptyCellEditor from "./EmptyCellEditor";
 import { buildLayout, type PlacedNode } from "@/lib/grid/layout";
+import { columnsForSheet } from "@/lib/grid/columns";
 
 // ─── FlowGrid component ───────────────────────────────────────────────────────
 
@@ -38,7 +40,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
 
   if (!format) return null;
 
-  const speeches = isCx ? CX_COLUMNS : format.speeches;
+  const speeches = isCx ? CX_COLUMNS : sheet ? columnsForSheet(format, sheet) : format.speeches;
 
   const sheetNodes = nodes.filter((n) => n.sheetId === sheetId);
   const droppedIds = isCx ? new Set<string>() : new Set(detectDrops(nodes, format, sheetId));
@@ -190,8 +192,18 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                   key={col}
                   className={classes}
                   onClick={() => setSelection({ sheetId, speechId: speech.id, nodeId: "" })}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const dragged = e.dataTransfer.getData("text/df-node");
+                    if (dragged) useRoundStore.getState().rehomeNode(dragged, speech.id, null);
+                  }}
                 >
-                  <span className="cell-empty" />
+                  {isSelected ? (
+                    <EmptyCellEditor sheetId={sheetId} speechId={speech.id} />
+                  ) : (
+                    <span className="cell-empty" />
+                  )}
                 </td>
               );
             })}
