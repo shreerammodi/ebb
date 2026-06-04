@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * AppRoot — top-level component that boots the app.
@@ -10,14 +10,14 @@
  * Renders <Workspace /> when a round is active, <RoundSetup /> otherwise.
  */
 
-import { useEffect, useState } from 'react';
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import { attachAutosave, loadLastRound } from '@/lib/persistence/autosave';
-import Workspace from './Workspace';
-import RoundSetup from './RoundSetup';
+import { useEffect, useState } from "react";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import { attachAutosave, loadLastRound } from "@/lib/persistence/autosave";
+import Workspace from "./Workspace";
+import RoundSetup from "./RoundSetup";
 
 export default function AppRoot() {
-  const round = useRoundStore(s => s.round);
+  const round = useRoundStore((s) => s.round);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -25,9 +25,11 @@ export default function AppRoot() {
     const unsubscribe = attachAutosave(useRoundStore);
 
     loadLastRound()
-      .then(r => {
+      .then((r) => {
         if (mounted && r) {
-          const flowSheets = [...r.sheets].filter(s => s.kind !== 'cx').sort((a, b) => a.order - b.order);
+          const flowSheets = [...r.sheets]
+            .filter((s) => s.kind !== "cx")
+            .sort((a, b) => a.order - b.order);
           const firstSheet = flowSheets[0] ?? [...r.sheets].sort((a, b) => a.order - b.order)[0];
           useRoundStore.setState({ round: r, activeSheetId: firstSheet?.id ?? null });
         }

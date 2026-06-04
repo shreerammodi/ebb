@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * GridCell — renders a single argument node cell in the flow grid.
@@ -6,10 +6,10 @@
  * Reads selection/mode/actions from the zustand store directly.
  */
 
-import { useRef, useEffect } from 'react';
-import type { ArgumentNode } from '@/lib/model/types';
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import { numberFor } from '@/lib/model/numbering';
+import { useRef, useEffect } from "react";
+import type { ArgumentNode } from "@/lib/model/types";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import { numberFor } from "@/lib/model/numbering";
 
 export interface GridCellProps {
   node: ArgumentNode;
@@ -33,14 +33,14 @@ export default function GridCell({
   hasChildren,
   isCx,
 }: GridCellProps) {
-  const selection = useRoundStore(s => s.selection);
-  const mode = useRoundStore(s => s.mode);
-  const keymapName = useRoundStore(s => s.keymapName);
-  const setSelection = useRoundStore(s => s.setSelection);
-  const updateNodeText = useRoundStore(s => s.updateNodeText);
-  const setMode = useRoundStore(s => s.setMode);
-  const autoNumber = useRoundStore(s => s.autoNumber);
-  const labelDrops = useRoundStore(s => s.labelDrops);
+  const selection = useRoundStore((s) => s.selection);
+  const mode = useRoundStore((s) => s.mode);
+  const keymapName = useRoundStore((s) => s.keymapName);
+  const setSelection = useRoundStore((s) => s.setSelection);
+  const updateNodeText = useRoundStore((s) => s.updateNodeText);
+  const setMode = useRoundStore((s) => s.setMode);
+  const autoNumber = useRoundStore((s) => s.autoNumber);
+  const labelDrops = useRoundStore((s) => s.labelDrops);
 
   const isSelected =
     selection?.sheetId === sheetId &&
@@ -48,7 +48,7 @@ export default function GridCell({
     selection?.nodeId === node.id;
 
   // Default keymap: always editable when selected (no modal insert mode).
-  const isInsertMode = isSelected && (mode === 'insert' || keymapName === 'default');
+  const isInsertMode = isSelected && (mode === "insert" || keymapName === "default");
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Grow the textarea to fit its content so it occupies the same space the
@@ -56,7 +56,7 @@ export default function GridCell({
   const autoHeight = () => {
     const el = inputRef.current;
     if (!el) return;
-    el.style.height = '0px';
+    el.style.height = "0px";
     el.style.height = `${el.scrollHeight}px`;
   };
 
@@ -72,8 +72,8 @@ export default function GridCell({
   };
 
   const num = numberFor(sheetNodes, node.id);
-  const showConceded = node.statuses.includes('conceded');
-  const showExtended = node.statuses.includes('extended');
+  const showConceded = node.statuses.includes("conceded");
+  const showExtended = node.statuses.includes("extended");
 
   if (isInsertMode) {
     return (
@@ -83,16 +83,16 @@ export default function GridCell({
         rows={1}
         spellCheck={false}
         value={node.text}
-        onChange={e => {
+        onChange={(e) => {
           updateNodeText(node.id, e.target.value);
           autoHeight();
         }}
-        onBlur={() => setMode('normal')}
-        onKeyDown={e => {
+        onBlur={() => setMode("normal")}
+        onKeyDown={(e) => {
           // Enter commits the edit rather than inserting a newline.
-          if (e.key === 'Enter') {
+          if (e.key === "Enter") {
             e.preventDefault();
-            setMode('normal');
+            setMode("normal");
           }
         }}
       />
@@ -100,15 +100,27 @@ export default function GridCell({
   }
 
   return (
-    <span
-      onClick={handleClick}
-      style={{ display: 'block', width: '100%', cursor: 'pointer' }}
-    >
+    <span onClick={handleClick} style={{ display: "block", width: "100%", cursor: "pointer" }}>
       {!isCx && autoNumber && num !== null && <span className="arg-num">{num}.</span>}
-      <span className={hasChildren ? 'arg-parent' : undefined}>{node.text}</span>
-      {!isCx && labelDrops && isDropped && <> <span className="badge-drop">⚠ dropped</span></>}
-      {!isCx && showConceded && <> <span className="status-good">✓ conceded</span></>}
-      {!isCx && showExtended && <> <span className="status-good">✓ extended</span></>}
+      <span className={hasChildren ? "arg-parent" : undefined}>{node.text}</span>
+      {!isCx && labelDrops && isDropped && (
+        <>
+          {" "}
+          <span className="badge-drop">⚠ dropped</span>
+        </>
+      )}
+      {!isCx && showConceded && (
+        <>
+          {" "}
+          <span className="status-good">✓ conceded</span>
+        </>
+      )}
+      {!isCx && showExtended && (
+        <>
+          {" "}
+          <span className="status-good">✓ extended</span>
+        </>
+      )}
     </span>
   );
 }

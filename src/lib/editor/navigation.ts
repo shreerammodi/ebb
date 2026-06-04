@@ -2,7 +2,7 @@
  * Tree navigation, ported from the reference's getAdjacentBox.
  * Pure: operates only on the Boxes map.
  */
-import type { Boxes } from '@/lib/editor/types';
+import type { Boxes } from "@/lib/editor/types";
 
 /**
  * The box visually above ('up') or below ('down') `id`, walking across nesting:
@@ -10,14 +10,14 @@ import type { Boxes } from '@/lib/editor/types';
  * into the adjacent parent's children (skipping childless parents).
  * Returns null at the very top/bottom of the sheet.
  */
-export function getAdjacentBox(boxes: Boxes, id: string, dir: 'up' | 'down'): string | null {
+export function getAdjacentBox(boxes: Boxes, id: string, dir: "up" | "down"): string | null {
   const node = boxes[id];
   if (!node || node.parentId === null) return null; // root has no adjacency
   const parent = boxes[node.parentId];
   if (!parent) return null;
 
   const index = parent.children.indexOf(id);
-  const newIndex = dir === 'up' ? index - 1 : index + 1;
+  const newIndex = dir === "up" ? index - 1 : index + 1;
 
   if (newIndex < 0 || newIndex >= parent.children.length) {
     // Out of range here: find the adjacent parent and dive into its children.
@@ -28,14 +28,14 @@ export function getAdjacentBox(boxes: Boxes, id: string, dir: 'up' | 'down'): st
       if (adjacentParent === null) return null;
     }
     const target = boxes[adjacentParent]!;
-    return dir === 'up' ? target.children[target.children.length - 1] : target.children[0];
+    return dir === "up" ? target.children[target.children.length - 1] : target.children[0];
   }
 
   return parent.children[newIndex];
 }
 
 /** Like getAdjacentBox, but skips empty (spacer) boxes. */
-export function adjacentNonEmpty(boxes: Boxes, id: string, dir: 'up' | 'down'): string | null {
+export function adjacentNonEmpty(boxes: Boxes, id: string, dir: "up" | "down"): string | null {
   let cur = id;
   for (;;) {
     const next = getAdjacentBox(boxes, cur, dir);

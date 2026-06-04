@@ -1,11 +1,11 @@
 /** Participant roles in a round. */
-export type Role = 'aff' | 'neg' | 'judge';
+export type Role = "aff" | "neg" | "judge";
 
 /** Competitive sides (excludes judge). */
-export type Side = 'aff' | 'neg';
+export type Side = "aff" | "neg";
 
 /** Status a debater can assign to an opponent's argument. */
-export type NodeStatus = 'conceded' | 'extended';
+export type NodeStatus = "conceded" | "extended";
 
 /** A single speech slot within a debate format. */
 export interface Speech {
@@ -47,11 +47,11 @@ export interface ArgumentNode {
 export interface Sheet {
   id: string;
   title: string;
-  group: 'aff' | 'neg';
+  group: "aff" | "neg";
   /** Display order among sheets. */
   order: number;
   /** Sheet variety. Absent / 'flow' = the normal argument grid. 'cx' = the cross-ex sheet. */
-  kind?: 'flow' | 'cx';
+  kind?: "flow" | "cx";
 }
 
 /** Live timer state for the current round. */
@@ -82,7 +82,7 @@ export interface Debater {
 
 /** Round result as recorded for scouting. */
 export interface Decision {
-  vote?: 'aff' | 'neg';
+  vote?: "aff" | "neg";
   rfd?: string;
 }
 

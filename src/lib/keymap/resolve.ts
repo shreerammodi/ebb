@@ -3,8 +3,8 @@
  * strings and resolving them against a keymap.
  */
 
-import type { CommandId } from '@/lib/commands/registry';
-import type { Chord, Keymap, Mode } from './types';
+import type { CommandId } from "@/lib/commands/registry";
+import type { Chord, Keymap, Mode } from "./types";
 
 interface KeyEventLike {
   key: string;
@@ -32,22 +32,18 @@ function isSinglePrintable(key: string): boolean {
 export function eventToChord(e: KeyEventLike): Chord {
   const printable = isSinglePrintable(e.key);
   const parts: string[] = [];
-  if (e.metaKey) parts.push('Meta');
-  if (e.ctrlKey) parts.push('Ctrl');
-  if (e.altKey) parts.push('Alt');
-  if (e.shiftKey && !printable) parts.push('Shift');
+  if (e.metaKey) parts.push("Meta");
+  if (e.ctrlKey) parts.push("Ctrl");
+  if (e.altKey) parts.push("Alt");
+  if (e.shiftKey && !printable) parts.push("Shift");
   parts.push(e.key);
-  return parts.join('+');
+  return parts.join("+");
 }
 
 /**
  * Returns the CommandId bound to this event in the given mode, or null.
  */
-export function resolveCommand(
-  keymap: Keymap,
-  mode: Mode,
-  e: KeyEventLike,
-): CommandId | null {
+export function resolveCommand(keymap: Keymap, mode: Mode, e: KeyEventLike): CommandId | null {
   const chord = eventToChord(e);
   return keymap.bindings[mode]?.[chord] ?? null;
 }

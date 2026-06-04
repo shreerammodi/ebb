@@ -1,29 +1,33 @@
-'use client';
+"use client";
 
-import { useRef } from 'react';
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import { readRoundFile } from '@/lib/persistence/io';
-import { Button } from '@/components/ui/button';
-import ExportMenu from './ExportMenu';
-import { teamCode } from '@/lib/model/teamCode';
+import { useRef } from "react";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import { readRoundFile } from "@/lib/persistence/io";
+import { Button } from "@/components/ui/button";
+import ExportMenu from "./ExportMenu";
+import { teamCode } from "@/lib/model/teamCode";
 
 export default function RoundHeader() {
-  const round = useRoundStore(s => s.round);
+  const round = useRoundStore((s) => s.round);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!round) return null;
 
   const { role, scouting } = round;
 
-  const affCode = teamCode(scouting.affSchool ?? '', scouting.aff.first, scouting.aff.second) || 'Aff';
-  const negCode = teamCode(scouting.negSchool ?? '', scouting.neg.first, scouting.neg.second) || 'Neg';
+  const affCode =
+    teamCode(scouting.affSchool ?? "", scouting.aff.first, scouting.aff.second) || "Aff";
+  const negCode =
+    teamCode(scouting.negSchool ?? "", scouting.neg.first, scouting.neg.second) || "Neg";
   const participants =
-    role === 'judge' ? `${affCode} (Aff) vs ${negCode} (Neg)`
-    : role === 'neg' ? `${negCode} vs ${affCode}`
-    : `${affCode} vs ${negCode}`;
+    role === "judge"
+      ? `${affCode} (Aff) vs ${negCode} (Neg)`
+      : role === "neg"
+        ? `${negCode} vs ${affCode}`
+        : `${affCode} vs ${negCode}`;
 
   function handleNewRound() {
-    useRoundStore.setState({ round: null, activeSheetId: null, selection: null, mode: 'normal' });
+    useRoundStore.setState({ round: null, activeSheetId: null, selection: null, mode: "normal" });
   }
 
   function handleImportClick() {
@@ -35,16 +39,21 @@ export default function RoundHeader() {
     if (!file) return;
     try {
       const imported = await readRoundFile(file);
-      useRoundStore.setState({ round: imported, activeSheetId: null, selection: null, mode: 'normal' });
+      useRoundStore.setState({
+        round: imported,
+        activeSheetId: null,
+        selection: null,
+        mode: "normal",
+      });
     } catch {
-      alert('Failed to import: file may be invalid or from an incompatible version.');
+      alert("Failed to import: file may be invalid or from an incompatible version.");
     }
-    e.target.value = '';
+    e.target.value = "";
   }
 
   return (
     <header
-      className="flex items-center justify-between h-12 px-4 bg-card border-b border-border flex-none"
+      className="flex h-12 flex-none items-center justify-between border-b border-border bg-card px-4"
       data-testid="round-header"
     >
       <span className="text-sm font-semibold text-zinc-900">{participants}</span>
@@ -58,9 +67,13 @@ export default function RoundHeader() {
           onChange={handleImportChange}
           data-testid="import-file-input"
         />
-        <Button variant="ghost" size="sm"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => useRoundStore.getState().setInfoOpen(true)}
-          aria-label="Round info" data-testid="info-btn">
+          aria-label="Round info"
+          data-testid="info-btn"
+        >
           Info
         </Button>
         <Button
@@ -73,20 +86,10 @@ export default function RoundHeader() {
           ⚙
         </Button>
         <ExportMenu />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleImportClick}
-          data-testid="import-btn"
-        >
+        <Button variant="outline" size="sm" onClick={handleImportClick} data-testid="import-btn">
           Import
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleNewRound}
-          data-testid="new-round-btn"
-        >
+        <Button variant="ghost" size="sm" onClick={handleNewRound} data-testid="new-round-btn">
           New round
         </Button>
       </div>

@@ -5,11 +5,21 @@
  * Zustand's shallow equality can detect changes reliably.
  */
 
-import { create } from 'zustand';
-import type { CommandId } from '@/lib/commands/registry';
-import type { Round, Sheet, ArgumentNode, Format, Role, Side, RoundMeta, NodeStatus, Scouting } from '@/lib/model/types';
-import { uid } from '@/lib/model/ids';
-import { emptyScouting, makeCxSheet } from '@/lib/model/normalize';
+import { create } from "zustand";
+import type { CommandId } from "@/lib/commands/registry";
+import type {
+  Round,
+  Sheet,
+  ArgumentNode,
+  Format,
+  Role,
+  Side,
+  RoundMeta,
+  NodeStatus,
+  Scouting,
+} from "@/lib/model/types";
+import { uid } from "@/lib/model/ids";
+import { emptyScouting, makeCxSheet } from "@/lib/model/normalize";
 import {
   addNode as treeAddNode,
   updateText,
@@ -17,8 +27,8 @@ import {
   setParent,
   removeNode as treeRemoveNode,
   moveNode as treeMoveNode,
-} from '@/lib/model/tree';
-import { detectDrops } from '@/lib/model/drops';
+} from "@/lib/model/tree";
+import { detectDrops } from "@/lib/model/drops";
 
 // ─── State shape ──────────────────────────────────────────────────────────────
 
@@ -29,9 +39,9 @@ export interface RoundState {
   /** Internal: identifies the last commit so consecutive same-key commits coalesce. */
   lastCommitKey: string | null;
   activeSheetId: string | null;
-  mode: 'normal' | 'insert';
+  mode: "normal" | "insert";
   selection: { sheetId: string; speechId: string; nodeId: string } | null;
-  keymapName: 'default' | 'vim';
+  keymapName: "default" | "vim";
   /** CommandId → custom chord (normal mode), overriding the preset binding. */
   keymapOverrides: Record<string, string>;
   autoNumber: boolean;
@@ -48,20 +58,26 @@ export interface RoundState {
 export interface RoundActions {
   createRound(input: { role: Role; format: Format; meta: RoundMeta }): void;
 
-  addSheet(input: { title: string; group: 'aff' | 'neg' }): string;
+  addSheet(input: { title: string; group: "aff" | "neg" }): string;
   renameSheet(sheetId: string, title: string): void;
   removeSheet(sheetId: string): void;
   reorderSheet(sheetId: string, newOrder: number): void;
   setActiveSheet(sheetId: string): void;
 
-  addNode(input: { sheetId: string; speechId: string; parentId: string | null; text?: string; insertAfterOrder?: number }): string;
+  addNode(input: {
+    sheetId: string;
+    speechId: string;
+    parentId: string | null;
+    text?: string;
+    insertAfterOrder?: number;
+  }): string;
   updateNodeText(nodeId: string, text: string): void;
   toggleNodeStatus(nodeId: string, status: NodeStatus): void;
   setNodeParent(nodeId: string, parentId: string | null): void;
   removeNode(nodeId: string): void;
   moveNode(nodeId: string, newOrder: number): void;
 
-  setMode(mode: 'normal' | 'insert'): void;
+  setMode(mode: "normal" | "insert"): void;
   setSelection(selection: { sheetId: string; speechId: string; nodeId: string } | null): void;
 
   undo(): void;
@@ -72,7 +88,7 @@ export interface RoundActions {
   /** Internal: drop selection/activeSheet if they point at something now gone. */
   _reconcileAfterHistory(): void;
 
-  setKeymapName(name: 'default' | 'vim'): void;
+  setKeymapName(name: "default" | "vim"): void;
   setKeymapOverride(commandId: CommandId, chord: string): void;
   clearKeymapOverride(commandId: CommandId): void;
   setAutoNumber(v: boolean): void;
@@ -96,24 +112,24 @@ export type RoundStore = RoundState & RoundActions;
 
 // ─── Keymap settings persistence ────────────────────────────────────────────
 
-const KEYMAP_SETTINGS_KEY = 'df-keymap-settings';
+const KEYMAP_SETTINGS_KEY = "df-keymap-settings";
 
 interface KeymapSettings {
-  keymapName: 'default' | 'vim';
+  keymapName: "default" | "vim";
   keymapOverrides: Record<string, string>;
 }
 
 /** Loads persisted keymap settings from localStorage (SSR-safe). */
 function loadKeymapSettings(): KeymapSettings {
-  const fallback: KeymapSettings = { keymapName: 'default', keymapOverrides: {} };
-  if (typeof window === 'undefined') return fallback;
+  const fallback: KeymapSettings = { keymapName: "default", keymapOverrides: {} };
+  if (typeof window === "undefined") return fallback;
   try {
     const raw = window.localStorage.getItem(KEYMAP_SETTINGS_KEY);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<KeymapSettings>;
-    const validPresets = ['default', 'vim'] as const;
-    const keymapName = validPresets.includes(parsed.keymapName as typeof validPresets[number])
-      ? (parsed.keymapName as typeof validPresets[number])
+    const validPresets = ["default", "vim"] as const;
+    const keymapName = validPresets.includes(parsed.keymapName as (typeof validPresets)[number])
+      ? (parsed.keymapName as (typeof validPresets)[number])
       : fallback.keymapName;
     return {
       keymapName,
@@ -126,7 +142,7 @@ function loadKeymapSettings(): KeymapSettings {
 
 /** Persists keymap settings to localStorage (SSR-safe; failures ignored). */
 function saveKeymapSettings(settings: KeymapSettings): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(KEYMAP_SETTINGS_KEY, JSON.stringify(settings));
   } catch {
@@ -136,27 +152,36 @@ function saveKeymapSettings(settings: KeymapSettings): void {
 
 // ─── Display settings persistence ───────────────────────────────────────────
 
-const DISPLAY_SETTINGS_KEY = 'df-display-settings';
+const DISPLAY_SETTINGS_KEY = "df-display-settings";
 
-interface DisplaySettings { autoNumber: boolean; labelDrops: boolean }
+interface DisplaySettings {
+  autoNumber: boolean;
+  labelDrops: boolean;
+}
 
 function loadDisplaySettings(): DisplaySettings {
   const fallback: DisplaySettings = { autoNumber: true, labelDrops: true };
-  if (typeof window === 'undefined') return fallback;
+  if (typeof window === "undefined") return fallback;
   try {
     const raw = window.localStorage.getItem(DISPLAY_SETTINGS_KEY);
     if (!raw) return fallback;
     const p = JSON.parse(raw) as Partial<DisplaySettings>;
     return {
-      autoNumber: typeof p.autoNumber === 'boolean' ? p.autoNumber : true,
-      labelDrops: typeof p.labelDrops === 'boolean' ? p.labelDrops : true,
+      autoNumber: typeof p.autoNumber === "boolean" ? p.autoNumber : true,
+      labelDrops: typeof p.labelDrops === "boolean" ? p.labelDrops : true,
     };
-  } catch { return fallback; }
+  } catch {
+    return fallback;
+  }
 }
 
 function saveDisplaySettings(s: DisplaySettings): void {
-  if (typeof window === 'undefined') return;
-  try { window.localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(s));
+  } catch {
+    /* ignore */
+  }
 }
 
 const initialDisplaySettings = loadDisplaySettings();
@@ -174,7 +199,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   future: [],
   lastCommitKey: null,
   activeSheetId: null,
-  mode: 'normal',
+  mode: "normal",
   selection: null,
   keymapName: initialKeymapSettings.keymapName,
   keymapOverrides: initialKeymapSettings.keymapOverrides,
@@ -190,7 +215,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   createRound({ role, format, meta }) {
     const now = Date.now();
     const round: Round = {
-      id: uid('round'),
+      id: uid("round"),
       createdAt: now,
       updatedAt: now,
       role,
@@ -216,7 +241,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       future: [],
       lastCommitKey: null,
       activeSheetId: null,
-      mode: 'normal',
+      mode: "normal",
       selection: null,
       quickSwitcherOpen: false,
       settingsOpen: false,
@@ -229,23 +254,20 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── addSheet ───────────────────────────────────────────────────────────────
   addSheet({ title, group }) {
     const { round, activeSheetId } = get();
-    if (!round) throw new Error('No active round');
+    if (!round) throw new Error("No active round");
 
-    const maxOrder =
-      round.sheets.length > 0
-        ? Math.max(...round.sheets.map(s => s.order))
-        : -1;
+    const maxOrder = round.sheets.length > 0 ? Math.max(...round.sheets.map((s) => s.order)) : -1;
 
     const sheet: Sheet = {
-      id: uid('sheet'),
+      id: uid("sheet"),
       title,
       group,
       order: maxOrder + 1,
-      kind: 'flow',
+      kind: "flow",
     };
 
-    const isFirstFlow = round.sheets.filter(s => s.kind !== 'cx').length === 0;
-    get()._commit(null, r => ({ ...r, sheets: [...r.sheets, sheet] }));
+    const isFirstFlow = round.sheets.filter((s) => s.kind !== "cx").length === 0;
+    get()._commit(null, (r) => ({ ...r, sheets: [...r.sheets, sheet] }));
     if (isFirstFlow) set({ activeSheetId: sheet.id });
 
     return sheet.id;
@@ -254,9 +276,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── renameSheet ────────────────────────────────────────────────────────────
   renameSheet(sheetId, title) {
     if (!get().round) return;
-    get()._commit(null, r => ({
+    get()._commit(null, (r) => ({
       ...r,
-      sheets: r.sheets.map(s => (s.id === sheetId ? { ...s, title } : s)),
+      sheets: r.sheets.map((s) => (s.id === sheetId ? { ...s, title } : s)),
     }));
   },
 
@@ -265,14 +287,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     const { round, activeSheetId, selection } = get();
     if (!round) return;
 
-    const remaining = round.sheets.filter(s => s.id !== sheetId);
-    get()._commit(null, r => ({
+    const remaining = round.sheets.filter((s) => s.id !== sheetId);
+    get()._commit(null, (r) => ({
       ...r,
       sheets: remaining,
-      nodes: r.nodes.filter(n => n.sheetId !== sheetId),
+      nodes: r.nodes.filter((n) => n.sheetId !== sheetId),
     }));
     if (activeSheetId === sheetId) {
-      const nextActive = remaining.find(s => s.kind !== 'cx') ?? remaining[0] ?? null;
+      const nextActive = remaining.find((s) => s.kind !== "cx") ?? remaining[0] ?? null;
       set({ activeSheetId: nextActive?.id ?? null });
     }
     if (selection?.sheetId === sheetId) set({ selection: null });
@@ -285,9 +307,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
    */
   reorderSheet(sheetId, newOrder) {
     if (!get().round) return;
-    get()._commit(null, r => ({
+    get()._commit(null, (r) => ({
       ...r,
-      sheets: r.sheets.map(s => (s.id === sheetId ? { ...s, order: newOrder } : s)),
+      sheets: r.sheets.map((s) => (s.id === sheetId ? { ...s, order: newOrder } : s)),
     }));
   },
 
@@ -299,43 +321,43 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── addNode ────────────────────────────────────────────────────────────────
   addNode(input) {
     const { round } = get();
-    if (!round) throw new Error('No active round');
+    if (!round) throw new Error("No active round");
 
     const { nodes, node } = treeAddNode(round.nodes, input);
-    get()._commit(null, r => ({ ...r, nodes }));
+    get()._commit(null, (r) => ({ ...r, nodes }));
     return node.id;
   },
 
   // ── updateNodeText ─────────────────────────────────────────────────────────
   updateNodeText(nodeId, text) {
     if (!get().round) return;
-    get()._commit(`text:${nodeId}`, r => ({ ...r, nodes: updateText(r.nodes, nodeId, text) }));
+    get()._commit(`text:${nodeId}`, (r) => ({ ...r, nodes: updateText(r.nodes, nodeId, text) }));
   },
 
   // ── toggleNodeStatus ───────────────────────────────────────────────────────
   toggleNodeStatus(nodeId, status) {
     if (!get().round) return;
-    get()._commit(null, r => ({ ...r, nodes: toggleStatus(r.nodes, nodeId, status) }));
+    get()._commit(null, (r) => ({ ...r, nodes: toggleStatus(r.nodes, nodeId, status) }));
   },
 
   // ── setNodeParent ──────────────────────────────────────────────────────────
   setNodeParent(nodeId, parentId) {
     if (!get().round) return;
-    get()._commit(null, r => ({ ...r, nodes: setParent(r.nodes, nodeId, parentId) }));
+    get()._commit(null, (r) => ({ ...r, nodes: setParent(r.nodes, nodeId, parentId) }));
   },
 
   // ── removeNode ─────────────────────────────────────────────────────────────
   removeNode(nodeId) {
     const { round, selection } = get();
     if (!round) return;
-    get()._commit(null, r => ({ ...r, nodes: treeRemoveNode(r.nodes, nodeId) }));
+    get()._commit(null, (r) => ({ ...r, nodes: treeRemoveNode(r.nodes, nodeId) }));
     if (selection?.nodeId === nodeId) set({ selection: null });
   },
 
   // ── moveNode ───────────────────────────────────────────────────────────────
   moveNode(nodeId, newOrder) {
     if (!get().round) return;
-    get()._commit(null, r => ({ ...r, nodes: treeMoveNode(r.nodes, nodeId, newOrder) }));
+    get()._commit(null, (r) => ({ ...r, nodes: treeMoveNode(r.nodes, nodeId, newOrder) }));
   },
 
   // ── setMode ────────────────────────────────────────────────────────────────
@@ -358,7 +380,12 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     const next = producer(round);
     const coalesce = coalesceKey !== null && coalesceKey === lastCommitKey;
     const newPast = coalesce ? past : [...past, round].slice(-UNDO_DEPTH);
-    set({ round: { ...next, updatedAt: Date.now() }, past: newPast, future: [], lastCommitKey: coalesceKey });
+    set({
+      round: { ...next, updatedAt: Date.now() },
+      past: newPast,
+      future: [],
+      lastCommitKey: coalesceKey,
+    });
   },
 
   undo() {
@@ -391,13 +418,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   _reconcileAfterHistory() {
     const { round, activeSheetId, selection } = get();
     if (!round) return;
-    const sheetExists = (id: string | null) => !!id && round.sheets.some(s => s.id === id);
+    const sheetExists = (id: string | null) => !!id && round.sheets.some((s) => s.id === id);
     const nextActive = sheetExists(activeSheetId)
       ? activeSheetId
-      : (round.sheets.find(s => s.kind !== 'cx')?.id ?? round.sheets[0]?.id ?? null);
-    const selValid = selection
-      && round.sheets.some(s => s.id === selection.sheetId)
-      && (selection.nodeId === '' || round.nodes.some(n => n.id === selection.nodeId));
+      : (round.sheets.find((s) => s.kind !== "cx")?.id ?? round.sheets[0]?.id ?? null);
+    const selValid =
+      selection &&
+      round.sheets.some((s) => s.id === selection.sheetId) &&
+      (selection.nodeId === "" || round.nodes.some((n) => n.id === selection.nodeId));
     set({ activeSheetId: nextActive, selection: selValid ? selection : null });
   },
 
@@ -462,14 +490,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setScouting ────────────────────────────────────────────────────────────
   setScouting(patch) {
     if (!get().round) return;
-    get()._commit('scouting', r => ({ ...r, scouting: { ...r.scouting, ...patch } }));
+    get()._commit("scouting", (r) => ({ ...r, scouting: { ...r.scouting, ...patch } }));
   },
 
   // ── startSpeech ────────────────────────────────────────────────────────────
   startSpeech(speechId) {
     const { round } = get();
     if (!round) return;
-    const speech = round.format.speeches.find(s => s.id === speechId);
+    const speech = round.format.speeches.find((s) => s.id === speechId);
     if (!speech) return;
     set({
       round: {
@@ -562,7 +590,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
 /** Returns all nodes belonging to the given sheet, or [] if round is null. */
 export function selectSheetNodes(round: Round | null, sheetId: string): ArgumentNode[] {
   if (!round) return [];
-  return round.nodes.filter(n => n.sheetId === sheetId);
+  return round.nodes.filter((n) => n.sheetId === sheetId);
 }
 
 /** Returns ids of dropped nodes on the given sheet, or [] if round is null. */
@@ -577,12 +605,7 @@ export function selectSheetDropCount(round: Round | null, sheetId: string): numb
 }
 
 /** Returns sheets belonging to a group, sorted ascending by order. */
-export function selectSheetsByGroup(
-  round: Round | null,
-  group: 'aff' | 'neg',
-): Sheet[] {
+export function selectSheetsByGroup(round: Round | null, group: "aff" | "neg"): Sheet[] {
   if (!round) return [];
-  return round.sheets
-    .filter(s => s.group === group)
-    .sort((a, b) => a.order - b.order);
+  return round.sheets.filter((s) => s.group === group).sort((a, b) => a.order - b.order);
 }

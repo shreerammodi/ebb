@@ -1,5 +1,5 @@
-import type { Round } from '@/lib/model/types';
-import { normalizeRound } from '@/lib/model/normalize';
+import type { Round } from "@/lib/model/types";
+import { normalizeRound } from "@/lib/model/normalize";
 
 // ─── Version ──────────────────────────────────────────────────────────────────
 
@@ -30,18 +30,18 @@ export function importRoundJSON(text: string): Round {
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error('Invalid JSON');
+    throw new Error("Invalid JSON");
   }
 
   // 2. Top-level shape: must be an object
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    throw new Error('Invalid round file');
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error("Invalid round file");
   }
   const envelope = parsed as Record<string, unknown>;
 
   // 3. Version must be a number
-  if (typeof envelope.version !== 'number') {
-    throw new Error('Invalid round file');
+  if (typeof envelope.version !== "number") {
+    throw new Error("Invalid round file");
   }
 
   // 4. Version must match FILE_VERSION
@@ -51,22 +51,25 @@ export function importRoundJSON(text: string): Round {
 
   // 5. round must be an object
   const round = envelope.round;
-  if (typeof round !== 'object' || round === null || Array.isArray(round)) {
-    throw new Error('Invalid round file');
+  if (typeof round !== "object" || round === null || Array.isArray(round)) {
+    throw new Error("Invalid round file");
   }
   const r = round as Record<string, unknown>;
 
   // 6. Required top-level fields
   if (
-    typeof r.id !== 'string' ||
-    typeof r.role !== 'string' ||
-    typeof r.format !== 'object' || r.format === null ||
+    typeof r.id !== "string" ||
+    typeof r.role !== "string" ||
+    typeof r.format !== "object" ||
+    r.format === null ||
     !Array.isArray(r.sheets) ||
     !Array.isArray(r.nodes) ||
-    typeof r.timers !== 'object' || r.timers === null ||
-    typeof r.meta !== 'object' || r.meta === null
+    typeof r.timers !== "object" ||
+    r.timers === null ||
+    typeof r.meta !== "object" ||
+    r.meta === null
   ) {
-    throw new Error('Invalid round file');
+    throw new Error("Invalid round file");
   }
 
   return normalizeRound(round as Round);
@@ -82,9 +85,9 @@ export function importRoundJSON(text: string): Round {
  */
 function formatDate(ts: number): string {
   const d = new Date(ts);
-  const yyyy = d.getFullYear().toString().padStart(4, '0');
-  const mm = (d.getMonth() + 1).toString().padStart(2, '0');
-  const dd = d.getDate().toString().padStart(2, '0');
+  const yyyy = d.getFullYear().toString().padStart(4, "0");
+  const mm = (d.getMonth() + 1).toString().padStart(2, "0");
+  const dd = d.getDate().toString().padStart(2, "0");
   return `${yyyy}${mm}${dd}`;
 }
 
@@ -93,7 +96,7 @@ function formatDate(ts: number): string {
  * Replaces anything that isn't alphanumeric, '-', or '_' with '-'.
  */
 function sanitizeSegment(s: string): string {
-  return s.replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
+  return s.replace(/[^a-z0-9_-]/gi, "-").toLowerCase();
 }
 
 /**
@@ -102,17 +105,17 @@ function sanitizeSegment(s: string): string {
  */
 export function downloadRoundFile(round: Round): void {
   const json = exportRoundJSON(round);
-  const blob = new Blob([json], { type: 'application/json' });
+  const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
 
   const date = formatDate(round.updatedAt ?? Date.now());
   const role = sanitizeSegment(round.role);
   const filename = `debate-flow-${role}-${date}.json`;
 
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
-  a.style.display = 'none';
+  a.style.display = "none";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -126,7 +129,7 @@ export function downloadRoundFile(round: Round): void {
 export async function readRoundFile(file: File): Promise<Round> {
   let text: string;
 
-  if (typeof file.text === 'function') {
+  if (typeof file.text === "function") {
     text = await file.text();
   } else {
     text = await new Promise<string>((resolve, reject) => {

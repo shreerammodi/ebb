@@ -1,7 +1,7 @@
 /** Filename + download helpers shared by the exporters. */
 
 function pad(n: number, width: number): string {
-  return n.toString().padStart(width, '0');
+  return n.toString().padStart(width, "0");
 }
 
 /** Compact date for filenames: YYYYMMDD (UTC). */
@@ -17,7 +17,7 @@ export function isoDate(ts: number): string {
 }
 
 function sanitize(s: string): string {
-  return s.replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
+  return s.replace(/[^a-z0-9_-]/gi, "-").toLowerCase();
 }
 
 /** e.g. debate-flow-aff-20260602.xlsx */
@@ -28,10 +28,10 @@ export function exportFilename(role: string, ts: number, ext: string): string {
 /** Trigger a browser download of a Blob. No-op safe outside the browser. */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
-  a.style.display = 'none';
+  a.style.display = "none";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

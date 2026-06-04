@@ -4,10 +4,10 @@
  * IMPORTANT: fake-indexeddb/auto MUST be imported first so it polyfills
  * the global indexedDB before Dexie is imported.
  */
-import 'fake-indexeddb/auto';
+import "fake-indexeddb/auto";
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { db } from './db';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { db } from "./db";
 import {
   persistRound,
   loadRound,
@@ -15,16 +15,16 @@ import {
   deleteRound,
   loadLastRound,
   attachAutosave,
-} from './autosave';
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import type { Round } from '@/lib/model/types';
+} from "./autosave";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import type { Round } from "@/lib/model/types";
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 
 /** Minimal format fixture. */
 const FORMAT = {
-  id: 'fmt_test',
-  name: 'Test Format',
+  id: "fmt_test",
+  name: "Test Format",
   speeches: [],
   prepSeconds: { aff: 240, neg: 240 },
 } as const;
@@ -35,7 +35,7 @@ function makeRound(overrides: Partial<Round> = {}): Round {
     id: `round_test_${Math.random().toString(36).slice(2, 7)}`,
     createdAt: now,
     updatedAt: now,
-    role: 'aff',
+    role: "aff",
     format: FORMAT,
     meta: {},
     sheets: [],
@@ -56,7 +56,7 @@ function resetStore() {
   useRoundStore.setState({
     round: null,
     activeSheetId: null,
-    mode: 'normal',
+    mode: "normal",
     selection: null,
   });
 }
@@ -71,24 +71,24 @@ beforeEach(async () => {
 
 // ─── persistRound / loadRound ─────────────────────────────────────────────────
 
-describe('persistRound + loadRound', () => {
-  it('round stored then loaded is deep-equal to original', async () => {
+describe("persistRound + loadRound", () => {
+  it("round stored then loaded is deep-equal to original", async () => {
     const round = makeRound();
     await persistRound(round);
     const loaded = await loadRound(round.id);
     expect(loaded).toEqual(round);
   });
 
-  it('loadRound returns undefined for non-existent id', async () => {
-    const result = await loadRound('nonexistent_id');
+  it("loadRound returns undefined for non-existent id", async () => {
+    const result = await loadRound("nonexistent_id");
     expect(result).toBeUndefined();
   });
 });
 
 // ─── listRounds ───────────────────────────────────────────────────────────────
 
-describe('listRounds', () => {
-  it('returns summaries sorted by updatedAt DESC (most recent first)', async () => {
+describe("listRounds", () => {
+  it("returns summaries sorted by updatedAt DESC (most recent first)", async () => {
     const older = makeRound({ updatedAt: 1000, createdAt: 1000 });
     const newer = makeRound({ updatedAt: 2000, createdAt: 1500 });
     await persistRound(older);
@@ -100,8 +100,8 @@ describe('listRounds', () => {
     expect(summaries[1].updatedAt).toBe(1000);
   });
 
-  it('summary contains required fields: id, updatedAt, createdAt, role', async () => {
-    const round = makeRound({ role: 'neg' });
+  it("summary contains required fields: id, updatedAt, createdAt, role", async () => {
+    const round = makeRound({ role: "neg" });
     await persistRound(round);
 
     const summaries = await listRounds();
@@ -109,10 +109,10 @@ describe('listRounds', () => {
     expect(s.id).toBe(round.id);
     expect(s.updatedAt).toBe(round.updatedAt);
     expect(s.createdAt).toBe(round.createdAt);
-    expect(s.role).toBe('neg');
+    expect(s.role).toBe("neg");
   });
 
-  it('returns empty array when no rounds', async () => {
+  it("returns empty array when no rounds", async () => {
     const summaries = await listRounds();
     expect(summaries).toEqual([]);
   });
@@ -120,8 +120,8 @@ describe('listRounds', () => {
 
 // ─── deleteRound ──────────────────────────────────────────────────────────────
 
-describe('deleteRound', () => {
-  it('deleted round is no longer retrievable via loadRound', async () => {
+describe("deleteRound", () => {
+  it("deleted round is no longer retrievable via loadRound", async () => {
     const round = makeRound();
     await persistRound(round);
     await deleteRound(round.id);
@@ -129,7 +129,7 @@ describe('deleteRound', () => {
     expect(loaded).toBeUndefined();
   });
 
-  it('does not affect other rounds', async () => {
+  it("does not affect other rounds", async () => {
     const a = makeRound();
     const b = makeRound();
     await persistRound(a);
@@ -142,13 +142,13 @@ describe('deleteRound', () => {
 
 // ─── loadLastRound ────────────────────────────────────────────────────────────
 
-describe('loadLastRound', () => {
-  it('returns undefined when no rounds exist', async () => {
+describe("loadLastRound", () => {
+  it("returns undefined when no rounds exist", async () => {
     const result = await loadLastRound();
     expect(result).toBeUndefined();
   });
 
-  it('returns the round with the highest updatedAt', async () => {
+  it("returns the round with the highest updatedAt", async () => {
     const older = makeRound({ updatedAt: 1000 });
     const newer = makeRound({ updatedAt: 3000 });
     const middle = makeRound({ updatedAt: 2000 });
@@ -163,17 +163,17 @@ describe('loadLastRound', () => {
 
 // ─── attachAutosave ───────────────────────────────────────────────────────────
 
-describe('attachAutosave', () => {
-  it('persists round after debounce fires following store mutation', async () => {
+describe("attachAutosave", () => {
+  it("persists round after debounce fires following store mutation", async () => {
     // Only fake setTimeout/clearTimeout — leave Promise/microtask machinery real
     // so Dexie's IndexedDB operations can still resolve.
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 
     const unsubscribe = attachAutosave(useRoundStore);
 
     // Create a round in the store
     useRoundStore.getState().createRound({
-      role: 'aff',
+      role: "aff",
       format: FORMAT,
       meta: {},
     });
@@ -181,7 +181,7 @@ describe('attachAutosave', () => {
     expect(round).not.toBeNull();
 
     // Trigger a mutation
-    useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
 
     // Advance timers past the debounce window (400ms)
     vi.advanceTimersByTime(500);
@@ -198,20 +198,20 @@ describe('attachAutosave', () => {
     vi.useRealTimers();
   });
 
-  it('unsubscribe flushes a pending save immediately', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  it("unsubscribe flushes a pending save immediately", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 
     const unsubscribe = attachAutosave(useRoundStore);
 
     useRoundStore.getState().createRound({
-      role: 'neg',
+      role: "neg",
       format: FORMAT,
       meta: {},
     });
     const round = useRoundStore.getState().round!;
 
     // Mutate but do NOT advance timers — pending save in buffer
-    useRoundStore.getState().addSheet({ title: 'Offcase', group: 'neg' });
+    useRoundStore.getState().addSheet({ title: "Offcase", group: "neg" });
 
     // Unsubscribe should flush the pending save immediately (no timer advance needed)
     unsubscribe();
@@ -226,8 +226,8 @@ describe('attachAutosave', () => {
     vi.useRealTimers();
   });
 
-  it('does not save when round is null', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  it("does not save when round is null", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 
     const unsubscribe = attachAutosave(useRoundStore);
 
@@ -235,7 +235,7 @@ describe('attachAutosave', () => {
     expect(useRoundStore.getState().round).toBeNull();
 
     // Trigger an unrelated store change
-    useRoundStore.setState({ mode: 'insert' });
+    useRoundStore.setState({ mode: "insert" });
 
     vi.advanceTimersByTime(500);
     await Promise.resolve();
@@ -248,19 +248,19 @@ describe('attachAutosave', () => {
     vi.useRealTimers();
   });
 
-  it('does not write a duplicate save if round has not changed since last save', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  it("does not write a duplicate save if round has not changed since last save", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 
     const unsubscribe = attachAutosave(useRoundStore);
 
     useRoundStore.getState().createRound({
-      role: 'aff',
+      role: "aff",
       format: FORMAT,
       meta: {},
     });
 
     // First mutation + flush
-    useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
     vi.advanceTimersByTime(500);
     await Promise.resolve();
     await Promise.resolve();
@@ -269,7 +269,7 @@ describe('attachAutosave', () => {
     expect(firstPersistedCount).toBe(1);
 
     // No further mutation — trigger an unrelated state update that doesn't change round
-    useRoundStore.setState({ mode: 'insert' });
+    useRoundStore.setState({ mode: "insert" });
     vi.advanceTimersByTime(500);
     await Promise.resolve();
     await Promise.resolve();

@@ -3,7 +3,7 @@
  * It is store-agnostic: `undo`/`redo` take an `apply` callback that applies a
  * bundle to the live state and returns that bundle's inverse.
  */
-import type { ActionBundle } from '@/lib/editor/action';
+import type { ActionBundle } from "@/lib/editor/action";
 
 export interface HistoryEntry {
   /** Bundle that reverts the recorded edit. */
@@ -39,7 +39,11 @@ export class History {
     const entry = this.past.pop();
     if (!entry) return null;
     const redoInverse = apply(entry.inverse);
-    this.future.push({ inverse: redoInverse, beforeFocus: entry.beforeFocus, afterFocus: entry.afterFocus });
+    this.future.push({
+      inverse: redoInverse,
+      beforeFocus: entry.beforeFocus,
+      afterFocus: entry.afterFocus,
+    });
     return entry.beforeFocus;
   }
 
@@ -48,7 +52,11 @@ export class History {
     const entry = this.future.pop();
     if (!entry) return null;
     const undoInverse = apply(entry.inverse);
-    this.past.push({ inverse: undoInverse, beforeFocus: entry.beforeFocus, afterFocus: entry.afterFocus });
+    this.past.push({
+      inverse: undoInverse,
+      beforeFocus: entry.beforeFocus,
+      afterFocus: entry.afterFocus,
+    });
     return entry.afterFocus;
   }
 

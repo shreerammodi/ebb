@@ -4,22 +4,22 @@
  * IMPORTANT: fake-indexeddb/auto MUST be imported first so it polyfills
  * the global indexedDB before Dexie is imported.
  */
-import 'fake-indexeddb/auto';
+import "fake-indexeddb/auto";
 
-import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import { db } from '@/lib/persistence/db';
-import { persistRound } from '@/lib/persistence/autosave';
-import AppRoot from './AppRoot';
-import type { Round } from '@/lib/model/types';
+import { beforeEach, describe, expect, it } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import { db } from "@/lib/persistence/db";
+import { persistRound } from "@/lib/persistence/autosave";
+import AppRoot from "./AppRoot";
+import type { Round } from "@/lib/model/types";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const FORMAT = {
-  id: 'fmt_test',
-  name: 'Test Format',
+  id: "fmt_test",
+  name: "Test Format",
   speeches: [],
   prepSeconds: { aff: 240, neg: 240 },
 } as const;
@@ -30,7 +30,7 @@ function makeRound(overrides: Partial<Round> = {}): Round {
     id: `round_test_${Math.random().toString(36).slice(2, 7)}`,
     createdAt: now,
     updatedAt: now,
-    role: 'aff',
+    role: "aff",
     format: FORMAT,
     meta: {},
     sheets: [],
@@ -53,7 +53,7 @@ beforeEach(async () => {
   useRoundStore.setState({
     round: null,
     activeSheetId: null,
-    mode: 'normal',
+    mode: "normal",
     selection: null,
     quickSwitcherOpen: false,
     settingsOpen: false,
@@ -62,19 +62,19 @@ beforeEach(async () => {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('AppRoot', () => {
-  it('shows RoundSetup when no round is stored', async () => {
+describe("AppRoot", () => {
+  it("shows RoundSetup when no round is stored", async () => {
     render(<AppRoot />);
 
     // Wait for the async loadLastRound to finish (loaded = true)
     await waitFor(() => {
-      expect(screen.getByTestId('round-setup-form')).toBeInTheDocument();
+      expect(screen.getByTestId("round-setup-form")).toBeInTheDocument();
     });
 
-    expect(screen.queryByTestId('workspace')).not.toBeInTheDocument();
+    expect(screen.queryByTestId("workspace")).not.toBeInTheDocument();
   });
 
-  it('shows Workspace when a round is stored in IndexedDB', async () => {
+  it("shows Workspace when a round is stored in IndexedDB", async () => {
     const round = makeRound();
     await persistRound(round);
 
@@ -82,29 +82,29 @@ describe('AppRoot', () => {
 
     // AppRoot loads the round from IndexedDB and renders Workspace
     await waitFor(() => {
-      expect(screen.getByTestId('workspace')).toBeInTheDocument();
+      expect(screen.getByTestId("workspace")).toBeInTheDocument();
     });
 
-    expect(screen.queryByTestId('round-setup-form')).not.toBeInTheDocument();
+    expect(screen.queryByTestId("round-setup-form")).not.toBeInTheDocument();
   });
 
-  it('shows Workspace after createRound is called in the store', async () => {
+  it("shows Workspace after createRound is called in the store", async () => {
     render(<AppRoot />);
 
     // Initially shows RoundSetup (no stored round)
     await waitFor(() => {
-      expect(screen.getByTestId('round-setup-form')).toBeInTheDocument();
+      expect(screen.getByTestId("round-setup-form")).toBeInTheDocument();
     });
 
     // Simulate a round being created (as RoundSetup would do)
     useRoundStore.getState().createRound({
-      role: 'aff',
+      role: "aff",
       format: FORMAT,
       meta: {},
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('workspace')).toBeInTheDocument();
+      expect(screen.getByTestId("workspace")).toBeInTheDocument();
     });
   });
 
@@ -115,17 +115,17 @@ describe('AppRoot', () => {
     render(<AppRoot />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('workspace')).toBeInTheDocument();
+      expect(screen.getByTestId("workspace")).toBeInTheDocument();
     });
 
     // Click "New round" button in RoundHeader
-    const newRoundBtn = screen.getByTestId('new-round-btn');
+    const newRoundBtn = screen.getByTestId("new-round-btn");
     await userEvent.click(newRoundBtn);
 
     await waitFor(() => {
-      expect(screen.getByTestId('round-setup-form')).toBeInTheDocument();
+      expect(screen.getByTestId("round-setup-form")).toBeInTheDocument();
     });
 
-    expect(screen.queryByTestId('workspace')).not.toBeInTheDocument();
+    expect(screen.queryByTestId("workspace")).not.toBeInTheDocument();
   });
 });

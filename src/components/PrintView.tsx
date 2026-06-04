@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * PrintView — renders all sheets as static read-only grids for printing.
@@ -10,11 +10,11 @@
  * shows via .print-only.
  */
 
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import FlowGrid from './FlowGrid';
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import FlowGrid from "./FlowGrid";
 
 export default function PrintView() {
-  const round = useRoundStore(s => s.round);
+  const round = useRoundStore((s) => s.round);
 
   if (!round) return null;
 
@@ -22,7 +22,7 @@ export default function PrintView() {
 
   return (
     <div className="print-only" data-testid="print-view" style={styles.container}>
-      {sheets.map(sheet => (
+      {sheets.map((sheet) => (
         <div key={sheet.id} style={styles.sheet}>
           <h2 style={styles.sheetTitle} data-testid={`print-sheet-title-${sheet.id}`}>
             {sheet.title}
@@ -38,21 +38,21 @@ export default function PrintView() {
 
 const styles = {
   container: {
-    padding:    '16px',
-    background: 'white',
-    color:      'black',
+    padding: "16px",
+    background: "white",
+    color: "black",
   } as React.CSSProperties,
 
   sheet: {
-    marginBottom:  '32px',
-    pageBreakAfter: 'auto',
+    marginBottom: "32px",
+    pageBreakAfter: "auto",
   } as React.CSSProperties,
 
   sheetTitle: {
-    fontSize:     '16px',
-    fontWeight:   700,
-    marginBottom: '8px',
-    marginTop:    0,
-    color:        'black',
+    fontSize: "16px",
+    fontWeight: 700,
+    marginBottom: "8px",
+    marginTop: 0,
+    color: "black",
   } as React.CSSProperties,
 } as const;

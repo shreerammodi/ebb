@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * FlowGrid — elastic debate flow table for a single sheet.
@@ -13,11 +13,11 @@
  * by tests and would collapse gracefully into separate rows.
  */
 
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import { detectDrops } from '@/lib/model/drops';
-import { CX_COLUMNS } from '@/lib/model/cxColumns';
-import GridCell from './GridCell';
-import { buildLayout, type PlacedNode } from '@/lib/grid/layout';
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import { detectDrops } from "@/lib/model/drops";
+import { CX_COLUMNS } from "@/lib/model/cxColumns";
+import GridCell from "./GridCell";
+import { buildLayout, type PlacedNode } from "@/lib/grid/layout";
 
 // ─── FlowGrid component ───────────────────────────────────────────────────────
 
@@ -27,20 +27,20 @@ export interface FlowGridProps {
 
 export default function FlowGrid({ sheetId }: FlowGridProps) {
   // Narrow store subscriptions to avoid re-renders on timer ticks
-  const nodes = useRoundStore(s => s.round?.nodes ?? []);
-  const format = useRoundStore(s => s.round?.format ?? null);
-  const selection = useRoundStore(s => s.selection);
-  const setSelection = useRoundStore(s => s.setSelection);
+  const nodes = useRoundStore((s) => s.round?.nodes ?? []);
+  const format = useRoundStore((s) => s.round?.format ?? null);
+  const selection = useRoundStore((s) => s.selection);
+  const setSelection = useRoundStore((s) => s.setSelection);
 
-  const sheets = useRoundStore(s => s.round?.sheets ?? []);
-  const sheet = sheets.find(s => s.id === sheetId);
-  const isCx = sheet?.kind === 'cx';
+  const sheets = useRoundStore((s) => s.round?.sheets ?? []);
+  const sheet = sheets.find((s) => s.id === sheetId);
+  const isCx = sheet?.kind === "cx";
 
   if (!format) return null;
 
   const speeches = isCx ? CX_COLUMNS : format.speeches;
 
-  const sheetNodes = nodes.filter(n => n.sheetId === sheetId);
+  const sheetNodes = nodes.filter((n) => n.sheetId === sheetId);
   const droppedIds = isCx ? new Set<string>() : new Set(detectDrops(nodes, format, sheetId));
 
   // ── Compute group header info ──────────────────────────────────────────────
@@ -49,7 +49,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
   interface TopCell {
     label: string;
     span: number;
-    side: 'aff' | 'neg' | null;
+    side: "aff" | "neg" | null;
   }
   const topCells: TopCell[] = [];
   let i = 0;
@@ -66,7 +66,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
       i = j;
       hasGroups = true;
     } else {
-      topCells.push({ label: '', span: 1, side: null });
+      topCells.push({ label: "", span: 1, side: null });
       i++;
     }
   }
@@ -75,11 +75,11 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
   const { placed, totalRows } = buildLayout(sheetNodes, speeches);
 
   // Build lookup: (row, col) → PlacedNode or 'covered' or undefined
-  const cellMap = new Map<string, PlacedNode | 'covered'>();
+  const cellMap = new Map<string, PlacedNode | "covered">();
   for (const p of placed) {
     cellMap.set(`${p.startRow},${p.col}`, p);
     for (let r = p.startRow + 1; r < p.startRow + p.rowSpan; r++) {
-      cellMap.set(`${r},${p.col}`, 'covered');
+      cellMap.set(`${r},${p.col}`, "covered");
     }
   }
 
@@ -101,7 +101,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                 <th
                   key={idx}
                   colSpan={cell.span}
-                  className={cell.side === 'aff' ? 'side-aff' : 'side-neg'}
+                  className={cell.side === "aff" ? "side-aff" : "side-neg"}
                 >
                   {cell.label}
                 </th>
@@ -112,11 +112,8 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
           </tr>
         )}
         <tr>
-          {speeches.map(speech => (
-            <th
-              key={speech.id}
-              className={speech.side === 'aff' ? 'side-aff' : 'side-neg'}
-            >
+          {speeches.map((speech) => (
+            <th key={speech.id} className={speech.side === "aff" ? "side-aff" : "side-neg"}>
               {speech.name}
             </th>
           ))}
@@ -128,12 +125,12 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
             {speeches.map((speech, col) => {
               const entry = cellMap.get(`${row},${col}`);
 
-              if (entry === 'covered') {
+              if (entry === "covered") {
                 // This cell is covered by a rowspan above — skip rendering it
                 return null;
               }
 
-              const sideClass = speech.side === 'aff' ? 'side-aff' : 'side-neg';
+              const sideClass = speech.side === "aff" ? "side-aff" : "side-neg";
 
               if (entry) {
                 // Render a node cell
@@ -146,11 +143,11 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
 
                 const classes = [
                   sideClass,
-                  isDropped ? 'cell-drop' : '',
-                  isSelected ? 'cell-sel' : '',
+                  isDropped ? "cell-drop" : "",
+                  isSelected ? "cell-sel" : "",
                 ]
                   .filter(Boolean)
-                  .join(' ');
+                  .join(" ");
 
                 return (
                   <td key={col} rowSpan={rowSpan} className={classes}>
@@ -178,23 +175,21 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
               const isSelected =
                 selection?.sheetId === sheetId &&
                 selection?.speechId === speech.id &&
-                selection?.nodeId === '';
+                selection?.nodeId === "";
 
               const classes = [
                 sideClass,
-                isAccessible ? '' : 'cell-void',
-                isSelected ? 'cell-sel' : '',
+                isAccessible ? "" : "cell-void",
+                isSelected ? "cell-sel" : "",
               ]
                 .filter(Boolean)
-                .join(' ');
+                .join(" ");
 
               return (
                 <td
                   key={col}
                   className={classes}
-                  onClick={() =>
-                    setSelection({ sheetId, speechId: speech.id, nodeId: '' })
-                  }
+                  onClick={() => setSelection({ sheetId, speechId: speech.id, nodeId: "" })}
                 >
                   <span className="cell-empty" />
                 </td>

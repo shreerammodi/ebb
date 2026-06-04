@@ -5,18 +5,22 @@
  * their template column style, and bold/strike ride on inline runs.
  */
 
-import type { ExportSheet } from './cells';
-import { templateColumn, colLetter } from './columns';
+import type { ExportSheet } from "./cells";
+import { templateColumn, colLetter } from "./columns";
 
 export function escXml(s: string): string {
   return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
-interface CellText { text: string; crossed: boolean; extended: boolean }
+interface CellText {
+  text: string;
+  crossed: boolean;
+  extended: boolean;
+}
 
 /**
  * Parse <col> elements into a 0-indexed column → style-index map.
@@ -29,9 +33,9 @@ export function parseColStyles(sheetXml: string): Map<number, number> {
   let m;
   while ((m = re.exec(sheetXml)) !== null) {
     const el = m[0];
-    const min = parseInt(el.match(/\bmin="(\d+)"/)?.[1] ?? '1');
-    const max = Math.min(parseInt(el.match(/\bmax="(\d+)"/)?.[1] ?? '1'), 26);
-    const style = parseInt(el.match(/\bstyle="(\d+)"/)?.[1] ?? '0');
+    const min = parseInt(el.match(/\bmin="(\d+)"/)?.[1] ?? "1");
+    const max = Math.min(parseInt(el.match(/\bmax="(\d+)"/)?.[1] ?? "1"), 26);
+    const style = parseInt(el.match(/\bstyle="(\d+)"/)?.[1] ?? "0");
     if (!isNaN(style)) {
       for (let c = min; c <= max; c++) {
         map.set(c - 1, style); // convert to 0-indexed
@@ -45,9 +49,9 @@ export function parseColStyles(sheetXml: string): Map<number, number> {
  *  style is the column's xf style index from styles.xml — preserves template background/borders.
  */
 export function inlineCell(ref: string, cell: CellText, style?: number): string {
-  const text = escXml((cell.extended ? '→ ' : '') + cell.text);
-  const rPr = cell.crossed ? '<rPr><strike/></rPr>' : '';
-  const sAttr = style !== undefined ? ` s="${style}"` : '';
+  const text = escXml((cell.extended ? "→ " : "") + cell.text);
+  const rPr = cell.crossed ? "<rPr><strike/></rPr>" : "";
+  const sAttr = style !== undefined ? ` s="${style}"` : "";
   return `<c r="${ref}"${sAttr} t="inlineStr"><is><r>${rPr}<t xml:space="preserve">${text}</t></r></is></c>`;
 }
 
@@ -57,12 +61,12 @@ export function buildBodyRow(
   byCol: Map<number, CellText>,
   colStyles?: Map<number, number>,
 ): string {
-  let cells = '';
+  let cells = "";
   const sorted = [...byCol.keys()].sort((a, b) => a - b);
   for (const col of sorted) {
     cells += inlineCell(colLetter(col) + rowNum, byCol.get(col)!, colStyles?.get(col));
   }
-  return cells ? `<row r="${rowNum}">${cells}</row>` : '';
+  return cells ? `<row r="${rowNum}">${cells}</row>` : "";
 }
 
 /**
@@ -75,17 +79,14 @@ export function setCellInline(xml: string, ref: string, value: string): string {
   // Self-closing cell (most empty template cells).
   const selfClose = new RegExp(`<c r="${ref}"([^>]*?)/>`);
   if (selfClose.test(xml)) {
-    return xml.replace(
-      selfClose,
-      `<c r="${ref}"$1 t="inlineStr">${inline}</c>`,
-    );
+    return xml.replace(selfClose, `<c r="${ref}"$1 t="inlineStr">${inline}</c>`);
   }
   // Cell with existing content (shared strings, formulas, etc.) — replace everything
   // between the opening and closing tags, strip t/cm/vm attrs from the opening tag.
   const withContent = new RegExp(`<c r="${ref}"([^>]*)>(?:.|\\n)*?<\\/c>`);
   return xml.replace(withContent, (_, attrs) => {
     // Strip t="...", cm="...", vm="..." attribute since we're changing to inlineStr.
-    const cleanAttrs = attrs.replace(/\s+(?:t|cm|vm)="[^"]*"/g, '');
+    const cleanAttrs = attrs.replace(/\s+(?:t|cm|vm)="[^"]*"/g, "");
     return `<c r="${ref}"${cleanAttrs} t="inlineStr">${inline}</c>`;
   });
 }
@@ -111,60 +112,77 @@ export function buildFlowSheetXml(templateXml: string, es: ExportSheet): string 
     if (tcol < 0) continue;
     const excelRow = cell.row + 3; // rows 1–2 are title + headers
     if (!byRow.has(excelRow)) byRow.set(excelRow, new Map());
-    byRow.get(excelRow)!.set(tcol, { text: cell.text, crossed: cell.crossed, extended: cell.extended });
+    byRow
+      .get(excelRow)!
+      .set(tcol, { text: cell.text, crossed: cell.crossed, extended: cell.extended });
     if (excelRow > maxRow) maxRow = excelRow;
   }
 
   // Pull template rows 1 and 2 out of the original sheetData.
-  const sheetData = templateXml.match(/<sheetData>[\s\S]*?<\/sheetData>/)?.[0] ?? '<sheetData></sheetData>';
-  const row1 = sheetData.match(/<row r="1"[\s\S]*?<\/row>/)?.[0] ?? '';
-  const row2 = sheetData.match(/<row r="2"[\s\S]*?<\/row>/)?.[0] ?? '';
-  const titledRow1 = setCellInline(row1, 'A1', es.sheet.title);
+  const sheetData =
+    templateXml.match(/<sheetData>[\s\S]*?<\/sheetData>/)?.[0] ?? "<sheetData></sheetData>";
+  const row1 = sheetData.match(/<row r="1"[\s\S]*?<\/row>/)?.[0] ?? "";
+  const row2 = sheetData.match(/<row r="2"[\s\S]*?<\/row>/)?.[0] ?? "";
+  const titledRow1 = setCellInline(row1, "A1", es.sheet.title);
 
   // Generate body rows in order, with column style applied to each cell.
-  let body = '';
+  let body = "";
   for (const rowNum of [...byRow.keys()].sort((a, b) => a - b)) {
     body += buildBodyRow(rowNum, byRow.get(rowNum)!, colStyles);
   }
 
-  const lastCol = side === 'aff' ? 'G' : 'F';
+  const lastCol = side === "aff" ? "G" : "F";
   return templateXml
-    .replace(/ codeName="[^"]*"/, '')
-    .replace(/ xr:uid="[^"]*"/, '')   // strip duplicate UID — Excel flags two sheets sharing a revision UID as corrupt
+    .replace(/ codeName="[^"]*"/, "")
+    .replace(/ xr:uid="[^"]*"/, "") // strip duplicate UID — Excel flags two sheets sharing a revision UID as corrupt
     .replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:${lastCol}${maxRow}"/>`)
-    .replace(/<sheetData>[\s\S]*?<\/sheetData>/, `<sheetData>${titledRow1}${row2}${body}</sheetData>`);
+    .replace(
+      /<sheetData>[\s\S]*?<\/sheetData>/,
+      `<sheetData>${titledRow1}${row2}${body}</sheetData>`,
+    );
 }
 
-export interface NewSheet { name: string; sheetId: number; rid: string; partName: string }
+export interface NewSheet {
+  name: string;
+  sheetId: number;
+  rid: string;
+  partName: string;
+}
 
 /** Insert the new <sheet> entries into workbook.xml just before </sheets>. */
 export function registerSheetsInWorkbook(workbookXml: string, sheets: NewSheet[]): string {
   const entries = sheets
-    .map(s => `<sheet name="${escXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rid}"/>`)
-    .join('');
-  return workbookXml.replace('</sheets>', `${entries}</sheets>`);
+    .map((s) => `<sheet name="${escXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rid}"/>`)
+    .join("");
+  return workbookXml.replace("</sheets>", `${entries}</sheets>`);
 }
 
 /** Add worksheet relationships before </Relationships>. */
 export function registerSheetsInRels(relsXml: string, sheets: NewSheet[]): string {
   const entries = sheets
-    .map(s => `<Relationship Id="${s.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/${s.partName}"/>`)
-    .join('');
-  return relsXml.replace('</Relationships>', `${entries}</Relationships>`);
+    .map(
+      (s) =>
+        `<Relationship Id="${s.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/${s.partName}"/>`,
+    )
+    .join("");
+  return relsXml.replace("</Relationships>", `${entries}</Relationships>`);
 }
 
 /** Remove the calcChain relationship so it matches the deleted calcChain.xml part. */
 export function removeCalcChainFromRels(relsXml: string): string {
-  return relsXml.replace(/<Relationship[^>]*calcChain[^>]*\/>/, '');
+  return relsXml.replace(/<Relationship[^>]*calcChain[^>]*\/>/, "");
 }
 
 /** Add worksheet content-type overrides and drop the calcChain override. */
 export function registerSheetsInContentTypes(ctXml: string, sheets: NewSheet[]): string {
   const entries = sheets
-    .map(s => `<Override PartName="/xl/worksheets/${s.partName}" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`)
-    .join('');
-  let out = ctXml.replace('</Types>', `${entries}</Types>`);
-  out = out.replace(/<Override PartName="\/xl\/calcChain\.xml"[^>]*\/>/, '');
+    .map(
+      (s) =>
+        `<Override PartName="/xl/worksheets/${s.partName}" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`,
+    )
+    .join("");
+  let out = ctXml.replace("</Types>", `${entries}</Types>`);
+  out = out.replace(/<Override PartName="\/xl\/calcChain\.xml"[^>]*\/>/, "");
   return out;
 }
 
@@ -174,4 +192,3 @@ export const registerSheets = {
   rels: registerSheetsInRels,
   contentTypes: registerSheetsInContentTypes,
 };
-

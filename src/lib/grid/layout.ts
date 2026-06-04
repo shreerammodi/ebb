@@ -5,7 +5,7 @@
  * ASSUMPTION: responses always live in a LATER column than their parent.
  */
 
-import type { ArgumentNode, Speech } from '@/lib/model/types';
+import type { ArgumentNode, Speech } from "@/lib/model/types";
 
 export interface PlacedNode {
   node: ArgumentNode;
@@ -26,7 +26,7 @@ export function buildLayout(
   const colIndex = new Map<string, number>(speeches.map((s, i) => [s.id, i]));
 
   // M3: filter out nodes whose speechId doesn't exist in the format
-  const validNodes = nodes.filter(n => colIndex.has(n.speechId));
+  const validNodes = nodes.filter((n) => colIndex.has(n.speechId));
 
   // Build children map
   const childrenByParent = new Map<string | null, ArgumentNode[]>();
@@ -55,7 +55,8 @@ export function buildLayout(
     if (visiting.has(node.id)) return 1;
     visiting.add(node.id);
     const children = childrenByParent.get(node.id) ?? [];
-    const count = children.length === 0 ? 1 : children.reduce((s, c) => s + leafCount(c, visiting), 0);
+    const count =
+      children.length === 0 ? 1 : children.reduce((s, c) => s + leafCount(c, visiting), 0);
     visiting.delete(node.id);
     leafCountCache.set(node.id, count);
     return count;

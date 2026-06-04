@@ -1,4 +1,4 @@
-import AppRoot from '@/components/AppRoot';
+import AppRoot from "@/components/AppRoot";
 
 export default function Home() {
   return <AppRoot />;

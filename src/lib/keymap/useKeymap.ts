@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import { executeCommand } from '@/lib/commands/commands';
-import { effectiveKeymap as computeEffectiveKeymap } from './effective';
-import { resolveCommand, eventToChord } from './resolve';
+import { useEffect } from "react";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import { executeCommand } from "@/lib/commands/commands";
+import { effectiveKeymap as computeEffectiveKeymap } from "./effective";
+import { resolveCommand, eventToChord } from "./resolve";
 
 /** Returns the keymap currently in effect: preset merged with user overrides. */
 export function effectiveKeymap() {
@@ -15,7 +15,7 @@ export function effectiveKeymap() {
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
+  if (tag === "INPUT" || tag === "TEXTAREA") return true;
   if (target.isContentEditable) return true;
   return false;
 }
@@ -33,23 +33,36 @@ export function useKeymap(): void {
       if (editable) {
         pendingPrefix = null;
         const { keymapName } = useRoundStore.getState();
-        if (keymapName === 'default') {
+        if (keymapName === "default") {
           // Allow arrow-key navigation and modifier chords (Meta+k etc.) through.
           // Everything else is regular typing and should not be intercepted.
-          const isNavKey = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Enter'].includes(e.key);
+          const isNavKey = [
+            "ArrowLeft",
+            "ArrowRight",
+            "ArrowUp",
+            "ArrowDown",
+            "Tab",
+            "Enter",
+          ].includes(e.key);
           const isModifierChord = e.metaKey || e.ctrlKey || e.altKey;
           if (!isNavKey && !isModifierChord) return;
         } else {
           // Vim: only allow Escape (edit.exit) through.
-          if (e.key !== 'Escape') return;
+          if (e.key !== "Escape") return;
         }
       }
 
-      const chord = eventToChord({ key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey });
+      const chord = eventToChord({
+        key: e.key,
+        metaKey: e.metaKey,
+        ctrlKey: e.ctrlKey,
+        altKey: e.altKey,
+        shiftKey: e.shiftKey,
+      });
       // Default keymap is always-insert: navigation bindings only exist in 'normal'.
       // Using the raw `mode` here would silently drop all commands when mode='insert'.
       const { keymapName } = useRoundStore.getState();
-      const effectiveMode = keymapName === 'default' ? 'normal' : mode;
+      const effectiveMode = keymapName === "default" ? "normal" : mode;
       const modeBindings = keymap.bindings[effectiveMode] ?? {};
 
       // ── Two-key chord resolution ─────────────────────────────────────────────
@@ -66,7 +79,7 @@ export function useKeymap(): void {
       }
 
       // Check whether this chord is a valid prefix for any two-key sequence.
-      const isPrefix = Object.keys(modeBindings).some(k => k.startsWith(`${chord} `));
+      const isPrefix = Object.keys(modeBindings).some((k) => k.startsWith(`${chord} `));
       if (isPrefix) {
         pendingPrefix = chord;
         e.preventDefault();
@@ -91,9 +104,9 @@ export function useKeymap(): void {
       executeCommand(commandId);
     }
 
-    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener("keydown", onKeyDown);
       pendingPrefix = null; // clear on unmount
     };
   }, []);

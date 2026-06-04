@@ -1,44 +1,57 @@
 # Aff/Neg Sheets & Rename Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development
+> (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use
+> checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rename sidebar groups from Case/Off-case to Aff/Neg with dedicated `Meta+a`/`Meta+n` creation hotkeys, and add inline sheet renaming via double-click or `Meta+r` / vim `g r`.
+**Goal:** Rename sidebar groups from Case/Off-case to Aff/Neg with dedicated `Meta+a`/`Meta+n`
+creation hotkeys, and add inline sheet renaming via double-click or `Meta+r` / vim `g r`.
 
-**Architecture:** Three coordinated layers: (1) `Sheet.group` type rename `'case'|'offcase'` → `'aff'|'neg'` with IndexedDB v2 migration; (2) new commands `sheet.newAff`, `sheet.newNeg`, `sheet.rename` replacing `sheet.new`, wired into keymaps; (3) Sidebar UI with two-button footer and `SheetRow` inline rename input, plus a two-key chord accumulator in `useKeymap`.
+**Architecture:** Three coordinated layers: (1) `Sheet.group` type rename `'case'|'offcase'` →
+`'aff'|'neg'` with IndexedDB v2 migration; (2) new commands `sheet.newAff`, `sheet.newNeg`,
+`sheet.rename` replacing `sheet.new`, wired into keymaps; (3) Sidebar UI with two-button footer and
+`SheetRow` inline rename input, plus a two-key chord accumulator in `useKeymap`.
 
-**Tech Stack:** TypeScript, React, Zustand, Dexie/IndexedDB, Vitest + Testing Library, fake-indexeddb
+**Tech Stack:** TypeScript, React, Zustand, Dexie/IndexedDB, Vitest + Testing Library,
+fake-indexeddb
 
 ---
 
 ## File Map
 
-| File | Change |
-|---|---|
-| `src/lib/model/types.ts` | `Sheet.group` literal type `'case'\|'offcase'` → `'aff'\|'neg'` |
-| `src/lib/store/useRoundStore.ts` | `addSheet` + `selectSheetsByGroup` signatures; add `renamingSheetId: string\|null` state + `setRenamingSheet` action |
-| `src/lib/persistence/db.ts` | Add `version(2).upgrade()` migrating `case→aff`, `offcase→neg` in every stored round |
-| `src/lib/commands/registry.ts` | Remove `sheet.new`; add `sheet.newAff`, `sheet.newNeg`, `sheet.rename` |
-| `src/lib/commands/commands.ts` | Remove `sheet.new` case; add `sheet.newAff`, `sheet.newNeg`, `sheet.rename` cases |
-| `src/lib/keymap/presets.ts` | COMMON\_NORMAL: replace `Meta+n→sheet.new` with `Meta+n→sheet.newNeg`; add `Meta+a→sheet.newAff`, `Meta+r→sheet.rename`; VIM\_KEYMAP normal: add `'g r'→sheet.rename` |
-| `src/lib/keymap/useKeymap.ts` | Add module-level `pendingPrefix` accumulator; handle two-key chord sequences |
-| `src/components/Sidebar.tsx` | `GroupConfig` type + GROUPS config; two-button `+ Aff`/`+ Neg` footer; `SheetRow` inline rename input |
-| `src/components/RoundSetup.tsx` | Bootstrap sheet `group: 'aff'` (was `'case'`) |
-| `src/components/KeybindingsCheatsheet.tsx` | Replace `sheet.new` row with `sheet.newAff`, `sheet.newNeg`, `sheet.rename` |
-| **All test files** | Bulk replace `group: 'case'` → `group: 'aff'`, `group: 'offcase'` → `group: 'neg'`, `'offcase'` selectors → `'neg'` |
+| File                                       | Change                                                                                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/model/types.ts`                   | `Sheet.group` literal type `'case'\|'offcase'` → `'aff'\|'neg'`                                                                                                     |
+| `src/lib/store/useRoundStore.ts`           | `addSheet` + `selectSheetsByGroup` signatures; add `renamingSheetId: string\|null` state + `setRenamingSheet` action                                                |
+| `src/lib/persistence/db.ts`                | Add `version(2).upgrade()` migrating `case→aff`, `offcase→neg` in every stored round                                                                                |
+| `src/lib/commands/registry.ts`             | Remove `sheet.new`; add `sheet.newAff`, `sheet.newNeg`, `sheet.rename`                                                                                              |
+| `src/lib/commands/commands.ts`             | Remove `sheet.new` case; add `sheet.newAff`, `sheet.newNeg`, `sheet.rename` cases                                                                                   |
+| `src/lib/keymap/presets.ts`                | COMMON_NORMAL: replace `Meta+n→sheet.new` with `Meta+n→sheet.newNeg`; add `Meta+a→sheet.newAff`, `Meta+r→sheet.rename`; VIM_KEYMAP normal: add `'g r'→sheet.rename` |
+| `src/lib/keymap/useKeymap.ts`              | Add module-level `pendingPrefix` accumulator; handle two-key chord sequences                                                                                        |
+| `src/components/Sidebar.tsx`               | `GroupConfig` type + GROUPS config; two-button `+ Aff`/`+ Neg` footer; `SheetRow` inline rename input                                                               |
+| `src/components/RoundSetup.tsx`            | Bootstrap sheet `group: 'aff'` (was `'case'`)                                                                                                                       |
+| `src/components/KeybindingsCheatsheet.tsx` | Replace `sheet.new` row with `sheet.newAff`, `sheet.newNeg`, `sheet.rename`                                                                                         |
+| **All test files**                         | Bulk replace `group: 'case'` → `group: 'aff'`, `group: 'offcase'` → `group: 'neg'`, `'offcase'` selectors → `'neg'`                                                 |
 
 ---
 
 ### Task 1: Rename Sheet.group type and fix all callsites
 
-This is a pervasive type rename. All production and test callsites must move together — TypeScript will fail to compile until they do. No new "failing test" step: the existing tests become the failing tests the moment you change `types.ts` alone.
+This is a pervasive type rename. All production and test callsites must move together — TypeScript
+will fail to compile until they do. No new "failing test" step: the existing tests become the
+failing tests the moment you change `types.ts` alone.
 
 **Files:**
+
 - Modify: `src/lib/model/types.ts:50-51`
 - Modify: `src/lib/store/useRoundStore.ts:42,499`
 - Modify: `src/lib/commands/commands.ts:178`
 - Modify: `src/components/Sidebar.tsx:16,21-22,63`
 - Modify: `src/components/RoundSetup.tsx:55`
-- Modify (tests, bulk): `src/lib/store/useRoundStore.test.ts`, `src/components/Sidebar.test.tsx`, `src/lib/commands/commands.test.ts`, `src/lib/persistence/autosave.test.ts`, `src/lib/keymap/useKeymap.test.tsx`, `src/components/FlowGrid.test.tsx`, `src/lib/persistence/io.test.ts`
+- Modify (tests, bulk): `src/lib/store/useRoundStore.test.ts`, `src/components/Sidebar.test.tsx`,
+  `src/lib/commands/commands.test.ts`, `src/lib/persistence/autosave.test.ts`,
+  `src/lib/keymap/useKeymap.test.tsx`, `src/components/FlowGrid.test.tsx`,
+  `src/lib/persistence/io.test.ts`
 
 - [ ] **Step 1: Update `types.ts`**
 
@@ -49,7 +62,7 @@ Replace lines 46–53:
 export interface Sheet {
   id: string;
   title: string;
-  group: 'aff' | 'neg';
+  group: "aff" | "neg";
   /** Display order among sheets. */
   order: number;
 }
@@ -58,11 +71,13 @@ export interface Sheet {
 - [ ] **Step 2: Update `useRoundStore.ts` signatures**
 
 Line 42 — change `addSheet` signature:
+
 ```typescript
 addSheet(input: { title: string; group: 'aff' | 'neg' }): string;
 ```
 
 Line 499 — change `selectSheetsByGroup` signature:
+
 ```typescript
 export function selectSheetsByGroup(
   round: Round | null,
@@ -84,22 +99,25 @@ case 'sheet.new': {
 - [ ] **Step 4: Update `Sidebar.tsx` type + GROUPS config**
 
 `GroupConfig` interface (line 16):
+
 ```typescript
 interface GroupConfig {
-  group: 'aff' | 'neg';
+  group: "aff" | "neg";
   label: string;
 }
 ```
 
 `GROUPS` array (lines 20–23):
+
 ```typescript
 const GROUPS: GroupConfig[] = [
-  { group: 'aff', label: 'Aff' },
-  { group: 'neg', label: 'Neg' },
+  { group: "aff", label: "Aff" },
+  { group: "neg", label: "Neg" },
 ];
 ```
 
 Footer button (line 63) — temporary, will be replaced in Task 7:
+
 ```typescript
 onClick={() => addSheet({ title: 'Untitled', group: 'neg' })}
 ```
@@ -107,7 +125,7 @@ onClick={() => addSheet({ title: 'Untitled', group: 'neg' })}
 - [ ] **Step 5: Update `RoundSetup.tsx` line 55**
 
 ```typescript
-addSheet({ title: 'Aff', group: 'aff' });
+addSheet({ title: "Aff", group: "aff" });
 ```
 
 - [ ] **Step 6: Bulk-replace all test callsites**
@@ -184,9 +202,11 @@ git commit -m "refactor: rename Sheet.group case/offcase → aff/neg"
 
 ### Task 2: IndexedDB v2 migration
 
-Stored rounds have `sheet.group` values of `'case'` and `'offcase'`. The v2 upgrade rewrites them in-place. This runs automatically on first open after the user updates.
+Stored rounds have `sheet.group` values of `'case'` and `'offcase'`. The v2 upgrade rewrites them
+in-place. This runs automatically on first open after the user updates.
 
 **Files:**
+
 - Modify: `src/lib/persistence/db.ts`
 - Create: `src/lib/persistence/db.test.ts`
 
@@ -198,49 +218,60 @@ Create `src/lib/persistence/db.test.ts`:
 /**
  * IMPORTANT: fake-indexeddb/auto MUST be imported first.
  */
-import 'fake-indexeddb/auto';
+import "fake-indexeddb/auto";
 
-import Dexie from 'dexie';
-import { describe, it, expect } from 'vitest';
+import Dexie from "dexie";
+import { describe, it, expect } from "vitest";
 
-describe('IndexedDB v1→v2 migration', () => {
-  it('remaps case→aff and offcase→neg on all sheet groups', async () => {
-    const DB_NAME = 'debateflow-migration-test';
+describe("IndexedDB v1→v2 migration", () => {
+  it("remaps case→aff and offcase→neg on all sheet groups", async () => {
+    const DB_NAME = "debateflow-migration-test";
 
     // Seed a v1 database with old group values.
     const v1 = new Dexie(DB_NAME);
-    v1.version(1).stores({ rounds: 'id, updatedAt' });
-    await v1.table('rounds').add({
-      id: 'round_mig',
+    v1.version(1).stores({ rounds: "id, updatedAt" });
+    await v1.table("rounds").add({
+      id: "round_mig",
       createdAt: 1,
       updatedAt: 1,
-      role: 'aff',
-      format: { id: 'f', name: 'T', speeches: [], prepSeconds: { aff: 240, neg: 240 } },
+      role: "aff",
+      format: { id: "f", name: "T", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
       meta: {},
       nodes: [],
-      timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 240, neg: 240 }, prepRunning: null },
+      timers: {
+        activeSpeechId: null,
+        speechRemaining: null,
+        running: false,
+        prepRemaining: { aff: 240, neg: 240 },
+        prepRunning: null,
+      },
       sheets: [
-        { id: 'sh1', title: 'Case', group: 'case', order: 0 },
-        { id: 'sh2', title: 'DA', group: 'offcase', order: 1 },
+        { id: "sh1", title: "Case", group: "case", order: 0 },
+        { id: "sh2", title: "DA", group: "offcase", order: 1 },
       ],
     });
     await v1.close();
 
     // Open at v2 with the same upgrade logic used in db.ts.
     const v2 = new Dexie(DB_NAME);
-    v2.version(1).stores({ rounds: 'id, updatedAt' });
-    v2.version(2).upgrade(tx =>
-      tx.table('rounds').toCollection().modify((r: { sheets: Array<{ group: string }> }) => {
-        r.sheets = r.sheets.map(s => ({
-          ...s,
-          group: s.group === 'case' ? 'aff' : s.group === 'offcase' ? 'neg' : s.group,
-        }));
-      }),
+    v2.version(1).stores({ rounds: "id, updatedAt" });
+    v2.version(2).upgrade((tx) =>
+      tx
+        .table("rounds")
+        .toCollection()
+        .modify((r: { sheets: Array<{ group: string }> }) => {
+          r.sheets = r.sheets.map((s) => ({
+            ...s,
+            group: s.group === "case" ? "aff" : s.group === "offcase" ? "neg" : s.group,
+          }));
+        }),
     );
 
-    const migrated = await v2.table('rounds').get('round_mig') as { sheets: Array<{ group: string }> };
-    expect(migrated.sheets[0].group).toBe('aff');
-    expect(migrated.sheets[1].group).toBe('neg');
+    const migrated = (await v2.table("rounds").get("round_mig")) as {
+      sheets: Array<{ group: string }>;
+    };
+    expect(migrated.sheets[0].group).toBe("aff");
+    expect(migrated.sheets[1].group).toBe("neg");
     await v2.close();
   });
 });
@@ -252,7 +283,8 @@ describe('IndexedDB v1→v2 migration', () => {
 npx vitest run src/lib/persistence/db.test.ts
 ```
 
-Expected: 1 test, FAIL (test creates v1 db, v2 opens it without upgrading because `db.ts` has no v2).
+Expected: 1 test, FAIL (test creates v1 db, v2 opens it without upgrading because `db.ts` has no
+v2).
 
 - [ ] **Step 3: Add version 2 upgrade to `db.ts`**
 
@@ -260,20 +292,23 @@ Replace the constructor body in `src/lib/persistence/db.ts`:
 
 ```typescript
 class DebateFlowDB extends Dexie {
-  rounds!: EntityTable<Round, 'id'>;
+  rounds!: EntityTable<Round, "id">;
 
   constructor() {
-    super('debateflow');
+    super("debateflow");
     this.version(1).stores({
-      rounds: 'id, updatedAt',
+      rounds: "id, updatedAt",
     });
-    this.version(2).upgrade(tx =>
-      tx.table('rounds').toCollection().modify((r: { sheets: Array<{ group: string }> }) => {
-        r.sheets = r.sheets.map(s => ({
-          ...s,
-          group: s.group === 'case' ? 'aff' : s.group === 'offcase' ? 'neg' : s.group,
-        }));
-      }),
+    this.version(2).upgrade((tx) =>
+      tx
+        .table("rounds")
+        .toCollection()
+        .modify((r: { sheets: Array<{ group: string }> }) => {
+          r.sheets = r.sheets.map((s) => ({
+            ...s,
+            group: s.group === "case" ? "aff" : s.group === "offcase" ? "neg" : s.group,
+          }));
+        }),
     );
   }
 }
@@ -306,13 +341,17 @@ git commit -m "feat(db): add v2 migration remapping case/offcase → aff/neg"
 
 ### Task 3: Command registry update
 
-Remove `sheet.new`. Add `sheet.newAff`, `sheet.newNeg`, `sheet.rename`. Update the cheatsheet component to reference the new command IDs.
+Remove `sheet.new`. Add `sheet.newAff`, `sheet.newNeg`, `sheet.rename`. Update the cheatsheet
+component to reference the new command IDs.
 
 **Files:**
+
 - Modify: `src/lib/commands/registry.ts`
 - Modify: `src/components/KeybindingsCheatsheet.tsx`
 
-No new test for the registry itself — it's a pure data declaration and TypeScript enforces correctness. Downstream tests for commands (Task 5) and keymaps (Task 6) will fail until those tasks are complete, so keep test runs scoped during this task.
+No new test for the registry itself — it's a pure data declaration and TypeScript enforces
+correctness. Downstream tests for commands (Task 5) and keymaps (Task 6) will fail until those tasks
+are complete, so keep test runs scoped during this task.
 
 - [ ] **Step 1: Update `registry.ts`**
 
@@ -320,57 +359,76 @@ Replace the `CommandId` type (lines 8–21):
 
 ```typescript
 export type CommandId =
-  | 'move.left' | 'move.down' | 'move.up' | 'move.right'
-  | 'edit.enter' | 'edit.exit'
-  | 'node.addAnswer' | 'node.answerAcross' | 'arg.newRoot'
-  | 'node.delete'
-  | 'status.toggleConceded' | 'status.toggleExtended'
-  | 'sheet.next' | 'sheet.prev' | 'sheet.newAff' | 'sheet.newNeg' | 'sheet.rename' | 'sheet.quickSwitch'
-  | 'sheet.jump1' | 'sheet.jump2' | 'sheet.jump3' | 'sheet.jump4' | 'sheet.jump5'
-  | 'sheet.jump6' | 'sheet.jump7' | 'sheet.jump8' | 'sheet.jump9'
-  | 'settings.open'
-  | 'timer.toggleSpeech'
-  | 'timer.togglePrepAff'
-  | 'timer.togglePrepNeg'
-  | 'help.open';
+  | "move.left"
+  | "move.down"
+  | "move.up"
+  | "move.right"
+  | "edit.enter"
+  | "edit.exit"
+  | "node.addAnswer"
+  | "node.answerAcross"
+  | "arg.newRoot"
+  | "node.delete"
+  | "status.toggleConceded"
+  | "status.toggleExtended"
+  | "sheet.next"
+  | "sheet.prev"
+  | "sheet.newAff"
+  | "sheet.newNeg"
+  | "sheet.rename"
+  | "sheet.quickSwitch"
+  | "sheet.jump1"
+  | "sheet.jump2"
+  | "sheet.jump3"
+  | "sheet.jump4"
+  | "sheet.jump5"
+  | "sheet.jump6"
+  | "sheet.jump7"
+  | "sheet.jump8"
+  | "sheet.jump9"
+  | "settings.open"
+  | "timer.toggleSpeech"
+  | "timer.togglePrepAff"
+  | "timer.togglePrepNeg"
+  | "help.open";
 ```
 
 Replace the `COMMANDS` record — remove `sheet.new`, add the three new entries:
 
 ```typescript
 export const COMMANDS: Record<CommandId, CommandDef> = {
-  'move.left': { id: 'move.left', label: 'Move left (to parent)' },
-  'move.down': { id: 'move.down', label: 'Move down' },
-  'move.up': { id: 'move.up', label: 'Move up' },
-  'move.right': { id: 'move.right', label: 'Move right (to child)' },
-  'edit.enter': { id: 'edit.enter', label: 'Edit cell' },
-  'edit.exit': { id: 'edit.exit', label: 'Exit edit' },
-  'node.addAnswer': { id: 'node.addAnswer', label: 'Add answer (sibling)' },
-  'node.answerAcross': { id: 'node.answerAcross', label: 'Answer across (next speech)' },
-  'arg.newRoot': { id: 'arg.newRoot', label: 'New root argument' },
-  'node.delete': { id: 'node.delete', label: 'Delete node' },
-  'status.toggleConceded': { id: 'status.toggleConceded', label: 'Toggle conceded' },
-  'status.toggleExtended': { id: 'status.toggleExtended', label: 'Toggle extended' },
-  'sheet.next': { id: 'sheet.next', label: 'Next sheet' },
-  'sheet.prev': { id: 'sheet.prev', label: 'Previous sheet' },
-  'sheet.newAff': { id: 'sheet.newAff', label: 'New aff sheet' },
-  'sheet.newNeg': { id: 'sheet.newNeg', label: 'New neg sheet' },
-  'sheet.rename': { id: 'sheet.rename', label: 'Rename active sheet' },
-  'sheet.quickSwitch': { id: 'sheet.quickSwitch', label: 'Quick switch sheet' },
-  'sheet.jump1': { id: 'sheet.jump1', label: 'Jump to sheet 1' },
-  'sheet.jump2': { id: 'sheet.jump2', label: 'Jump to sheet 2' },
-  'sheet.jump3': { id: 'sheet.jump3', label: 'Jump to sheet 3' },
-  'sheet.jump4': { id: 'sheet.jump4', label: 'Jump to sheet 4' },
-  'sheet.jump5': { id: 'sheet.jump5', label: 'Jump to sheet 5' },
-  'sheet.jump6': { id: 'sheet.jump6', label: 'Jump to sheet 6' },
-  'sheet.jump7': { id: 'sheet.jump7', label: 'Jump to sheet 7' },
-  'sheet.jump8': { id: 'sheet.jump8', label: 'Jump to sheet 8' },
-  'sheet.jump9': { id: 'sheet.jump9', label: 'Jump to sheet 9' },
-  'settings.open': { id: 'settings.open', label: 'Open settings' },
-  'timer.toggleSpeech': { id: 'timer.toggleSpeech', label: 'Toggle speech timer' },
-  'timer.togglePrepAff': { id: 'timer.togglePrepAff', label: 'Toggle aff prep timer' },
-  'timer.togglePrepNeg': { id: 'timer.togglePrepNeg', label: 'Toggle neg prep timer' },
-  'help.open': { id: 'help.open', label: 'Show keybindings' },
+  "move.left": { id: "move.left", label: "Move left (to parent)" },
+  "move.down": { id: "move.down", label: "Move down" },
+  "move.up": { id: "move.up", label: "Move up" },
+  "move.right": { id: "move.right", label: "Move right (to child)" },
+  "edit.enter": { id: "edit.enter", label: "Edit cell" },
+  "edit.exit": { id: "edit.exit", label: "Exit edit" },
+  "node.addAnswer": { id: "node.addAnswer", label: "Add answer (sibling)" },
+  "node.answerAcross": { id: "node.answerAcross", label: "Answer across (next speech)" },
+  "arg.newRoot": { id: "arg.newRoot", label: "New root argument" },
+  "node.delete": { id: "node.delete", label: "Delete node" },
+  "status.toggleConceded": { id: "status.toggleConceded", label: "Toggle conceded" },
+  "status.toggleExtended": { id: "status.toggleExtended", label: "Toggle extended" },
+  "sheet.next": { id: "sheet.next", label: "Next sheet" },
+  "sheet.prev": { id: "sheet.prev", label: "Previous sheet" },
+  "sheet.newAff": { id: "sheet.newAff", label: "New aff sheet" },
+  "sheet.newNeg": { id: "sheet.newNeg", label: "New neg sheet" },
+  "sheet.rename": { id: "sheet.rename", label: "Rename active sheet" },
+  "sheet.quickSwitch": { id: "sheet.quickSwitch", label: "Quick switch sheet" },
+  "sheet.jump1": { id: "sheet.jump1", label: "Jump to sheet 1" },
+  "sheet.jump2": { id: "sheet.jump2", label: "Jump to sheet 2" },
+  "sheet.jump3": { id: "sheet.jump3", label: "Jump to sheet 3" },
+  "sheet.jump4": { id: "sheet.jump4", label: "Jump to sheet 4" },
+  "sheet.jump5": { id: "sheet.jump5", label: "Jump to sheet 5" },
+  "sheet.jump6": { id: "sheet.jump6", label: "Jump to sheet 6" },
+  "sheet.jump7": { id: "sheet.jump7", label: "Jump to sheet 7" },
+  "sheet.jump8": { id: "sheet.jump8", label: "Jump to sheet 8" },
+  "sheet.jump9": { id: "sheet.jump9", label: "Jump to sheet 9" },
+  "settings.open": { id: "settings.open", label: "Open settings" },
+  "timer.toggleSpeech": { id: "timer.toggleSpeech", label: "Toggle speech timer" },
+  "timer.togglePrepAff": { id: "timer.togglePrepAff", label: "Toggle aff prep timer" },
+  "timer.togglePrepNeg": { id: "timer.togglePrepNeg", label: "Toggle neg prep timer" },
+  "help.open": { id: "help.open", label: "Show keybindings" },
 };
 ```
 
@@ -412,9 +470,11 @@ git commit -m "feat(registry): replace sheet.new with sheet.newAff/newNeg/rename
 
 ### Task 4: Store rename state
 
-Add `renamingSheetId` to the store's state shape and `setRenamingSheet` to its actions. This unblocks Task 5 (the rename command handler calls it).
+Add `renamingSheetId` to the store's state shape and `setRenamingSheet` to its actions. This
+unblocks Task 5 (the rename command handler calls it).
 
 **Files:**
+
 - Modify: `src/lib/store/useRoundStore.ts`
 - Modify: `src/lib/store/useRoundStore.test.ts` (add new describe block)
 
@@ -423,22 +483,22 @@ Add `renamingSheetId` to the store's state shape and `setRenamingSheet` to its a
 Append to `src/lib/store/useRoundStore.test.ts`:
 
 ```typescript
-describe('renamingSheetId', () => {
+describe("renamingSheetId", () => {
   beforeEach(() => {
     useRoundStore.setState({ ...BLANK_STATE, renamingSheetId: null });
   });
 
-  it('starts as null', () => {
+  it("starts as null", () => {
     expect(useRoundStore.getState().renamingSheetId).toBeNull();
   });
 
-  it('setRenamingSheet sets the id', () => {
-    useRoundStore.getState().setRenamingSheet('sheet_abc');
-    expect(useRoundStore.getState().renamingSheetId).toBe('sheet_abc');
+  it("setRenamingSheet sets the id", () => {
+    useRoundStore.getState().setRenamingSheet("sheet_abc");
+    expect(useRoundStore.getState().renamingSheetId).toBe("sheet_abc");
   });
 
-  it('setRenamingSheet(null) clears the id', () => {
-    useRoundStore.getState().setRenamingSheet('sheet_abc');
+  it("setRenamingSheet(null) clears the id", () => {
+    useRoundStore.getState().setRenamingSheet("sheet_abc");
     useRoundStore.getState().setRenamingSheet(null);
     expect(useRoundStore.getState().renamingSheetId).toBeNull();
   });
@@ -461,9 +521,9 @@ In the `RoundState` interface (around line 24–35), add:
 export interface RoundState {
   round: Round | null;
   activeSheetId: string | null;
-  mode: 'normal' | 'insert';
+  mode: "normal" | "insert";
   selection: { sheetId: string; speechId: string; nodeId: string } | null;
-  keymapName: 'vim' | 'excel' | 'basic';
+  keymapName: "vim" | "excel" | "basic";
   keymapOverrides: Record<string, string>;
   quickSwitcherOpen: boolean;
   settingsOpen: boolean;
@@ -521,6 +581,7 @@ git commit -m "feat(store): add renamingSheetId state and setRenamingSheet actio
 Replace the `sheet.new` handler with three new handlers.
 
 **Files:**
+
 - Modify: `src/lib/commands/commands.ts`
 - Modify: `src/lib/commands/commands.test.ts`
 
@@ -529,73 +590,73 @@ Replace the `sheet.new` handler with three new handlers.
 Append to `src/lib/commands/commands.test.ts`:
 
 ```typescript
-describe('sheet.newAff', () => {
+describe("sheet.newAff", () => {
   beforeEach(resetStore);
 
-  it('adds an aff sheet, makes it active', () => {
+  it("adds an aff sheet, makes it active", () => {
     setupRound();
     const before = useRoundStore.getState().round!.sheets.length;
-    executeCommand('sheet.newAff');
+    executeCommand("sheet.newAff");
     const state = useRoundStore.getState();
     const sheets = state.round!.sheets;
     expect(sheets).toHaveLength(before + 1);
     const newest = sheets[sheets.length - 1];
-    expect(newest.group).toBe('aff');
+    expect(newest.group).toBe("aff");
     expect(state.activeSheetId).toBe(newest.id);
   });
 
-  it('no-ops when round is null', () => {
-    executeCommand('sheet.newAff');
+  it("no-ops when round is null", () => {
+    executeCommand("sheet.newAff");
     expect(useRoundStore.getState().round).toBeNull();
   });
 });
 
-describe('sheet.newNeg', () => {
+describe("sheet.newNeg", () => {
   beforeEach(resetStore);
 
-  it('adds a neg sheet and makes it active', () => {
+  it("adds a neg sheet and makes it active", () => {
     setupRound();
-    executeCommand('sheet.newNeg');
+    executeCommand("sheet.newNeg");
     const state = useRoundStore.getState();
     const newest = state.round!.sheets[state.round!.sheets.length - 1];
-    expect(newest.group).toBe('neg');
+    expect(newest.group).toBe("neg");
     expect(state.activeSheetId).toBe(newest.id);
   });
 
-  it('sets selection to the first neg speech', () => {
+  it("sets selection to the first neg speech", () => {
     setupRound();
-    executeCommand('sheet.newNeg');
+    executeCommand("sheet.newNeg");
     const state = useRoundStore.getState();
     const fmt = state.round!.format;
-    const firstNegSpeech = fmt.speeches.find(s => s.side === 'neg')!;
+    const firstNegSpeech = fmt.speeches.find((s) => s.side === "neg")!;
     const newest = state.round!.sheets[state.round!.sheets.length - 1];
     expect(state.selection).toEqual({
       sheetId: newest.id,
       speechId: firstNegSpeech.id,
-      nodeId: '',
+      nodeId: "",
     });
   });
 
-  it('no-ops when round is null', () => {
-    executeCommand('sheet.newNeg');
+  it("no-ops when round is null", () => {
+    executeCommand("sheet.newNeg");
     expect(useRoundStore.getState().round).toBeNull();
   });
 });
 
-describe('sheet.rename', () => {
+describe("sheet.rename", () => {
   beforeEach(resetStore);
 
-  it('sets renamingSheetId to the active sheet id', () => {
+  it("sets renamingSheetId to the active sheet id", () => {
     const { sheetId } = setupRound();
     useRoundStore.getState().setActiveSheet(sheetId);
-    executeCommand('sheet.rename');
+    executeCommand("sheet.rename");
     expect(useRoundStore.getState().renamingSheetId).toBe(sheetId);
   });
 
-  it('no-ops when there is no active sheet', () => {
+  it("no-ops when there is no active sheet", () => {
     setupRound();
     useRoundStore.setState({ activeSheetId: null });
-    executeCommand('sheet.rename');
+    executeCommand("sheet.rename");
     expect(useRoundStore.getState().renamingSheetId).toBeNull();
   });
 });
@@ -607,11 +668,13 @@ describe('sheet.rename', () => {
 npx vitest run src/lib/commands/commands.test.ts
 ```
 
-Expected: new describe blocks FAIL — `sheet.newAff`, `sheet.newNeg`, `sheet.rename` cases not in switch.
+Expected: new describe blocks FAIL — `sheet.newAff`, `sheet.newNeg`, `sheet.rename` cases not in
+switch.
 
 - [ ] **Step 3: Update `commands.ts` — replace the `sheet.new` case, add three new cases**
 
-Remove the entire `case 'sheet.new':` block (lines 176–181). Add the following three cases in its place:
+Remove the entire `case 'sheet.new':` block (lines 176–181). Add the following three cases in its
+place:
 
 ```typescript
     case 'sheet.newAff': {
@@ -670,6 +733,7 @@ git commit -m "feat(commands): add sheet.newAff, sheet.newNeg, sheet.rename hand
 Wire the new commands into the keymap presets.
 
 **Files:**
+
 - Modify: `src/lib/keymap/presets.ts`
 - Modify: `src/lib/keymap/effective.test.ts` (add new assertions)
 
@@ -678,40 +742,40 @@ Wire the new commands into the keymap presets.
 Append to `src/lib/keymap/effective.test.ts`:
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import { effectiveKeymap } from './effective';
+import { describe, it, expect } from "vitest";
+import { effectiveKeymap } from "./effective";
 ```
 
 (Check if the file already has these imports — if so, just append the describe block.)
 
 ```typescript
-describe('COMMON_NORMAL bindings after aff/neg/rename additions', () => {
-  it('Meta+a → sheet.newAff in all presets', () => {
-    for (const name of ['vim', 'excel', 'basic'] as const) {
+describe("COMMON_NORMAL bindings after aff/neg/rename additions", () => {
+  it("Meta+a → sheet.newAff in all presets", () => {
+    for (const name of ["vim", "excel", "basic"] as const) {
       const km = effectiveKeymap(name, {});
-      expect(km.bindings.normal['Meta+a']).toBe('sheet.newAff');
+      expect(km.bindings.normal["Meta+a"]).toBe("sheet.newAff");
     }
   });
 
-  it('Meta+n → sheet.newNeg (not sheet.new) in all presets', () => {
-    for (const name of ['vim', 'excel', 'basic'] as const) {
+  it("Meta+n → sheet.newNeg (not sheet.new) in all presets", () => {
+    for (const name of ["vim", "excel", "basic"] as const) {
       const km = effectiveKeymap(name, {});
-      expect(km.bindings.normal['Meta+n']).toBe('sheet.newNeg');
+      expect(km.bindings.normal["Meta+n"]).toBe("sheet.newNeg");
     }
   });
 
-  it('Meta+r → sheet.rename in all presets', () => {
-    for (const name of ['vim', 'excel', 'basic'] as const) {
+  it("Meta+r → sheet.rename in all presets", () => {
+    for (const name of ["vim", "excel", "basic"] as const) {
       const km = effectiveKeymap(name, {});
-      expect(km.bindings.normal['Meta+r']).toBe('sheet.rename');
+      expect(km.bindings.normal["Meta+r"]).toBe("sheet.rename");
     }
   });
 
   it('"g r" → sheet.rename in vim only', () => {
-    const vim = effectiveKeymap('vim', {});
-    expect(vim.bindings.normal['g r']).toBe('sheet.rename');
-    const excel = effectiveKeymap('excel', {});
-    expect(excel.bindings.normal['g r']).toBeUndefined();
+    const vim = effectiveKeymap("vim", {});
+    expect(vim.bindings.normal["g r"]).toBe("sheet.rename");
+    const excel = effectiveKeymap("excel", {});
+    expect(excel.bindings.normal["g r"]).toBeUndefined();
   });
 });
 ```
@@ -730,17 +794,17 @@ In `COMMON_NORMAL`, replace the `'Meta+n': 'sheet.new'` entry and add two new on
 
 ```typescript
 const COMMON_NORMAL: Record<Chord, CommandId> = {
-  ']': 'sheet.next',
-  '[': 'sheet.prev',
-  'Meta+k': 'sheet.quickSwitch',
-  'Meta+a': 'sheet.newAff',
-  'Meta+n': 'sheet.newNeg',
-  'Meta+r': 'sheet.rename',
-  'Meta+,': 'settings.open',
-  s: 'timer.toggleSpeech',
-  p: 'timer.togglePrepAff',
-  P: 'timer.togglePrepNeg',
-  '?': 'help.open',
+  "]": "sheet.next",
+  "[": "sheet.prev",
+  "Meta+k": "sheet.quickSwitch",
+  "Meta+a": "sheet.newAff",
+  "Meta+n": "sheet.newNeg",
+  "Meta+r": "sheet.rename",
+  "Meta+,": "settings.open",
+  s: "timer.toggleSpeech",
+  p: "timer.togglePrepAff",
+  P: "timer.togglePrepNeg",
+  "?": "help.open",
   ...SHEET_JUMPS,
 };
 ```
@@ -749,22 +813,22 @@ In `VIM_KEYMAP`, add the two-key chord binding to the `normal` bindings:
 
 ```typescript
 export const VIM_KEYMAP: Keymap = {
-  name: 'vim',
+  name: "vim",
   bindings: {
     normal: {
-      h: 'move.left',
-      j: 'move.down',
-      k: 'move.up',
-      l: 'move.right',
-      i: 'edit.enter',
-      Enter: 'edit.enter',
-      o: 'node.addAnswer',
-      a: 'node.answerAcross',
-      O: 'arg.newRoot',
-      c: 'status.toggleConceded',
-      e: 'status.toggleExtended',
-      x: 'node.delete',
-      'g r': 'sheet.rename',
+      h: "move.left",
+      j: "move.down",
+      k: "move.up",
+      l: "move.right",
+      i: "edit.enter",
+      Enter: "edit.enter",
+      o: "node.addAnswer",
+      a: "node.answerAcross",
+      O: "arg.newRoot",
+      c: "status.toggleConceded",
+      e: "status.toggleExtended",
+      x: "node.delete",
+      "g r": "sheet.rename",
       ...COMMON_NORMAL,
     },
     insert: { ...INSERT_EXIT },
@@ -802,6 +866,7 @@ git commit -m "feat(keymap): add Meta+a/Meta+n/Meta+r bindings and vim 'g r' cho
 Replace the single `+ Add sheet` button with `+ Aff` / `+ Neg`. Add inline rename to `SheetRow`.
 
 **Files:**
+
 - Modify: `src/components/Sidebar.tsx`
 - Modify: `src/components/Sidebar.test.tsx`
 
@@ -897,21 +962,24 @@ Append to the `describe('Sidebar', ...)` block in `Sidebar.test.tsx`:
 Also update the existing test that checked for `'Off-case'` label (it's now `'Neg'`):
 
 Find and replace in the test file:
+
 ```typescript
 // old:
-expect(screen.getByText('Off-case')).toBeInTheDocument();
+expect(screen.getByText("Off-case")).toBeInTheDocument();
 // new:
-expect(screen.getByText('Neg')).toBeInTheDocument();
+expect(screen.getByText("Neg")).toBeInTheDocument();
 ```
 
 And the test for `+ Add sheet` button (now replaced):
+
 ```typescript
 // old test: '"+ Add sheet" button adds an off-case sheet'
 // Replace the test body to check for new buttons (already covered by new tests above)
 // Delete or update the old test body to not reference 'add-sheet' testid
 ```
 
-Specifically, remove or replace the old `it('"+ Add sheet" button adds an off-case sheet', ...)` test entirely — the new tests cover this behavior.
+Specifically, remove or replace the old `it('"+ Add sheet" button adds an off-case sheet', ...)`
+test entirely — the new tests cover this behavior.
 
 - [ ] **Step 2: Run tests — expect FAIL**
 
@@ -1200,6 +1268,7 @@ git commit -m "feat(sidebar): Aff/Neg buttons, inline sheet rename"
 Add `pendingPrefix` accumulator so `g r` (vim) fires `sheet.rename`.
 
 **Files:**
+
 - Modify: `src/lib/keymap/useKeymap.ts`
 - Modify: `src/lib/keymap/useKeymap.test.tsx`
 
@@ -1265,13 +1334,13 @@ Expected: new tests FAIL — pressing `g` then `r` does not fire anything yet.
 Replace the full file content:
 
 ```typescript
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import { executeCommand } from '@/lib/commands/commands';
-import { effectiveKeymap as computeEffectiveKeymap } from './effective';
-import { resolveCommand, eventToChord } from './resolve';
+import { useEffect } from "react";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import { executeCommand } from "@/lib/commands/commands";
+import { effectiveKeymap as computeEffectiveKeymap } from "./effective";
+import { resolveCommand, eventToChord } from "./resolve";
 
 /** Returns the keymap currently in effect: preset merged with user overrides. */
 export function effectiveKeymap() {
@@ -1282,7 +1351,7 @@ export function effectiveKeymap() {
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
+  if (tag === "INPUT" || tag === "TEXTAREA") return true;
   if (target.isContentEditable) return true;
   return false;
 }
@@ -1301,10 +1370,16 @@ export function useKeymap(): void {
       // Also clear any pending chord prefix so it doesn't get stuck.
       if (editable) {
         pendingPrefix = null;
-        if (e.key !== 'Escape') return;
+        if (e.key !== "Escape") return;
       }
 
-      const chord = eventToChord({ key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey });
+      const chord = eventToChord({
+        key: e.key,
+        metaKey: e.metaKey,
+        ctrlKey: e.ctrlKey,
+        altKey: e.altKey,
+        shiftKey: e.shiftKey,
+      });
       const modeBindings = keymap.bindings[mode] ?? {};
 
       // ── Two-key chord resolution ─────────────────────────────────────────────
@@ -1321,7 +1396,7 @@ export function useKeymap(): void {
       }
 
       // Check whether this chord is a valid prefix for any two-key sequence.
-      const isPrefix = Object.keys(modeBindings).some(k => k.startsWith(`${chord} `));
+      const isPrefix = Object.keys(modeBindings).some((k) => k.startsWith(`${chord} `));
       if (isPrefix) {
         pendingPrefix = chord;
         e.preventDefault();
@@ -1342,9 +1417,9 @@ export function useKeymap(): void {
       executeCommand(commandId);
     }
 
-    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener("keydown", onKeyDown);
       pendingPrefix = null; // clear on unmount
     };
   }, []);
@@ -1380,42 +1455,46 @@ git commit -m "feat(keymap): add two-key chord sequence support (pendingPrefix)"
 
 ### Spec coverage
 
-| Spec requirement | Task |
-|---|---|
-| `Sheet.group` type `'aff'\|'neg'` | Task 1 |
-| Sidebar GROUPS labels → Aff / Neg | Task 1 (type) + Task 7 (UI) |
-| `RoundSetup` bootstrap `group: 'aff'` | Task 1 |
-| `addSheet` / `selectSheetsByGroup` signature update | Task 1 |
-| IndexedDB v2 migration `case→aff`, `offcase→neg` | Task 2 |
-| Remove `sheet.new`, add `sheet.newAff` / `sheet.newNeg` / `sheet.rename` | Task 3 |
-| `sheet.newAff` handler — create + activate | Task 5 |
-| `sheet.newNeg` handler — create + activate + select first neg speech | Task 5 |
-| `sheet.rename` handler — `setRenamingSheet(activeSheetId)` | Task 5 |
-| `Meta+a → sheet.newAff` in COMMON\_NORMAL | Task 6 |
-| `Meta+n → sheet.newNeg` (replaces `sheet.new`) | Task 6 |
-| `Meta+r → sheet.rename` in COMMON\_NORMAL | Task 6 |
-| `g r → sheet.rename` in VIM\_KEYMAP | Task 6 |
-| `renamingSheetId` store state + `setRenamingSheet` action | Task 4 |
-| Sidebar `+ Aff` / `+ Neg` footer buttons | Task 7 |
-| `SheetRow` inline rename input (Enter commit, Escape cancel, blur commit) | Task 7 |
-| Double-click title triggers rename | Task 7 |
-| Auto-focus + select-all on rename start | Task 7 |
-| Two-key chord accumulator in `useKeymap` | Task 8 |
-| Escape in editable clears pending prefix | Task 8 |
-| `KeybindingsCheatsheet` updated | Task 3 |
+| Spec requirement                                                          | Task                        |
+| ------------------------------------------------------------------------- | --------------------------- |
+| `Sheet.group` type `'aff'\|'neg'`                                         | Task 1                      |
+| Sidebar GROUPS labels → Aff / Neg                                         | Task 1 (type) + Task 7 (UI) |
+| `RoundSetup` bootstrap `group: 'aff'`                                     | Task 1                      |
+| `addSheet` / `selectSheetsByGroup` signature update                       | Task 1                      |
+| IndexedDB v2 migration `case→aff`, `offcase→neg`                          | Task 2                      |
+| Remove `sheet.new`, add `sheet.newAff` / `sheet.newNeg` / `sheet.rename`  | Task 3                      |
+| `sheet.newAff` handler — create + activate                                | Task 5                      |
+| `sheet.newNeg` handler — create + activate + select first neg speech      | Task 5                      |
+| `sheet.rename` handler — `setRenamingSheet(activeSheetId)`                | Task 5                      |
+| `Meta+a → sheet.newAff` in COMMON_NORMAL                                  | Task 6                      |
+| `Meta+n → sheet.newNeg` (replaces `sheet.new`)                            | Task 6                      |
+| `Meta+r → sheet.rename` in COMMON_NORMAL                                  | Task 6                      |
+| `g r → sheet.rename` in VIM_KEYMAP                                        | Task 6                      |
+| `renamingSheetId` store state + `setRenamingSheet` action                 | Task 4                      |
+| Sidebar `+ Aff` / `+ Neg` footer buttons                                  | Task 7                      |
+| `SheetRow` inline rename input (Enter commit, Escape cancel, blur commit) | Task 7                      |
+| Double-click title triggers rename                                        | Task 7                      |
+| Auto-focus + select-all on rename start                                   | Task 7                      |
+| Two-key chord accumulator in `useKeymap`                                  | Task 8                      |
+| Escape in editable clears pending prefix                                  | Task 8                      |
+| `KeybindingsCheatsheet` updated                                           | Task 3                      |
 
 All spec sections covered.
 
 ### Placeholder scan
 
-No TBDs, TODOs, or "similar to Task N" references found. All code blocks contain complete implementations.
+No TBDs, TODOs, or "similar to Task N" references found. All code blocks contain complete
+implementations.
 
 ### Type consistency
 
 - `Sheet.group: 'aff' | 'neg'` — defined Task 1, used consistently in Tasks 1–7.
-- `addSheet({ title, group: 'aff' | 'neg' })` — signature updated Task 1, called correctly in Tasks 5 + 7.
-- `renamingSheetId: string | null` — added Task 4, read in Task 7 (`Sidebar`), written in Task 5 (`sheet.rename` handler).
+- `addSheet({ title, group: 'aff' | 'neg' })` — signature updated Task 1, called correctly in Tasks
+  5 + 7.
+- `renamingSheetId: string | null` — added Task 4, read in Task 7 (`Sidebar`), written in Task 5
+  (`sheet.rename` handler).
 - `setRenamingSheet(id: string | null)` — defined Task 4, called Task 5 + Task 7.
 - `selectSheetsByGroup(round, 'aff' | 'neg')` — Task 1 signature, Task 7 usage.
-- `sheet.newAff` / `sheet.newNeg` / `sheet.rename` CommandId — defined Task 3, implemented Task 5, bound Task 6, invoked Task 7.
+- `sheet.newAff` / `sheet.newNeg` / `sheet.rename` CommandId — defined Task 3, implemented Task 5,
+  bound Task 6, invoked Task 7.
 - `pendingPrefix` — module-level in Task 8, cleared on editable target and on unmount.

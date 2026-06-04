@@ -1,38 +1,42 @@
-'use client';
+"use client";
 
-import { useRef, useState, useEffect } from 'react';
-import { useRoundStore, selectSheetsByGroup, selectSheetDropCount } from '@/lib/store/useRoundStore';
-import { executeCommand } from '@/lib/commands/commands';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import type { Sheet } from '@/lib/model/types';
+import { useRef, useState, useEffect } from "react";
+import {
+  useRoundStore,
+  selectSheetsByGroup,
+  selectSheetDropCount,
+} from "@/lib/store/useRoundStore";
+import { executeCommand } from "@/lib/commands/commands";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { Sheet } from "@/lib/model/types";
 
 interface GroupConfig {
-  group: 'aff' | 'neg';
+  group: "aff" | "neg";
   label: string;
 }
 
 const GROUPS: GroupConfig[] = [
-  { group: 'aff', label: 'Aff' },
-  { group: 'neg', label: 'Neg' },
+  { group: "aff", label: "Aff" },
+  { group: "neg", label: "Neg" },
 ];
 
 export default function Sidebar() {
-  const round            = useRoundStore(s => s.round);
-  const activeSheetId    = useRoundStore(s => s.activeSheetId);
-  const setActiveSheet   = useRoundStore(s => s.setActiveSheet);
-  const renamingSheetId  = useRoundStore(s => s.renamingSheetId);
-  const setRenamingSheet = useRoundStore(s => s.setRenamingSheet);
-  const labelDrops       = useRoundStore(s => s.labelDrops);
-  const removeSheet      = useRoundStore(s => s.removeSheet);
+  const round = useRoundStore((s) => s.round);
+  const activeSheetId = useRoundStore((s) => s.activeSheetId);
+  const setActiveSheet = useRoundStore((s) => s.setActiveSheet);
+  const renamingSheetId = useRoundStore((s) => s.renamingSheetId);
+  const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
+  const labelDrops = useRoundStore((s) => s.labelDrops);
+  const removeSheet = useRoundStore((s) => s.removeSheet);
 
   if (!round) return null;
 
-  const cxSheet = round.sheets.find(s => s.kind === 'cx') ?? null;
+  const cxSheet = round.sheets.find((s) => s.kind === "cx") ?? null;
 
   return (
     <nav
-      className="no-print flex flex-col w-[220px] shrink-0 h-full bg-card border-r border-border"
+      className="no-print flex h-full w-[220px] shrink-0 flex-col border-r border-border bg-card"
       aria-label="Sheets"
       data-testid="sidebar"
     >
@@ -41,37 +45,39 @@ export default function Sidebar() {
           <div className="mb-3">
             <div
               data-testid="cx-section-label"
-              className="font-mono text-[9px] font-bold uppercase tracking-widest text-zinc-400 px-2 pb-1"
+              className="px-2 pb-1 font-mono text-[9px] font-bold tracking-widest text-zinc-400 uppercase"
             >
               CX
             </div>
             <button
               type="button"
               onClick={() => setActiveSheet(cxSheet.id)}
-              aria-current={cxSheet.id === activeSheetId ? 'true' : undefined}
+              aria-current={cxSheet.id === activeSheetId ? "true" : undefined}
               data-testid="cx-sheet-row"
               className={cn(
-                'flex items-center w-full text-left text-[13px] px-2 py-1.5 rounded-md border transition-colors',
+                "flex w-full items-center rounded-md border px-2 py-1.5 text-left text-[13px] transition-colors",
                 cxSheet.id === activeSheetId
-                  ? 'bg-zinc-100 border-zinc-200 font-semibold text-zinc-900'
-                  : 'border-transparent hover:bg-zinc-50 text-zinc-700',
+                  ? "border-zinc-200 bg-zinc-100 font-semibold text-zinc-900"
+                  : "border-transparent text-zinc-700 hover:bg-zinc-50",
               )}
             >
-              <span className="overflow-hidden text-ellipsis whitespace-nowrap">{cxSheet.title}</span>
+              <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                {cxSheet.title}
+              </span>
             </button>
           </div>
         )}
         {GROUPS.map(({ group, label }) => {
-          const sheets = selectSheetsByGroup(round, group).filter(s => s.kind !== 'cx');
+          const sheets = selectSheetsByGroup(round, group).filter((s) => s.kind !== "cx");
           return (
             <div key={group} className="mb-3">
-              <div className="font-mono text-[9px] font-bold uppercase tracking-widest text-zinc-400 px-2 pb-1">
+              <div className="px-2 pb-1 font-mono text-[9px] font-bold tracking-widest text-zinc-400 uppercase">
                 {label}
               </div>
               {sheets.length === 0 ? (
-                <div className="text-zinc-400 text-xs px-2 py-1">No sheets</div>
+                <div className="px-2 py-1 text-xs text-zinc-400">No sheets</div>
               ) : (
-                sheets.map(sheet => (
+                sheets.map((sheet) => (
                   <SheetRow
                     key={sheet.id}
                     sheet={sheet}
@@ -89,13 +95,13 @@ export default function Sidebar() {
         })}
       </div>
 
-      <div className="flex gap-1 p-2 shrink-0">
+      <div className="flex shrink-0 gap-1 p-2">
         <Button
           type="button"
           variant="outline"
           size="sm"
           className="flex-1"
-          onClick={() => executeCommand('sheet.newAff')}
+          onClick={() => executeCommand("sheet.newAff")}
           data-testid="add-aff"
         >
           + Aff
@@ -105,7 +111,7 @@ export default function Sidebar() {
           variant="outline"
           size="sm"
           className="flex-1"
-          onClick={() => executeCommand('sheet.newNeg')}
+          onClick={() => executeCommand("sheet.newNeg")}
           data-testid="add-neg"
         >
           + Neg
@@ -125,9 +131,17 @@ interface SheetRowProps {
   onDelete: () => void;
 }
 
-function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRename, onDelete }: SheetRowProps) {
-  const renameSheet      = useRoundStore(s => s.renameSheet);
-  const setRenamingSheet = useRoundStore(s => s.setRenamingSheet);
+function SheetRow({
+  sheet,
+  dropCount,
+  active,
+  onSelect,
+  isRenaming,
+  onStartRename,
+  onDelete,
+}: SheetRowProps) {
+  const renameSheet = useRoundStore((s) => s.renameSheet);
+  const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(sheet.title);
 
@@ -152,20 +166,28 @@ function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRenam
 
   if (isRenaming) {
     return (
-      <div className={cn(
-        'flex items-center gap-1.5 w-full px-2 py-1.5 rounded-md border',
-        active ? 'bg-zinc-100 border-zinc-200 font-semibold' : 'border-transparent',
-      )}>
+      <div
+        className={cn(
+          "flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5",
+          active ? "border-zinc-200 bg-zinc-100 font-semibold" : "border-transparent",
+        )}
+      >
         <input
           ref={inputRef}
           value={value}
-          onChange={e => setValue(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') { e.stopPropagation(); commit(); }
-            if (e.key === 'Escape') { e.stopPropagation(); cancel(); }
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.stopPropagation();
+              commit();
+            }
+            if (e.key === "Escape") {
+              e.stopPropagation();
+              cancel();
+            }
           }}
           onBlur={commit}
-          className="flex-1 text-[13px] text-zinc-900 bg-transparent border-none outline outline-1 outline-aff rounded-sm px-0.5 font-[inherit]"
+          className="flex-1 rounded-sm border-none bg-transparent px-0.5 font-[inherit] text-[13px] text-zinc-900 outline outline-1 outline-aff"
           data-testid={`rename-input-${sheet.id}`}
         />
       </div>
@@ -179,14 +201,16 @@ function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRenam
         tabIndex={0}
         onClick={onSelect}
         onDoubleClick={onStartRename}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onSelect(); }}
-        aria-current={active ? 'true' : undefined}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onSelect();
+        }}
+        aria-current={active ? "true" : undefined}
         data-testid={`sheet-${sheet.id}`}
         className={cn(
-          'flex flex-1 items-center justify-between gap-1.5 w-full text-left text-[13px] text-zinc-700 px-2 py-1.5 rounded-md border transition-colors cursor-pointer',
+          "flex w-full flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-md border px-2 py-1.5 text-left text-[13px] text-zinc-700 transition-colors",
           active
-            ? 'bg-zinc-100 border-zinc-200 font-semibold text-zinc-900'
-            : 'border-transparent hover:bg-zinc-50',
+            ? "border-zinc-200 bg-zinc-100 font-semibold text-zinc-900"
+            : "border-transparent hover:bg-zinc-50",
         )}
       >
         <span className="overflow-hidden text-ellipsis whitespace-nowrap">{sheet.title}</span>
@@ -200,11 +224,21 @@ function SheetRow({ sheet, dropCount, active, onSelect, isRenaming, onStartRenam
         role="button"
         aria-label="Delete sheet"
         data-testid={`delete-sheet-${sheet.id}`}
-        onClick={e => { e.stopPropagation(); onDelete(); }}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onDelete(); } }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.stopPropagation();
+            onDelete();
+          }
+        }}
         tabIndex={0}
-        className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 px-1 cursor-pointer"
-      >×</span>
+        className="cursor-pointer px-1 text-zinc-400 opacity-0 group-hover:opacity-100 hover:text-red-500"
+      >
+        ×
+      </span>
     </div>
   );
 }

@@ -1,7 +1,7 @@
-import type { Round, Scouting, Sheet } from './types';
-import { uid } from './ids';
+import type { Round, Scouting, Sheet } from "./types";
+import { uid } from "./ids";
 
-const emptyDebater = () => ({ first: '', last: '' });
+const emptyDebater = () => ({ first: "", last: "" });
 
 export function emptyScouting(): Scouting {
   return {
@@ -12,7 +12,7 @@ export function emptyScouting(): Scouting {
 
 /** A fresh pinned CX sheet. order = -1 so it sorts above flow sheets. */
 export function makeCxSheet(): Sheet {
-  return { id: uid('sheet'), title: 'CX', group: 'aff', order: -1, kind: 'cx' };
+  return { id: uid("sheet"), title: "CX", group: "aff", order: -1, kind: "cx" };
 }
 
 /**
@@ -24,8 +24,8 @@ export function normalizeRound(raw: Round): Round {
   delete r.topic;
   delete r.cx;
   if (!r.scouting) r.scouting = emptyScouting();
-  r.sheets = r.sheets.map(s => ({ ...s, kind: s.kind ?? 'flow' }));
-  if (!r.sheets.some(s => s.kind === 'cx')) {
+  r.sheets = r.sheets.map((s) => ({ ...s, kind: s.kind ?? "flow" }));
+  if (!r.sheets.some((s) => s.kind === "cx")) {
     r.sheets = [makeCxSheet(), ...r.sheets];
   }
   return r;

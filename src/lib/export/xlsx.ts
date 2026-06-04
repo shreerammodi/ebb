@@ -3,9 +3,9 @@
  * from the hidden AFF/NEG template sheets, then re-zips as .xlsx.
  */
 
-import { unzipSync, zipSync, strToU8, strFromU8 } from 'fflate';
-import type { Round } from '@/lib/model/types';
-import { buildExportSheets } from './cells';
+import { unzipSync, zipSync, strToU8, strFromU8 } from "fflate";
+import type { Round } from "@/lib/model/types";
+import { buildExportSheets } from "./cells";
 import {
   buildFlowSheetXml,
   registerSheetsInRels,
@@ -14,8 +14,8 @@ import {
   setCellInline,
   escXml,
   type NewSheet,
-} from './xlsxParts';
-import { isoDate, exportFilename, downloadBlob } from './download';
+} from "./xlsxParts";
+import { isoDate, exportFilename, downloadBlob } from "./download";
 
 /** Resolve a sheet name → part filename (e.g. "AFF" → "sheet2.xml") using workbook + rels XML. */
 function resolveSheetPart(workbookXml: string, relsXml: string, sheetName: string): string {
@@ -30,7 +30,8 @@ function resolveSheetPart(workbookXml: string, relsXml: string, sheetName: strin
 /** Highest rId number present in the rels XML. */
 function maxRidNumber(relsXml: string): number {
   const re = /Id="rId(\d+)"/g;
-  let max = 0, m;
+  let max = 0,
+    m;
   while ((m = re.exec(relsXml)) !== null) max = Math.max(max, parseInt(m[1]));
   return max;
 }
@@ -45,7 +46,8 @@ function nextPartNumber(files: Record<string, Uint8Array>): number {
 /** Highest sheetId value in workbook.xml. */
 function maxSheetId(workbookXml: string): number {
   const re = /sheetId="(\d+)"/g;
-  let max = 0, m;
+  let max = 0,
+    m;
   while ((m = re.exec(workbookXml)) !== null) max = Math.max(max, parseInt(m[1]));
   return max;
 }
@@ -65,7 +67,7 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
     (_, pre, c, post) => `${pre}${parseInt(c) + n}${post}`,
   );
   // Append new sheet names before the closing </vt:vector> inside TitlesOfParts.
-  const entries = newSheets.map(s => `<vt:lpstr>${escXml(s.name)}</vt:lpstr>`).join('');
+  const entries = newSheets.map((s) => `<vt:lpstr>${escXml(s.name)}</vt:lpstr>`).join("");
   out = out.replace(/(<\/vt:vector><\/TitlesOfParts>)/, `${entries}$1`);
   return out;
 }
@@ -84,39 +86,37 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
  */
 function patchCx(cxXml: string, round: Round): string {
   const PERIODS = [
-    { qId: 'cx-1ac-q', rId: 'cx-1ac-r', qCol: 'A', rCol: 'B', qStyle: 23, rStyle: 27 },
-    { qId: 'cx-1nc-q', rId: 'cx-1nc-r', qCol: 'C', rCol: 'D', qStyle: 29, rStyle: 25 },
-    { qId: 'cx-2ac-q', rId: 'cx-2ac-r', qCol: 'E', rCol: 'F', qStyle: 23, rStyle: 27 },
-    { qId: 'cx-2nc-q', rId: 'cx-2nc-r', qCol: 'G', rCol: 'H', qStyle: 29, rStyle: 23 },
+    { qId: "cx-1ac-q", rId: "cx-1ac-r", qCol: "A", rCol: "B", qStyle: 23, rStyle: 27 },
+    { qId: "cx-1nc-q", rId: "cx-1nc-r", qCol: "C", rCol: "D", qStyle: 29, rStyle: 25 },
+    { qId: "cx-2ac-q", rId: "cx-2ac-r", qCol: "E", rCol: "F", qStyle: 23, rStyle: 27 },
+    { qId: "cx-2nc-q", rId: "cx-2nc-r", qCol: "G", rCol: "H", qStyle: 29, rStyle: 23 },
   ];
   const FIRST_DATA_ROW = 3;
 
-  const cxSheet = round.sheets.find(s => s.kind === 'cx');
+  const cxSheet = round.sheets.find((s) => s.kind === "cx");
   if (!cxSheet) return cxXml;
-  const cxNodes = round.nodes.filter(n => n.sheetId === cxSheet.id);
+  const cxNodes = round.nodes.filter((n) => n.sheetId === cxSheet.id);
 
   // For each period: ordered Question nodes, each paired with its Response child.
-  const perPeriod = PERIODS.map(p => {
-    const questions = cxNodes
-      .filter(n => n.speechId === p.qId)
-      .sort((a, b) => a.order - b.order);
-    const pairs = questions.map(q => {
-      const resp = cxNodes.find(n => n.parentId === q.id && n.speechId === p.rId);
-      return { question: q.text, response: resp?.text ?? '' };
+  const perPeriod = PERIODS.map((p) => {
+    const questions = cxNodes.filter((n) => n.speechId === p.qId).sort((a, b) => a.order - b.order);
+    const pairs = questions.map((q) => {
+      const resp = cxNodes.find((n) => n.parentId === q.id && n.speechId === p.rId);
+      return { question: q.text, response: resp?.text ?? "" };
     });
     return { ...p, pairs };
   });
 
-  const maxRows = Math.max(0, ...perPeriod.map(p => p.pairs.length));
+  const maxRows = Math.max(0, ...perPeriod.map((p) => p.pairs.length));
   if (maxRows === 0) return cxXml;
 
   const makeCell = (ref: string, value: string, style: number): string =>
     `<c r="${ref}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${escXml(value)}</t></is></c>`;
 
-  let insertedRows = '';
+  let insertedRows = "";
   for (let i = 0; i < maxRows; i++) {
     const rowNum = FIRST_DATA_ROW + i;
-    let cells = '';
+    let cells = "";
     for (const p of perPeriod) {
       const pair = p.pairs[i];
       if (!pair) continue;
@@ -126,7 +126,7 @@ function patchCx(cxXml: string, round: Round): string {
     if (cells) insertedRows += `<row r="${rowNum}" spans="1:8">${cells}</row>`;
   }
 
-  let out = cxXml.replace('</sheetData>', `${insertedRows}</sheetData>`);
+  let out = cxXml.replace("</sheetData>", `${insertedRows}</sheetData>`);
   const lastRow = FIRST_DATA_ROW + maxRows - 1;
   out = out.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:H${lastRow}"/>`);
   return out;
@@ -135,19 +135,25 @@ function patchCx(cxXml: string, round: Round): string {
 function patchInfo(infoXml: string, round: Round): string {
   let xml = infoXml;
   const sc = round.scouting;
-  const set = (ref: string, v?: string) => { if (v && v.trim()) xml = setCellInline(xml, ref, v); };
+  const set = (ref: string, v?: string) => {
+    if (v && v.trim()) xml = setCellInline(xml, ref, v);
+  };
 
-  set('D5', sc.affSchool);
-  set('H5', sc.negSchool);
-  set('D8', sc.aff.first.first);  set('E8', sc.aff.first.last);
-  set('D9', sc.aff.second.first); set('E9', sc.aff.second.last);
-  set('H8', sc.neg.first.first);  set('I8', sc.neg.first.last);
-  set('H9', sc.neg.second.first); set('I9', sc.neg.second.last);
-  set('D11', sc.tournament);
-  set('D12', sc.judge);
-  set('D13', sc.date || isoDate(round.createdAt));
-  if (sc.decision?.vote) set('F16', sc.decision.vote.toUpperCase());
-  set('D32', sc.decision?.rfd);
+  set("D5", sc.affSchool);
+  set("H5", sc.negSchool);
+  set("D8", sc.aff.first.first);
+  set("E8", sc.aff.first.last);
+  set("D9", sc.aff.second.first);
+  set("E9", sc.aff.second.last);
+  set("H8", sc.neg.first.first);
+  set("I8", sc.neg.first.last);
+  set("H9", sc.neg.second.first);
+  set("I9", sc.neg.second.last);
+  set("D11", sc.tournament);
+  set("D12", sc.judge);
+  set("D13", sc.date || isoDate(round.createdAt));
+  if (sc.decision?.vote) set("F16", sc.decision.vote.toUpperCase());
+  set("D32", sc.decision?.rfd);
   return xml;
 }
 
@@ -159,12 +165,12 @@ function patchInfo(infoXml: string, round: Round): string {
  * taken; the chosen name is added to it so callers stay collision-free.
  */
 function safeSheetName(title: string, used: Set<string>): string {
-  let base = (title ?? '')
-    .replace(/[:\\/?*\[\]]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/^'+|'+$/g, '')
+  let base = (title ?? "")
+    .replace(/[:\\/?*\[\]]/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^'+|'+$/g, "")
     .trim();
-  if (!base) base = 'Sheet';
+  if (!base) base = "Sheet";
   if (base.length > 31) base = base.slice(0, 31).trim();
 
   let name = base;
@@ -187,10 +193,10 @@ function safeSheetName(title: string, used: Set<string>): string {
  * r: namespaces and the <sheet> entries are carried over.
  */
 function rebuildWorkbookXml(originalXml: string, newSheets: NewSheet[]): string {
-  const existingSheets = originalXml.match(/<sheets>([\s\S]*?)<\/sheets>/)?.[1] ?? '';
+  const existingSheets = originalXml.match(/<sheets>([\s\S]*?)<\/sheets>/)?.[1] ?? "";
   const newSheetEntries = newSheets
-    .map(s => `<sheet name="${escXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rid}"/>`)
-    .join('');
+    .map((s) => `<sheet name="${escXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rid}"/>`)
+    .join("");
 
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -201,7 +207,7 @@ function rebuildWorkbookXml(originalXml: string, newSheets: NewSheet[]): string 
     '<bookViews><workbookView xWindow="100" yWindow="700" windowWidth="51000" windowHeight="28000"/></bookViews>' +
     `<sheets>${existingSheets}${newSheetEntries}</sheets>` +
     '<calcPr calcId="191029"/>' +
-    '</workbook>'
+    "</workbook>"
   );
 }
 
@@ -212,42 +218,46 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
   const stripRevision = (bytes: Uint8Array) => {
     const xml = strFromU8(bytes);
     let clean = xml
-      .replace(/ xr:revisionPtr="[^"]*"/g, '')
-      .replace(/ xr:uid="[^"]*"/g, '')
-      .replace(/<xr:revisionPtr[^>]*>\d+<\/xr:revisionPtr>/g, '')
-      .replace(/<xr:uid[^>]*>[\s\S]*?<\/xr:uid>/g, '')
-      .replace(/<x:embed[^>]*>/g, '')
-      .replace(/<xlink:[^>]*>/g, '')
-      .replace(/ codeName="[^"]*"/g, '');
+      .replace(/ xr:revisionPtr="[^"]*"/g, "")
+      .replace(/ xr:uid="[^"]*"/g, "")
+      .replace(/<xr:revisionPtr[^>]*>\d+<\/xr:revisionPtr>/g, "")
+      .replace(/<xr:uid[^>]*>[\s\S]*?<\/xr:uid>/g, "")
+      .replace(/<x:embed[^>]*>/g, "")
+      .replace(/<xlink:[^>]*>/g, "")
+      .replace(/ codeName="[^"]*"/g, "");
     return strToU8(clean);
   };
 
   const files = Object.assign({}, stripped);
   for (const key of Object.keys(files)) {
-    if (key.startsWith('xl/worksheets/') && key.endsWith('.xml')) {
+    if (key.startsWith("xl/worksheets/") && key.endsWith(".xml")) {
       files[key] = stripRevision(files[key]);
     }
   }
 
-  const workbookXml = strFromU8(files['xl/workbook.xml']);
-  const relsXml = strFromU8(files['xl/_rels/workbook.xml.rels']);
+  const workbookXml = strFromU8(files["xl/workbook.xml"]);
+  const relsXml = strFromU8(files["xl/_rels/workbook.xml.rels"]);
 
-  const affPart = resolveSheetPart(workbookXml, relsXml, 'AFF');
-  const negPart = resolveSheetPart(workbookXml, relsXml, 'NEG');
-  const infoPart = resolveSheetPart(workbookXml, relsXml, 'Info');
+  const affPart = resolveSheetPart(workbookXml, relsXml, "AFF");
+  const negPart = resolveSheetPart(workbookXml, relsXml, "NEG");
+  const infoPart = resolveSheetPart(workbookXml, relsXml, "Info");
 
   // Patch Info sheet.
-  files[`xl/worksheets/${infoPart}`] = strToU8(patchInfo(strFromU8(files[`xl/worksheets/${infoPart}`]), round));
+  files[`xl/worksheets/${infoPart}`] = strToU8(
+    patchInfo(strFromU8(files[`xl/worksheets/${infoPart}`]), round),
+  );
 
   // Patch CX sheet.
-  const cxPart = resolveSheetPart(workbookXml, relsXml, 'CX');
-  files[`xl/worksheets/${cxPart}`] = strToU8(patchCx(strFromU8(files[`xl/worksheets/${cxPart}`]), round));
+  const cxPart = resolveSheetPart(workbookXml, relsXml, "CX");
+  files[`xl/worksheets/${cxPart}`] = strToU8(
+    patchCx(strFromU8(files[`xl/worksheets/${cxPart}`]), round),
+  );
 
   // Build one new sheet per flow sheet. The CX sheet is written into the
   // template's dedicated CX sheet above (patchCx), so it must NOT also be
   // appended as a flow tab — doing so creates a duplicate "CX" name and
   // corrupts the workbook.
-  const exportSheets = buildExportSheets(round).filter(es => es.sheet.kind !== 'cx');
+  const exportSheets = buildExportSheets(round).filter((es) => es.sheet.kind !== "cx");
   const baseSheetId = maxSheetId(workbookXml);
   const baseRid = maxRidNumber(relsXml);
   const basePart = nextPartNumber(files);
@@ -256,7 +266,7 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
   // Excel tab names must be unique (case-insensitively) across the whole
   // workbook, so seed the used-name set with the template's existing sheets.
   const usedNames = new Set(
-    [...workbookXml.matchAll(/<sheet [^>]*name="([^"]*)"/g)].map(m => m[1].toLowerCase()),
+    [...workbookXml.matchAll(/<sheet [^>]*name="([^"]*)"/g)].map((m) => m[1].toLowerCase()),
   );
 
   exportSheets.forEach((es, i) => {
@@ -267,34 +277,43 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
       rid: `rId${baseRid + 1 + i}`,
       partName,
     };
-    const tmpl = es.sheet.group === 'aff' ? files[`xl/worksheets/${affPart}`] : files[`xl/worksheets/${negPart}`];
+    const tmpl =
+      es.sheet.group === "aff"
+        ? files[`xl/worksheets/${affPart}`]
+        : files[`xl/worksheets/${negPart}`];
     const tmplXml = strFromU8(tmpl);
     const flowXml = buildFlowSheetXml(tmplXml, es);
     files[`xl/worksheets/${partName}`] = strToU8(flowXml);
     newSheets.push(meta);
   });
 
-  files['xl/workbook.xml'] = strToU8(rebuildWorkbookXml(workbookXml, newSheets));
-  files['xl/_rels/workbook.xml.rels'] = strToU8(
+  files["xl/workbook.xml"] = strToU8(rebuildWorkbookXml(workbookXml, newSheets));
+  files["xl/_rels/workbook.xml.rels"] = strToU8(
     removeCalcChainFromRels(registerSheetsInRels(relsXml, newSheets)),
   );
-  files['[Content_Types].xml'] = strToU8(registerSheetsInContentTypes(strFromU8(files['[Content_Types].xml']), newSheets));
+  files["[Content_Types].xml"] = strToU8(
+    registerSheetsInContentTypes(strFromU8(files["[Content_Types].xml"]), newSheets),
+  );
 
   // Sync app.xml sheet count — mismatch triggers Excel's repair dialog.
-  files['docProps/app.xml'] = strToU8(updateAppXml(strFromU8(files['docProps/app.xml']), newSheets));
+  files["docProps/app.xml"] = strToU8(
+    updateAppXml(strFromU8(files["docProps/app.xml"]), newSheets),
+  );
 
   // Drop calcChain so Excel rebuilds it (sheet set changed).
-  delete files['xl/calcChain.xml'];
+  delete files["xl/calcChain.xml"];
 
   return zipSync(files);
 }
 
 /** Browser orchestrator: fetch template, build, download. */
 export async function downloadXlsx(round: Round): Promise<void> {
-  const res = await fetch('/templates/Flow.xlsx');
-  if (!res.ok) throw new Error('Could not load the Excel template');
+  const res = await fetch("/templates/Flow.xlsx");
+  if (!res.ok) throw new Error("Could not load the Excel template");
   const templateBytes = new Uint8Array(await res.arrayBuffer());
   const bytes = buildXlsx(round, templateBytes);
-  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  downloadBlob(blob, exportFilename(round.role, round.createdAt, 'xlsx'));
+  const blob = new Blob([bytes.buffer as ArrayBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  downloadBlob(blob, exportFilename(round.role, round.createdAt, "xlsx"));
 }

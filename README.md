@@ -1,6 +1,7 @@
 # Debate Flow
 
-A local-first, keyboard-first web app for flowing competitive debate rounds (Policy and LD). No accounts. All data stays on your device.
+A local-first, keyboard-first web app for flowing competitive debate rounds (Policy and LD). No
+accounts. All data stays on your device.
 
 ## Features
 
@@ -28,26 +29,27 @@ npm run test:watch
 
 ## Default keybindings (Vim)
 
-| Key | Action |
-|-----|--------|
-| `h j k l` | Move selection left / down / up / right |
-| `i` or `Enter` | Edit (insert mode) |
-| `Escape` | Exit insert mode |
-| `o` | Add answer (sibling under same parent) |
-| `a` | Answer across (child in next opposing speech) |
-| `O` | New root argument |
-| `x` | Delete node |
-| `c` / `e` | Toggle conceded / extended |
-| `s` | Toggle speech timer |
-| `p` / `P` | Toggle Aff / Neg prep |
-| `]` / `[` | Next / prev sheet |
-| `⌘K` | Quick switcher |
-| `⌘N` | New sheet |
-| `⌘,` | Keymap settings |
-| `⌘1–9` | Jump to sheet 1–9 |
+| Key            | Action                                        |
+| -------------- | --------------------------------------------- |
+| `h j k l`      | Move selection left / down / up / right       |
+| `i` or `Enter` | Edit (insert mode)                            |
+| `Escape`       | Exit insert mode                              |
+| `o`            | Add answer (sibling under same parent)        |
+| `a`            | Answer across (child in next opposing speech) |
+| `O`            | New root argument                             |
+| `x`            | Delete node                                   |
+| `c` / `e`      | Toggle conceded / extended                    |
+| `s`            | Toggle speech timer                           |
+| `p` / `P`      | Toggle Aff / Neg prep                         |
+| `]` / `[`      | Next / prev sheet                             |
+| `⌘K`           | Quick switcher                                |
+| `⌘N`           | New sheet                                     |
+| `⌘,`           | Keymap settings                               |
+| `⌘1–9`         | Jump to sheet 1–9                             |
 
 ## Design constraints
 
-- **Reserved colors**: blue = Aff, red = Neg, only ever for sides. Selection = violet, drop = amber, conceded/extended = green.
+- **Reserved colors**: blue = Aff, red = Neg, only ever for sides. Selection = violet, drop = amber,
+  conceded/extended = green.
 - **Light mode only**.
 - **Local-first**: IndexedDB + localStorage only, no network requests.

@@ -4,9 +4,9 @@
  * on-screen grid uses, plus the numbering overlay and flattened decorations.
  */
 
-import type { Round, Sheet } from '@/lib/model/types';
-import { buildLayout } from '@/lib/grid/layout';
-import { numberFor } from '@/lib/model/numbering';
+import type { Round, Sheet } from "@/lib/model/types";
+import { buildLayout } from "@/lib/grid/layout";
+import { numberFor } from "@/lib/model/numbering";
 
 export interface ExportCell {
   /** 0-based column index within format.speeches (matches the grid). */
@@ -35,19 +35,19 @@ export function buildExportSheets(round: Round): ExportSheet[] {
   return round.sheets
     .slice()
     .sort((a, b) => a.order - b.order)
-    .map(sheet => {
-      const sheetNodes = round.nodes.filter(n => n.sheetId === sheet.id);
+    .map((sheet) => {
+      const sheetNodes = round.nodes.filter((n) => n.sheetId === sheet.id);
       const { placed, totalRows } = buildLayout(sheetNodes, speeches);
-      const cells: ExportCell[] = placed.map(p => {
+      const cells: ExportCell[] = placed.map((p) => {
         const num = numberFor(sheetNodes, p.node.id);
-        const prefix = num !== null ? `${num}. ` : '';
+        const prefix = num !== null ? `${num}. ` : "";
         return {
           col: p.col,
-          speechName: speeches[p.col]?.name ?? '',
+          speechName: speeches[p.col]?.name ?? "",
           row: p.startRow,
           text: prefix + p.node.text,
-          crossed: p.node.statuses.includes('conceded'),
-          extended: p.node.statuses.includes('extended'),
+          crossed: p.node.statuses.includes("conceded"),
+          extended: p.node.statuses.includes("extended"),
         };
       });
 

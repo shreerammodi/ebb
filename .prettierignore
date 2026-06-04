@@ -1,0 +1,16 @@
+# Build output & dependencies
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+
+# Generated / vendored
+package-lock.json
+next-env.d.ts
+tsconfig.tsbuildinfo
+*.log
+
+# Superpowers workspace
+.superpowers/

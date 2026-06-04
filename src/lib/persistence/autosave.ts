@@ -4,11 +4,11 @@
  * Depends on db.ts for the Dexie singleton.
  */
 
-import { db } from './db';
-import type { Round } from '@/lib/model/types';
-import type { RoundStore } from '@/lib/store/useRoundStore';
-import type { StoreApi } from 'zustand';
-import { normalizeRound } from '@/lib/model/normalize';
+import { db } from "./db";
+import type { Round } from "@/lib/model/types";
+import type { RoundStore } from "@/lib/store/useRoundStore";
+import type { StoreApi } from "zustand";
+import { normalizeRound } from "@/lib/model/normalize";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,8 +17,8 @@ export interface RoundSummary {
   id: string;
   updatedAt: number;
   createdAt: number;
-  role: Round['role'];
-  meta: Round['meta'];
+  role: Round["role"];
+  meta: Round["meta"];
 }
 
 // ─── Core CRUD ────────────────────────────────────────────────────────────────
@@ -38,8 +38,8 @@ export async function loadRound(id: string): Promise<Round | undefined> {
  * (most recently updated first).
  */
 export async function listRounds(): Promise<RoundSummary[]> {
-  const rounds = await db.rounds.orderBy('updatedAt').reverse().toArray();
-  return rounds.map(r => ({
+  const rounds = await db.rounds.orderBy("updatedAt").reverse().toArray();
+  return rounds.map((r) => ({
     id: r.id,
     updatedAt: r.updatedAt,
     createdAt: r.createdAt,
@@ -58,7 +58,7 @@ export async function deleteRound(id: string): Promise<void> {
  * empty.  Normalizes the round so legacy rounds gain new fields.
  */
 export async function loadLastRound(): Promise<Round | undefined> {
-  const r = await db.rounds.orderBy('updatedAt').last();
+  const r = await db.rounds.orderBy("updatedAt").last();
   return r ? normalizeRound(r) : undefined;
 }
 
@@ -100,8 +100,7 @@ export function attachAutosave(store: StoreApi<RoundStore>): () => void {
 
     if (!round) return;
 
-    const changed =
-      round.id !== lastSeenId || round.updatedAt !== lastSeenUpdatedAt;
+    const changed = round.id !== lastSeenId || round.updatedAt !== lastSeenUpdatedAt;
 
     if (!changed) return;
 

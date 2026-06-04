@@ -9,26 +9,28 @@
  * Tick interval: 1 second via setInterval.
  */
 
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRoundStore } from '@/lib/store/useRoundStore';
+import { useEffect } from "react";
+import { useRoundStore } from "@/lib/store/useRoundStore";
 
 /** Formats a number of seconds as mm:ss. */
 function formatTime(seconds: number): string {
   return (
-    Math.floor(seconds / 60).toString().padStart(2, '0') +
-    ':' +
-    (seconds % 60).toString().padStart(2, '0')
+    Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0") +
+    ":" +
+    (seconds % 60).toString().padStart(2, "0")
   );
 }
 
 export default function Timers() {
-  const round = useRoundStore(s => s.round);
-  const tickSpeech = useRoundStore(s => s.tickSpeech);
-  const tickPrep = useRoundStore(s => s.tickPrep);
-  const startPrep = useRoundStore(s => s.startPrep);
-  const stopPrep = useRoundStore(s => s.stopPrep);
+  const round = useRoundStore((s) => s.round);
+  const tickSpeech = useRoundStore((s) => s.tickSpeech);
+  const tickPrep = useRoundStore((s) => s.tickPrep);
+  const startPrep = useRoundStore((s) => s.startPrep);
+  const stopPrep = useRoundStore((s) => s.stopPrep);
 
   const timers = round?.timers ?? null;
   const running = timers?.running ?? false;
@@ -52,7 +54,7 @@ export default function Timers() {
   }
 
   const activeSpeech = timers.activeSpeechId
-    ? round.format.speeches.find(s => s.id === timers.activeSpeechId) ?? null
+    ? (round.format.speeches.find((s) => s.id === timers.activeSpeechId) ?? null)
     : null;
 
   function handleToggleSpeech() {
@@ -66,18 +68,18 @@ export default function Timers() {
   }
 
   function handleTogglePrepAff() {
-    if (prepRunning === 'aff') {
+    if (prepRunning === "aff") {
       stopPrep();
     } else {
-      startPrep('aff');
+      startPrep("aff");
     }
   }
 
   function handleTogglePrepNeg() {
-    if (prepRunning === 'neg') {
+    if (prepRunning === "neg") {
       stopPrep();
     } else {
-      startPrep('neg');
+      startPrep("neg");
     }
   }
 
@@ -85,9 +87,7 @@ export default function Timers() {
     <div className="timers no-print">
       {/* Speech timer */}
       <div className="timers__speech">
-        {activeSpeech && (
-          <span className="timers__speech-name">{activeSpeech.name}</span>
-        )}
+        {activeSpeech && <span className="timers__speech-name">{activeSpeech.name}</span>}
         {timers.speechRemaining !== null && (
           <span className="timers__speech-time" data-testid="speech-time">
             {formatTime(timers.speechRemaining)}
@@ -96,10 +96,10 @@ export default function Timers() {
         <button
           className="timers__btn"
           onClick={handleToggleSpeech}
-          aria-label={running ? 'Stop speech timer' : 'Start speech timer'}
+          aria-label={running ? "Stop speech timer" : "Start speech timer"}
           disabled={timers.speechRemaining === null}
         >
-          {running ? 'Stop' : 'Start'}
+          {running ? "Stop" : "Start"}
         </button>
       </div>
 
@@ -112,9 +112,9 @@ export default function Timers() {
         <button
           className="timers__btn"
           onClick={handleTogglePrepAff}
-          aria-label={prepRunning === 'aff' ? 'Stop aff prep' : 'Start aff prep'}
+          aria-label={prepRunning === "aff" ? "Stop aff prep" : "Start aff prep"}
         >
-          {prepRunning === 'aff' ? 'Stop' : 'Start'}
+          {prepRunning === "aff" ? "Stop" : "Start"}
         </button>
       </div>
 
@@ -127,9 +127,9 @@ export default function Timers() {
         <button
           className="timers__btn"
           onClick={handleTogglePrepNeg}
-          aria-label={prepRunning === 'neg' ? 'Stop neg prep' : 'Start neg prep'}
+          aria-label={prepRunning === "neg" ? "Stop neg prep" : "Start neg prep"}
         >
-          {prepRunning === 'neg' ? 'Stop' : 'Start'}
+          {prepRunning === "neg" ? "Stop" : "Start"}
         </button>
       </div>
     </div>

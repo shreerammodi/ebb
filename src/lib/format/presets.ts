@@ -1,5 +1,5 @@
-import type { Format, Side } from '@/lib/model/types';
-import { uid } from '@/lib/model/ids';
+import type { Format, Side } from "@/lib/model/types";
+import { uid } from "@/lib/model/ids";
 
 /** A speech template (no id yet — id is assigned by makeFormat). */
 export interface SpeechTemplate {
@@ -19,15 +19,15 @@ export interface FormatPresetDescriptor {
 // ─── Policy preset ──────────────────────────────────────────────────────────
 
 export const POLICY_PRESET: FormatPresetDescriptor = {
-  name: 'Policy',
+  name: "Policy",
   speeches: [
-    { name: '1AC', side: 'aff', seconds: 480 },
-    { name: '1NC', side: 'neg', seconds: 480 },
-    { name: '2AC', side: 'aff', seconds: 480 },
-    { name: 'Block', side: 'neg', seconds: 780 },
-    { name: '1AR', side: 'aff', seconds: 300 },
-    { name: '2NR', side: 'neg', seconds: 300 },
-    { name: '2AR', side: 'aff', seconds: 300 },
+    { name: "1AC", side: "aff", seconds: 480 },
+    { name: "1NC", side: "neg", seconds: 480 },
+    { name: "2AC", side: "aff", seconds: 480 },
+    { name: "Block", side: "neg", seconds: 780 },
+    { name: "1AR", side: "aff", seconds: 300 },
+    { name: "2NR", side: "neg", seconds: 300 },
+    { name: "2AR", side: "aff", seconds: 300 },
   ],
   prepSeconds: { aff: 480, neg: 480 },
 };
@@ -35,20 +35,20 @@ export const POLICY_PRESET: FormatPresetDescriptor = {
 // ─── Lincoln–Douglas preset ──────────────────────────────────────────────────
 
 export const LD_PRESET: FormatPresetDescriptor = {
-  name: 'Lincoln–Douglas',
+  name: "Lincoln–Douglas",
   speeches: [
-    { name: 'AC', side: 'aff', seconds: 360 },
-    { name: 'NC', side: 'neg', seconds: 420 },
-    { name: '1AR', side: 'aff', seconds: 240 },
-    { name: 'NR', side: 'neg', seconds: 360 },
-    { name: '2AR', side: 'aff', seconds: 180 },
+    { name: "AC", side: "aff", seconds: 360 },
+    { name: "NC", side: "neg", seconds: 420 },
+    { name: "1AR", side: "aff", seconds: 240 },
+    { name: "NR", side: "neg", seconds: 360 },
+    { name: "2AR", side: "aff", seconds: 180 },
   ],
   prepSeconds: { aff: 240, neg: 240 },
 };
 
 // ─── Enumerable list for setup UI ────────────────────────────────────────────
 
-export type PresetKey = 'policy' | 'ld';
+export type PresetKey = "policy" | "ld";
 
 export interface PresetEntry {
   key: PresetKey;
@@ -57,8 +57,8 @@ export interface PresetEntry {
 }
 
 export const FORMAT_PRESETS: PresetEntry[] = [
-  { key: 'policy', label: 'Policy', preset: POLICY_PRESET },
-  { key: 'ld', label: 'Lincoln–Douglas', preset: LD_PRESET },
+  { key: "policy", label: "Policy", preset: POLICY_PRESET },
+  { key: "ld", label: "Lincoln–Douglas", preset: LD_PRESET },
 ];
 
 // ─── Factory ─────────────────────────────────────────────────────────────────
@@ -69,10 +69,10 @@ export const FORMAT_PRESETS: PresetEntry[] = [
  */
 export function makeFormat(preset: FormatPresetDescriptor): Format {
   return {
-    id: uid('fmt'),
+    id: uid("fmt"),
     name: preset.name,
     speeches: preset.speeches.map((t) => ({
-      id: uid('speech'),
+      id: uid("speech"),
       name: t.name,
       side: t.side,
       seconds: t.seconds,

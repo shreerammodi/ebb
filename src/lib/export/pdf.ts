@@ -3,10 +3,10 @@
  * the same placement as the on-screen grid. Aff columns blue, neg columns red.
  */
 
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
-import type { Round } from '@/lib/model/types';
-import { buildExportSheets } from './cells';
-import { exportFilename, downloadBlob } from './download';
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import type { Round } from "@/lib/model/types";
+import { buildExportSheets } from "./cells";
+import { exportFilename, downloadBlob } from "./download";
 
 const PAGE_W = 792; // US-letter landscape
 const PAGE_H = 612;
@@ -22,7 +22,7 @@ const INK = rgb(0.1, 0.1, 0.1);
 function wrap(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const words = text.split(/\s+/);
   const lines: string[] = [];
-  let line = '';
+  let line = "";
   for (const w of words) {
     const next = line ? `${line} ${w}` : w;
     if (font.widthOfTextAtSize(next, size) > maxWidth && line) {
@@ -40,8 +40,8 @@ function drawSheet(
   page: PDFPage,
   font: PDFFont,
   boldFont: PDFFont,
-  speeches: Round['format']['speeches'],
-  cells: ReturnType<typeof buildExportSheets>[number]['cells'],
+  speeches: Round["format"]["speeches"],
+  cells: ReturnType<typeof buildExportSheets>[number]["cells"],
 ): void {
   const cols = speeches.length;
   const colW = (PAGE_W - 2 * MARGIN) / cols;
@@ -53,14 +53,14 @@ function drawSheet(
       y: topY - FONT_SIZE - 2,
       size: FONT_SIZE + 1,
       font: boldFont,
-      color: s.side === 'aff' ? AFF : NEG,
+      color: s.side === "aff" ? AFF : NEG,
     });
   });
 
   for (const cell of cells) {
     const x = MARGIN + cell.col * colW + 2;
     const yTop = topY - HEADER_H - cell.row * ROW_H;
-    const prefix = cell.extended ? '→ ' : '';
+    const prefix = cell.extended ? "→ " : "";
     const lines = wrap(prefix + cell.text, font, FONT_SIZE, colW - 4);
     lines.forEach((ln, li) => {
       const y = yTop - FONT_SIZE - li * (FONT_SIZE + 1);
@@ -86,7 +86,13 @@ export async function buildPdf(round: Round): Promise<Uint8Array> {
 
   for (const es of buildExportSheets(round)) {
     const page = doc.addPage([PAGE_W, PAGE_H]);
-    page.drawText(es.sheet.title, { x: MARGIN, y: PAGE_H - MARGIN + 4, size: 10, font: boldFont, color: INK });
+    page.drawText(es.sheet.title, {
+      x: MARGIN,
+      y: PAGE_H - MARGIN + 4,
+      size: 10,
+      font: boldFont,
+      color: INK,
+    });
     drawSheet(page, font, boldFont, speeches, es.cells);
   }
 
@@ -97,6 +103,6 @@ export async function buildPdf(round: Round): Promise<Uint8Array> {
 
 export async function downloadPdf(round: Round): Promise<void> {
   const bytes = await buildPdf(round);
-  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' });
-  downloadBlob(blob, exportFilename(round.role, round.createdAt, 'pdf'));
+  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+  downloadBlob(blob, exportFilename(round.role, round.createdAt, "pdf"));
 }

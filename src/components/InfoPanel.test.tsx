@@ -1,23 +1,25 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, it, expect, beforeEach } from 'vitest';
-import InfoPanel from './InfoPanel';
-import { useRoundStore } from '@/lib/store/useRoundStore';
-import { makeFormatByKey } from '@/lib/format/presets';
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, beforeEach } from "vitest";
+import InfoPanel from "./InfoPanel";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import { makeFormatByKey } from "@/lib/format/presets";
 
-describe('InfoPanel', () => {
+describe("InfoPanel", () => {
   beforeEach(() => {
-    useRoundStore.getState().createRound({ role: 'aff', format: makeFormatByKey('policy'), meta: {} });
+    useRoundStore
+      .getState()
+      .createRound({ role: "aff", format: makeFormatByKey("policy"), meta: {} });
     useRoundStore.getState().setInfoOpen(true);
   });
 
-  it('edits aff school', async () => {
+  it("edits aff school", async () => {
     render(<InfoPanel />);
-    await userEvent.type(screen.getByTestId('scout-affSchool'), 'Westwood');
-    expect(useRoundStore.getState().round!.scouting.affSchool).toBe('Westwood');
+    await userEvent.type(screen.getByTestId("scout-affSchool"), "Westwood");
+    expect(useRoundStore.getState().round!.scouting.affSchool).toBe("Westwood");
   });
 
-  it('renders nothing when closed', () => {
+  it("renders nothing when closed", () => {
     useRoundStore.getState().setInfoOpen(false);
     const { container } = render(<InfoPanel />);
     expect(container.firstChild).toBeNull();

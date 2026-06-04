@@ -37,7 +37,7 @@ export type Boxes = Record<string, BoxNode>;
 export interface Sheet {
   id: string;
   title: string;
-  side: 'aff' | 'neg';
+  side: "aff" | "neg";
   /** Display order among sheets. */
   order: number;
 }

@@ -2,8 +2,8 @@
  * Coalesced text edits. While typing, the latest content is held as a
  * PendingEdit; it is committed as a single update action on blur / focus change.
  */
-import type { Boxes } from '@/lib/editor/types';
-import type { Action } from '@/lib/editor/action';
+import type { Boxes } from "@/lib/editor/types";
+import type { Action } from "@/lib/editor/action";
 
 export interface PendingEdit {
   boxId: string;
@@ -13,8 +13,8 @@ export interface PendingEdit {
 /** Build an update action that changes only the box's content. */
 export function updateContentAction(boxes: Boxes, boxId: string, content: string): Action {
   const node = boxes[boxId];
-  if (!node) return { tag: 'identity' };
-  return { tag: 'update', id: boxId, value: { ...node.value, content } };
+  if (!node) return { tag: "identity" };
+  return { tag: "update", id: boxId, value: { ...node.value, content } };
 }
 
 /**
@@ -26,5 +26,5 @@ export function resolvePending(boxes: Boxes, pending: PendingEdit | null): Actio
   const node = boxes[pending.boxId];
   if (!node) return null;
   if (node.value.content === pending.content) return null;
-  return { tag: 'update', id: pending.boxId, value: { ...node.value, content: pending.content } };
+  return { tag: "update", id: pending.boxId, value: { ...node.value, content: pending.content } };
 }

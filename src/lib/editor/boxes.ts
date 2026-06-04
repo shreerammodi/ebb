@@ -1,15 +1,22 @@
 /**
  * Pure helpers over the Boxes map. No mutation, no store access.
  */
-import { uid } from '@/lib/model/ids';
-import type { Box, BoxNode, Boxes } from '@/lib/editor/types';
+import { uid } from "@/lib/model/ids";
+import type { Box, BoxNode, Boxes } from "@/lib/editor/types";
 
 export function newBox(overrides: Partial<Box> = {}): Box {
-  return { content: '', empty: false, crossed: false, bold: false, isExtension: false, ...overrides };
+  return {
+    content: "",
+    empty: false,
+    crossed: false,
+    bold: false,
+    isExtension: false,
+    ...overrides,
+  };
 }
 
 export function newBoxId(): string {
-  return uid('box');
+  return uid("box");
 }
 
 export function getNode(boxes: Boxes, id: string): BoxNode | null {

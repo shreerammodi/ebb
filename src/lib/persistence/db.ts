@@ -5,28 +5,31 @@
  * All persistence operations live in autosave.ts.
  */
 
-import Dexie, { type EntityTable } from 'dexie';
-import type { Round } from '@/lib/model/types';
+import Dexie, { type EntityTable } from "dexie";
+import type { Round } from "@/lib/model/types";
 
 export class DebateFlowDB extends Dexie {
-  rounds!: EntityTable<Round, 'id'>;
+  rounds!: EntityTable<Round, "id">;
 
-  constructor(name = 'debateflow') {
+  constructor(name = "debateflow") {
     super(name);
     this.version(1).stores({
       /**
        * Primary key:  id
        * Index:        updatedAt  (for sorting by recency)
        */
-      rounds: 'id, updatedAt',
+      rounds: "id, updatedAt",
     });
-    this.version(2).upgrade(tx =>
-      tx.table('rounds').toCollection().modify((r: { sheets: Array<{ group: string }> }) => {
-        r.sheets = r.sheets.map(s => ({
-          ...s,
-          group: s.group === 'case' ? 'aff' : s.group === 'offcase' ? 'neg' : s.group,
-        }));
-      }),
+    this.version(2).upgrade((tx) =>
+      tx
+        .table("rounds")
+        .toCollection()
+        .modify((r: { sheets: Array<{ group: string }> }) => {
+          r.sheets = r.sheets.map((s) => ({
+            ...s,
+            group: s.group === "case" ? "aff" : s.group === "offcase" ? "neg" : s.group,
+          }));
+        }),
     );
   }
 }

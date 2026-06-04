@@ -1,8 +1,8 @@
-import '@testing-library/jest-dom';
+import "@testing-library/jest-dom";
 
 // jsdom in this environment does not provide localStorage. Supply a minimal
 // in-memory polyfill so code that persists settings can run under test.
-if (typeof window !== 'undefined' && window.localStorage == null) {
+if (typeof window !== "undefined" && window.localStorage == null) {
   const store = new Map<string, string>();
   const localStorageMock: Storage = {
     get length() {
@@ -24,7 +24,7 @@ if (typeof window !== 'undefined' && window.localStorage == null) {
       store.set(key, String(value));
     },
   };
-  Object.defineProperty(window, 'localStorage', {
+  Object.defineProperty(window, "localStorage", {
     value: localStorageMock,
     writable: true,
   });
@@ -33,6 +33,6 @@ if (typeof window !== 'undefined' && window.localStorage == null) {
 // Radix UI components (DropdownMenu, Dialog) dispatch PointerEvents.
 // jsdom doesn't implement PointerEvent; alias it to MouseEvent so Radix
 // event handlers fire correctly under test.
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as unknown as Record<string, unknown>).PointerEvent = window.MouseEvent;
 }

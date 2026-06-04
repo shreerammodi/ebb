@@ -4,7 +4,7 @@
  * Pure function; no side effects, no UI/store imports.
  */
 
-import type { ArgumentNode } from '@/lib/model/types';
+import type { ArgumentNode } from "@/lib/model/types";
 
 /**
  * Returns the display number for a response node within its sibling group.
@@ -20,14 +20,14 @@ import type { ArgumentNode } from '@/lib/model/types';
  * - Returns null if nodeId is not found in the array.
  */
 export function numberFor(nodes: ArgumentNode[], nodeId: string): number | null {
-  const target = nodes.find(n => n.id === nodeId);
+  const target = nodes.find((n) => n.id === nodeId);
   if (!target) return null;
   if (target.parentId === null) return null;
 
   // Collect siblings: same parent, sheet, and speech
   const siblings = nodes
     .filter(
-      n =>
+      (n) =>
         n.parentId === target.parentId &&
         n.sheetId === target.sheetId &&
         n.speechId === target.speechId,
@@ -36,7 +36,7 @@ export function numberFor(nodes: ArgumentNode[], nodeId: string): number | null 
 
   let counter = 0;
   for (const sibling of siblings) {
-    if (typeof sibling.numberOverride === 'number') {
+    if (typeof sibling.numberOverride === "number") {
       counter = sibling.numberOverride;
     } else {
       counter += 1;

@@ -7,9 +7,9 @@
  * chord to it instead.
  */
 
-import { getPresetKeymap, type KeymapName } from './presets';
-import type { Keymap } from './types';
-import type { CommandId } from '@/lib/commands/registry';
+import { getPresetKeymap, type KeymapName } from "./presets";
+import type { Keymap } from "./types";
+import type { CommandId } from "@/lib/commands/registry";
 
 export function effectiveKeymap(
   keymapName: KeymapName,
