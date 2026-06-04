@@ -15,6 +15,7 @@
 
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { detectDrops } from '@/lib/model/drops';
+import { CX_COLUMNS } from '@/lib/model/cxColumns';
 import GridCell from './GridCell';
 import { buildLayout, type PlacedNode } from '@/lib/grid/layout';
 
@@ -31,12 +32,16 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
   const selection = useRoundStore(s => s.selection);
   const setSelection = useRoundStore(s => s.setSelection);
 
+  const sheets = useRoundStore(s => s.round?.sheets ?? []);
+  const sheet = sheets.find(s => s.id === sheetId);
+  const isCx = sheet?.kind === 'cx';
+
   if (!format) return null;
 
-  const speeches = format.speeches;
+  const speeches = isCx ? CX_COLUMNS : format.speeches;
 
   const sheetNodes = nodes.filter(n => n.sheetId === sheetId);
-  const droppedIds = new Set(detectDrops(nodes, format, sheetId));
+  const droppedIds = isCx ? new Set<string>() : new Set(detectDrops(nodes, format, sheetId));
 
   // ── Compute group header info ──────────────────────────────────────────────
   // Build "top header" cells: runs of same non-empty group get a colSpan header;
@@ -156,6 +161,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                       isDropped={isDropped}
                       sheetNodes={sheetNodes}
                       hasChildren={hasChildrenSet.has(node.id)}
+                      isCx={isCx}
                     />
                   </td>
                 );

@@ -283,6 +283,45 @@ describe('FlowGrid', () => {
     useRoundStore.getState().setAutoNumber(true);
   });
 
+  // ── CX sheet rendering ────────────────────────────────────────────────────
+
+  it('renders CX period group headers when the sheet is a CX sheet', () => {
+    const fmt = makeFormatByKey('policy');
+    useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
+    const round = useRoundStore.getState().round!;
+    const cxSheet = round.sheets.find(s => s.kind === 'cx')!;
+    const cxId = cxSheet.id;
+
+    render(<FlowGrid sheetId={cxId} />);
+
+    ['1AC CX', '1NC CX', '2AC CX', '2NC CX'].forEach(h =>
+      expect(screen.getByText(h)).toBeTruthy(),
+    );
+    expect(screen.getAllByText('Question').length).toBe(4);
+    expect(screen.getAllByText('Response').length).toBe(4);
+  });
+
+  it('does not number or badge cells on a CX sheet even when autoNumber is on', () => {
+    const fmt = makeFormatByKey('policy');
+    useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
+    const round = useRoundStore.getState().round!;
+    const cxSheet = round.sheets.find(s => s.kind === 'cx')!;
+    const cxId = cxSheet.id;
+
+    useRoundStore.getState().setAutoNumber(true);
+    useRoundStore.getState().addNode({
+      sheetId: cxId,
+      speechId: 'cx-1ac-q',
+      parentId: null,
+      text: 'Q1',
+    });
+
+    render(<FlowGrid sheetId={cxId} />);
+
+    expect(screen.getByText('Q1')).toBeTruthy();
+    expect(screen.queryByText('1.')).toBeNull();
+  });
+
   // ── Group header side class ────────────────────────────────────────────────
 
   it('applies side-aff class to a group header spanning aff speeches', () => {

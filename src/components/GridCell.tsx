@@ -20,6 +20,8 @@ export interface GridCellProps {
   sheetNodes: ArgumentNode[];
   /** True if this node has children (is a parent). */
   hasChildren: boolean;
+  /** True when rendered inside a CX sheet — suppresses numbering and badges. */
+  isCx?: boolean;
 }
 
 export default function GridCell({
@@ -29,6 +31,7 @@ export default function GridCell({
   isDropped,
   sheetNodes,
   hasChildren,
+  isCx,
 }: GridCellProps) {
   const selection = useRoundStore(s => s.selection);
   const mode = useRoundStore(s => s.mode);
@@ -101,11 +104,11 @@ export default function GridCell({
       onClick={handleClick}
       style={{ display: 'block', width: '100%', cursor: 'pointer' }}
     >
-      {autoNumber && num !== null && <span className="arg-num">{num}.</span>}
+      {!isCx && autoNumber && num !== null && <span className="arg-num">{num}.</span>}
       <span className={hasChildren ? 'arg-parent' : undefined}>{node.text}</span>
-      {labelDrops && isDropped && <> <span className="badge-drop">⚠ dropped</span></>}
-      {showConceded && <> <span className="status-good">✓ conceded</span></>}
-      {showExtended && <> <span className="status-good">✓ extended</span></>}
+      {!isCx && labelDrops && isDropped && <> <span className="badge-drop">⚠ dropped</span></>}
+      {!isCx && showConceded && <> <span className="status-good">✓ conceded</span></>}
+      {!isCx && showExtended && <> <span className="status-good">✓ extended</span></>}
     </span>
   );
 }
