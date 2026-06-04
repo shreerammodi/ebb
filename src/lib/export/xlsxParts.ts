@@ -65,13 +65,29 @@ export function buildBodyRow(
   return cells ? `<row r="${rowNum}">${cells}</row>` : '';
 }
 
-/** Replace a self-closing `<c r="REF" .../>` with an inline-string cell, keeping attrs. */
+/**
+ * Replace a `<c r="REF" .../>` (self-closing) or `<c r="REF" ...>...</c>`
+ * (with existing content) with an inline-string cell, keeping non-type attrs.
+ */
 export function setCellInline(xml: string, ref: string, value: string): string {
-  const re = new RegExp(`<c r="${ref}"([^>]*?)/>`);
-  return xml.replace(
-    re,
-    `<c r="${ref}"$1 t="inlineStr"><is><t xml:space="preserve">${escXml(value)}</t></is></c>`,
-  );
+  const escaped = escXml(value);
+  const inline = `<is><t xml:space="preserve">${escaped}</t></is>`;
+  // Self-closing cell (most empty template cells).
+  const selfClose = new RegExp(`<c r="${ref}"([^>]*?)/>`);
+  if (selfClose.test(xml)) {
+    return xml.replace(
+      selfClose,
+      `<c r="${ref}"$1 t="inlineStr">${inline}</c>`,
+    );
+  }
+  // Cell with existing content (shared strings, formulas, etc.) — replace everything
+  // between the opening and closing tags, strip t/cm/vm attrs from the opening tag.
+  const withContent = new RegExp(`<c r="${ref}"([^>]*)>(?:.|\\n)*?<\\/c>`);
+  return xml.replace(withContent, (_, attrs) => {
+    // Strip t="...", cm="...", vm="..." attribute since we're changing to inlineStr.
+    const cleanAttrs = attrs.replace(/\s+(?:t|cm|vm)="[^"]*"/g, '');
+    return `<c r="${ref}"${cleanAttrs} t="inlineStr">${inline}</c>`;
+  });
 }
 
 /**

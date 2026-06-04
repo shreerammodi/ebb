@@ -15,11 +15,17 @@ import {
   nodeBelowInColumn,
   nextOpposingSpeech,
 } from '@/lib/grid/navigation';
+import { responseColumnFor, CX_COLUMNS } from '@/lib/model/cxColumns';
 import type { CommandId } from './registry';
 
 /** Sheets sorted ascending by order. */
 function sortedSheets(sheets: Sheet[]): Sheet[] {
   return sheets.slice().sort((a, b) => a.order - b.order);
+}
+
+/** Returns true when the given sheet is a CX sheet. */
+function isCxSheet(round: { sheets: { id: string; kind?: string }[] }, sheetId: string): boolean {
+  return round.sheets.find(s => s.id === sheetId)?.kind === 'cx';
 }
 
 /** Selects a node by its ids and switches to insert mode. */
@@ -29,11 +35,11 @@ function selectNodeInsert(ids: { sheetId: string; speechId: string; nodeId: stri
   setMode('insert');
 }
 
-/** Jumps to the Nth (1-indexed, order-sorted) sheet, no-op if out of range. */
+/** Jumps to the Nth (1-indexed, order-sorted) flow sheet, no-op if out of range. */
 function jumpToSheet(n: number): void {
   const { round, setActiveSheet } = useRoundStore.getState();
   if (!round) return;
-  const sheets = sortedSheets(round.sheets);
+  const sheets = sortedSheets(round.sheets.filter(s => s.kind !== 'cx'));
   const target = sheets[n - 1];
   if (target) setActiveSheet(target.id);
 }
@@ -92,6 +98,16 @@ export function executeCommand(id: CommandId): void {
       return;
     }
 
+    case 'edit.undo': {
+      useRoundStore.getState().undo();
+      return;
+    }
+
+    case 'edit.redo': {
+      useRoundStore.getState().redo();
+      return;
+    }
+
     // ── Node creation ────────────────────────────────────────────────────────
     case 'node.addAnswer': {
       if (!round) return;
@@ -115,14 +131,19 @@ export function executeCommand(id: CommandId): void {
       if (!sel || sel.nodeId === '') return;
       const node = round.nodes.find(n => n.id === sel.nodeId);
       if (!node) return;
-      const targetSpeech = nextOpposingSpeech(round.format, node.speechId);
-      if (!targetSpeech) return;
+      let targetSpeechId: string | null;
+      if (isCxSheet(round, node.sheetId)) {
+        targetSpeechId = responseColumnFor(node.speechId); // Q → its Response column
+      } else {
+        targetSpeechId = nextOpposingSpeech(round.format, node.speechId)?.id ?? null;
+      }
+      if (!targetSpeechId) return;
       const newId = state.addNode({
         sheetId: node.sheetId,
-        speechId: targetSpeech.id,
+        speechId: targetSpeechId,
         parentId: node.id,
       });
-      selectNodeInsert({ sheetId: node.sheetId, speechId: targetSpeech.id, nodeId: newId });
+      selectNodeInsert({ sheetId: node.sheetId, speechId: targetSpeechId, nodeId: newId });
       return;
     }
 
@@ -131,7 +152,8 @@ export function executeCommand(id: CommandId): void {
       const sel = state.selection;
       const sheetId = sel?.sheetId ?? state.activeSheetId;
       if (!sheetId) return;
-      const speechId = sel?.speechId ?? round.format.speeches[0]?.id;
+      const onCx = isCxSheet(round, sheetId);
+      const speechId = sel?.speechId ?? (onCx ? CX_COLUMNS[0].id : round.format.speeches[0]?.id);
       if (!speechId) return;
       const selNode = sel?.nodeId ? round.nodes.find(n => n.id === sel.nodeId) : undefined;
       const insertAfterOrder = selNode?.speechId === speechId ? selNode.order : undefined;
@@ -144,7 +166,21 @@ export function executeCommand(id: CommandId): void {
       if (!round) return;
       const sel = state.selection;
       if (!sel || sel.nodeId === '') return;
+      const node = round.nodes.find(n => n.id === sel.nodeId);
+      if (!node) return;
+      // Pick a neighbor so the cursor stays in the flow after deletion.
+      // above/below/parent are never descendants of `node`, so they survive removal.
+      const neighbor =
+        nodeAboveInColumn(round.nodes, node) ??
+        nodeBelowInColumn(round.nodes, node) ??
+        parentOf(round.nodes, node.id);
       state.removeNode(sel.nodeId);
+      if (neighbor) {
+        state.setSelection({ sheetId: neighbor.sheetId, speechId: neighbor.speechId, nodeId: neighbor.id });
+      } else {
+        // No neighbor — keep the cursor on the now-empty cell in the same column.
+        state.setSelection({ sheetId: node.sheetId, speechId: node.speechId, nodeId: '' });
+      }
       return;
     }
 
@@ -154,6 +190,7 @@ export function executeCommand(id: CommandId): void {
       if (!round) return;
       const sel = state.selection;
       if (!sel || sel.nodeId === '') return;
+      if (isCxSheet(round, sel.sheetId)) return;
       state.toggleNodeStatus(
         sel.nodeId,
         id === 'status.toggleConceded' ? 'conceded' : 'extended',
@@ -165,7 +202,7 @@ export function executeCommand(id: CommandId): void {
     case 'sheet.next':
     case 'sheet.prev': {
       if (!round) return;
-      const sheets = sortedSheets(round.sheets);
+      const sheets = sortedSheets(round.sheets.filter(s => s.kind !== 'cx'));
       if (sheets.length === 0) return;
       const idx = sheets.findIndex(s => s.id === state.activeSheetId);
       const base = idx === -1 ? 0 : idx;
@@ -226,6 +263,12 @@ export function executeCommand(id: CommandId): void {
     // ── Settings ─────────────────────────────────────────────────────────────
     case 'settings.open': {
       state.setSettingsOpen(true);
+      return;
+    }
+
+    // ── Info ──────────────────────────────────────────────────────────────────
+    case 'info.open': {
+      state.setInfoOpen(true);
       return;
     }
 

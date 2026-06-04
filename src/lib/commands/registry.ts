@@ -7,7 +7,7 @@
 
 export type CommandId =
   | 'move.left' | 'move.down' | 'move.up' | 'move.right'
-  | 'edit.enter' | 'edit.exit'
+  | 'edit.enter' | 'edit.exit' | 'edit.undo' | 'edit.redo'
   | 'node.addAnswer' | 'node.answerAcross' | 'arg.newRoot'
   | 'node.delete'
   | 'status.toggleConceded' | 'status.toggleExtended'
@@ -15,6 +15,7 @@ export type CommandId =
   | 'sheet.jump1' | 'sheet.jump2' | 'sheet.jump3' | 'sheet.jump4' | 'sheet.jump5'
   | 'sheet.jump6' | 'sheet.jump7' | 'sheet.jump8' | 'sheet.jump9'
   | 'settings.open'
+  | 'info.open'
   | 'timer.toggleSpeech'
   | 'timer.togglePrepAff'
   | 'timer.togglePrepNeg'
@@ -32,6 +33,8 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
   'move.right': { id: 'move.right', label: 'Move right (to child)' },
   'edit.enter': { id: 'edit.enter', label: 'Edit cell' },
   'edit.exit': { id: 'edit.exit', label: 'Exit edit' },
+  'edit.undo': { id: 'edit.undo', label: 'Undo' },
+  'edit.redo': { id: 'edit.redo', label: 'Redo' },
   'node.addAnswer': { id: 'node.addAnswer', label: 'Add answer (sibling)' },
   'node.answerAcross': { id: 'node.answerAcross', label: 'Answer across (next speech)' },
   'arg.newRoot': { id: 'arg.newRoot', label: 'New root argument' },
@@ -54,6 +57,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
   'sheet.jump8': { id: 'sheet.jump8', label: 'Jump to sheet 8' },
   'sheet.jump9': { id: 'sheet.jump9', label: 'Jump to sheet 9' },
   'settings.open': { id: 'settings.open', label: 'Open settings' },
+  'info.open': { id: 'info.open', label: 'Open round info' },
   'timer.toggleSpeech': { id: 'timer.toggleSpeech', label: 'Toggle speech timer' },
   'timer.togglePrepAff': { id: 'timer.togglePrepAff', label: 'Toggle aff prep timer' },
   'timer.togglePrepNeg': { id: 'timer.togglePrepNeg', label: 'Toggle neg prep timer' },

@@ -95,15 +95,84 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
   return out;
 }
 
+/**
+ * Write CX nodes into the CX sheet.
+ *
+ * CX sheet layout (from xl/worksheets/sheet5.xml in Flow.xlsx template):
+ *   Row 1: Period headers merged over column pairs (A1:B1=1AC CX, C1:D1=1NC CX, E1:F1=2AC CX, G1:H1=2NC CX)
+ *   Row 2: Column headers (Question/Response alternating A-H)
+ *   Row 3+: Data rows
+ *
+ * CX data is stored as ArgumentNodes on the CX sheet. Question nodes have
+ * speechId like 'cx-1ac-q'; response nodes are children (parentId = question.id)
+ * with speechId 'cx-1ac-r'. The 4 periods map to column pairs A/B, C/D, E/F, G/H.
+ */
+function patchCx(cxXml: string, round: Round): string {
+  const PERIODS = [
+    { qId: 'cx-1ac-q', rId: 'cx-1ac-r', qCol: 'A', rCol: 'B', qStyle: 23, rStyle: 27 },
+    { qId: 'cx-1nc-q', rId: 'cx-1nc-r', qCol: 'C', rCol: 'D', qStyle: 29, rStyle: 25 },
+    { qId: 'cx-2ac-q', rId: 'cx-2ac-r', qCol: 'E', rCol: 'F', qStyle: 23, rStyle: 27 },
+    { qId: 'cx-2nc-q', rId: 'cx-2nc-r', qCol: 'G', rCol: 'H', qStyle: 29, rStyle: 23 },
+  ];
+  const FIRST_DATA_ROW = 3;
+
+  const cxSheet = round.sheets.find(s => s.kind === 'cx');
+  if (!cxSheet) return cxXml;
+  const cxNodes = round.nodes.filter(n => n.sheetId === cxSheet.id);
+
+  // For each period: ordered Question nodes, each paired with its Response child.
+  const perPeriod = PERIODS.map(p => {
+    const questions = cxNodes
+      .filter(n => n.speechId === p.qId)
+      .sort((a, b) => a.order - b.order);
+    const pairs = questions.map(q => {
+      const resp = cxNodes.find(n => n.parentId === q.id && n.speechId === p.rId);
+      return { question: q.text, response: resp?.text ?? '' };
+    });
+    return { ...p, pairs };
+  });
+
+  const maxRows = Math.max(0, ...perPeriod.map(p => p.pairs.length));
+  if (maxRows === 0) return cxXml;
+
+  const makeCell = (ref: string, value: string, style: number): string =>
+    `<c r="${ref}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${escXml(value)}</t></is></c>`;
+
+  let insertedRows = '';
+  for (let i = 0; i < maxRows; i++) {
+    const rowNum = FIRST_DATA_ROW + i;
+    let cells = '';
+    for (const p of perPeriod) {
+      const pair = p.pairs[i];
+      if (!pair) continue;
+      if (pair.question.trim()) cells += makeCell(`${p.qCol}${rowNum}`, pair.question, p.qStyle);
+      if (pair.response.trim()) cells += makeCell(`${p.rCol}${rowNum}`, pair.response, p.rStyle);
+    }
+    if (cells) insertedRows += `<row r="${rowNum}" spans="1:8">${cells}</row>`;
+  }
+
+  let out = cxXml.replace('</sheetData>', `${insertedRows}</sheetData>`);
+  const lastRow = FIRST_DATA_ROW + maxRows - 1;
+  out = out.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:H${lastRow}"/>`);
+  return out;
+}
+
 function patchInfo(infoXml: string, round: Round): string {
   let xml = infoXml;
-  const m = round.meta;
-  if (m.tournament) xml = setCellInline(xml, 'D11', m.tournament);
-  if (m.roundLabel) xml = setCellInline(xml, 'D12', m.roundLabel);
-  xml = setCellInline(xml, 'D13', isoDate(round.createdAt));
-  if (m.affName) xml = setCellInline(xml, 'D8', m.affName);
-  if (m.negName) xml = setCellInline(xml, 'H8', m.negName);
-  if (m.judge) xml = setCellInline(xml, 'D16', m.judge);
+  const sc = round.scouting;
+  const set = (ref: string, v?: string) => { if (v && v.trim()) xml = setCellInline(xml, ref, v); };
+
+  set('D5', sc.affSchool);
+  set('H5', sc.negSchool);
+  set('D8', sc.aff.first.first);  set('E8', sc.aff.first.last);
+  set('D9', sc.aff.second.first); set('E9', sc.aff.second.last);
+  set('H8', sc.neg.first.first);  set('I8', sc.neg.first.last);
+  set('H9', sc.neg.second.first); set('I9', sc.neg.second.last);
+  set('D11', sc.tournament);
+  set('D12', sc.judge);
+  set('D13', sc.date || isoDate(round.createdAt));
+  if (sc.decision?.vote) set('F16', sc.decision.vote.toUpperCase());
+  set('D32', sc.decision?.rfd);
   return xml;
 }
 
@@ -129,6 +198,10 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
 
   // Patch Info sheet.
   files[`xl/worksheets/${infoPart}`] = strToU8(patchInfo(strFromU8(files[`xl/worksheets/${infoPart}`]), round));
+
+  // Patch CX sheet.
+  const cxPart = resolveSheetPart(workbookXml, relsXml, 'CX');
+  files[`xl/worksheets/${cxPart}`] = strToU8(patchCx(strFromU8(files[`xl/worksheets/${cxPart}`]), round));
 
   // Build one new sheet per flow sheet.
   const exportSheets = buildExportSheets(round);

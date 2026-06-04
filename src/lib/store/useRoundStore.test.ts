@@ -51,11 +51,12 @@ describe('createRound', () => {
     expect(round!.id).toMatch(/^round_/);
   });
 
-  it('initializes with empty sheets and nodes', () => {
+  it('initializes with a pinned CX sheet and empty nodes', () => {
     const fmt = makeFormatByKey('ld');
     useRoundStore.getState().createRound({ role: 'neg', format: fmt, meta: {} });
     const { round } = useRoundStore.getState();
-    expect(round!.sheets).toEqual([]);
+    expect(round!.sheets).toHaveLength(1);
+    expect(round!.sheets[0].kind).toBe('cx');
     expect(round!.nodes).toEqual([]);
   });
 
@@ -70,13 +71,6 @@ describe('createRound', () => {
       prepRemaining: { aff: 480, neg: 480 },
       prepRunning: null,
     });
-  });
-
-  it('stores the optional topic', () => {
-    const fmt = makeFormatByKey('policy');
-    useRoundStore.getState().createRound({ role: 'aff', format: fmt, meta: {}, topic: 'Resolved: X' });
-    const { round } = useRoundStore.getState();
-    expect(round!.topic).toBe('Resolved: X');
   });
 
   it('stores the provided meta', () => {
@@ -134,8 +128,10 @@ describe('addSheet', () => {
   });
 
   it('appends a sheet to round.sheets', () => {
+    // createRound seeds 1 CX sheet; addSheet appends a flow sheet
     useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
-    expect(useRoundStore.getState().round!.sheets).toHaveLength(1);
+    expect(useRoundStore.getState().round!.sheets).toHaveLength(2);
+    expect(useRoundStore.getState().round!.sheets.filter(s => s.kind !== 'cx')).toHaveLength(1);
   });
 
   it('sets activeSheetId to the first added sheet', () => {
@@ -149,12 +145,14 @@ describe('addSheet', () => {
     expect(useRoundStore.getState().activeSheetId).toBe(first);
   });
 
-  it('assigns incrementing order values', () => {
+  it('assigns incrementing order values after the pinned CX sheet (order -1)', () => {
     useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
-    const sheets = useRoundStore.getState().round!.sheets;
-    expect(sheets[0].order).toBe(0);
-    expect(sheets[1].order).toBe(1);
+    const flowSheets = useRoundStore.getState().round!.sheets
+      .filter(s => s.kind !== 'cx')
+      .sort((a, b) => a.order - b.order);
+    expect(flowSheets[0].order).toBe(0);
+    expect(flowSheets[1].order).toBe(1);
   });
 
   it('updates round.updatedAt', () => {
@@ -211,7 +209,10 @@ describe('removeSheet', () => {
   it('removes the sheet from round.sheets', () => {
     const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
     useRoundStore.getState().removeSheet(id);
-    expect(useRoundStore.getState().round!.sheets).toHaveLength(0);
+    // CX sheet remains
+    const sheets = useRoundStore.getState().round!.sheets;
+    expect(sheets.some(s => s.id === id)).toBe(false);
+    expect(sheets.filter(s => s.kind !== 'cx')).toHaveLength(0);
   });
 
   it('also removes nodes belonging to that sheet', () => {
@@ -224,17 +225,22 @@ describe('removeSheet', () => {
     expect(useRoundStore.getState().round!.nodes).toHaveLength(0);
   });
 
-  it('sets activeSheetId to null when active sheet is removed and no other sheets', () => {
+  it('sets activeSheetId to null when all sheets (including CX) are removed', () => {
     const id = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
+    // Remove the flow sheet — CX sheet still remains; activeSheetId falls back to CX
     useRoundStore.getState().removeSheet(id);
+    // Now also remove the CX sheet
+    const cxId = useRoundStore.getState().round!.sheets.find(s => s.kind === 'cx')!.id;
+    useRoundStore.getState().removeSheet(cxId);
     expect(useRoundStore.getState().activeSheetId).toBeNull();
   });
 
   it('sets activeSheetId to another sheet when active is removed', () => {
     const first = useRoundStore.getState().addSheet({ title: 'Case', group: 'aff' });
-    const second = useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
+    useRoundStore.getState().addSheet({ title: 'DA', group: 'neg' });
     useRoundStore.getState().removeSheet(first);
-    expect(useRoundStore.getState().activeSheetId).toBe(second);
+    // active sheet changes (no longer first)
+    expect(useRoundStore.getState().activeSheetId).not.toBe(first);
   });
 
   it('does not change activeSheetId when a non-active sheet is removed', () => {
@@ -681,6 +687,113 @@ describe('renamingSheetId', () => {
 
 // ─── keymap / modal flags ────────────────────────────────────────────────────
 
+// ─── undo/redo ───────────────────────────────────────────────────────────────
+
+function freshRound() {
+  useRoundStore.getState().createRound({ role: 'aff', format: makeFormatByKey('policy'), meta: {} });
+}
+
+describe('undo/redo', () => {
+  beforeEach(() => {
+    useRoundStore.setState({ round: null, past: [], future: [], selection: null, mode: 'normal' });
+    freshRound();
+  });
+
+  it('undoes a node addition', () => {
+    const s = useRoundStore.getState();
+    const sheetId = s.addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'x' });
+    expect(useRoundStore.getState().round!.nodes.length).toBe(1);
+
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.nodes.length).toBe(0);
+
+    useRoundStore.getState().redo();
+    expect(useRoundStore.getState().round!.nodes.length).toBe(1);
+  });
+
+  it('undoes a sheet deletion, restoring its nodes', () => {
+    const s = useRoundStore.getState();
+    const sheetId = s.addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'x' });
+
+    useRoundStore.getState().removeSheet(sheetId);
+    expect(useRoundStore.getState().round!.sheets.find(x => x.id === sheetId)).toBeUndefined();
+
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.sheets.find(x => x.id === sheetId)).toBeDefined();
+    expect(useRoundStore.getState().round!.nodes.length).toBe(1);
+  });
+
+  it('coalesces consecutive text edits to the same node into one undo step', () => {
+    const s = useRoundStore.getState();
+    const sheetId = s.addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    const nodeId = useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: '' });
+
+    useRoundStore.getState().updateNodeText(nodeId, 'a');
+    useRoundStore.getState().updateNodeText(nodeId, 'ab');
+    useRoundStore.getState().updateNodeText(nodeId, 'abc');
+
+    // One undo reverts ALL the coalesced text edits back to the post-add value ('').
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.nodes.find(n => n.id === nodeId)!.text).toBe('');
+  });
+
+  it('does not create undo entries for timer ticks', () => {
+    const s = useRoundStore.getState();
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    s.startSpeech(speechId);
+    const depthBefore = useRoundStore.getState().past.length;
+    useRoundStore.getState().tickSpeech();
+    useRoundStore.getState().tickSpeech();
+    expect(useRoundStore.getState().past.length).toBe(depthBefore);
+  });
+
+  it('does not create undo entries for selection changes', () => {
+    const depthBefore = useRoundStore.getState().past.length;
+    useRoundStore.getState().setSelection({ sheetId: 'a', speechId: 'b', nodeId: '' });
+    expect(useRoundStore.getState().past.length).toBe(depthBefore);
+  });
+
+  it('discards the redo stack when a new edit happens after undo', () => {
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'a' });
+    useRoundStore.getState().undo();              // future now has 1 entry
+    expect(useRoundStore.getState().future.length).toBeGreaterThan(0);
+    useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: 'b' }); // new edit
+    expect(useRoundStore.getState().future.length).toBe(0);
+  });
+
+  it('caps the undo history at UNDO_DEPTH (50) entries', () => {
+    const sheetId = useRoundStore.getState().addSheet({ title: 'Aff', group: 'aff' });
+    const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+    // addSheet already pushed 1 entry; do many more distinct (non-coalescing) commits.
+    for (let i = 0; i < 80; i++) {
+      useRoundStore.getState().addNode({ sheetId, speechId, parentId: null, text: `n${i}` });
+    }
+    expect(useRoundStore.getState().past.length).toBeLessThanOrEqual(50);
+  });
+});
+
+describe('display settings', () => {
+  it('defaults autoNumber and labelDrops to true', () => {
+    expect(useRoundStore.getState().autoNumber).toBe(true);
+    expect(useRoundStore.getState().labelDrops).toBe(true);
+  });
+  it('setters update state', () => {
+    useRoundStore.getState().setAutoNumber(false);
+    expect(useRoundStore.getState().autoNumber).toBe(false);
+    useRoundStore.getState().setLabelDrops(false);
+    expect(useRoundStore.getState().labelDrops).toBe(false);
+    useRoundStore.getState().setAutoNumber(true);
+    useRoundStore.getState().setLabelDrops(true);
+  });
+});
+
 describe('keymap and modal flags', () => {
   beforeEach(resetStore);
 
@@ -711,3 +824,20 @@ describe('keymap and modal flags', () => {
     expect(useRoundStore.getState().settingsOpen).toBe(false);
   });
 });
+
+describe('setScouting', () => {
+  it('deep-merges a partial and is undoable', () => {
+    useRoundStore.getState().createRound({ role: 'aff', format: makeFormatByKey('policy'), meta: {} });
+    useRoundStore.getState().setScouting({ affSchool: 'Westwood' });
+    expect(useRoundStore.getState().round!.scouting.affSchool).toBe('Westwood');
+    useRoundStore.getState().setScouting({ negSchool: 'Lincoln' });
+    expect(useRoundStore.getState().round!.scouting.affSchool).toBe('Westwood');
+    expect(useRoundStore.getState().round!.scouting.negSchool).toBe('Lincoln');
+    // Both setScouting calls coalesce under the same key ('scouting'), so one undo
+    // reverts both back to the initial empty scouting state.
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.scouting.affSchool).toBeUndefined();
+    expect(useRoundStore.getState().round!.scouting.negSchool).toBeUndefined();
+  });
+});
+

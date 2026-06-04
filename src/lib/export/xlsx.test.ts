@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { unzipSync, strFromU8 } from 'fflate';
 import { buildXlsx } from './xlsx';
 import type { Round } from '@/lib/model/types';
+import { emptyScouting } from '@/lib/model/normalize';
 
 const template = new Uint8Array(
   readFileSync(resolve(process.cwd(), 'public/templates/Flow.xlsx')),
@@ -20,6 +21,7 @@ function round(): Round {
       ],
     },
     meta: { tournament: 'States', roundLabel: 'R3' },
+    scouting: emptyScouting(),
     sheets: [{ id: 'sh', title: 'Politics DA', group: 'aff', order: 0 }],
     nodes: [
       { id: 'p', sheetId: 'sh', speechId: 's0', parentId: null, order: 0, text: 'Uniqueness', statuses: [] },
@@ -29,6 +31,27 @@ function round(): Round {
 }
 
 describe('buildXlsx', () => {
+  it('writes CX question/response nodes into the CX sheet', () => {
+    const r = round();
+    // Ensure a CX sheet exists
+    if (!r.sheets.some(s => s.kind === 'cx')) {
+      r.sheets.push({ id: 'cx', title: 'CX', group: 'aff', order: -1, kind: 'cx' });
+    }
+    const cxId = r.sheets.find(s => s.kind === 'cx')!.id;
+    r.nodes.push(
+      { id: 'q1', sheetId: cxId, speechId: 'cx-1ac-q', parentId: null, order: 0, text: 'Why plan?', statuses: [] },
+      { id: 'r1', sheetId: cxId, speechId: 'cx-1ac-r', parentId: 'q1', order: 0, text: 'Because.', statuses: [] },
+    );
+    const bytes = buildXlsx(r, template);
+    const files = unzipSync(bytes);
+    const cxXml = Object.keys(files)
+      .filter(k => k.startsWith('xl/worksheets/'))
+      .map(k => strFromU8(files[k]))
+      .join('');
+    expect(cxXml).toContain('Why plan?');
+    expect(cxXml).toContain('Because.');
+  });
+
   it('produces a valid zip with a populated sheet and patched Info', () => {
     const bytes = buildXlsx(round(), template);
     const files = unzipSync(bytes);
@@ -43,13 +66,28 @@ describe('buildXlsx', () => {
     expect(newSheet).toContain('Politics DA');
     // Workbook registers the new tab name.
     expect(strFromU8(files['xl/workbook.xml'])).toContain('Politics DA');
-    // Info sheet got the tournament value.
-    expect(strFromU8(files['xl/worksheets/sheet1.xml'])).toContain('States');
     // calcChain relationship removed from rels — no dangling reference.
     expect(strFromU8(files['xl/_rels/workbook.xml.rels'])).not.toContain('calcChain');
     // No duplicate xr:uid on the cloned sheet — prevents Excel corruption.
     expect(newSheet).not.toContain('xr:uid=');
     // Body cells carry the column style index from the template.
     expect(newSheet).toContain('s="35"');
+  });
+
+  it('writes scouting fields into the Info sheet', () => {
+    const r = round();
+    r.scouting = {
+      affSchool: 'Westwood', negSchool: 'Lincoln',
+      aff: { first: { first: 'Al', last: 'Smith' }, second: { first: 'Bo', last: 'Jones' } },
+      neg: { first: { first: 'Cy', last: 'Diaz' }, second: { first: 'Di', last: 'Eaton' } },
+      tournament: 'Berkeley', round: '3', date: '2026-06-03', judge: 'Pat Lee',
+      decision: { vote: 'aff', rfd: 'Clear on impacts.' },
+    };
+    const bytes = buildXlsx(r, template);
+    const xml = strFromU8(unzipSync(bytes)['xl/worksheets/sheet1.xml']);
+    expect(xml).toContain('Westwood');
+    expect(xml).toContain('Lincoln');
+    expect(xml).toContain('Smith');
+    expect(xml).toContain('Clear on impacts.');
   });
 });

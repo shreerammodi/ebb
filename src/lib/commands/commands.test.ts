@@ -247,7 +247,7 @@ describe('arg.newRoot', () => {
 describe('node.delete', () => {
   beforeEach(resetStore);
 
-  it('removes the selected node and clears selection', () => {
+  it('removes the selected node and keeps the cursor on the now-empty cell', () => {
     const { sheetId, speeches } = setupRound();
     const sp = speeches[1].id;
     const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
@@ -256,7 +256,21 @@ describe('node.delete', () => {
     executeCommand('node.delete');
     const st = useRoundStore.getState();
     expect(st.round!.nodes.find(n => n.id === a)).toBeUndefined();
-    expect(st.selection).toBeNull();
+    // Cursor stays in the flow on the empty cell in the same column, not null.
+    expect(st.selection).toEqual({ sheetId, speechId: sp, nodeId: '' });
+  });
+
+  it('moves the cursor to the neighbor above after deleting a stacked node', () => {
+    const { sheetId, speeches } = setupRound();
+    const sp = speeches[1].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null, insertAfterOrder: 0 });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: b });
+
+    executeCommand('node.delete');
+    const st = useRoundStore.getState();
+    expect(st.round!.nodes.find(n => n.id === b)).toBeUndefined();
+    expect(st.selection).toEqual({ sheetId, speechId: sp, nodeId: a });
   });
 });
 
@@ -302,47 +316,116 @@ describe('sheet navigation', () => {
     // setupRound already added one sheet ('DA'). Add two more.
     const s2 = s.addSheet({ title: 'CP', group: 'neg' });
     const s3 = s.addSheet({ title: 'K', group: 'neg' });
-    const sheets = useRoundStore.getState().round!.sheets
+    // Flow-only sheets sorted by order (CX excluded from cycling).
+    const flowSheets = useRoundStore.getState().round!.sheets
+      .filter(sh => sh.kind !== 'cx')
       .slice()
       .sort((a, b) => a.order - b.order);
-    return { sheets, s2, s3 };
+    return { flowSheets, s2, s3 };
   }
 
   it('sheet.next activates the next sheet by order (clamped)', () => {
-    const { sheets } = threeSheets();
-    useRoundStore.getState().setActiveSheet(sheets[0].id);
+    const { flowSheets } = threeSheets();
+    useRoundStore.getState().setActiveSheet(flowSheets[0].id);
     executeCommand('sheet.next');
-    expect(useRoundStore.getState().activeSheetId).toBe(sheets[1].id);
+    expect(useRoundStore.getState().activeSheetId).toBe(flowSheets[1].id);
     executeCommand('sheet.next');
-    expect(useRoundStore.getState().activeSheetId).toBe(sheets[2].id);
+    expect(useRoundStore.getState().activeSheetId).toBe(flowSheets[2].id);
     executeCommand('sheet.next'); // clamp
-    expect(useRoundStore.getState().activeSheetId).toBe(sheets[2].id);
+    expect(useRoundStore.getState().activeSheetId).toBe(flowSheets[2].id);
   });
 
   it('sheet.prev activates the previous sheet (clamped)', () => {
-    const { sheets } = threeSheets();
-    useRoundStore.getState().setActiveSheet(sheets[2].id);
+    const { flowSheets } = threeSheets();
+    useRoundStore.getState().setActiveSheet(flowSheets[2].id);
     executeCommand('sheet.prev');
-    expect(useRoundStore.getState().activeSheetId).toBe(sheets[1].id);
+    expect(useRoundStore.getState().activeSheetId).toBe(flowSheets[1].id);
     executeCommand('sheet.prev');
-    expect(useRoundStore.getState().activeSheetId).toBe(sheets[0].id);
+    expect(useRoundStore.getState().activeSheetId).toBe(flowSheets[0].id);
     executeCommand('sheet.prev'); // clamp
-    expect(useRoundStore.getState().activeSheetId).toBe(sheets[0].id);
+    expect(useRoundStore.getState().activeSheetId).toBe(flowSheets[0].id);
   });
 
-  it('sheet.jump2 activates the 2nd sheet', () => {
-    const { sheets } = threeSheets();
+  it('sheet.jump2 activates the 2nd flow sheet', () => {
+    const { flowSheets } = threeSheets();
     executeCommand('sheet.jump2');
-    expect(useRoundStore.getState().activeSheetId).toBe(sheets[1].id);
+    expect(useRoundStore.getState().activeSheetId).toBe(flowSheets[1].id);
   });
 
   it('sheet.jump9 no-ops when out of range', () => {
-    const { sheets } = threeSheets();
-    useRoundStore.getState().setActiveSheet(sheets[0].id);
+    const { flowSheets } = threeSheets();
+    useRoundStore.getState().setActiveSheet(flowSheets[0].id);
     executeCommand('sheet.jump9');
-    expect(useRoundStore.getState().activeSheetId).toBe(sheets[0].id);
+    expect(useRoundStore.getState().activeSheetId).toBe(flowSheets[0].id);
   });
 
+});
+
+describe('CX command behavior', () => {
+  beforeEach(resetStore);
+
+  /** Returns the CX sheet id from the current round. */
+  function getCxSheetId(): string {
+    const round = useRoundStore.getState().round!;
+    const cxSheet = round.sheets.find(s => s.kind === 'cx');
+    if (!cxSheet) throw new Error('No CX sheet found');
+    return cxSheet.id;
+  }
+
+  it('answer-across from a CX question creates a child in the paired response column', () => {
+    setupRound();
+    const cxId = getCxSheetId();
+    const qId = useRoundStore.getState().addNode({
+      sheetId: cxId,
+      speechId: 'cx-1ac-q',
+      parentId: null,
+    });
+    useRoundStore.getState().setSelection({ sheetId: cxId, speechId: 'cx-1ac-q', nodeId: qId });
+
+    executeCommand('node.answerAcross');
+
+    const st = useRoundStore.getState();
+    expect(st.mode).toBe('insert');
+    const newId = st.selection!.nodeId;
+    expect(newId).not.toBe(qId);
+    const created = st.round!.nodes.find(n => n.id === newId);
+    expect(created?.parentId).toBe(qId);
+    expect(created?.speechId).toBe('cx-1ac-r');
+  });
+
+  it('does not toggle conceded/extended on a CX node', () => {
+    setupRound();
+    const cxId = getCxSheetId();
+    const nodeId = useRoundStore.getState().addNode({
+      sheetId: cxId,
+      speechId: 'cx-1ac-q',
+      parentId: null,
+    });
+    useRoundStore.getState().setSelection({ sheetId: cxId, speechId: 'cx-1ac-q', nodeId });
+
+    executeCommand('status.toggleConceded');
+
+    const node = useRoundStore.getState().round!.nodes.find(n => n.id === nodeId);
+    expect(node?.statuses).toEqual([]);
+  });
+
+  it('sheet.next skips the CX sheet', () => {
+    setupRound(); // creates CX sheet + 1 flow sheet ('DA')
+    const s = useRoundStore.getState();
+    const s2 = s.addSheet({ title: 'CP', group: 'neg' });
+    const flowSheets = useRoundStore.getState().round!.sheets
+      .filter(sh => sh.kind !== 'cx')
+      .slice()
+      .sort((a, b) => a.order - b.order);
+    // Start on the first flow sheet and verify next goes to second flow (not CX)
+    useRoundStore.getState().setActiveSheet(flowSheets[0].id);
+    executeCommand('sheet.next');
+    const nextId = useRoundStore.getState().activeSheetId;
+    expect(nextId).toBe(flowSheets[1].id);
+    // Verify the CX sheet was never landed on
+    const cxId = getCxSheetId();
+    expect(nextId).not.toBe(cxId);
+  });
 });
 
 describe('modal flags', () => {
@@ -411,6 +494,29 @@ describe('sheet.newNeg', () => {
   it('no-ops when round is null', () => {
     executeCommand('sheet.newNeg');
     expect(useRoundStore.getState().round).toBeNull();
+  });
+});
+
+describe('edit.undo / edit.redo', () => {
+  beforeEach(resetStore);
+
+  it('undo restores a deleted node; redo removes it again', () => {
+    const { sheetId, speeches } = setupRound();
+    const sp = speeches[1].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: a });
+
+    // delete the node
+    executeCommand('node.delete');
+    expect(useRoundStore.getState().round!.nodes.length).toBe(0);
+
+    // undo restores it
+    executeCommand('edit.undo');
+    expect(useRoundStore.getState().round!.nodes.length).toBe(1);
+
+    // redo removes it again
+    executeCommand('edit.redo');
+    expect(useRoundStore.getState().round!.nodes.length).toBe(0);
   });
 });
 

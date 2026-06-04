@@ -8,6 +8,7 @@ import { db } from './db';
 import type { Round } from '@/lib/model/types';
 import type { RoundStore } from '@/lib/store/useRoundStore';
 import type { StoreApi } from 'zustand';
+import { normalizeRound } from '@/lib/model/normalize';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,7 +17,6 @@ export interface RoundSummary {
   id: string;
   updatedAt: number;
   createdAt: number;
-  topic?: string;
   role: Round['role'];
   meta: Round['meta'];
 }
@@ -43,7 +43,6 @@ export async function listRounds(): Promise<RoundSummary[]> {
     id: r.id,
     updatedAt: r.updatedAt,
     createdAt: r.createdAt,
-    topic: r.topic,
     role: r.role,
     meta: r.meta,
   }));
@@ -56,10 +55,11 @@ export async function deleteRound(id: string): Promise<void> {
 
 /**
  * Return the most-recently-updated round, or undefined if the database is
- * empty.
+ * empty.  Normalizes the round so legacy rounds gain new fields.
  */
 export async function loadLastRound(): Promise<Round | undefined> {
-  return db.rounds.orderBy('updatedAt').last();
+  const r = await db.rounds.orderBy('updatedAt').last();
+  return r ? normalizeRound(r) : undefined;
 }
 
 // ─── attachAutosave ───────────────────────────────────────────────────────────

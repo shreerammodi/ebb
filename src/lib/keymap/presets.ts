@@ -22,6 +22,8 @@ const SHEET_JUMPS: Record<Chord, CommandId> = {
 
 /** Chords shared across all presets' normal mode. */
 const COMMON_NORMAL: Record<Chord, CommandId> = {
+    'Ctrl+z': 'edit.undo',
+    'Ctrl+Shift+z': 'edit.redo',
     ']': 'sheet.next',
     '[': 'sheet.prev',
     'Ctrl+k': 'sheet.quickSwitch',

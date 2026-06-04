@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 import { buildPdf } from './pdf';
 import type { Round } from '@/lib/model/types';
+import { emptyScouting } from '@/lib/model/normalize';
 
 function round(sheets: number): Round {
   return {
@@ -14,6 +15,7 @@ function round(sheets: number): Round {
       ],
     },
     meta: {},
+    scouting: emptyScouting(),
     sheets: Array.from({ length: sheets }, (_, i) => ({ id: `sh${i}`, title: `S${i}`, group: 'aff' as const, order: i })),
     nodes: [{ id: 'p', sheetId: 'sh0', speechId: 's0', parentId: null, order: 0, text: 'Hello', statuses: [] }],
     timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 0, neg: 0 }, prepRunning: null },

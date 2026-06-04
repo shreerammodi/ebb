@@ -3,10 +3,12 @@
 import { useEffect } from 'react';
 import { useRoundStore } from '@/lib/store/useRoundStore';
 import { useKeymap } from '@/lib/keymap/useKeymap';
+import { CX_COLUMNS } from '@/lib/model/cxColumns';
 import RoundHeader from './RoundHeader';
 import Sidebar from './Sidebar';
 import QuickSwitcher from './QuickSwitcher';
 import SettingsPanel from './SettingsPanel';
+import InfoPanel from './InfoPanel';
 import KeybindingsCheatsheet from './KeybindingsCheatsheet';
 import FlowGrid from './FlowGrid';
 import PrintView from './PrintView';
@@ -21,11 +23,13 @@ export default function Workspace() {
     if (!activeSheetId || !round || mode === 'insert') return;
     if (selection?.sheetId === activeSheetId && selection.nodeId !== '') return;
 
+    const activeSheet = round.sheets.find(s => s.id === activeSheetId);
+    const columns = activeSheet?.kind === 'cx' ? CX_COLUMNS : round.format.speeches;
     const sheetNodes = round.nodes
       .filter(n => n.sheetId === activeSheetId)
       .sort((a, b) => {
-        const colA = round.format.speeches.findIndex(s => s.id === a.speechId);
-        const colB = round.format.speeches.findIndex(s => s.id === b.speechId);
+        const colA = columns.findIndex(s => s.id === a.speechId);
+        const colB = columns.findIndex(s => s.id === b.speechId);
         return colA !== colB ? colA - colB : a.order - b.order;
       });
 
@@ -52,6 +56,7 @@ export default function Workspace() {
       </div>
       <QuickSwitcher />
       <SettingsPanel />
+      <InfoPanel />
       <KeybindingsCheatsheet />
       <PrintView />
     </div>

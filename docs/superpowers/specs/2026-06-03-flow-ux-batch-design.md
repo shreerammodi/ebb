@@ -103,6 +103,18 @@ Mirror the Excel **Info** sheet and make it editable anytime.
 - **Sidebar:** the pinned CX sheet renders at the top of the list, above the Aff/Neg groups, and is not deletable/renamable.
 - CX sheets are excluded from drop detection and from flow exports; included in Excel as the CX sheet (populate `Question`/`Response` cells per period).
 
+### Task 6 — REVISED (2026-06-03, after first implementation)
+
+User feedback superseded the bespoke `round.cx` + custom `CxSheet` approach. The CX sheet now **reuses the flow-grid engine**:
+
+- **CX cells are real `ArgumentNode`s** on a fixed CX-specific column set (`CX_COLUMNS`), rendered through the same `FlowGrid`/`GridCell`. Navigation, edit, undo, and keymap all work identically. The `round.cx`/`CxData`/`CxRow`/`CxPeriod` model and `addCxRow`/`updateCxRow`/`removeCxRow` actions and the standalone `CxSheet` component are **removed**.
+- `CX_COLUMNS` = 8 pseudo-speeches: for each period `1AC`/`1NC`/`2AC`/`2NC`, a `Question` column then a `Response` column, grouped by period (`group: '<period> CX'`). Stable ids (`cx-1ac-q`, `cx-1ac-r`, …). Side per column = questioner/answerer (Q = opponent of the named speech, R = the named speech's side), so colors alternate meaningfully.
+- **Response is a child of its Question:** `answer across` from a Question cell creates the Response as a child in the paired Response column (reusing the existing rowspan grouping). move-right/left navigate Q↔R via the existing parent/child helpers.
+- **No drop/extend/number on CX:** drop detection already ignores CX nodes (their `speechId` isn't in `format.speeches`); status toggles (`conceded`/`extended`) no-op on CX nodes; `GridCell` suppresses numbering + status badges on CX sheets.
+- **Sidebar:** CX is its own labeled section ABOVE the Aff section (not a single pinned button).
+- **Sheet cycling:** `sheet.next`/`prev`/`jump` operate on flow sheets only; CX is reached by clicking its section.
+- **Excel CX export:** reads CX nodes (Question parent + Response child per period) instead of `round.cx`.
+
 ## Architecture notes
 
 - **One foundational change set, then parallel work.** Model edits (`scouting`, `Sheet.kind`, `cx`, remove `topic`) and the undo engine both live in `types.ts` / `useRoundStore.ts`; doing them first avoids merge conflicts. After that, UI polish (1/2/3), Info (5), and CX (6) are largely independent.

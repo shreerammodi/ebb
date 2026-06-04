@@ -50,6 +50,8 @@ export interface Sheet {
   group: 'aff' | 'neg';
   /** Display order among sheets. */
   order: number;
+  /** Sheet variety. Absent / 'flow' = the normal argument grid. 'cx' = the cross-ex sheet. */
+  kind?: 'flow' | 'cx';
 }
 
 /** Live timer state for the current round. */
@@ -72,6 +74,33 @@ export interface RoundMeta {
   opponent?: string;
 }
 
+/** One debater's name. */
+export interface Debater {
+  first: string;
+  last: string;
+}
+
+/** Round result as recorded for scouting. */
+export interface Decision {
+  vote?: 'aff' | 'neg';
+  rfd?: string;
+}
+
+/** Scouting / Info-sheet data, mirroring the Excel Info sheet. */
+export interface Scouting {
+  affSchool?: string;
+  negSchool?: string;
+  /** Aff debaters: first = 1A, second = 2A. */
+  aff: { first: Debater; second: Debater };
+  /** Neg debaters: first = 1N, second = 2N. */
+  neg: { first: Debater; second: Debater };
+  tournament?: string;
+  round?: string;
+  date?: string;
+  judge?: string;
+  decision?: Decision;
+}
+
 /** Top-level aggregate representing a complete debate round. */
 export interface Round {
   id: string;
@@ -79,8 +108,8 @@ export interface Round {
   updatedAt: number;
   role: Role;
   format: Format;
-  topic?: string;
   meta: RoundMeta;
+  scouting: Scouting;
   sheets: Sheet[];
   nodes: ArgumentNode[];
   timers: TimerState;

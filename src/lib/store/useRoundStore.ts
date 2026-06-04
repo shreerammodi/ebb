@@ -7,8 +7,9 @@
 
 import { create } from 'zustand';
 import type { CommandId } from '@/lib/commands/registry';
-import type { Round, Sheet, ArgumentNode, Format, Role, Side, RoundMeta, NodeStatus } from '@/lib/model/types';
+import type { Round, Sheet, ArgumentNode, Format, Role, Side, RoundMeta, NodeStatus, Scouting } from '@/lib/model/types';
 import { uid } from '@/lib/model/ids';
+import { emptyScouting, makeCxSheet } from '@/lib/model/normalize';
 import {
   addNode as treeAddNode,
   updateText,
@@ -23,22 +24,29 @@ import { detectDrops } from '@/lib/model/drops';
 
 export interface RoundState {
   round: Round | null;
+  past: Round[];
+  future: Round[];
+  /** Internal: identifies the last commit so consecutive same-key commits coalesce. */
+  lastCommitKey: string | null;
   activeSheetId: string | null;
   mode: 'normal' | 'insert';
   selection: { sheetId: string; speechId: string; nodeId: string } | null;
   keymapName: 'default' | 'vim';
   /** CommandId → custom chord (normal mode), overriding the preset binding. */
   keymapOverrides: Record<string, string>;
+  autoNumber: boolean;
+  labelDrops: boolean;
   quickSwitcherOpen: boolean;
   settingsOpen: boolean;
   cheatsheetOpen: boolean;
   renamingSheetId: string | null;
+  infoOpen: boolean;
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export interface RoundActions {
-  createRound(input: { role: Role; format: Format; meta: RoundMeta; topic?: string }): void;
+  createRound(input: { role: Role; format: Format; meta: RoundMeta }): void;
 
   addSheet(input: { title: string; group: 'aff' | 'neg' }): string;
   renameSheet(sheetId: string, title: string): void;
@@ -56,13 +64,26 @@ export interface RoundActions {
   setMode(mode: 'normal' | 'insert'): void;
   setSelection(selection: { sheetId: string; speechId: string; nodeId: string } | null): void;
 
+  undo(): void;
+  redo(): void;
+  /** @internal `_commit` and `_reconcileAfterHistory` are store-private plumbing — do not call them outside the store's own action implementations. */
+  /** Internal: snapshot the current round, then replace it via `producer`. */
+  _commit(coalesceKey: string | null, producer: (round: Round) => Round): void;
+  /** Internal: drop selection/activeSheet if they point at something now gone. */
+  _reconcileAfterHistory(): void;
+
   setKeymapName(name: 'default' | 'vim'): void;
   setKeymapOverride(commandId: CommandId, chord: string): void;
   clearKeymapOverride(commandId: CommandId): void;
+  setAutoNumber(v: boolean): void;
+  setLabelDrops(v: boolean): void;
   setQuickSwitcherOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
   setCheatsheetOpen(open: boolean): void;
   setRenamingSheet(id: string | null): void;
+  setInfoOpen(open: boolean): void;
+
+  setScouting(patch: Partial<Scouting>): void;
 
   startSpeech(speechId: string): void;
   tickSpeech(): void;
@@ -113,25 +134,60 @@ function saveKeymapSettings(settings: KeymapSettings): void {
   }
 }
 
+// ─── Display settings persistence ───────────────────────────────────────────
+
+const DISPLAY_SETTINGS_KEY = 'df-display-settings';
+
+interface DisplaySettings { autoNumber: boolean; labelDrops: boolean }
+
+function loadDisplaySettings(): DisplaySettings {
+  const fallback: DisplaySettings = { autoNumber: true, labelDrops: true };
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = window.localStorage.getItem(DISPLAY_SETTINGS_KEY);
+    if (!raw) return fallback;
+    const p = JSON.parse(raw) as Partial<DisplaySettings>;
+    return {
+      autoNumber: typeof p.autoNumber === 'boolean' ? p.autoNumber : true,
+      labelDrops: typeof p.labelDrops === 'boolean' ? p.labelDrops : true,
+    };
+  } catch { return fallback; }
+}
+
+function saveDisplaySettings(s: DisplaySettings): void {
+  if (typeof window === 'undefined') return;
+  try { window.localStorage.setItem(DISPLAY_SETTINGS_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
+
+const initialDisplaySettings = loadDisplaySettings();
+
 // ─── Store ────────────────────────────────────────────────────────────────────
+
+const UNDO_DEPTH = 50;
 
 const initialKeymapSettings = loadKeymapSettings();
 
 export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── Initial state ──────────────────────────────────────────────────────────
   round: null,
+  past: [],
+  future: [],
+  lastCommitKey: null,
   activeSheetId: null,
   mode: 'normal',
   selection: null,
   keymapName: initialKeymapSettings.keymapName,
   keymapOverrides: initialKeymapSettings.keymapOverrides,
+  autoNumber: initialDisplaySettings.autoNumber,
+  labelDrops: initialDisplaySettings.labelDrops,
   quickSwitcherOpen: false,
   settingsOpen: false,
   cheatsheetOpen: false,
   renamingSheetId: null,
+  infoOpen: false,
 
   // ── createRound ────────────────────────────────────────────────────────────
-  createRound({ role, format, meta, topic }) {
+  createRound({ role, format, meta }) {
     const now = Date.now();
     const round: Round = {
       id: uid('round'),
@@ -139,9 +195,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       updatedAt: now,
       role,
       format,
-      topic,
       meta,
-      sheets: [],
+      scouting: emptyScouting(),
+      sheets: [makeCxSheet()],
       nodes: [],
       timers: {
         activeSpeechId: null,
@@ -156,6 +212,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     };
     set({
       round,
+      past: [],
+      future: [],
+      lastCommitKey: null,
       activeSheetId: null,
       mode: 'normal',
       selection: null,
@@ -163,6 +222,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       settingsOpen: false,
       cheatsheetOpen: false,
       renamingSheetId: null,
+      infoOpen: false,
     });
   },
 
@@ -181,32 +241,23 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       title,
       group,
       order: maxOrder + 1,
+      kind: 'flow',
     };
 
-    const isFirst = round.sheets.length === 0;
-    set({
-      round: {
-        ...round,
-        sheets: [...round.sheets, sheet],
-        updatedAt: Date.now(),
-      },
-      activeSheetId: isFirst ? sheet.id : activeSheetId,
-    });
+    const isFirstFlow = round.sheets.filter(s => s.kind !== 'cx').length === 0;
+    get()._commit(null, r => ({ ...r, sheets: [...r.sheets, sheet] }));
+    if (isFirstFlow) set({ activeSheetId: sheet.id });
 
     return sheet.id;
   },
 
   // ── renameSheet ────────────────────────────────────────────────────────────
   renameSheet(sheetId, title) {
-    const { round } = get();
-    if (!round) return;
-    set({
-      round: {
-        ...round,
-        sheets: round.sheets.map(s => (s.id === sheetId ? { ...s, title } : s)),
-        updatedAt: Date.now(),
-      },
-    });
+    if (!get().round) return;
+    get()._commit(null, r => ({
+      ...r,
+      sheets: r.sheets.map(s => (s.id === sheetId ? { ...s, title } : s)),
+    }));
   },
 
   // ── removeSheet ────────────────────────────────────────────────────────────
@@ -215,23 +266,16 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     if (!round) return;
 
     const remaining = round.sheets.filter(s => s.id !== sheetId);
-    const nodes = round.nodes.filter(n => n.sheetId !== sheetId);
-
-    let newActiveSheetId = activeSheetId;
+    get()._commit(null, r => ({
+      ...r,
+      sheets: remaining,
+      nodes: r.nodes.filter(n => n.sheetId !== sheetId),
+    }));
     if (activeSheetId === sheetId) {
-      newActiveSheetId = remaining.length > 0 ? remaining[0].id : null;
+      const nextActive = remaining.find(s => s.kind !== 'cx') ?? remaining[0] ?? null;
+      set({ activeSheetId: nextActive?.id ?? null });
     }
-
-    set({
-      round: {
-        ...round,
-        sheets: remaining,
-        nodes,
-        updatedAt: Date.now(),
-      },
-      activeSheetId: newActiveSheetId,
-      selection: selection?.sheetId === sheetId ? null : selection,
-    });
+    if (selection?.sheetId === sheetId) set({ selection: null });
   },
 
   // ── reorderSheet ───────────────────────────────────────────────────────────
@@ -240,17 +284,11 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
    * avoiding collisions — e.g. pass fractional or pre-spaced order values.
    */
   reorderSheet(sheetId, newOrder) {
-    const { round } = get();
-    if (!round) return;
-    set({
-      round: {
-        ...round,
-        sheets: round.sheets.map(s =>
-          s.id === sheetId ? { ...s, order: newOrder } : s,
-        ),
-        updatedAt: Date.now(),
-      },
-    });
+    if (!get().round) return;
+    get()._commit(null, r => ({
+      ...r,
+      sheets: r.sheets.map(s => (s.id === sheetId ? { ...s, order: newOrder } : s)),
+    }));
   },
 
   // ── setActiveSheet ─────────────────────────────────────────────────────────
@@ -264,90 +302,103 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     if (!round) throw new Error('No active round');
 
     const { nodes, node } = treeAddNode(round.nodes, input);
-    set({
-      round: {
-        ...round,
-        nodes,
-        updatedAt: Date.now(),
-      },
-    });
+    get()._commit(null, r => ({ ...r, nodes }));
     return node.id;
   },
 
   // ── updateNodeText ─────────────────────────────────────────────────────────
   updateNodeText(nodeId, text) {
-    const { round } = get();
-    if (!round) return;
-    set({
-      round: {
-        ...round,
-        nodes: updateText(round.nodes, nodeId, text),
-        updatedAt: Date.now(),
-      },
-    });
+    if (!get().round) return;
+    get()._commit(`text:${nodeId}`, r => ({ ...r, nodes: updateText(r.nodes, nodeId, text) }));
   },
 
   // ── toggleNodeStatus ───────────────────────────────────────────────────────
   toggleNodeStatus(nodeId, status) {
-    const { round } = get();
-    if (!round) return;
-    set({
-      round: {
-        ...round,
-        nodes: toggleStatus(round.nodes, nodeId, status),
-        updatedAt: Date.now(),
-      },
-    });
+    if (!get().round) return;
+    get()._commit(null, r => ({ ...r, nodes: toggleStatus(r.nodes, nodeId, status) }));
   },
 
   // ── setNodeParent ──────────────────────────────────────────────────────────
   setNodeParent(nodeId, parentId) {
-    const { round } = get();
-    if (!round) return;
-    set({
-      round: {
-        ...round,
-        nodes: setParent(round.nodes, nodeId, parentId),
-        updatedAt: Date.now(),
-      },
-    });
+    if (!get().round) return;
+    get()._commit(null, r => ({ ...r, nodes: setParent(r.nodes, nodeId, parentId) }));
   },
 
   // ── removeNode ─────────────────────────────────────────────────────────────
   removeNode(nodeId) {
     const { round, selection } = get();
     if (!round) return;
-    set({
-      round: {
-        ...round,
-        nodes: treeRemoveNode(round.nodes, nodeId),
-        updatedAt: Date.now(),
-      },
-      selection: selection?.nodeId === nodeId ? null : selection,
-    });
+    get()._commit(null, r => ({ ...r, nodes: treeRemoveNode(r.nodes, nodeId) }));
+    if (selection?.nodeId === nodeId) set({ selection: null });
   },
 
   // ── moveNode ───────────────────────────────────────────────────────────────
   moveNode(nodeId, newOrder) {
-    const { round } = get();
-    if (!round) return;
-    set({
-      round: {
-        ...round,
-        nodes: treeMoveNode(round.nodes, nodeId, newOrder),
-        updatedAt: Date.now(),
-      },
-    });
+    if (!get().round) return;
+    get()._commit(null, r => ({ ...r, nodes: treeMoveNode(r.nodes, nodeId, newOrder) }));
   },
 
   // ── setMode ────────────────────────────────────────────────────────────────
   setMode(mode) {
-    set({ mode });
+    set({ mode, lastCommitKey: null });
   },
 
   // ── setSelection ───────────────────────────────────────────────────────────
   setSelection(selection) {
-    set({ selection });
+    set({ selection, lastCommitKey: null });
+  },
+
+  // ── undo/redo plumbing ───────────────────────────────────────────────────────
+  // commit(coalesceKey, producer): snapshot current round, then replace it.
+  // When coalesceKey matches the previous commit's key, the snapshot is reused
+  // (the prior edits collapse into one undo step).
+  _commit(coalesceKey, producer) {
+    const { round, past, lastCommitKey } = get();
+    if (!round) return;
+    const next = producer(round);
+    const coalesce = coalesceKey !== null && coalesceKey === lastCommitKey;
+    const newPast = coalesce ? past : [...past, round].slice(-UNDO_DEPTH);
+    set({ round: { ...next, updatedAt: Date.now() }, past: newPast, future: [], lastCommitKey: coalesceKey });
+  },
+
+  undo() {
+    const { past, future, round } = get();
+    if (past.length === 0 || !round) return;
+    const previous = past[past.length - 1];
+    set({
+      round: previous,
+      past: past.slice(0, -1),
+      future: [round, ...future].slice(0, UNDO_DEPTH),
+      lastCommitKey: null,
+    });
+    get()._reconcileAfterHistory();
+  },
+
+  redo() {
+    const { past, future, round } = get();
+    if (future.length === 0 || !round) return;
+    const next = future[0];
+    set({
+      round: next,
+      past: [...past, round].slice(-UNDO_DEPTH),
+      future: future.slice(1),
+      lastCommitKey: null,
+    });
+    get()._reconcileAfterHistory();
+  },
+
+  // After undo/redo, drop selection/activeSheet if they now point at something gone.
+  _reconcileAfterHistory() {
+    const { round, activeSheetId, selection } = get();
+    if (!round) return;
+    const sheetExists = (id: string | null) => !!id && round.sheets.some(s => s.id === id);
+    const nextActive = sheetExists(activeSheetId)
+      ? activeSheetId
+      : (round.sheets.find(s => s.kind !== 'cx')?.id ?? round.sheets[0]?.id ?? null);
+    const selValid = selection
+      && round.sheets.some(s => s.id === selection.sheetId)
+      && (selection.nodeId === '' || round.nodes.some(n => n.id === selection.nodeId));
+    set({ activeSheetId: nextActive, selection: selValid ? selection : null });
   },
 
   // ── setKeymapName ──────────────────────────────────────────────────────────
@@ -371,6 +422,18 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     saveKeymapSettings({ keymapName: get().keymapName, keymapOverrides: overrides });
   },
 
+  // ── setAutoNumber ──────────────────────────────────────────────────────────
+  setAutoNumber(v) {
+    set({ autoNumber: v });
+    saveDisplaySettings({ autoNumber: v, labelDrops: get().labelDrops });
+  },
+
+  // ── setLabelDrops ──────────────────────────────────────────────────────────
+  setLabelDrops(v) {
+    set({ labelDrops: v });
+    saveDisplaySettings({ autoNumber: get().autoNumber, labelDrops: v });
+  },
+
   // ── setQuickSwitcherOpen ───────────────────────────────────────────────────
   setQuickSwitcherOpen(open) {
     set({ quickSwitcherOpen: open });
@@ -389,6 +452,17 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setRenamingSheet ───────────────────────────────────────────────────────
   setRenamingSheet(id) {
     set({ renamingSheetId: id });
+  },
+
+  // ── setInfoOpen ────────────────────────────────────────────────────────────
+  setInfoOpen(open) {
+    set({ infoOpen: open });
+  },
+
+  // ── setScouting ────────────────────────────────────────────────────────────
+  setScouting(patch) {
+    if (!get().round) return;
+    get()._commit('scouting', r => ({ ...r, scouting: { ...r.scouting, ...patch } }));
   },
 
   // ── startSpeech ────────────────────────────────────────────────────────────
