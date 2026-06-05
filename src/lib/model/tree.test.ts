@@ -234,17 +234,20 @@ describe("addNode", () => {
     expect(node.order).toBe(4);
   });
 
-  it("does not count nodes from other sheets/speeches when computing order", () => {
+  it("does not count nodes from other sheets when computing root order", () => {
+    // Roots order sheet-wide: a root on the same sheet (even a different speech)
+    // counts, but roots on other sheets do not.
     const nodes: ArgumentNode[] = [
-      makeNode({ id: "a", order: 99, sheetId: "sheet2", speechId: "speech1" }),
-      makeNode({ id: "b", order: 50, sheetId: "sheet1", speechId: "speech2" }),
+      makeNode({ id: "a", order: 99, sheetId: "sheet2", speechId: "speech1", parentId: null }),
+      makeNode({ id: "b", order: 50, sheetId: "sheet1", speechId: "speech2", parentId: null }),
     ];
     const { node } = addNode(nodes, {
       sheetId: "sheet1",
       speechId: "speech1",
       parentId: null,
     });
-    expect(node.order).toBe(0);
+    // sheet2 root (a) is excluded; sheet1 root (b, order 50) counts → 51.
+    expect(node.order).toBe(51);
   });
 
   it('creates a node id prefixed with "node"', () => {
@@ -275,6 +278,29 @@ describe("addNode", () => {
       parentId: null,
     });
     expect(newNodes).toHaveLength(3);
+  });
+});
+
+describe("addNode root ordering (sheet-wide)", () => {
+  it("orders roots across the whole sheet, not per column", () => {
+    let nodes: ArgumentNode[] = [];
+    const a = addNode(nodes, { sheetId: "s", speechId: "1ac", parentId: null });
+    nodes = a.nodes;
+    const b = addNode(nodes, { sheetId: "s", speechId: "1nc", parentId: null });
+    nodes = b.nodes;
+    expect(a.node.order).toBe(0);
+    expect(b.node.order).toBe(1); // sheet-wide, not 0 again for a new column
+  });
+
+  it("still orders children within their own column", () => {
+    let nodes: ArgumentNode[] = [];
+    const root = addNode(nodes, { sheetId: "s", speechId: "1ac", parentId: null });
+    nodes = root.nodes;
+    const c1 = addNode(nodes, { sheetId: "s", speechId: "1nc", parentId: root.node.id });
+    nodes = c1.nodes;
+    const c2 = addNode(nodes, { sheetId: "s", speechId: "1nc", parentId: root.node.id });
+    expect(c1.node.order).toBe(0);
+    expect(c2.node.order).toBe(1);
   });
 });
 
