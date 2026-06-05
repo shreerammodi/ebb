@@ -5,6 +5,15 @@
 model (column-free `ArgumentNode` tree) is kept; this spec replaces how the editor *renders,
 navigates, and creates* cells, adopting the interaction model of the reference app.
 
+> **Implementation note (decided 2026-06-05, at planning):** The plan
+> `docs/superpowers/plans/2026-06-05-flow-editor-ashwagandhae-port.md` achieves these goals with a
+> lower-risk approach than the "recursive rewrite + new fields" sketched below. `buildLayout`
+> already *is* the shared placement function and already produces the band layout incl.
+> roots-anywhere, so it is **kept** (not replaced); the new `empty`/`isExtension` fields are
+> **not added** — spacing uses normal empty-text nodes and "extension" reuses the existing
+> `'extended'` status (already rendered as `↳` inside a cell). Goals (physical nav, modeless
+> single-line cells, roots-anywhere, Excel-tight visual, everything-is-a-cell) are unchanged.
+
 ## Goal
 
 The editor still feels clunky, mostly around arrow-key navigation and the lack of a fluid
