@@ -281,6 +281,12 @@ body {
   min-height: 1.4em;
 }
 
+/* Em-dash placeholder — marks a blank, inaccessible cell (no argument can go here). */
+.dash {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
 /* ------------------------------------------------------------
    5. SIDEBAR / HEADER HELPERS
    ------------------------------------------------------------ */

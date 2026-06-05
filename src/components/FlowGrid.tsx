@@ -217,8 +217,11 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                 >
                   {isSelected ? (
                     <EmptyCellEditor sheetId={sheetId} speechId={speech.id} />
-                  ) : (
+                  ) : isAccessible ? (
                     <span className="cell-empty" />
+                  ) : (
+                    // Blank & inaccessible — mark it with a faint gray em-dash.
+                    <span className="dash">—</span>
                   )}
                 </td>
               );
