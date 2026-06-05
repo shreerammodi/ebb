@@ -25,4 +25,22 @@ describe("buildLayout", () => {
     expect(parent.rowSpan).toBe(2);
     expect(totalRows).toBe(2);
   });
+
+  it("places roots by sheet-wide order, not by column", () => {
+    const sps: Speech[] = [
+      { id: "1ac", name: "1ac", side: "aff", seconds: 0 },
+      { id: "1nc", name: "1nc", side: "neg", seconds: 0 },
+    ];
+    const nodes = [
+      node({ id: "a", speechId: "1nc", order: 0 }),
+      node({ id: "b", speechId: "1ac", order: 1 }),
+    ];
+    const { placed } = buildLayout(nodes, sps);
+    const a = placed.find((p) => p.node.id === "a")!;
+    const b = placed.find((p) => p.node.id === "b")!;
+    expect(a.startRow).toBe(0);
+    expect(a.col).toBe(1);
+    expect(b.startRow).toBe(1);
+    expect(b.col).toBe(0);
+  });
 });
