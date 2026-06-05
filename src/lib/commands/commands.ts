@@ -14,8 +14,8 @@ import {
   nodeAboveInColumn,
   nodeBelowInColumn,
   nextOpposingSpeech,
+  adjacentInColumn,
 } from "@/lib/grid/navigation";
-import { adjacentInColumn } from "@/lib/grid/navigation";
 import { buildLayout } from "@/lib/grid/layout";
 import { columnsForSheet } from "@/lib/grid/columns";
 import { responseColumnFor, CX_COLUMNS } from "@/lib/model/cxColumns";
