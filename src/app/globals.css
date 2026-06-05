@@ -119,28 +119,54 @@ body {
   font-size: 12.5px;
   width: 100%;
   font-family: var(--font-sans);
+  table-layout: fixed;
 }
 
 .flow th {
-  text-align: center;
-  font-size: 12.5px;
+  position: relative;
+  text-align: left;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
-  padding: 6px 8px 5px;
-  border-bottom: 2px solid var(--line);
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
   white-space: nowrap;
   font-family: var(--font-mono);
 }
 
 .flow td {
   vertical-align: top;
-  padding: 8px;
+  padding: 5px 8px;
   border: 1px solid var(--line);
   line-height: 1.35;
   background: transparent;
   color: var(--ink);
+}
+
+/* Header "+" add button (appears on column-header hover) */
+.th-add {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.flow th:hover .th-add {
+  opacity: 0.7;
+}
+.th-add:hover {
+  opacity: 1 !important;
 }
 
 /* Side coloring — TEXT + thin left edge only, no background tints */
@@ -157,12 +183,11 @@ body {
 }
 
 /* Inaccessible empty cell — no argument can be placed here (no parent to its
-   left, and not the first/originating column). Render it blank: drop every
-   gridline, including the side-coloured left edge. With border-collapse, an
-   accessible neighbour's solid border still wins the shared edge, so reachable
-   cells keep a full box and the unreachable region reads as empty space. */
+   left, and not the first/originating column). For an Excel-tight continuous
+   grid, keep the faint gridlines so unreachable cells read as empty grid space
+   rather than borderless gaps. */
 .flow td.cell-void {
-  border-style: none;
+  border-color: var(--line);
 }
 
 /* Selected cell */
