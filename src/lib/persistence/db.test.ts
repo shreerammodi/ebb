@@ -45,3 +45,49 @@ describe("IndexedDB v1→v2 migration", () => {
     await v2.close();
   });
 });
+
+describe("IndexedDB v4 migration", () => {
+  it("v4 collapses newlines in node text to single lines", async () => {
+    const DB_NAME = "debateflow-v4-newline-test";
+
+    // Seed a v1 database carrying nodes with multi-line text.
+    const v1 = new Dexie(DB_NAME);
+    v1.version(1).stores({ rounds: "id, updatedAt" });
+    await v1.table("rounds").add({
+      id: "round_v4",
+      createdAt: 1,
+      updatedAt: 1,
+      role: "aff",
+      format: { id: "f", name: "T", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
+      meta: {},
+      nodes: [
+        {
+          id: "n1",
+          sheetId: "s",
+          speechId: "1ac",
+          parentId: null,
+          order: 0,
+          text: "tag\ncite",
+          statuses: [],
+          bold: false,
+          numberOverride: null,
+        },
+      ],
+      timers: {
+        activeSpeechId: null,
+        speechRemaining: null,
+        running: false,
+        prepRemaining: { aff: 240, neg: 240 },
+        prepRunning: null,
+      },
+      sheets: [],
+    });
+    await v1.close();
+
+    // Open with the production class so all upgrades (incl. v4) run.
+    const upgraded = new DebateFlowDB(DB_NAME);
+    const r = await upgraded.rounds.get("round_v4");
+    expect(r!.nodes[0].text).toBe("tag cite");
+    await upgraded.close();
+  });
+});
