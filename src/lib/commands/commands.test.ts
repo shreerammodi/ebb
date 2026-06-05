@@ -77,6 +77,27 @@ describe("move.down / move.up", () => {
     expect(useRoundStore.getState().selection?.nodeId).toBe(a);
   });
 
+  it("move.down crosses bands by physical placement, not per-column order", () => {
+    setupRound();
+    const store = () => useRoundStore.getState();
+    const fmt = store().round!.format;
+    const sheetId = store().addSheet({ title: "Case", group: "aff" });
+    const pCol = fmt.speeches[0].id; // parent column
+    const cCol = fmt.speeches[1].id; // child column (one to the right)
+
+    const A = store().addNode({ sheetId, speechId: pCol, parentId: null });
+    const B = store().addNode({ sheetId, speechId: pCol, parentId: null });
+    // Add B's child first so b1 gets the lower cCol order, then a1. Physically a1
+    // sits above b1 (band A precedes band B), but a1 has the HIGHER per-column
+    // order. Old order-based nodeBelowInColumn returns null (nothing with a
+    // greater cCol order than a1); placement-based logic returns b1.
+    const b1 = store().addNode({ sheetId, speechId: cCol, parentId: B });
+    const a1 = store().addNode({ sheetId, speechId: cCol, parentId: A });
+    store().setSelection({ sheetId, speechId: cCol, nodeId: a1 });
+    executeCommand("move.down");
+    expect(store().selection?.nodeId).toBe(b1);
+  });
+
   it("move.down no-ops at the bottom of the column", () => {
     const { sheetId, speeches } = setupRound();
     const sp = speeches[1].id;

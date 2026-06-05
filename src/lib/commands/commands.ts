@@ -15,6 +15,9 @@ import {
   nodeBelowInColumn,
   nextOpposingSpeech,
 } from "@/lib/grid/navigation";
+import { adjacentInColumn } from "@/lib/grid/navigation";
+import { buildLayout } from "@/lib/grid/layout";
+import { columnsForSheet } from "@/lib/grid/columns";
 import { responseColumnFor, CX_COLUMNS } from "@/lib/model/cxColumns";
 import type { CommandId } from "./registry";
 
@@ -61,10 +64,21 @@ export function executeCommand(id: CommandId): void {
       if (!node) return;
 
       let target: ArgumentNode | null = null;
-      if (id === "move.up") target = nodeAboveInColumn(round.nodes, node);
-      else if (id === "move.down") target = nodeBelowInColumn(round.nodes, node);
-      else if (id === "move.left") target = parentOf(round.nodes, node.id);
-      else target = firstChildOf(round.nodes, node.id, node.sheetId);
+      if (id === "move.up" || id === "move.down") {
+        const sheetNodes = round.nodes.filter((n) => n.sheetId === node.sheetId);
+        const sheet = round.sheets.find((s) => s.id === node.sheetId);
+        const speeches = isCxSheet(round, node.sheetId)
+          ? CX_COLUMNS
+          : sheet
+            ? columnsForSheet(round.format, sheet)
+            : round.format.speeches;
+        const { placed } = buildLayout(sheetNodes, speeches);
+        target = adjacentInColumn(placed, node.id, id === "move.up" ? "up" : "down");
+      } else if (id === "move.left") {
+        target = parentOf(round.nodes, node.id);
+      } else {
+        target = firstChildOf(round.nodes, node.id, node.sheetId);
+      }
 
       if (target) {
         state.setSelection({
@@ -199,7 +213,10 @@ export function executeCommand(id: CommandId): void {
       if (id === "format.toggleBold") {
         state.toggleNodeBold(sel.nodeId);
       } else {
-        state.toggleNodeStatus(sel.nodeId, id === "status.toggleConceded" ? "conceded" : "extended");
+        state.toggleNodeStatus(
+          sel.nodeId,
+          id === "status.toggleConceded" ? "conceded" : "extended",
+        );
       }
       return;
     }
