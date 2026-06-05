@@ -89,16 +89,12 @@ describe("GridCell decorations", () => {
 describe("GridCell editing keys", () => {
   beforeEach(resetStore);
 
-  it("Ctrl+Enter inserts a newline in the focused cell instead of creating a sibling", () => {
-    const node = makeNode({ id: "n1", text: "tag" });
+  it("Backspace in an empty focused cell deletes the node", () => {
+    const node = makeNode({ id: "n1", text: "" });
     renderCell(node);
     const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
-    ta.focus();
-    ta.setSelectionRange(3, 3);
-    fireEvent.keyDown(ta, { key: "Enter", ctrlKey: true });
-    expect(useRoundStore.getState().round!.nodes.find((n) => n.id === node.id)!.text).toContain(
-      "\n",
-    );
+    fireEvent.keyDown(ta, { key: "Backspace" });
+    expect(useRoundStore.getState().round!.nodes.find((n) => n.id === node.id)).toBeUndefined();
   });
 
   it("plain Enter does NOT preventDefault inside the cell (keymap handles it)", () => {
