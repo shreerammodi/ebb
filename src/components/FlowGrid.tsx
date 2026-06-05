@@ -33,6 +33,8 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
   const format = useRoundStore((s) => s.round?.format ?? null);
   const selection = useRoundStore((s) => s.selection);
   const setSelection = useRoundStore((s) => s.setSelection);
+  const addNode = useRoundStore((s) => s.addNode);
+  const setMode = useRoundStore((s) => s.setMode);
 
   const sheets = useRoundStore((s) => s.round?.sheets ?? []);
   const sheet = sheets.find((s) => s.id === sheetId);
@@ -116,7 +118,21 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         <tr>
           {speeches.map((speech) => (
             <th key={speech.id} className={speech.side === "aff" ? "side-aff" : "side-neg"}>
-              {speech.name}
+              <span className="th-label">{speech.name}</span>
+              {!isCx && (
+                <button
+                  type="button"
+                  className="th-add"
+                  title={`New argument in ${speech.name}`}
+                  onClick={() => {
+                    const id = addNode({ sheetId, speechId: speech.id, parentId: null });
+                    setSelection({ sheetId, speechId: speech.id, nodeId: id });
+                    setMode("insert");
+                  }}
+                >
+                  +
+                </button>
+              )}
             </th>
           ))}
         </tr>
@@ -201,8 +217,11 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                 >
                   {isSelected ? (
                     <EmptyCellEditor sheetId={sheetId} speechId={speech.id} />
-                  ) : (
+                  ) : isAccessible ? (
                     <span className="cell-empty" />
+                  ) : (
+                    // Blank & inaccessible — mark it with a faint gray em-dash.
+                    <span className="dash">—</span>
                   )}
                 </td>
               );

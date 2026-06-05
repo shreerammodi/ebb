@@ -38,6 +38,7 @@ function round(): Round {
         bold: false,
       },
     ],
+    groups: [],
     timers: {
       activeSpeechId: null,
       speechRemaining: null,

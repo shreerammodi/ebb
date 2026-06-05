@@ -41,6 +41,19 @@ export class DebateFlowDB extends Dexie {
           }
         }),
     );
+    this.version(4).upgrade((tx) =>
+      tx
+        .table("rounds")
+        .toCollection()
+        .modify((r: { nodes?: Array<{ text?: string }> }) => {
+          if (Array.isArray(r.nodes)) {
+            r.nodes = r.nodes.map((n) => ({
+              ...n,
+              text: typeof n.text === "string" ? n.text.replace(/\r?\n|\r/g, " ") : n.text,
+            }));
+          }
+        }),
+    );
   }
 }
 

@@ -56,6 +56,8 @@ export const DEFAULT_KEYMAP: Keymap = {
       Enter: "node.addAnswer",
       "Shift+Enter": "node.answerAcross",
       "Alt+Enter": "arg.newRoot",
+      "Ctrl+Shift+x": "status.toggleConceded",
+      "Ctrl+e": "status.toggleExtended",
       Delete: "node.delete",
       ...COMMON_NORMAL,
     },

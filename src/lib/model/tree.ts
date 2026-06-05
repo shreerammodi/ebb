@@ -50,7 +50,15 @@ export function addNode(
     insertAfterOrder?: number;
   },
 ): { nodes: ArgumentNode[]; node: ArgumentNode } {
-  const column = nodes.filter((n) => n.sheetId === input.sheetId && n.speechId === input.speechId);
+  const isRoot = input.parentId === null;
+  // Roots order against ALL roots on the sheet (roots-anywhere); children order
+  // within their own (sheet, speech) column.
+  const inScope = (n: ArgumentNode): boolean =>
+    isRoot
+      ? n.sheetId === input.sheetId && n.parentId === null
+      : n.sheetId === input.sheetId && n.speechId === input.speechId;
+
+  const scope = nodes.filter(inScope);
 
   let newOrder: number;
   let updatedNodes: ArgumentNode[];
@@ -58,12 +66,10 @@ export function addNode(
   if (input.insertAfterOrder !== undefined) {
     newOrder = input.insertAfterOrder + 1;
     updatedNodes = nodes.map((n) =>
-      n.sheetId === input.sheetId && n.speechId === input.speechId && n.order >= newOrder
-        ? { ...n, order: n.order + 1 }
-        : n,
+      inScope(n) && n.order >= newOrder ? { ...n, order: n.order + 1 } : n,
     );
   } else {
-    newOrder = column.length > 0 ? Math.max(...column.map((n) => n.order)) + 1 : 0;
+    newOrder = scope.length > 0 ? Math.max(...scope.map((n) => n.order)) + 1 : 0;
     updatedNodes = [...nodes];
   }
 
@@ -98,7 +104,8 @@ export function setParent(
  * Returns a new array with the target node's text updated.
  */
 export function updateText(nodes: ArgumentNode[], nodeId: string, text: string): ArgumentNode[] {
-  return nodes.map((n) => (n.id === nodeId ? { ...n, text } : n));
+  const oneLine = text.replace(/\r?\n|\r/g, " ");
+  return nodes.map((n) => (n.id === nodeId ? { ...n, text: oneLine } : n));
 }
 
 /**

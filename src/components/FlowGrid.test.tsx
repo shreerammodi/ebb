@@ -122,8 +122,8 @@ describe("FlowGrid", () => {
     render(<FlowGrid sheetId={sheetId} />);
 
     const headers = screen.getAllByRole("columnheader");
-    const ncHeader = headers.find((h) => h.textContent === "1NC");
-    const acHeader = headers.find((h) => h.textContent === "2AC");
+    const ncHeader = headers.find((h) => h.querySelector(".th-label")?.textContent === "1NC");
+    const acHeader = headers.find((h) => h.querySelector(".th-label")?.textContent === "2AC");
 
     expect(ncHeader).toBeDefined();
     expect(acHeader).toBeDefined();
@@ -138,7 +138,7 @@ describe("FlowGrid", () => {
     render(<FlowGrid sheetId={sheetId} />);
 
     const headers = screen.getAllByRole("columnheader");
-    const blockHeader = headers.find((h) => h.textContent === "Block");
+    const blockHeader = headers.find((h) => h.querySelector(".th-label")?.textContent === "Block");
     expect(blockHeader).toBeDefined();
     expect(blockHeader!.classList.contains("side-neg")).toBe(true);
   });
@@ -249,12 +249,9 @@ describe("FlowGrid", () => {
 
   // ── Empty cells — no em-dash ──────────────────────────────────────────────
 
-  it("renders empty cells without an em-dash but still clickable", async () => {
+  it("renders accessible empty cells without an em-dash but still clickable", async () => {
     const { sheetId } = setupScenario();
     render(<FlowGrid sheetId={sheetId} />);
-
-    // No em-dash text node should exist anywhere
-    expect(screen.queryByText("—")).toBeNull();
 
     // Find an empty data cell (one with no node text — click it and check selection)
     // The 1AC column has no nodes in our scenario, so it will have empty cells
@@ -272,6 +269,8 @@ describe("FlowGrid", () => {
       );
     });
     expect(emptyTd).toBeDefined();
+    // An accessible empty cell stays clean — the em-dash is only for inaccessible cells.
+    expect(emptyTd!.querySelector(".dash")).toBeNull();
 
     // Click it
     emptyTd!.click();
@@ -457,5 +456,23 @@ describe("FlowGrid", () => {
     const affBlockHeader = headers.find((h) => h.textContent === "Aff block");
     expect(affBlockHeader).toBeDefined();
     expect(affBlockHeader!.classList.contains("side-aff")).toBe(true);
+  });
+
+  it("renders a gray em-dash in blank, inaccessible cells", () => {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+    const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+    // A single root in the first column. On that row, cells two-or-more columns
+    // to the right have no argument to their left, so they are inaccessible and
+    // must show the em-dash placeholder (".dash").
+    useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: fmt.speeches[0].id, parentId: null, text: "Adv" });
+
+    const { container } = render(<FlowGrid sheetId={sheetId} />);
+
+    const dashes = container.querySelectorAll("span.dash");
+    expect(dashes.length).toBeGreaterThan(0);
+    dashes.forEach((d) => expect(d.textContent).toBe("—"));
   });
 });

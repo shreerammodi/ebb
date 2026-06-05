@@ -10,6 +10,7 @@ import { useRef, useEffect } from "react";
 import type { ArgumentNode } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { numberFor } from "@/lib/model/numbering";
+import { executeCommand } from "@/lib/commands/commands";
 
 export interface GridCellProps {
   node: ArgumentNode;
@@ -88,20 +89,14 @@ export default function GridCell({
         }}
         onBlur={() => setMode("normal")}
         onKeyDown={(e) => {
-          // Ctrl/Cmd+Enter inserts a literal newline (tag ⏎ cite) within the cell.
-          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          // Single-line cells: never insert a literal newline.
+          // Backspace on an empty cell deletes the node (and reselects a neighbor).
+          if (e.key === "Backspace" && node.text === "") {
             e.preventDefault();
-            const el = e.currentTarget;
-            const { selectionStart, selectionEnd, value } = el;
-            const next = value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd);
-            updateNodeText(node.id, next);
-            requestAnimationFrame(() => {
-              el.selectionStart = el.selectionEnd = selectionStart + 1;
-              autoHeight();
-            });
+            executeCommand("node.delete");
             return;
           }
-          // Plain Enter / Shift+Enter are left for the global keymap layer
+          // Plain Enter / Shift+Enter are handled by the global keymap layer
           // (node.addAnswer / node.answerAcross). Do not intercept them here.
         }}
       />

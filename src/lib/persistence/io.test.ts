@@ -20,6 +20,7 @@ function makeRound(overrides: Partial<Round> = {}): Round {
       { id: "sheet_cx", title: "CX", group: "aff", order: -1, kind: "cx" },
       { id: "sheet_001", title: "Case", group: "aff", order: 0, kind: "flow" },
     ],
+    groups: [],
     nodes: [
       {
         id: "node_001",

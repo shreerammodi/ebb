@@ -40,12 +40,9 @@ export function buildLayout(
     children.sort((a, b) => a.order - b.order);
   }
 
-  // Roots: nodes with parentId === null, sorted by (col, order)
-  const roots = (childrenByParent.get(null) ?? []).slice().sort((a, b) => {
-    const ca = colIndex.get(a.speechId) ?? 0;
-    const cb = colIndex.get(b.speechId) ?? 0;
-    return ca !== cb ? ca - cb : a.order - b.order;
-  });
+  // Roots: nodes with parentId === null, stacked by their sheet-wide order so a
+  // root created in any column can sit anywhere vertically (roots-anywhere).
+  const roots = (childrenByParent.get(null) ?? []).slice().sort((a, b) => a.order - b.order);
 
   // Leaf count (memoized) with cycle guard
   const leafCountCache = new Map<string, number>();

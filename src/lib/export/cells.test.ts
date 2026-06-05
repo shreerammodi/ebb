@@ -40,8 +40,10 @@ function round(): Round {
         order: 0,
         text: "Resp",
         statuses: ["conceded"],
+        bold: false,
       },
     ],
+    groups: [],
     timers: {
       activeSpeechId: null,
       speechRemaining: null,

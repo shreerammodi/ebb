@@ -39,6 +39,7 @@ function round(sheets: number): Round {
         bold: false,
       },
     ],
+    groups: [],
     timers: {
       activeSpeechId: null,
       speechRemaining: null,

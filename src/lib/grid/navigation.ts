@@ -6,6 +6,7 @@
  */
 
 import type { ArgumentNode, Format, Speech } from "@/lib/model/types";
+import type { PlacedNode } from "@/lib/grid/layout";
 
 /** Returns the parent node of nodeId, or null. */
 export function parentOf(nodes: ArgumentNode[], nodeId: string): ArgumentNode | null {
@@ -65,4 +66,27 @@ export function nextOpposingSpeech(format: Format, speechId: string): Speech | n
     if (format.speeches[i].side !== side) return format.speeches[i];
   }
   return null;
+}
+
+/**
+ * Returns the placed node physically above/below `nodeId` in the SAME column,
+ * by screen row (`startRow`) — the true visual neighbor across band boundaries.
+ * Null at the column's vertical edge. Never crosses columns.
+ */
+export function adjacentInColumn(
+  placed: PlacedNode[],
+  nodeId: string,
+  dir: "up" | "down",
+): ArgumentNode | null {
+  const cur = placed.find((p) => p.node.id === nodeId);
+  if (!cur) return null;
+  const sameCol = placed.filter((p) => p.col === cur.col && p.node.id !== nodeId);
+  if (dir === "up") {
+    const above = sameCol.filter((p) => p.startRow < cur.startRow);
+    if (above.length === 0) return null;
+    return above.reduce((best, p) => (p.startRow > best.startRow ? p : best)).node;
+  }
+  const below = sameCol.filter((p) => p.startRow > cur.startRow);
+  if (below.length === 0) return null;
+  return below.reduce((best, p) => (p.startRow < best.startRow ? p : best)).node;
 }

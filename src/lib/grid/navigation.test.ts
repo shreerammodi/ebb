@@ -7,7 +7,9 @@ import {
   nodeAboveInColumn,
   nodeBelowInColumn,
   nextOpposingSpeech,
+  adjacentInColumn,
 } from "./navigation";
+import type { PlacedNode } from "@/lib/grid/layout";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -112,6 +114,31 @@ describe("nodeBelowInColumn", () => {
     const a = makeNode({ id: "a", order: 0 });
     const other = makeNode({ id: "o", order: 1, sheetId: "sheet2" });
     expect(nodeBelowInColumn([a, other], a)).toBeNull();
+  });
+});
+
+// ─── adjacentInColumn ─────────────────────────────────────────────────────────
+
+describe("adjacentInColumn", () => {
+  const placed = (id: string, startRow: number, col: number): PlacedNode => ({
+    node: makeNode({ id }),
+    startRow,
+    rowSpan: 1,
+    col,
+  });
+
+  it("finds the nearest box above/below in the same column by screen row", () => {
+    const ps = [
+      placed("top", 0, 0),
+      placed("mid", 3, 0),
+      placed("bot", 7, 0),
+      placed("other", 1, 1),
+    ];
+    expect(adjacentInColumn(ps, "mid", "up")!.id).toBe("top");
+    expect(adjacentInColumn(ps, "mid", "down")!.id).toBe("bot");
+    expect(adjacentInColumn(ps, "top", "up")).toBeNull();
+    expect(adjacentInColumn(ps, "bot", "down")).toBeNull();
+    expect(adjacentInColumn(ps, "top", "down")!.id).toBe("mid");
   });
 });
 
