@@ -122,8 +122,8 @@ describe("FlowGrid", () => {
     render(<FlowGrid sheetId={sheetId} />);
 
     const headers = screen.getAllByRole("columnheader");
-    const ncHeader = headers.find((h) => h.textContent === "1NC");
-    const acHeader = headers.find((h) => h.textContent === "2AC");
+    const ncHeader = headers.find((h) => h.querySelector(".th-label")?.textContent === "1NC");
+    const acHeader = headers.find((h) => h.querySelector(".th-label")?.textContent === "2AC");
 
     expect(ncHeader).toBeDefined();
     expect(acHeader).toBeDefined();
@@ -138,7 +138,7 @@ describe("FlowGrid", () => {
     render(<FlowGrid sheetId={sheetId} />);
 
     const headers = screen.getAllByRole("columnheader");
-    const blockHeader = headers.find((h) => h.textContent === "Block");
+    const blockHeader = headers.find((h) => h.querySelector(".th-label")?.textContent === "Block");
     expect(blockHeader).toBeDefined();
     expect(blockHeader!.classList.contains("side-neg")).toBe(true);
   });
