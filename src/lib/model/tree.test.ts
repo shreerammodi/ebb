@@ -304,6 +304,26 @@ describe("addNode root ordering (sheet-wide)", () => {
   });
 });
 
+describe("updateText single-line", () => {
+  it("collapses newlines to spaces so cells stay one line", () => {
+    const nodes = [
+      {
+        id: "n1",
+        sheetId: "s",
+        speechId: "1ac",
+        parentId: null,
+        order: 0,
+        text: "",
+        statuses: [],
+        bold: false,
+        numberOverride: null,
+      },
+    ] as any;
+    const out = updateText(nodes, "n1", "tag\ncite\r\nmore");
+    expect(out[0].text).toBe("tag cite more");
+  });
+});
+
 // ─── setParent ───────────────────────────────────────────────────────────────
 
 describe("setParent", () => {

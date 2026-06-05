@@ -104,7 +104,8 @@ export function setParent(
  * Returns a new array with the target node's text updated.
  */
 export function updateText(nodes: ArgumentNode[], nodeId: string, text: string): ArgumentNode[] {
-  return nodes.map((n) => (n.id === nodeId ? { ...n, text } : n));
+  const oneLine = text.replace(/\r?\n|\r/g, " ");
+  return nodes.map((n) => (n.id === nodeId ? { ...n, text: oneLine } : n));
 }
 
 /**
