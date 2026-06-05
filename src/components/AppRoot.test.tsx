@@ -12,17 +12,18 @@ import userEvent from "@testing-library/user-event";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { db } from "@/lib/persistence/db";
 import { persistRound } from "@/lib/persistence/autosave";
+import { emptyScouting } from "@/lib/model/normalize";
 import AppRoot from "./AppRoot";
-import type { Round } from "@/lib/model/types";
+import type { Round, Format } from "@/lib/model/types";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-const FORMAT = {
+const FORMAT: Format = {
   id: "fmt_test",
   name: "Test Format",
   speeches: [],
   prepSeconds: { aff: 240, neg: 240 },
-} as const;
+};
 
 function makeRound(overrides: Partial<Round> = {}): Round {
   const now = Date.now();
@@ -33,8 +34,10 @@ function makeRound(overrides: Partial<Round> = {}): Round {
     role: "aff",
     format: FORMAT,
     meta: {},
+    scouting: emptyScouting(),
     sheets: [],
     nodes: [],
+    groups: [],
     timers: {
       activeSpeechId: null,
       speechRemaining: null,

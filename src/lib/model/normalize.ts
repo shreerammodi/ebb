@@ -28,6 +28,7 @@ export function normalizeRound(raw: Round): Round {
   if (Array.isArray(r.nodes)) {
     r.nodes = r.nodes.map((n) => ({ ...n, bold: n.bold ?? false }));
   }
+  if (!Array.isArray(r.groups)) r.groups = [];
   if (!r.sheets.some((s) => s.kind === "cx")) {
     r.sheets = [makeCxSheet(), ...r.sheets];
   }

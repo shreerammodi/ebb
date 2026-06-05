@@ -49,6 +49,7 @@ describe("columnsForSheet", () => {
         { id: "f1", title: "Aff", group: "aff", order: 0, kind: "flow" },
       ],
       nodes: [],
+      groups: [],
       timers: {
         activeSpeechId: null,
         speechRemaining: null,

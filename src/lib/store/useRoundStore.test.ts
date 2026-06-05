@@ -1,36 +1,48 @@
-import { describe, it, expect } from "vitest";
-// Assuming setup where round/node exists and is populated successfully in memory
+import { describe, it, expect, beforeEach } from "vitest";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+import { makeFormatByKey } from "@/lib/format/presets";
+
+const BLANK_STATE = {
+  round: null,
+  activeSheetId: null,
+  mode: "normal" as const,
+  selection: null,
+};
+
+function resetStore() {
+  useRoundStore.setState(BLANK_STATE);
+}
+
+function setupRound() {
+  const fmt = makeFormatByKey("policy");
+  useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+  const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
+  const sp = fmt.speeches[1].id; // 1NC
+  const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+  const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+  return { sheetId, sp, a, b };
+}
 
 describe("Group Actions (Task 2)", () => {
-  // Arrange: Initial setup to create a round and two nodes (a, b) in the sheet
-  const setupRound = () => {
-    // Simulate initial round creation
-    const a = "node_id_a";
-    const b = "node_id_b";
-    // In a real scenario, this would involve creating the round and nodes.
-    return { roundReady: true, a, b }; 
-  };
+  beforeEach(resetStore);
 
   it("groupNodes bundles two nodes and is undoable", () => {
-    const setup = setupRound();
-    // Action: Group nodes a and b, label "DAs"
-    useRoundStore.getState().groupNodes("s", [setup.a, setup.b], "DAs");
+    const { sheetId, a, b } = setupRound();
+
+    useRoundStore.getState().groupNodes(sheetId, [a, b], "DAs");
     const groups = useRoundStore.getState().round!.groups;
     expect(groups).toHaveLength(1);
-    // Check if the group contains both IDs
-    expect(groups[0].memberIds).toEqual([setup.a, setup.b]);
-    
-    // Undo check
+    expect(groups[0].memberIds).toEqual([a, b]);
+
     useRoundStore.getState().undo();
     expect(useRoundStore.getState().round!.groups).toHaveLength(0);
   });
 
   it("ungroupNode removes a node from its group", () => {
-    const setup = setupRound(); // Assume round ready with nodes a, b
-    // Arrange: Group them up first
-    useRoundStore.getState().groupNodes("s", [setup.a, setup.b], "");
-    // Action: Ungroup node a (which dissolves the group since only b remains)
-    useRoundStore.getState().ungroupNode(setup.a);
+    const { sheetId, a, b } = setupRound();
+
+    useRoundStore.getState().groupNodes(sheetId, [a, b], "");
+    useRoundStore.getState().ungroupNode(a);
     const groups = useRoundStore.getState().round!.groups;
     expect(groups).toHaveLength(0); // Dissolved because <2 remain.
   });

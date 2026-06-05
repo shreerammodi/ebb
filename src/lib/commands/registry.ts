@@ -41,7 +41,9 @@ export type CommandId =
   | "timer.toggleSpeech"
   | "timer.togglePrepAff"
   | "timer.togglePrepNeg"
-  | "help.open";
+  | "help.open"
+  | "group.withBelow"
+  | "group.ungroup";
 
 export interface CommandDef {
   id: CommandId;
@@ -85,4 +87,6 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
   "timer.togglePrepAff": { id: "timer.togglePrepAff", label: "Toggle aff prep timer" },
   "timer.togglePrepNeg": { id: "timer.togglePrepNeg", label: "Toggle neg prep timer" },
   "help.open": { id: "help.open", label: "Show keybindings" },
+  "group.withBelow": { id: "group.withBelow", label: "Group with node below" },
+  "group.ungroup": { id: "group.ungroup", label: "Remove from group" },
 };

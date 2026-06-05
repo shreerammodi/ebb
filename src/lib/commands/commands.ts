@@ -277,6 +277,27 @@ export function executeCommand(id: CommandId): void {
       return;
     }
 
+    // ── Groups ────────────────────────────────────────────────────────────────
+    case "group.withBelow": {
+      if (!round) return;
+      const sel = state.selection;
+      if (!sel || sel.nodeId === "") return;
+      const node = round.nodes.find((n) => n.id === sel.nodeId);
+      if (!node) return;
+      const below = nodeBelowInColumn(round.nodes, node);
+      if (!below) return;
+      state.groupNodes(node.sheetId, [node.id, below.id], "");
+      return;
+    }
+
+    case "group.ungroup": {
+      if (!round) return;
+      const sel = state.selection;
+      if (!sel || sel.nodeId === "") return;
+      state.ungroupNode(sel.nodeId);
+      return;
+    }
+
     // ── Help ─────────────────────────────────────────────────────────────────
     case "help.open": {
       state.setCheatsheetOpen(!state.cheatsheetOpen);
