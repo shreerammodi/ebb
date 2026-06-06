@@ -39,7 +39,6 @@ describe("columnsForSheet", () => {
       updatedAt: 0,
       role: "aff",
       format: makeFormatByKey("policy"),
-      meta: {},
       scouting: {
         aff: { first: { first: "", last: "" }, second: { first: "", last: "" } },
         neg: { first: { first: "", last: "" }, second: { first: "", last: "" } },

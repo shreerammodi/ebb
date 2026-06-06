@@ -23,8 +23,7 @@ function round(): Round {
         { id: "s1", name: "1NC", side: "neg", seconds: 0 },
       ],
     },
-    meta: { tournament: "States", roundLabel: "R3" },
-    scouting: emptyScouting(),
+    scouting: { ...emptyScouting(), tournament: "States", round: "R3" },
     sheets: [{ id: "sh", title: "Politics DA", group: "aff", order: 0 }],
     nodes: [
       {

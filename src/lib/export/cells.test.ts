@@ -18,7 +18,6 @@ function round(): Round {
         { id: "s1", name: "1NC", side: "neg", seconds: 0 },
       ],
     },
-    meta: {},
     scouting: emptyScouting(),
     sheets: [{ id: "sh", title: "T", group: "aff", order: 0 }],
     nodes: [

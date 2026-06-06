@@ -77,16 +77,6 @@ export interface TimerState {
   prepRunning: Side | null;
 }
 
-/** Optional round metadata (tournament context, participants). */
-export interface RoundMeta {
-  tournament?: string;
-  roundLabel?: string;
-  judge?: string;
-  affName?: string;
-  negName?: string;
-  opponent?: string;
-}
-
 /** One debater's name. */
 export interface Debater {
   first: string;
@@ -121,7 +111,6 @@ export interface Round {
   updatedAt: number;
   role: Role;
   format: Format;
-  meta: RoundMeta;
   scouting: Scouting;
   sheets: Sheet[];
   nodes: ArgumentNode[];

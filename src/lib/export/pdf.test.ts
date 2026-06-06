@@ -19,7 +19,6 @@ function round(sheets: number): Round {
         { id: "s1", name: "1NC", side: "neg", seconds: 0 },
       ],
     },
-    meta: {},
     scouting: emptyScouting(),
     sheets: Array.from({ length: sheets }, (_, i) => ({
       id: `sh${i}`,

@@ -18,7 +18,6 @@ function makeRound(): Round {
       ],
       prepSeconds: { aff: 0, neg: 0 },
     },
-    meta: {},
     scouting: {
       aff: { first: { first: "", last: "" }, second: { first: "", last: "" } },
       neg: { first: { first: "", last: "" }, second: { first: "", last: "" } },

@@ -14,7 +14,6 @@ import type {
   Format,
   Role,
   Side,
-  RoundMeta,
   NodeStatus,
   Scouting,
 } from "@/lib/model/types";
@@ -59,7 +58,7 @@ export interface RoundState {
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export interface RoundActions {
-  createRound(input: { role: Role; format: Format; meta: RoundMeta }): void;
+  createRound(input: { role: Role; format: Format }): void;
 
   addSheet(input: { title: string; group: "aff" | "neg" }): string;
   renameSheet(sheetId: string, title: string): void;
@@ -220,7 +219,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   infoOpen: false,
 
   // ── createRound ────────────────────────────────────────────────────────────
-  createRound({ role, format, meta }) {
+  createRound({ role, format }) {
     const now = Date.now();
     const round: Round = {
       id: uid("round"),
@@ -228,7 +227,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       updatedAt: now,
       role,
       format,
-      meta,
       scouting: emptyScouting(),
       sheets: [makeCxSheet()],
       nodes: [],

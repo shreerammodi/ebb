@@ -9,7 +9,7 @@ describe("InfoPanel", () => {
   beforeEach(() => {
     useRoundStore
       .getState()
-      .createRound({ role: "aff", format: makeFormatByKey("policy"), meta: {} });
+      .createRound({ role: "aff", format: makeFormatByKey("policy") });
     useRoundStore.getState().setInfoOpen(true);
   });
 

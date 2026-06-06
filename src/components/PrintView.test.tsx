@@ -23,7 +23,7 @@ function resetStore() {
 
 function setupTwoSheets() {
   const fmt = makeFormatByKey("policy");
-  useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+  useRoundStore.getState().createRound({ role: "aff", format: fmt });
 
   const sheet1Id = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
   const sheet2Id = useRoundStore.getState().addSheet({ title: "Topicality", group: "neg" });

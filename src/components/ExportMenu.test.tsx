@@ -12,7 +12,7 @@ vi.mock("@/lib/export/pdf", () => ({ downloadPdf: vi.fn().mockResolvedValue(unde
 beforeEach(() => {
   useRoundStore
     .getState()
-    .createRound({ role: "aff", format: makeFormatByKey("policy"), meta: {} });
+    .createRound({ role: "aff", format: makeFormatByKey("policy") });
 });
 
 describe("ExportMenu", () => {

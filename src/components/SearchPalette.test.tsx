@@ -22,7 +22,7 @@ function resetStore() {
 /** Round with two sheets; one argument on the Disad sheet. */
 function setupRound() {
   const store = useRoundStore.getState();
-  store.createRound({ role: "aff", format: makeFormatByKey("policy"), meta: { opponent: "Opp" } });
+  store.createRound({ role: "aff", format: makeFormatByKey("policy") });
   const caseId = store.addSheet({ title: "Case", group: "aff" });
   const daId = store.addSheet({ title: "Disad", group: "neg" });
   const speechId = useRoundStore.getState().round!.format.speeches[0].id;

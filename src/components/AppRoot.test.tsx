@@ -33,7 +33,6 @@ function makeRound(overrides: Partial<Round> = {}): Round {
     updatedAt: now,
     role: "aff",
     format: FORMAT,
-    meta: {},
     scouting: emptyScouting(),
     sheets: [],
     nodes: [],
@@ -103,7 +102,6 @@ describe("AppRoot", () => {
     useRoundStore.getState().createRound({
       role: "aff",
       format: FORMAT,
-      meta: {},
     });
 
     await waitFor(() => {

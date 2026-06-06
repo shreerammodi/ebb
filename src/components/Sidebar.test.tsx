@@ -28,7 +28,6 @@ function setupRound() {
   store.createRound({
     role: "aff",
     format: makeFormatByKey("policy"),
-    meta: { opponent: "Opp" },
   });
   const caseId = store.addSheet({ title: "Case", group: "aff" });
   const daId = store.addSheet({ title: "Disad", group: "neg" });

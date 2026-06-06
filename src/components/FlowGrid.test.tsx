@@ -43,7 +43,7 @@ interface TestContext {
 
 function setupScenario(): TestContext {
   const fmt = makeFormatByKey("policy");
-  useRoundStore.getState().createRound({ role: "neg", format: fmt, meta: {} });
+  useRoundStore.getState().createRound({ role: "neg", format: fmt });
   const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
 
   const speeches = fmt.speeches;
@@ -206,7 +206,7 @@ describe("FlowGrid", () => {
 
   it("renders at least one row even when the sheet has no nodes", () => {
     const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "neg", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "Empty", group: "aff" });
 
     render(<FlowGrid sheetId={sheetId} />);
@@ -219,7 +219,7 @@ describe("FlowGrid", () => {
 
   it("does NOT throw when two nodes form a parentId cycle", () => {
     const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "neg", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "Cycle", group: "aff" });
 
     const speeches = fmt.speeches;
@@ -285,7 +285,7 @@ describe("FlowGrid", () => {
     // Empty flow: only the first column (where roots originate) is reachable.
     // Later columns have nothing to their left to respond to → inaccessible.
     const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
 
     render(<FlowGrid sheetId={sheetId} />);
@@ -301,7 +301,7 @@ describe("FlowGrid", () => {
 
   it("keeps the cell directly right of an argument accessible, but not further", () => {
     const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
     // Root argument in 1AC (col 0), no children
     useRoundStore.getState().addNode({
@@ -339,7 +339,7 @@ describe("FlowGrid", () => {
 
   it("renders CX period group headers when the sheet is a CX sheet", () => {
     const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "neg", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
     const round = useRoundStore.getState().round!;
     const cxSheet = round.sheets.find((s) => s.kind === "cx")!;
     const cxId = cxSheet.id;
@@ -355,7 +355,7 @@ describe("FlowGrid", () => {
 
   it("does not number or badge cells on a CX sheet even when autoNumber is on", () => {
     const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "neg", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
     const round = useRoundStore.getState().round!;
     const cxSheet = round.sheets.find((s) => s.kind === "cx")!;
     const cxId = cxSheet.id;
@@ -378,7 +378,7 @@ describe("FlowGrid", () => {
 
   it("typing in a selected empty cell creates a node with that text", () => {
     const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "neg", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
     const s1NC = fmt.speeches.find((s) => s.side === "neg")!.id;
 
@@ -395,7 +395,7 @@ describe("FlowGrid", () => {
 
   it("dropping a node onto another sets the dragged node's parent to the target", () => {
     const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
     const s1AC = fmt.speeches[0].id;
     const s1NC = fmt.speeches[1].id;
@@ -447,7 +447,7 @@ describe("FlowGrid", () => {
       prepSeconds: { aff: 240, neg: 240 },
     });
 
-    useRoundStore.getState().createRound({ role: "neg", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "AffGroup", group: "aff" });
 
     render(<FlowGrid sheetId={sheetId} />);
@@ -460,7 +460,7 @@ describe("FlowGrid", () => {
 
   it("renders a gray em-dash in blank, inaccessible cells", () => {
     const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+    useRoundStore.getState().createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
     // A single root in the first column. On that row, cells two-or-more columns
     // to the right have no argument to their left, so they are inaccessible and

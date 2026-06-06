@@ -15,7 +15,7 @@ export default function RoundSetup() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    createRound({ role, format: makeFormatByKey("policy"), meta: {} });
+    createRound({ role, format: makeFormatByKey("policy") });
     addSheet({ title: role === "neg" ? "Neg" : "Aff", group: role === "judge" ? "aff" : role });
   }
 
