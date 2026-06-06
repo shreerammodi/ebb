@@ -43,4 +43,29 @@ describe("normalizeRound", () => {
     const r = normalizeRound(base) as Round;
     expect(r.sheets.filter((s) => s.kind === "cx").length).toBe(1);
   });
+
+  it("folds legacy round.meta into scouting and drops meta", () => {
+    const legacy = {
+      id: "r",
+      createdAt: 0,
+      updatedAt: 0,
+      role: "aff",
+      format: { id: "f", name: "P", prepSeconds: { aff: 0, neg: 0 }, speeches: [] },
+      meta: { tournament: "TOC", judge: "Smith", roundLabel: "Octos" },
+      scouting: undefined,
+      sheets: [],
+      nodes: [],
+      groups: [],
+      timers: {
+        activeSpeechId: null, speechRemaining: null, running: false,
+        prepRemaining: { aff: 0, neg: 0 }, prepRunning: null,
+      },
+    } as unknown as Parameters<typeof normalizeRound>[0];
+
+    const r = normalizeRound(legacy);
+    expect(r.scouting.tournament).toBe("TOC");
+    expect(r.scouting.judge).toBe("Smith");
+    expect(r.scouting.round).toBe("Octos");
+    expect((r as unknown as { meta?: unknown }).meta).toBeUndefined();
+  });
 });

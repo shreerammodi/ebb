@@ -20,7 +20,6 @@ describe("IndexedDB v1→v2 migration", () => {
       updatedAt: 1,
       role: "aff",
       format: { id: "f", name: "T", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
-      meta: {},
       nodes: [],
       timers: {
         activeSpeechId: null,
@@ -59,7 +58,6 @@ describe("IndexedDB v4 migration", () => {
       updatedAt: 1,
       role: "aff",
       format: { id: "f", name: "T", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
-      meta: {},
       nodes: [
         {
           id: "n1",

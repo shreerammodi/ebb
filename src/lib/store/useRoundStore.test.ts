@@ -15,7 +15,7 @@ function resetStore() {
 
 function setupRound() {
   const fmt = makeFormatByKey("policy");
-  useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+  useRoundStore.getState().createRound({ role: "aff", format: fmt });
   const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
   const sp = fmt.speeches[1].id; // 1NC
   const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });

@@ -40,7 +40,7 @@ describe("useKeymap", () => {
   it('moves selection to the node below on "j" (vim normal)', () => {
     const fmt = makeFormatByKey("policy");
     const store = useRoundStore.getState();
-    store.createRound({ role: "aff", format: fmt, meta: {} });
+    store.createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
     const sp = fmt.speeches[1].id;
     const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
@@ -56,7 +56,7 @@ describe("useKeymap", () => {
   it("cleans up its listener on unmount", () => {
     const fmt = makeFormatByKey("policy");
     const store = useRoundStore.getState();
-    store.createRound({ role: "aff", format: fmt, meta: {} });
+    store.createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
     const sp = fmt.speeches[1].id;
     const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
@@ -81,7 +81,7 @@ describe("default keymap (always-insert)", () => {
     // the effective (normal) mode for the default keymap, not the raw mode.
     const fmt = makeFormatByKey("policy");
     const store = useRoundStore.getState();
-    store.createRound({ role: "aff", format: fmt, meta: {} });
+    store.createRound({ role: "aff", format: fmt });
     useRoundStore.setState({ keymapName: "default" });
     const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
     const sp = fmt.speeches[1].id;
@@ -103,7 +103,7 @@ describe("two-key chord sequences", () => {
   function setupWithSheet() {
     const fmt = makeFormatByKey("policy");
     const store = useRoundStore.getState();
-    store.createRound({ role: "aff", format: fmt, meta: {} });
+    store.createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
     useRoundStore.setState({ activeSheetId: sheetId, renamingSheetId: null });
     return sheetId;

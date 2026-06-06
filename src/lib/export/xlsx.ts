@@ -16,6 +16,8 @@ import {
   type NewSheet,
 } from "./xlsxParts";
 import { isoDate, exportFilename, downloadBlob } from "./download";
+import type { ExportOptions } from "./options";
+import { cxPeriods } from "./cx";
 
 /** Resolve a sheet name → part filename (e.g. "AFF" → "sheet2.xml") using workbook + rels XML. */
 function resolveSheetPart(workbookXml: string, relsXml: string, sheetName: string): string {
@@ -85,28 +87,16 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
  * with speechId 'cx-1ac-r'. The 4 periods map to column pairs A/B, C/D, E/F, G/H.
  */
 function patchCx(cxXml: string, round: Round): string {
-  const PERIODS = [
-    { qId: "cx-1ac-q", rId: "cx-1ac-r", qCol: "A", rCol: "B", qStyle: 23, rStyle: 27 },
-    { qId: "cx-1nc-q", rId: "cx-1nc-r", qCol: "C", rCol: "D", qStyle: 29, rStyle: 25 },
-    { qId: "cx-2ac-q", rId: "cx-2ac-r", qCol: "E", rCol: "F", qStyle: 23, rStyle: 27 },
-    { qId: "cx-2nc-q", rId: "cx-2nc-r", qCol: "G", rCol: "H", qStyle: 29, rStyle: 23 },
+  // Excel-specific column + style mapping, keyed by CX period order.
+  const CELLS = [
+    { qCol: "A", rCol: "B", qStyle: 23, rStyle: 27 },
+    { qCol: "C", rCol: "D", qStyle: 29, rStyle: 25 },
+    { qCol: "E", rCol: "F", qStyle: 23, rStyle: 27 },
+    { qCol: "G", rCol: "H", qStyle: 29, rStyle: 23 },
   ];
   const FIRST_DATA_ROW = 3;
 
-  const cxSheet = round.sheets.find((s) => s.kind === "cx");
-  if (!cxSheet) return cxXml;
-  const cxNodes = round.nodes.filter((n) => n.sheetId === cxSheet.id);
-
-  // For each period: ordered Question nodes, each paired with its Response child.
-  const perPeriod = PERIODS.map((p) => {
-    const questions = cxNodes.filter((n) => n.speechId === p.qId).sort((a, b) => a.order - b.order);
-    const pairs = questions.map((q) => {
-      const resp = cxNodes.find((n) => n.parentId === q.id && n.speechId === p.rId);
-      return { question: q.text, response: resp?.text ?? "" };
-    });
-    return { ...p, pairs };
-  });
-
+  const perPeriod = cxPeriods(round).map((p, i) => ({ ...p, ...CELLS[i] }));
   const maxRows = Math.max(0, ...perPeriod.map((p) => p.pairs.length));
   if (maxRows === 0) return cxXml;
 
@@ -212,7 +202,7 @@ function rebuildWorkbookXml(originalXml: string, newSheets: NewSheet[]): string 
 }
 
 /** Build the populated .xlsx bytes. Pure given the template bytes. */
-export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
+export function buildXlsx(round: Round, templateBytes: Uint8Array, opts: ExportOptions): Uint8Array {
   // First, strip revision data from the template to prevent corruption.
   const stripped = unzipSync(templateBytes);
   const stripRevision = (bytes: Uint8Array) => {
@@ -257,7 +247,7 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
   // template's dedicated CX sheet above (patchCx), so it must NOT also be
   // appended as a flow tab — doing so creates a duplicate "CX" name and
   // corrupts the workbook.
-  const exportSheets = buildExportSheets(round).filter((es) => es.sheet.kind !== "cx");
+  const exportSheets = buildExportSheets(round, opts).filter((es) => es.sheet.kind !== "cx");
   const baseSheetId = maxSheetId(workbookXml);
   const baseRid = maxRidNumber(relsXml);
   const basePart = nextPartNumber(files);
@@ -307,11 +297,11 @@ export function buildXlsx(round: Round, templateBytes: Uint8Array): Uint8Array {
 }
 
 /** Browser orchestrator: fetch template, build, download. */
-export async function downloadXlsx(round: Round): Promise<void> {
+export async function downloadXlsx(round: Round, opts: ExportOptions): Promise<void> {
   const res = await fetch("/templates/Flow.xlsx");
   if (!res.ok) throw new Error("Could not load the Excel template");
   const templateBytes = new Uint8Array(await res.arrayBuffer());
-  const bytes = buildXlsx(round, templateBytes);
+  const bytes = buildXlsx(round, templateBytes, opts);
   const blob = new Blob([bytes.buffer as ArrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });

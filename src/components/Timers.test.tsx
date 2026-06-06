@@ -24,7 +24,7 @@ function resetStore() {
 
 function setupRound() {
   const fmt = makeFormatByKey("policy");
-  useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+  useRoundStore.getState().createRound({ role: "aff", format: fmt });
   return { fmt, speeches: fmt.speeches };
 }
 

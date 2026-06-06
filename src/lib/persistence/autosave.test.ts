@@ -38,7 +38,6 @@ function makeRound(overrides: Partial<Round> = {}): Round {
     updatedAt: now,
     role: "aff",
     format: FORMAT,
-    meta: {},
     scouting: emptyScouting(),
     sheets: [],
     nodes: [],
@@ -178,7 +177,6 @@ describe("attachAutosave", () => {
     useRoundStore.getState().createRound({
       role: "aff",
       format: FORMAT,
-      meta: {},
     });
     const round = useRoundStore.getState().round!;
     expect(round).not.toBeNull();
@@ -209,7 +207,6 @@ describe("attachAutosave", () => {
     useRoundStore.getState().createRound({
       role: "neg",
       format: FORMAT,
-      meta: {},
     });
     const round = useRoundStore.getState().round!;
 
@@ -259,7 +256,6 @@ describe("attachAutosave", () => {
     useRoundStore.getState().createRound({
       role: "aff",
       format: FORMAT,
-      meta: {},
     });
 
     // First mutation + flush

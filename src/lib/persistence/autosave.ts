@@ -18,7 +18,6 @@ export interface RoundSummary {
   updatedAt: number;
   createdAt: number;
   role: Round["role"];
-  meta: Round["meta"];
 }
 
 // ─── Core CRUD ────────────────────────────────────────────────────────────────
@@ -44,7 +43,6 @@ export async function listRounds(): Promise<RoundSummary[]> {
     updatedAt: r.updatedAt,
     createdAt: r.createdAt,
     role: r.role,
-    meta: r.meta,
   }));
 }
 

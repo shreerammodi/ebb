@@ -9,7 +9,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { makeFormatByKey } from "@/lib/format/presets";
-import type { Role, RoundMeta } from "@/lib/model/types";
+import type { Role } from "@/lib/model/types";
 import RoundHeader from "./RoundHeader";
 
 // Mock io functions used by the header
@@ -20,11 +20,10 @@ vi.mock("@/lib/persistence/io", () => ({
 vi.mock("@/lib/export/xlsx", () => ({ downloadXlsx: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@/lib/export/pdf", () => ({ downloadPdf: vi.fn().mockResolvedValue(undefined) }));
 
-function setupRound(role: Role, meta: RoundMeta) {
+function setupRound(role: Role) {
   useRoundStore.getState().createRound({
     role,
     format: makeFormatByKey("policy"),
-    meta,
   });
 }
 
@@ -41,19 +40,19 @@ describe("RoundHeader", () => {
   });
 
   it('renders "Aff vs Neg" fallback for role=aff with empty scouting', () => {
-    setupRound("aff", {});
+    setupRound("aff");
     render(<RoundHeader />);
     expect(screen.getByText("Aff vs Neg")).toBeInTheDocument();
   });
 
   it('renders "Neg vs Aff" fallback for role=neg with empty scouting', () => {
-    setupRound("neg", {});
+    setupRound("neg");
     render(<RoundHeader />);
     expect(screen.getByText("Neg vs Aff")).toBeInTheDocument();
   });
 
   it('renders "<affCode> (Aff) vs <negCode> (Neg)" for role=judge with scouting', () => {
-    setupRound("judge", {});
+    setupRound("judge");
     useRoundStore.getState().setScouting({
       affSchool: "Alpha",
       aff: { first: { first: "T", last: "A" }, second: { first: "", last: "" } },
@@ -65,7 +64,7 @@ describe("RoundHeader", () => {
   });
 
   it("renders the export menu, Import, and New round buttons", () => {
-    setupRound("aff", { opponent: "Smith/Jones" });
+    setupRound("aff");
     render(<RoundHeader />);
     expect(screen.getByTestId("export-btn")).toBeInTheDocument();
     expect(screen.getByTestId("import-btn")).toBeInTheDocument();
@@ -74,7 +73,7 @@ describe("RoundHeader", () => {
   });
 
   it("opens settings when the settings button is clicked", async () => {
-    setupRound("aff", { opponent: "Smith/Jones" });
+    setupRound("aff");
     render(<RoundHeader />);
     const btn = screen.getByTestId("settings-btn");
     await userEvent.click(btn);
@@ -84,7 +83,7 @@ describe("RoundHeader", () => {
   it("shows team codes from scouting", () => {
     useRoundStore
       .getState()
-      .createRound({ role: "aff", format: makeFormatByKey("policy"), meta: {} });
+      .createRound({ role: "aff", format: makeFormatByKey("policy") });
     useRoundStore.getState().setScouting({
       affSchool: "Westwood",
       aff: { first: { first: "Al", last: "Smith" }, second: { first: "Bo", last: "Jones" } },
@@ -97,7 +96,7 @@ describe("RoundHeader", () => {
     const { readRoundFile } = await import("@/lib/persistence/io");
 
     // Set up an initial round
-    setupRound("aff", { opponent: "Smith/Jones" });
+    setupRound("aff");
     // Simulate stale selection state
     useRoundStore.setState({
       activeSheetId: "stale-sheet",
@@ -109,12 +108,11 @@ describe("RoundHeader", () => {
     useRoundStore.getState().createRound({
       role: "neg",
       format: makeFormatByKey("policy"),
-      meta: { affName: "Alpha", negName: "Beta" },
     });
     const importedRound = useRoundStore.getState().round!;
 
     // Reset store back to original so we can observe the change
-    setupRound("aff", { opponent: "Smith/Jones" });
+    setupRound("aff");
     useRoundStore.setState({
       activeSheetId: "stale-sheet",
       selection: { sheetId: "stale-sheet", speechId: "s1", nodeId: "n1" },

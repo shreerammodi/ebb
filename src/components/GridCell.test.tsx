@@ -32,7 +32,7 @@ function makeNode(over: Partial<ArgumentNode> & Pick<ArgumentNode, "id" | "text"
 function renderCell(node: ArgumentNode, opts?: { selected?: boolean }) {
   resetStore();
   const fmt = makeFormatByKey("policy");
-  useRoundStore.getState().createRound({ role: "aff", format: fmt, meta: {} });
+  useRoundStore.getState().createRound({ role: "aff", format: fmt });
   if (opts?.selected !== false) {
     useRoundStore.getState().setSelection({
       sheetId: node.sheetId,
