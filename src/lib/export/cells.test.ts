@@ -86,9 +86,18 @@ describe("buildExportSheets", () => {
   });
 
   it("flags dropped cells only when labelDrops is on", () => {
-    const on = buildExportSheets(round(), { autoNumber: true, labelDrops: true })[0];
-    const off = buildExportSheets(round(), { autoNumber: true, labelDrops: false })[0];
+    // Two aff roots on 1AC: "answered" gets a 1NC child; "dropped" gets none.
+    // 1NC has content, so the unanswered root is a drop.
+    const r = round();
+    r.nodes = [
+      { id: "answered", sheetId: "sh", speechId: "s0", parentId: null, order: 0, text: "Answered", statuses: [], bold: false },
+      { id: "reply", sheetId: "sh", speechId: "s1", parentId: "answered", order: 0, text: "Reply", statuses: [], bold: false },
+      { id: "dropped", sheetId: "sh", speechId: "s0", parentId: null, order: 1, text: "Dropped", statuses: [], bold: false },
+    ];
+    const on = buildExportSheets(r, { autoNumber: true, labelDrops: true })[0];
+    const off = buildExportSheets(r, { autoNumber: true, labelDrops: false })[0];
+    expect(on.cells.find((c) => c.nodeId === "dropped")!.dropped).toBe(true);
+    expect(on.cells.find((c) => c.nodeId === "answered")!.dropped).toBe(false);
     expect(off.cells.every((c) => c.dropped === false)).toBe(true);
-    expect(typeof on.cells[0].dropped).toBe("boolean");
   });
 });

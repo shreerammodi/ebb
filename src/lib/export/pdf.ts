@@ -144,6 +144,9 @@ function drawFlowSheet(doc: PDFDocument, font: PDFFont, bold: PDFFont, es: Expor
     pages.push(page);
   }
 
+  // Each cell is anchored to its start row's page. Pagination breaks at any leaf
+  // row, so a multi-row span (a parent tag) can be split from its lower rows
+  // across a page boundary — accepted graceful degradation, like group brackets.
   for (const cell of es.cells) {
     const page = pages[rowPage[cell.row]];
     const x = MARGIN + cell.col * colW + CELL_PAD;
