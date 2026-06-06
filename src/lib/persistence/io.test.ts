@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FILE_VERSION, exportRoundJSON, importRoundJSON } from "./io";
 import { makeFormatByKey } from "@/lib/format/presets";
-import { emptyScouting } from "@/lib/model/normalize";
+import { emptyScouting, normalizeRound } from "@/lib/model/normalize";
 import type { Round } from "@/lib/model/types";
 
 // ─── Fixture ──────────────────────────────────────────────────────────────────
@@ -14,7 +14,6 @@ function makeRound(overrides: Partial<Round> = {}): Round {
     updatedAt: now,
     role: "aff",
     format: makeFormatByKey("policy"),
-    meta: { tournament: "Nationals", roundLabel: "Round 1" },
     scouting: emptyScouting(),
     sheets: [
       { id: "sheet_cx", title: "CX", group: "aff", order: -1, kind: "cx" },
@@ -53,10 +52,10 @@ describe("exportRoundJSON", () => {
     expect(typeof json).toBe("string");
   });
 
-  it('exported string contains "version": 1', () => {
+  it('exported string contains "version": 2', () => {
     const round = makeRound();
     const json = exportRoundJSON(round);
-    expect(json).toContain('"version": 1');
+    expect(json).toContain('"version": 2');
   });
 
   it("includes the round id in the exported string", () => {
@@ -73,7 +72,7 @@ describe("importRoundJSON", () => {
     const round = makeRound();
     const json = exportRoundJSON(round);
     const imported = importRoundJSON(json);
-    expect(imported).toEqual(round);
+    expect(imported).toEqual(normalizeRound(structuredClone(round)));
   });
 
   it("preserves bold through export → import", () => {
@@ -115,9 +114,9 @@ describe("importRoundJSON", () => {
     expect(() => importRoundJSON("")).toThrow("Invalid JSON");
   });
 
-  it('throws "Unsupported file version" when version is 2', () => {
-    const payload = JSON.stringify({ version: 2, round: makeRound() });
-    expect(() => importRoundJSON(payload)).toThrow("Unsupported file version: 2");
+  it('throws "Unsupported file version" when version is 3', () => {
+    const payload = JSON.stringify({ version: 3, round: makeRound() });
+    expect(() => importRoundJSON(payload)).toThrow("Unsupported file version: 3");
   });
 
   it('throws "Unsupported file version" when version is 0', () => {
@@ -171,15 +170,39 @@ describe("importRoundJSON", () => {
     expect(() => importRoundJSON(payload)).toThrow("Invalid round file");
   });
 
-  it('throws "Invalid round file" when round.meta is missing', () => {
-    const { meta: _meta, ...roundNoMeta } = makeRound();
-    const payload = JSON.stringify({ version: FILE_VERSION, round: roundNoMeta });
-    expect(() => importRoundJSON(payload)).toThrow("Invalid round file");
-  });
-
   it('throws "Invalid round file" when version field is not a number', () => {
     const payload = JSON.stringify({ version: "1", round: makeRound() });
     expect(() => importRoundJSON(payload)).toThrow("Invalid round file");
+  });
+
+  it("exports version 2", () => {
+    expect(exportRoundJSON(makeRound())).toContain('"version": 2');
+  });
+
+  it("round-trips a rich round losslessly", () => {
+    const r = normalizeRound(makeRound({
+      scouting: { ...emptyScouting(), tournament: "TOC", judge: "Lee", round: "Octos" },
+      groups: [{ id: "g1", sheetId: "sheet_001", label: "Bundle", memberIds: ["node_001"] }],
+      nodes: [
+        {
+          id: "node_001", sheetId: "sheet_001", speechId: "speech_001", parentId: null,
+          order: 0, text: "Solvency", statuses: ["extended"], bold: true, numberOverride: 4,
+        },
+      ],
+    }));
+    const back = importRoundJSON(exportRoundJSON(r));
+    expect(back).toEqual(r);
+  });
+
+  it("migrates a legacy v1 file, folding meta into scouting", () => {
+    const v1 = JSON.stringify({
+      version: 1,
+      round: { ...makeRound(), meta: { tournament: "Old", judge: "J", roundLabel: "R3" } },
+    });
+    const r = importRoundJSON(v1);
+    expect(r.scouting.tournament).toBe("Old");
+    expect(r.scouting.judge).toBe("J");
+    expect(r.scouting.round).toBe("R3");
   });
 });
 
@@ -193,7 +216,7 @@ describe("readRoundFile", () => {
     const json = exportRoundJSON(round);
     const file = new File([json], "debate-flow-aff-20240101.json", { type: "application/json" });
     const imported = await readRoundFile(file);
-    expect(imported).toEqual(round);
+    expect(imported).toEqual(normalizeRound(structuredClone(round)));
   });
 
   it("rejects when file contains invalid JSON", async () => {

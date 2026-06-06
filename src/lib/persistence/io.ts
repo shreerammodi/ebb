@@ -3,12 +3,17 @@ import { normalizeRound } from "@/lib/model/normalize";
 
 // ─── Version ──────────────────────────────────────────────────────────────────
 
-export const FILE_VERSION = 1;
+export const FILE_VERSION = 2;
+
+/** Versions importRoundJSON can read (older are migrated via normalizeRound). */
+const SUPPORTED_VERSIONS = new Set([1, 2]);
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 /**
  * Serialize a Round to a JSON string with version envelope.
+ * NOTE: display settings (autoNumber, labelDrops) are intentionally NOT included —
+ * they are per-device user preferences in localStorage, not round data.
  */
 export function exportRoundJSON(round: Round): string {
   return JSON.stringify({ version: FILE_VERSION, round }, null, 2);
@@ -44,8 +49,8 @@ export function importRoundJSON(text: string): Round {
     throw new Error("Invalid round file");
   }
 
-  // 4. Version must match FILE_VERSION
-  if (envelope.version !== FILE_VERSION) {
+  // 4. Version must be supported
+  if (!SUPPORTED_VERSIONS.has(envelope.version)) {
     throw new Error(`Unsupported file version: ${envelope.version}`);
   }
 
@@ -65,9 +70,7 @@ export function importRoundJSON(text: string): Round {
     !Array.isArray(r.sheets) ||
     !Array.isArray(r.nodes) ||
     typeof r.timers !== "object" ||
-    r.timers === null ||
-    typeof r.meta !== "object" ||
-    r.meta === null
+    r.timers === null
   ) {
     throw new Error("Invalid round file");
   }
