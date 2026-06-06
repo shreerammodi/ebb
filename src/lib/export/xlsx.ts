@@ -17,6 +17,7 @@ import {
 } from "./xlsxParts";
 import { isoDate, exportFilename, downloadBlob } from "./download";
 import type { ExportOptions } from "./options";
+import { cxPeriods } from "./cx";
 
 /** Resolve a sheet name → part filename (e.g. "AFF" → "sheet2.xml") using workbook + rels XML. */
 function resolveSheetPart(workbookXml: string, relsXml: string, sheetName: string): string {
@@ -86,28 +87,16 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
  * with speechId 'cx-1ac-r'. The 4 periods map to column pairs A/B, C/D, E/F, G/H.
  */
 function patchCx(cxXml: string, round: Round): string {
-  const PERIODS = [
-    { qId: "cx-1ac-q", rId: "cx-1ac-r", qCol: "A", rCol: "B", qStyle: 23, rStyle: 27 },
-    { qId: "cx-1nc-q", rId: "cx-1nc-r", qCol: "C", rCol: "D", qStyle: 29, rStyle: 25 },
-    { qId: "cx-2ac-q", rId: "cx-2ac-r", qCol: "E", rCol: "F", qStyle: 23, rStyle: 27 },
-    { qId: "cx-2nc-q", rId: "cx-2nc-r", qCol: "G", rCol: "H", qStyle: 29, rStyle: 23 },
+  // Excel-specific column + style mapping, keyed by CX period order.
+  const CELLS = [
+    { qCol: "A", rCol: "B", qStyle: 23, rStyle: 27 },
+    { qCol: "C", rCol: "D", qStyle: 29, rStyle: 25 },
+    { qCol: "E", rCol: "F", qStyle: 23, rStyle: 27 },
+    { qCol: "G", rCol: "H", qStyle: 29, rStyle: 23 },
   ];
   const FIRST_DATA_ROW = 3;
 
-  const cxSheet = round.sheets.find((s) => s.kind === "cx");
-  if (!cxSheet) return cxXml;
-  const cxNodes = round.nodes.filter((n) => n.sheetId === cxSheet.id);
-
-  // For each period: ordered Question nodes, each paired with its Response child.
-  const perPeriod = PERIODS.map((p) => {
-    const questions = cxNodes.filter((n) => n.speechId === p.qId).sort((a, b) => a.order - b.order);
-    const pairs = questions.map((q) => {
-      const resp = cxNodes.find((n) => n.parentId === q.id && n.speechId === p.rId);
-      return { question: q.text, response: resp?.text ?? "" };
-    });
-    return { ...p, pairs };
-  });
-
+  const perPeriod = cxPeriods(round).map((p, i) => ({ ...p, ...CELLS[i] }));
   const maxRows = Math.max(0, ...perPeriod.map((p) => p.pairs.length));
   if (maxRows === 0) return cxXml;
 
