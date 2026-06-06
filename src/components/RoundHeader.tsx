@@ -83,7 +83,7 @@ export default function RoundHeader() {
           aria-label="Settings"
           data-testid="settings-btn"
         >
-          ⚙
+          <span className="text-base leading-none">⚙</span>
         </Button>
         <ExportMenu />
         <Button variant="outline" size="sm" onClick={handleImportClick} data-testid="import-btn">
