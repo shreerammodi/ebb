@@ -1,8 +1,8 @@
 /**
- * Bridges the round model to placed export cells used by both the Excel and PDF
- * exporters. One ExportSheet per flow sheet; cells carry the same row/col the
- * on-screen grid uses (via columnsForSheet / CX_COLUMNS), plus numbering overlay,
- * flattened decorations, drop flags, and node identity for group brackets.
+ * Bridges the round model to placed export cells consumed by the Excel exporter.
+ * One ExportSheet per flow sheet; cells carry the same row/col the on-screen grid
+ * uses (via columnsForSheet / CX_COLUMNS), plus numbering overlay, flattened
+ * decorations, drop flags, and node identity for group brackets.
  */
 
 import type { Round, Sheet, Speech } from "@/lib/model/types";
@@ -10,11 +10,10 @@ import { buildLayout } from "@/lib/grid/layout";
 import { columnsForSheet } from "@/lib/grid/columns";
 import { CX_COLUMNS } from "@/lib/model/cxColumns";
 import { numberFor } from "@/lib/model/numbering";
-import { detectDrops } from "@/lib/model/drops";
 import type { ExportOptions } from "./options";
 
 export interface ExportCell {
-  /** Source node id (lets the PDF match ArgGroup memberIds). */
+  /** Source node id (ties a placed cell back to its model node / ArgGroup memberIds). */
   nodeId: string;
   /** 0-based column index within the sheet's VISIBLE columns. */
   col: number;
@@ -32,8 +31,6 @@ export interface ExportCell {
   crossed: boolean;
   /** extended → arrow marker. */
   extended: boolean;
-  /** Dropped (only true when labelDrops is on; PDF renders, Excel ignores). */
-  dropped: boolean;
 }
 
 export interface ExportSheet {
@@ -53,10 +50,6 @@ export function buildExportSheets(round: Round, opts: ExportOptions): ExportShee
       const columns = sheet.kind === "cx" ? CX_COLUMNS : columnsForSheet(round.format, sheet);
       const sheetNodes = round.nodes.filter((n) => n.sheetId === sheet.id);
       const { placed, totalRows } = buildLayout(sheetNodes, columns);
-      const droppedIds =
-        opts.labelDrops && sheet.kind !== "cx"
-          ? new Set(detectDrops(sheetNodes, round.format, sheet.id))
-          : new Set<string>();
 
       const cells: ExportCell[] = placed.map((p) => {
         const num = opts.autoNumber ? numberFor(sheetNodes, p.node.id) : null;
@@ -71,7 +64,6 @@ export function buildExportSheets(round: Round, opts: ExportOptions): ExportShee
           bold: p.node.bold,
           crossed: p.node.statuses.includes("conceded"),
           extended: p.node.statuses.includes("extended"),
-          dropped: droppedIds.has(p.node.id),
         };
       });
 

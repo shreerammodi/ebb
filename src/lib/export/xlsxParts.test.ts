@@ -107,7 +107,7 @@ describe("buildFlowSheetXml", () => {
   const es: ExportSheet = {
     sheet: { id: "sh", title: "K", group: "aff", order: 0 },
     columns: [{ id: "s0", name: "1AC", side: "aff", seconds: 0 }],
-    cells: [{ nodeId: "n1", col: 0, speechName: "1AC", row: 0, rowSpan: 1, text: "Node", bold: false, crossed: false, extended: false, dropped: false }],
+    cells: [{ nodeId: "n1", col: 0, speechName: "1AC", row: 0, rowSpan: 1, text: "Node", bold: false, crossed: false, extended: false }],
     rowCount: 1,
   };
 

@@ -240,7 +240,7 @@ describe("buildXlsx", () => {
         bold: false,
       },
     ];
-    const bytes = buildXlsx(r, template, { autoNumber: true, labelDrops: false });
+    const bytes = buildXlsx(r, template, { autoNumber: true });
     const files = unzipSync(bytes);
     // The generated flow sheet is the last appended worksheet
     const flowXml = Object.keys(files)
@@ -286,7 +286,7 @@ describe("buildXlsx", () => {
         bold: false,
       },
     ];
-    const bytes = buildXlsx(r, template, { autoNumber: false, labelDrops: false });
+    const bytes = buildXlsx(r, template, { autoNumber: false });
     const files = unzipSync(bytes);
     const flowXml = Object.keys(files)
       .filter((k) => k.startsWith("xl/worksheets/sheet") && k.endsWith(".xml"))

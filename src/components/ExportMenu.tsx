@@ -4,7 +4,6 @@ import type { Round } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { downloadRoundFile } from "@/lib/persistence/io";
 import { downloadXlsx } from "@/lib/export/xlsx";
-import { downloadPdf } from "@/lib/export/pdf";
 import type { ExportOptions } from "@/lib/export/options";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,8 +15,7 @@ import {
 
 export default function ExportMenu() {
   const autoNumber = useRoundStore((s) => s.autoNumber);
-  const labelDrops = useRoundStore((s) => s.labelDrops);
-  const opts: ExportOptions = { autoNumber, labelDrops };
+  const opts: ExportOptions = { autoNumber };
 
   async function run(fn: (round: Round) => unknown | Promise<unknown>) {
     const round = useRoundStore.getState().round;
@@ -45,9 +43,6 @@ export default function ExportMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem data-testid="export-excel" onSelect={() => run((r) => downloadXlsx(r, opts))}>
           Excel
-        </DropdownMenuItem>
-        <DropdownMenuItem data-testid="export-pdf" onSelect={() => run((r) => downloadPdf(r, opts))}>
-          PDF
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

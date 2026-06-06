@@ -7,7 +7,6 @@ import { makeFormatByKey } from "@/lib/format/presets";
 
 vi.mock("@/lib/persistence/io", () => ({ downloadRoundFile: vi.fn() }));
 vi.mock("@/lib/export/xlsx", () => ({ downloadXlsx: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("@/lib/export/pdf", () => ({ downloadPdf: vi.fn().mockResolvedValue(undefined) }));
 
 beforeEach(() => {
   useRoundStore
@@ -16,13 +15,12 @@ beforeEach(() => {
 });
 
 describe("ExportMenu", () => {
-  it("opens on click and exposes the three formats", async () => {
+  it("opens on click and exposes the two formats", async () => {
     const user = userEvent.setup();
     render(<ExportMenu />);
     await user.click(screen.getByTestId("export-btn"));
     expect(screen.getByTestId("export-json")).toBeInTheDocument();
     expect(screen.getByTestId("export-excel")).toBeInTheDocument();
-    expect(screen.getByTestId("export-pdf")).toBeInTheDocument();
   });
 
   it("JSON item invokes downloadRoundFile", async () => {
@@ -41,14 +39,5 @@ describe("ExportMenu", () => {
     await user.click(screen.getByTestId("export-btn"));
     await user.click(screen.getByTestId("export-excel"));
     expect(downloadXlsx).toHaveBeenCalled();
-  });
-
-  it("PDF item invokes downloadPdf", async () => {
-    const user = userEvent.setup();
-    const { downloadPdf } = await import("@/lib/export/pdf");
-    render(<ExportMenu />);
-    await user.click(screen.getByTestId("export-btn"));
-    await user.click(screen.getByTestId("export-pdf"));
-    expect(downloadPdf).toHaveBeenCalled();
   });
 });

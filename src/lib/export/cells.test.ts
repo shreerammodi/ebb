@@ -68,36 +68,20 @@ describe("buildExportSheets", () => {
   });
 
   it("omits numbering when autoNumber is off", () => {
-    const [es] = buildExportSheets(round(), { autoNumber: false, labelDrops: false });
+    const [es] = buildExportSheets(round(), { autoNumber: false });
     expect(es.cells.find((c) => c.text === "Root")).toBeTruthy(); // no "1. " prefix
   });
 
   it("applies numbering when autoNumber is on", () => {
-    const [es] = buildExportSheets(round(), { autoNumber: true, labelDrops: false });
+    const [es] = buildExportSheets(round(), { autoNumber: true });
     expect(es.cells.some((c) => c.text.startsWith("1. "))).toBe(true);
   });
 
   it("carries nodeId, rowSpan and bold on cells", () => {
-    const [es] = buildExportSheets(round(), { autoNumber: true, labelDrops: true });
+    const [es] = buildExportSheets(round(), { autoNumber: true });
     const root = es.cells.find((c) => c.nodeId === "p");
     expect(root).toBeTruthy();
     expect(typeof root!.rowSpan).toBe("number");
     expect(root!.bold).toBe(false);
-  });
-
-  it("flags dropped cells only when labelDrops is on", () => {
-    // Two aff roots on 1AC: "answered" gets a 1NC child; "dropped" gets none.
-    // 1NC has content, so the unanswered root is a drop.
-    const r = round();
-    r.nodes = [
-      { id: "answered", sheetId: "sh", speechId: "s0", parentId: null, order: 0, text: "Answered", statuses: [], bold: false },
-      { id: "reply", sheetId: "sh", speechId: "s1", parentId: "answered", order: 0, text: "Reply", statuses: [], bold: false },
-      { id: "dropped", sheetId: "sh", speechId: "s0", parentId: null, order: 1, text: "Dropped", statuses: [], bold: false },
-    ];
-    const on = buildExportSheets(r, { autoNumber: true, labelDrops: true })[0];
-    const off = buildExportSheets(r, { autoNumber: true, labelDrops: false })[0];
-    expect(on.cells.find((c) => c.nodeId === "dropped")!.dropped).toBe(true);
-    expect(on.cells.find((c) => c.nodeId === "answered")!.dropped).toBe(false);
-    expect(off.cells.every((c) => c.dropped === false)).toBe(true);
   });
 });

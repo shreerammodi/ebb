@@ -18,7 +18,6 @@ vi.mock("@/lib/persistence/io", () => ({
   readRoundFile: vi.fn(),
 }));
 vi.mock("@/lib/export/xlsx", () => ({ downloadXlsx: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("@/lib/export/pdf", () => ({ downloadPdf: vi.fn().mockResolvedValue(undefined) }));
 
 function setupRound(role: Role) {
   useRoundStore.getState().createRound({
