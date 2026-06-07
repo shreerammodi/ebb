@@ -8,8 +8,15 @@
 import Dexie, { type EntityTable } from "dexie";
 import type { Round } from "@/lib/model/types";
 
+/** A precomputed fuzzy-search haystack for one round (scouting + all node text). */
+export interface SearchIndexRow {
+  id: string;
+  searchText: string;
+}
+
 export class DebateFlowDB extends Dexie {
   rounds!: EntityTable<Round, "id">;
+  searchIndex!: EntityTable<SearchIndexRow, "id">;
 
   constructor(name = "debateflow") {
     super(name);
@@ -54,6 +61,11 @@ export class DebateFlowDB extends Dexie {
           }
         }),
     );
+    this.version(5).stores({
+      // Re-declare rounds to add the deletedAt index; add the searchIndex table.
+      rounds: "id, updatedAt, deletedAt",
+      searchIndex: "id",
+    });
   }
 }
 

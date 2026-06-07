@@ -89,3 +89,15 @@ describe("IndexedDB v4 migration", () => {
     await upgraded.close();
   });
 });
+
+describe("IndexedDB v5 schema", () => {
+  it("exposes a searchIndex table and keeps rounds", async () => {
+    const DB_NAME = "debateflow-v5-schema-test";
+    const db = new DebateFlowDB(DB_NAME);
+    await db.searchIndex.put({ id: "r1", searchText: "hello world" });
+    const row = await db.searchIndex.get("r1");
+    expect(row?.searchText).toBe("hello world");
+    expect(db.rounds).toBeDefined();
+    await db.close();
+  });
+});
