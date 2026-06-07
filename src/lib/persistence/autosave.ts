@@ -9,55 +9,59 @@ import type { Round } from "@/lib/model/types";
 import type { RoundStore } from "@/lib/store/useRoundStore";
 import type { StoreApi } from "zustand";
 import { normalizeRound } from "@/lib/model/normalize";
+import { buildSummary, type RoundSummary } from "@/lib/dashboard/summary";
+import { writeSearchIndex, deleteSearchIndex } from "./searchIndex";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-/** Lightweight summary returned by listRounds(). */
-export interface RoundSummary {
-  id: string;
-  updatedAt: number;
-  createdAt: number;
-  role: Round["role"];
-}
+export type { RoundSummary };
 
 // ─── Core CRUD ────────────────────────────────────────────────────────────────
 
-/** Persist (insert or update) a round in IndexedDB. */
+/** Persist (insert or update) a round and refresh its search index row. */
 export async function persistRound(round: Round): Promise<void> {
-  await db.rounds.put(round);
+  const normalized = normalizeRound(round);
+  await db.rounds.put(normalized);
+  await writeSearchIndex(normalized);
 }
 
-/** Load a single round by id.  Returns undefined if not found. */
+/** Load a single round by id. Returns undefined if not found. */
 export async function loadRound(id: string): Promise<Round | undefined> {
-  return db.rounds.get(id);
+  const r = await db.rounds.get(id);
+  return r ? normalizeRound(r) : undefined;
 }
 
-/**
- * Return lightweight summaries of all rounds, sorted by updatedAt DESC
- * (most recently updated first).
- */
+/** Live (non-trashed) round summaries, most-recently-updated first. */
 export async function listRounds(): Promise<RoundSummary[]> {
   const rounds = await db.rounds.orderBy("updatedAt").reverse().toArray();
-  return rounds.map((r) => ({
-    id: r.id,
-    updatedAt: r.updatedAt,
-    createdAt: r.createdAt,
-    role: r.role,
-  }));
+  return rounds.filter((r) => r.deletedAt == null).map(buildSummary);
 }
 
-/** Delete a round by id. */
-export async function deleteRound(id: string): Promise<void> {
+/** Trashed round summaries, most-recently-updated first. */
+export async function listTrash(): Promise<RoundSummary[]> {
+  const rounds = await db.rounds.orderBy("updatedAt").reverse().toArray();
+  return rounds.filter((r) => r.deletedAt != null).map(buildSummary);
+}
+
+/** Move a round to Trash (soft delete). */
+export async function softDeleteRound(id: string): Promise<void> {
+  await db.rounds.update(id, { deletedAt: Date.now() });
+}
+
+/** Restore a trashed round. */
+export async function restoreRound(id: string): Promise<void> {
+  await db.rounds.update(id, { deletedAt: null });
+}
+
+/** Permanently delete a round and its search index row. */
+export async function deleteRoundForever(id: string): Promise<void> {
   await db.rounds.delete(id);
+  await deleteSearchIndex(id);
 }
 
-/**
- * Return the most-recently-updated round, or undefined if the database is
- * empty.  Normalizes the round so legacy rounds gain new fields.
- */
+/** Most-recently-updated LIVE round, normalized; undefined if none. */
 export async function loadLastRound(): Promise<Round | undefined> {
-  const r = await db.rounds.orderBy("updatedAt").last();
-  return r ? normalizeRound(r) : undefined;
+  const rounds = await db.rounds.orderBy("updatedAt").reverse().toArray();
+  const live = rounds.find((r) => r.deletedAt == null);
+  return live ? normalizeRound(live) : undefined;
 }
 
 // ─── attachAutosave ───────────────────────────────────────────────────────────
