@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { listRounds, type RoundSummary } from "@/lib/persistence/autosave";
 import { loadSearchIndex, backfillSearchIndex } from "@/lib/persistence/searchIndex";
@@ -73,6 +74,7 @@ export default function Dashboard() {
         />
         <div className="flex-1" />
         <ImportExportControls onChanged={refresh} />
+        <Link href="/trash" className="text-[13px] text-zinc-500 hover:text-zinc-800" data-testid="dashboard-trash-link">Trash</Link>
         <Button
           variant="ghost"
           size="sm"
