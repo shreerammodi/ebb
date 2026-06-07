@@ -109,6 +109,8 @@ export interface Round {
   id: string;
   createdAt: number;
   updatedAt: number;
+  /** ms timestamp when soft-deleted (moved to Trash); absent/null = live. */
+  deletedAt?: number | null;
   role: Role;
   format: Format;
   scouting: Scouting;

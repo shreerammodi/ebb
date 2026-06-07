@@ -69,3 +69,50 @@ describe("normalizeRound", () => {
     expect((r as unknown as { meta?: unknown }).meta).toBeUndefined();
   });
 });
+
+describe("normalizeRound deletedAt", () => {
+  it("preserves a deletedAt timestamp", () => {
+    const raw = {
+      id: "r1",
+      createdAt: 1,
+      updatedAt: 2,
+      deletedAt: 1234,
+      role: "aff",
+      format: { id: "f", name: "T", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
+      scouting: emptyScouting(),
+      sheets: [],
+      nodes: [],
+      groups: [],
+      timers: {
+        activeSpeechId: null,
+        speechRemaining: null,
+        running: false,
+        prepRemaining: { aff: 240, neg: 240 },
+        prepRunning: null,
+      },
+    } as unknown as Round;
+    expect(normalizeRound(raw).deletedAt).toBe(1234);
+  });
+
+  it("leaves deletedAt undefined for a live round", () => {
+    const raw = {
+      id: "r2",
+      createdAt: 1,
+      updatedAt: 2,
+      role: "aff",
+      format: { id: "f", name: "T", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
+      scouting: emptyScouting(),
+      sheets: [],
+      nodes: [],
+      groups: [],
+      timers: {
+        activeSpeechId: null,
+        speechRemaining: null,
+        running: false,
+        prepRemaining: { aff: 240, neg: 240 },
+        prepRunning: null,
+      },
+    } as unknown as Round;
+    expect(normalizeRound(raw).deletedAt ?? null).toBeNull();
+  });
+});
