@@ -8,6 +8,8 @@ import { loadSearchIndex, backfillSearchIndex } from "@/lib/persistence/searchIn
 import { filterFlows } from "@/lib/dashboard/filter";
 import { sortSummaries, groupByTournament, type SortKey } from "@/lib/dashboard/organize";
 import FlowCard from "./FlowCard";
+import NewFlowButton from "./NewFlowButton";
+import FlowCardMenu from "./FlowCardMenu";
 import SettingsPanel from "@/components/SettingsPanel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,7 @@ export default function Dashboard() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("updated");
   const [grouped, setGrouped] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     await backfillSearchIndex();
@@ -76,9 +79,7 @@ export default function Dashboard() {
         >
           <span className="text-base leading-none">⚙</span>
         </Button>
-        <Button size="sm" data-testid="new-flow" onClick={() => {}}>
-          + New flow
-        </Button>
+        <NewFlowButton />
       </div>
 
       <div className="px-5 py-5">
@@ -89,7 +90,7 @@ export default function Dashboard() {
           >
             <p className="text-[15px] font-medium text-zinc-700">No flows yet</p>
             <p className="text-[13px] text-zinc-500">Create your first flow to get started.</p>
-            <Button size="sm" onClick={() => {}}>+ New flow</Button>
+            <NewFlowButton />
           </div>
         ) : (
           <>
@@ -129,7 +130,7 @@ export default function Dashboard() {
                   </h2>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {g.items.map((s) => (
-                      <FlowCard key={s.id} summary={s} onOpen={open} />
+                      <FlowCard key={s.id} summary={s} onOpen={open} menu={<FlowCardMenu id={s.id} onViewDetails={setDetailId} onChanged={refresh} />} />
                     ))}
                   </div>
                 </section>
@@ -137,7 +138,7 @@ export default function Dashboard() {
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {sorted.map((m) => (
-                  <FlowCard key={m.summary.id} summary={m.summary} onOpen={open} snippet={m.snippet} />
+                  <FlowCard key={m.summary.id} summary={m.summary} onOpen={open} snippet={m.snippet} menu={<FlowCardMenu id={m.summary.id} onViewDetails={setDetailId} onChanged={refresh} />} />
                 ))}
               </div>
             )}
