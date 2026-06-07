@@ -32,13 +32,13 @@ export async function loadRound(id: string): Promise<Round | undefined> {
 /** Live (non-trashed) round summaries, most-recently-updated first. */
 export async function listRounds(): Promise<RoundSummary[]> {
   const rounds = await db.rounds.orderBy("updatedAt").reverse().toArray();
-  return rounds.filter((r) => r.deletedAt == null).map(buildSummary);
+  return rounds.filter((r) => r.deletedAt == null).map((r) => buildSummary(normalizeRound(r)));
 }
 
 /** Trashed round summaries, most-recently-updated first. */
 export async function listTrash(): Promise<RoundSummary[]> {
   const rounds = await db.rounds.orderBy("updatedAt").reverse().toArray();
-  return rounds.filter((r) => r.deletedAt != null).map(buildSummary);
+  return rounds.filter((r) => r.deletedAt != null).map((r) => buildSummary(normalizeRound(r)));
 }
 
 /** Move a round to Trash (soft delete). */
