@@ -1,5 +1,5 @@
-import AppRoot from "@/components/AppRoot";
+import Dashboard from "@/components/dashboard/Dashboard";
 
 export default function Home() {
-  return <AppRoot />;
+  return <Dashboard />;
 }
