@@ -1,6 +1,7 @@
 import { db } from "./db";
 import type { Round } from "@/lib/model/types";
 import { teamCode } from "@/lib/model/teamCode";
+import { normalizeRound } from "@/lib/model/normalize";
 
 /**
  * Build the lowercased fuzzy-search haystack for a round:
@@ -49,5 +50,5 @@ export async function backfillSearchIndex(): Promise<void> {
   const have = new Set(rows.map((r) => r.id));
   const missing = rounds.filter((r) => !have.has(r.id));
   if (missing.length === 0) return;
-  await db.searchIndex.bulkPut(missing.map((r) => ({ id: r.id, searchText: buildSearchText(r) })));
+  await db.searchIndex.bulkPut(missing.map((r) => ({ id: r.id, searchText: buildSearchText(normalizeRound(r)) })));
 }
