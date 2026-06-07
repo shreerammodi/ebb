@@ -10,6 +10,8 @@ import { sortSummaries, groupByTournament, type SortKey } from "@/lib/dashboard/
 import FlowCard from "./FlowCard";
 import NewFlowButton from "./NewFlowButton";
 import FlowCardMenu from "./FlowCardMenu";
+import FlowDetailDrawer from "./FlowDetailDrawer";
+import ImportExportControls from "./ImportExportControls";
 import SettingsPanel from "@/components/SettingsPanel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -70,6 +72,7 @@ export default function Dashboard() {
           data-testid="dashboard-search"
         />
         <div className="flex-1" />
+        <ImportExportControls onChanged={refresh} />
         <Button
           variant="ghost"
           size="sm"
@@ -147,6 +150,7 @@ export default function Dashboard() {
       </div>
 
       <SettingsPanel />
+      <FlowDetailDrawer id={detailId} onClose={() => setDetailId(null)} onChanged={refresh} />
     </div>
   );
 }
