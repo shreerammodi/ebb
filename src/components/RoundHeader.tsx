@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { readRoundFile } from "@/lib/persistence/io";
 import { Button } from "@/components/ui/button";
@@ -25,10 +26,6 @@ export default function RoundHeader() {
       : role === "neg"
         ? `${negCode} vs ${affCode}`
         : `${affCode} vs ${negCode}`;
-
-  function handleNewRound() {
-    useRoundStore.setState({ round: null, activeSheetId: null, selection: null, mode: "normal" });
-  }
 
   function handleImportClick() {
     fileInputRef.current?.click();
@@ -56,7 +53,12 @@ export default function RoundHeader() {
       className="flex h-12 flex-none items-center justify-between border-b border-border bg-card px-4"
       data-testid="round-header"
     >
-      <span className="text-sm font-semibold text-zinc-900">{participants}</span>
+      <div className="flex items-center gap-3">
+        <Link href="/" className="text-[13px] text-zinc-500 hover:text-zinc-800" data-testid="back-to-flows">
+          ← Flows
+        </Link>
+        <span className="text-sm font-semibold text-zinc-900">{participants}</span>
+      </div>
       <div className="no-print flex items-center gap-2">
         <input
           ref={fileInputRef}
@@ -88,9 +90,6 @@ export default function RoundHeader() {
         <ExportMenu />
         <Button variant="outline" size="sm" onClick={handleImportClick} data-testid="import-btn">
           Import
-        </Button>
-        <Button variant="ghost" size="sm" onClick={handleNewRound} data-testid="new-round-btn">
-          New round
         </Button>
       </div>
     </header>

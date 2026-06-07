@@ -1,22 +1,20 @@
 "use client";
 
-/**
- * AppRoot — top-level component that boots the app.
- *
- * On mount:
- *   1. Attaches debounced autosave to the round store (IndexedDB via Dexie).
- *   2. Loads the most recently saved round, if any, into the store.
- *
- * Renders <Workspace /> when a round is active, <RoundSetup /> otherwise.
- */
-
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useRoundStore } from "@/lib/store/useRoundStore";
-import { attachAutosave, loadLastRound } from "@/lib/persistence/autosave";
+import { attachAutosave, loadRound } from "@/lib/persistence/autosave";
 import Workspace from "./Workspace";
-import RoundSetup from "./RoundSetup";
 
+/**
+ * AppRoot — boots the editor for the flow identified by ?id=.
+ * Attaches autosave, loads the round, and selects an initial sheet.
+ * Redirects to "/" when the id is missing, not found, or trashed.
+ */
 export default function AppRoot() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const id = params.get("id");
   const round = useRoundStore((s) => s.round);
   const [loaded, setLoaded] = useState(false);
 
@@ -24,19 +22,26 @@ export default function AppRoot() {
     let mounted = true;
     const unsubscribe = attachAutosave(useRoundStore);
 
-    loadLastRound()
+    if (!id) {
+      router.replace("/");
+      return () => {
+        mounted = false;
+        unsubscribe();
+      };
+    }
+
+    loadRound(id)
       .then((r) => {
-        if (mounted && r) {
-          const flowSheets = [...r.sheets]
-            .filter((s) => s.kind !== "cx")
-            .sort((a, b) => a.order - b.order);
-          const firstSheet = flowSheets[0] ?? [...r.sheets].sort((a, b) => a.order - b.order)[0];
-          useRoundStore.setState({ round: r, activeSheetId: firstSheet?.id ?? null });
+        if (!mounted) return;
+        if (!r || r.deletedAt != null) {
+          router.replace("/");
+          return;
         }
+        const flowSheets = [...r.sheets].filter((s) => s.kind !== "cx").sort((a, b) => a.order - b.order);
+        const firstSheet = flowSheets[0] ?? [...r.sheets].sort((a, b) => a.order - b.order)[0];
+        useRoundStore.setState({ round: r, activeSheetId: firstSheet?.id ?? null });
       })
-      .catch(() => {
-        // IndexedDB unavailable — start fresh
-      })
+      .catch(() => router.replace("/"))
       .finally(() => {
         if (mounted) setLoaded(true);
       });
@@ -45,9 +50,8 @@ export default function AppRoot() {
       mounted = false;
       unsubscribe();
     };
-  }, []);
+  }, [id, router]);
 
-  if (!loaded) return null;
-
-  return round ? <Workspace /> : <RoundSetup />;
+  if (!loaded || !round) return null;
+  return <Workspace />;
 }

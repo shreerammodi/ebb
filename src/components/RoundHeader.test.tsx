@@ -12,6 +12,13 @@ import { makeFormatByKey } from "@/lib/format/presets";
 import type { Role } from "@/lib/model/types";
 import RoundHeader from "./RoundHeader";
 
+// Mock next/link used by the header's back-to-flows link
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+    <a href={href} {...props}>{children}</a>
+  ),
+}));
+
 // Mock io functions used by the header
 vi.mock("@/lib/persistence/io", () => ({
   downloadRoundFile: vi.fn(),
@@ -62,12 +69,13 @@ describe("RoundHeader", () => {
     expect(screen.getByText("Alpha TA (Aff) vs Beta TB (Neg)")).toBeInTheDocument();
   });
 
-  it("renders the export menu, Import, and New round buttons", () => {
+  it("renders the back link, export menu, and Import button", () => {
     setupRound("aff");
     render(<RoundHeader />);
+    expect(screen.getByTestId("back-to-flows")).toBeInTheDocument();
     expect(screen.getByTestId("export-btn")).toBeInTheDocument();
     expect(screen.getByTestId("import-btn")).toBeInTheDocument();
-    expect(screen.getByTestId("new-round-btn")).toBeInTheDocument();
+    expect(screen.queryByTestId("new-round-btn")).not.toBeInTheDocument();
     expect(screen.queryByTestId("print-btn")).not.toBeInTheDocument();
   });
 

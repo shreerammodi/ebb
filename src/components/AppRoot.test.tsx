@@ -6,15 +6,30 @@
  */
 import "fake-indexeddb/auto";
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { db } from "@/lib/persistence/db";
 import { persistRound } from "@/lib/persistence/autosave";
 import { emptyScouting } from "@/lib/model/normalize";
-import AppRoot from "./AppRoot";
 import type { Round, Format } from "@/lib/model/types";
+
+// ─── Navigation mock ──────────────────────────────────────────────────────────
+
+const replace = vi.fn();
+let mockSearch = "";
+
+// Stable router object — recreating it each render would change the useEffect
+// dependency and cause the effect to re-run indefinitely in tests.
+const stableRouter = { replace };
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => stableRouter,
+  useSearchParams: () => new URLSearchParams(mockSearch),
+}));
+
+// Import AppRoot AFTER mock is set up
+import AppRoot from "./AppRoot";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -52,81 +67,57 @@ function makeRound(overrides: Partial<Round> = {}): Round {
 
 beforeEach(async () => {
   await db.rounds.clear();
+  await db.searchIndex.clear();
+  mockSearch = "";
+  replace.mockReset();
   useRoundStore.setState({
     round: null,
     activeSheetId: null,
     mode: "normal",
     selection: null,
-    quickSwitcherOpen: false,
-    settingsOpen: false,
   });
 });
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("AppRoot", () => {
-  it("shows RoundSetup when no round is stored", async () => {
+  it("redirects to / when no ?id= param", async () => {
+    mockSearch = "";
     render(<AppRoot />);
-
-    // Wait for the async loadLastRound to finish (loaded = true)
     await waitFor(() => {
-      expect(screen.getByTestId("round-setup-form")).toBeInTheDocument();
+      expect(replace).toHaveBeenCalledWith("/");
     });
-
-    expect(screen.queryByTestId("workspace")).not.toBeInTheDocument();
   });
 
-  it("shows Workspace when a round is stored in IndexedDB", async () => {
+  it("redirects to / when ?id= does not match any round", async () => {
+    mockSearch = "id=nonexistent_id";
+    render(<AppRoot />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith("/");
+    });
+  });
+
+  it("shows Workspace when ?id= matches a live round", async () => {
     const round = makeRound();
     await persistRound(round);
+    mockSearch = `id=${round.id}`;
 
     render(<AppRoot />);
-
-    // AppRoot loads the round from IndexedDB and renders Workspace
-    await waitFor(() => {
-      expect(screen.getByTestId("workspace")).toBeInTheDocument();
-    });
-
-    expect(screen.queryByTestId("round-setup-form")).not.toBeInTheDocument();
-  });
-
-  it("shows Workspace after createRound is called in the store", async () => {
-    render(<AppRoot />);
-
-    // Initially shows RoundSetup (no stored round)
-    await waitFor(() => {
-      expect(screen.getByTestId("round-setup-form")).toBeInTheDocument();
-    });
-
-    // Simulate a round being created (as RoundSetup would do)
-    useRoundStore.getState().createRound({
-      role: "aff",
-      format: FORMAT,
-    });
 
     await waitFor(() => {
       expect(screen.getByTestId("workspace")).toBeInTheDocument();
     });
   });
 
-  it('returns to RoundSetup when "New round" is clicked in the header', async () => {
-    const round = makeRound();
+  it("redirects to / when the round is trashed", async () => {
+    const round = makeRound({ deletedAt: 1 });
     await persistRound(round);
+    mockSearch = `id=${round.id}`;
 
     render(<AppRoot />);
 
     await waitFor(() => {
-      expect(screen.getByTestId("workspace")).toBeInTheDocument();
+      expect(replace).toHaveBeenCalledWith("/");
     });
-
-    // Click "New round" button in RoundHeader
-    const newRoundBtn = screen.getByTestId("new-round-btn");
-    await userEvent.click(newRoundBtn);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("round-setup-form")).toBeInTheDocument();
-    });
-
-    expect(screen.queryByTestId("workspace")).not.toBeInTheDocument();
   });
 });
