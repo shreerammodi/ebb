@@ -20,7 +20,12 @@ straight into the editor (or shows `RoundSetup` when the DB is empty).
   `blue = Aff`, `red = Neg`).
 - Per-card scouting summary; full scouting available on demand.
 - Delete a flow undoably (soft-delete → Trash; restorable).
-- Import/export flows: per-flow (JSON/Excel/PDF) and bulk backup/restore.
+- Import/export flows: per-flow (JSON/Excel) and bulk backup/restore.
+
+> **PDF note (spec correction):** there is no `round → PDF file` exporter today —
+> PDF is only `window.print()` over the active round (`PrintView`). Per-card
+> export is therefore **JSON + Excel** only in this build; PDF parity is deferred
+> until a standalone PDF exporter exists (`pdf-lib` is already a dependency).
 - Open the Settings menu from the dashboard.
 - Fuzzy search across flows, including argument content.
 
@@ -141,13 +146,13 @@ searchIndex: "id"   // { id: string; searchText: string }
 
 ### 2.5 Export
 
-- **Per flow (card kebab / drawer):** JSON / Excel / PDF. The underlying
-  exporters already take a round argument (`downloadRoundFile(round)`,
-  `downloadXlsx(round, opts)`, `pdf.ts` download), so the dashboard loads the
-  full round by id, reads global display options from the store
-  (`autoNumber`, …), and calls them. (The editor's `ExportMenu` currently
-  surfaces only JSON + Excel; per the "full parity" decision, both the editor
-  menu and the card menu offer JSON/Excel/PDF.)
+- **Per flow (card kebab / drawer):** JSON / Excel. The underlying exporters
+  already take a round argument (`downloadRoundFile(round)`,
+  `downloadXlsx(round, opts)`), so the dashboard loads the full round by id,
+  reads global display options from the store (`autoNumber`), and calls them.
+  PDF is **not** offered from the dashboard in this build (no standalone PDF
+  exporter exists — see the PDF note above). The editor's `ExportMenu` is
+  unchanged (JSON + Excel + the existing Print path).
 - **Export all (top bar):** writes a backup envelope
   `{ version, kind: "backup", rounds: <all live rounds> }` as a single file.
 
@@ -182,7 +187,7 @@ searchIndex: "id"   // { id: string; searchText: string }
 ### 3.3 Kebab menu
 
 - **View details** → detail drawer (§5.1)
-- **Export ▸** → JSON / Excel / PDF
+- **Export ▸** → JSON / Excel
 - **Delete** → soft-delete to trash + Undo toast (§5.3)
 
 ### 3.4 + New flow
@@ -222,7 +227,7 @@ primitive:
 - **Full scouting:** both schools; all four debaters (1A/2A/1N/2N); tournament,
   round, date, judge; decision (vote + full RFD text).
 - **Light stats:** role, sheet count.
-- **Actions:** Open in editor · Export ▸ (JSON/Excel/PDF) · Delete.
+- **Actions:** Open in editor · Export ▸ (JSON/Excel) · Delete.
 
 Loads the full round by id on open (cheap, single round).
 
@@ -271,7 +276,7 @@ Changed:
 - `src/app/page.tsx` — render `Dashboard`.
 - `src/components/AppRoot.tsx` — relocate load/autosave to `/flow` page (or repurpose as the flow page body).
 - `src/components/RoundHeader.tsx` — home/back-to-flows affordance.
-- `src/components/ExportMenu.tsx` — add PDF; share export-run helper with the card menu.
+- `src/lib/export/run.ts` (new) — shared `runExport(round, opts, fmt)` helper used by both `ExportMenu` and the card/drawer menus (JSON + Excel). `ExportMenu` is otherwise unchanged.
 
 Removed/retired:
 
@@ -291,7 +296,7 @@ Removed/retired:
 1. Dashboard is the home, real URLs → **query-param routing** (`/flow?id=`), static-export safe.
 2. Card density → **compact card + detail drawer**; card = **design B** (mini info-sheet).
 3. Per-card actions → **kebab menu** on hover.
-4. Per-card export → **full parity** (JSON/Excel/PDF).
+4. Per-card export → **JSON + Excel** (PDF deferred — no standalone PDF exporter exists yet).
 5. Import → **always a new flow** (fresh id); **bulk Export all + multi-flow import** supported.
 6. Delete → **trash bin (soft delete)**, **separate `/trash` route**, **manual purge only**, plus Undo toast.
 7. Search → **all node content + scouting**, via a **precomputed `searchText` in a separate Dexie index table**; content matches shown as a **highlighted snippet line**.
