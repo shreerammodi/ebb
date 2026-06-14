@@ -320,46 +320,5 @@ export function executeCommand(id: CommandId): void {
       state.setCheatsheetOpen(!state.cheatsheetOpen);
       return;
     }
-
-    // ── Timers ────────────────────────────────────────────────────────────────
-    case "timer.toggleSpeech": {
-      if (!round) return;
-      if (round.timers.running) {
-        useRoundStore.setState({
-          round: {
-            ...round,
-            timers: { ...round.timers, running: false },
-          },
-        });
-      } else if (round.timers.activeSpeechId !== null) {
-        useRoundStore.setState({
-          round: {
-            ...round,
-            timers: { ...round.timers, running: true },
-          },
-        });
-      }
-      return;
-    }
-
-    case "timer.togglePrepAff": {
-      if (!round) return;
-      if (round.timers.prepRunning === "aff") {
-        state.stopPrep();
-      } else {
-        state.startPrep("aff");
-      }
-      return;
-    }
-
-    case "timer.togglePrepNeg": {
-      if (!round) return;
-      if (round.timers.prepRunning === "neg") {
-        state.stopPrep();
-      } else {
-        state.startPrep("neg");
-      }
-      return;
-    }
   }
 }

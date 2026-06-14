@@ -46,14 +46,6 @@ const GROUPS = [
     ],
   },
   {
-    label: "Timers",
-    rows: [
-      { commandId: "timer.toggleSpeech" as CommandId },
-      { commandId: "timer.togglePrepAff" as CommandId },
-      { commandId: "timer.togglePrepNeg" as CommandId },
-    ],
-  },
-  {
     label: "App",
     rows: [{ commandId: "settings.open" as CommandId }, { commandId: "help.open" as CommandId }],
   },

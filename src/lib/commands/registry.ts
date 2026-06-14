@@ -38,9 +38,6 @@ export type CommandId =
   | "sheet.jump9"
   | "settings.open"
   | "info.open"
-  | "timer.toggleSpeech"
-  | "timer.togglePrepAff"
-  | "timer.togglePrepNeg"
   | "help.open"
   | "group.withBelow"
   | "group.ungroup";
@@ -83,9 +80,6 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
   "sheet.jump9": { id: "sheet.jump9", label: "Jump to sheet 9" },
   "settings.open": { id: "settings.open", label: "Open settings" },
   "info.open": { id: "info.open", label: "Open round info" },
-  "timer.toggleSpeech": { id: "timer.toggleSpeech", label: "Toggle speech timer" },
-  "timer.togglePrepAff": { id: "timer.togglePrepAff", label: "Toggle aff prep timer" },
-  "timer.togglePrepNeg": { id: "timer.togglePrepNeg", label: "Toggle neg prep timer" },
   "help.open": { id: "help.open", label: "Show keybindings" },
   "group.withBelow": { id: "group.withBelow", label: "Group with node below" },
   "group.ungroup": { id: "group.ungroup", label: "Remove from group" },

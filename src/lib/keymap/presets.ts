@@ -32,9 +32,6 @@ const COMMON_NORMAL: Record<Chord, CommandId> = {
   "Ctrl+n": "sheet.newNeg",
   "Ctrl+r": "sheet.rename",
   "Ctrl+,": "settings.open",
-  s: "timer.toggleSpeech",
-  p: "timer.togglePrepAff",
-  P: "timer.togglePrepNeg",
   "?": "help.open",
   ...SHEET_JUMPS,
 };
