@@ -63,7 +63,13 @@ export default function GridCell({
 
   useEffect(() => {
     if (isInsertMode && inputRef.current) {
-      inputRef.current.focus();
+      const el = inputRef.current;
+      el.focus();
+      // A freshly-mounted textarea defaults its caret to position 0. When editing
+      // is handed off from EmptyCellEditor (first keystroke creates the node), that
+      // would drop the caret to the LEFT of the just-typed letter — put it at the end.
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
       autoHeight();
     }
   }, [isInsertMode]);

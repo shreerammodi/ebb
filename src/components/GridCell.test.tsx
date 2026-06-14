@@ -97,6 +97,17 @@ describe("GridCell editing keys", () => {
     expect(useRoundStore.getState().round!.nodes.find((n) => n.id === node.id)).toBeUndefined();
   });
 
+  it("places the caret at the end of the text when a cell enters insert mode", () => {
+    // Regression: when an empty cell's first keystroke creates a node and hands
+    // editing to GridCell, the freshly-mounted textarea would default its caret
+    // to position 0 — placing it to the LEFT of the typed letter.
+    const node = makeNode({ id: "n1", text: "a" });
+    renderCell(node);
+    const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
+    expect(ta.selectionStart).toBe(1);
+    expect(ta.selectionEnd).toBe(1);
+  });
+
   it("plain Enter does NOT preventDefault inside the cell (keymap handles it)", () => {
     const node = makeNode({ id: "n1", text: "tag" });
     renderCell(node);
