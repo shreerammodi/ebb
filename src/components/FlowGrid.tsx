@@ -89,7 +89,28 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
     }
   }
 
-  const effectiveRows = Math.max(totalRows, 1);
+  // ── Active empty cell (Excel-style entry cell) ───────────────────────────────
+  // When an empty cell (`nodeId: ""`) is focused, resolve which physical (row,
+  // col) hosts its editor. An explicit `selection.row` wins; otherwise default
+  // to the entry row — the first blank row at the bottom of that column.
+  let activeEmptyCol: number | null = null;
+  let activeEmptyRow: number | null = null;
+  if (selection?.sheetId === sheetId && selection.nodeId === "") {
+    const col = speeches.findIndex((s) => s.id === selection.speechId);
+    if (col !== -1) {
+      activeEmptyCol = col;
+      activeEmptyRow =
+        typeof selection.row === "number"
+          ? selection.row
+          : placed
+              .filter((p) => p.col === col)
+              .reduce((m, p) => Math.max(m, p.startRow + p.rowSpan), 0);
+    }
+  }
+
+  // In straight-down mode the sheet reads like a spreadsheet: show one trailing
+  // blank entry row below the content so there is always a cell to type into.
+  const effectiveRows = Math.max(totalRows + (straightDown ? 1 : 0), (activeEmptyRow ?? -1) + 1, 1);
 
   // Children lookup (for arg-parent class)
   const hasChildrenSet = new Set<string>();
@@ -190,12 +211,11 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
               // originate, or a cell whose immediate left neighbour holds an
               // argument to respond to. Everything else is unreachable — e.g.
               // 1NC cells when there are no 1AC arguments — and renders blank.
-              const isAccessible = col === 0 || cellMap.has(`${row},${col - 1}`);
+              // Straight-down mode drops this rule: every cell is real (like a
+              // spreadsheet), so there are no inaccessible voids.
+              const isAccessible = straightDown || col === 0 || cellMap.has(`${row},${col - 1}`);
 
-              const isSelected =
-                selection?.sheetId === sheetId &&
-                selection?.speechId === speech.id &&
-                selection?.nodeId === "";
+              const isSelected = activeEmptyCol === col && activeEmptyRow === row;
 
               const classes = [
                 sideClass,
@@ -209,7 +229,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                 <td
                   key={col}
                   className={classes}
-                  onClick={() => setSelection({ sheetId, speechId: speech.id, nodeId: "" })}
+                  onClick={() => setSelection({ sheetId, speechId: speech.id, nodeId: "", row })}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();

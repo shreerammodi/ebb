@@ -588,9 +588,7 @@ describe("straightDown behavior", () => {
     const negSp = speeches[1].id; // 1NC neg
     const root = useRoundStore.getState().addNode({ sheetId, speechId: affSp, parentId: null });
     // A pre-existing child (e.g. created before straight-down was turned on).
-    const child = useRoundStore
-      .getState()
-      .addNode({ sheetId, speechId: negSp, parentId: root });
+    const child = useRoundStore.getState().addNode({ sheetId, speechId: negSp, parentId: root });
     useRoundStore.getState().setSelection({ sheetId, speechId: negSp, nodeId: child });
 
     executeCommand("node.addAnswer");
@@ -609,6 +607,65 @@ describe("straightDown behavior", () => {
 
     executeCommand("node.answerAcross");
     expect(useRoundStore.getState().round!.nodes.length).toBe(before);
+  });
+
+  it("node.addAnswer moves DOWN to the existing cell below instead of inserting", () => {
+    const { sheetId, speeches } = setupRound();
+    const sp = speeches[0].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: a });
+    const before = useRoundStore.getState().round!.nodes.length;
+
+    // Enter from `a` (which has `b` below it) should select `b`, not create a node.
+    executeCommand("node.addAnswer");
+    const st = useRoundStore.getState();
+    expect(st.round!.nodes.length).toBe(before);
+    expect(st.selection!.nodeId).toBe(b);
+  });
+
+  it("move.down from the bottom node selects the empty entry cell below", () => {
+    const { sheetId, speeches } = setupRound();
+    const sp = speeches[1].id; // 1NC — a valid column on this neg sheet
+    useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: b });
+
+    executeCommand("move.down");
+    const sel = useRoundStore.getState().selection!;
+    expect(sel.nodeId).toBe("");
+    expect(sel.speechId).toBe(sp);
+    expect(typeof sel.row).toBe("number");
+  });
+
+  it("move.up from the empty entry cell returns to the bottom node", () => {
+    const { sheetId, speeches } = setupRound();
+    const sp = speeches[1].id;
+    useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: "", row: 2 });
+
+    executeCommand("move.up");
+    expect(useRoundStore.getState().selection!.nodeId).toBe(b);
+  });
+
+  it("node.addAnswer creates a new cell below only when at the bottom", () => {
+    const { sheetId, speeches } = setupRound();
+    const sp = speeches[0].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: b });
+    const before = useRoundStore.getState().round!.nodes.length;
+
+    // Enter from `b` (the bottom cell) spawns a fresh root below it.
+    executeCommand("node.addAnswer");
+    const st = useRoundStore.getState();
+    expect(st.round!.nodes.length).toBe(before + 1);
+    const created = st.round!.nodes.find((n) => n.id === st.selection!.nodeId);
+    expect(created?.id).not.toBe(a);
+    expect(created?.id).not.toBe(b);
+    expect(created?.parentId).toBeNull();
+    expect(created?.speechId).toBe(sp);
   });
 });
 

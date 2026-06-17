@@ -42,7 +42,13 @@ export interface RoundState {
   lastCommitKey: string | null;
   activeSheetId: string | null;
   mode: "normal" | "insert";
-  selection: { sheetId: string; speechId: string; nodeId: string } | null;
+  /**
+   * The focused cell. `nodeId: ""` means an empty cell is focused; `row` (if
+   * present) identifies which physical row that empty cell occupies, so the
+   * grid can place the editor on a specific blank row (Excel-style entry cell
+   * below the content). `row` is ignored when `nodeId` refers to a real node.
+   */
+  selection: { sheetId: string; speechId: string; nodeId: string; row?: number } | null;
   keymapName: "default" | "vim";
   /** CommandId → custom chord (normal mode), overriding the preset binding. */
   keymapOverrides: Record<string, string>;
@@ -86,7 +92,9 @@ export interface RoundActions {
   ungroupNode(nodeId: string): void;
 
   setMode(mode: "normal" | "insert"): void;
-  setSelection(selection: { sheetId: string; speechId: string; nodeId: string } | null): void;
+  setSelection(
+    selection: { sheetId: string; speechId: string; nodeId: string; row?: number } | null,
+  ): void;
 
   undo(): void;
   redo(): void;

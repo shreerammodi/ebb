@@ -59,7 +59,27 @@ export function executeCommand(id: CommandId): void {
     case "move.right": {
       if (!round) return;
       const sel = state.selection;
-      if (!sel || sel.nodeId === "") return;
+      if (!sel) return;
+      const straight = state.straightDown && !isCxSheet(round, sel.sheetId);
+
+      // Empty entry cell (Excel-style cell below the content, straight-down only):
+      // ↑ jumps back to the bottom node in the column; other moves no-op.
+      if (sel.nodeId === "") {
+        if (straight && id === "move.up") {
+          const colNodes = round.nodes.filter(
+            (n) => n.sheetId === sel.sheetId && n.speechId === sel.speechId,
+          );
+          if (colNodes.length === 0) return;
+          const bottom = colNodes.reduce((best, n) => (n.order > best.order ? n : best));
+          state.setSelection({
+            sheetId: bottom.sheetId,
+            speechId: bottom.speechId,
+            nodeId: bottom.id,
+          });
+        }
+        return;
+      }
+
       const node = round.nodes.find((n) => n.id === sel.nodeId);
       if (!node) return;
 
@@ -74,6 +94,21 @@ export function executeCommand(id: CommandId): void {
             : round.format.speeches;
         const { placed } = buildLayout(sheetNodes, speeches);
         target = adjacentInColumn(placed, node.id, id === "move.up" ? "up" : "down");
+
+        // Straight-down: ↓ off the bottom node lands on the empty entry cell
+        // directly below it (the row just past this node's placement).
+        if (!target && straight && id === "move.down") {
+          const cur = placed.find((p) => p.node.id === node.id);
+          if (cur) {
+            state.setSelection({
+              sheetId: node.sheetId,
+              speechId: node.speechId,
+              nodeId: "",
+              row: cur.startRow + cur.rowSpan,
+            });
+          }
+          return;
+        }
       } else if (id === "move.left") {
         target = parentOf(round.nodes, node.id);
       } else {
@@ -129,9 +164,21 @@ export function executeCommand(id: CommandId): void {
       if (!sel || sel.nodeId === "") return;
       const node = round.nodes.find((n) => n.id === sel.nodeId);
       if (!node) return;
-      // Straight-down (flow sheets only): every Enter spawns a fresh root cell
-      // directly below, ignoring any existing parent link.
+      // Straight-down (flow sheets only): behave like Excel's Enter — move the
+      // cursor DOWN to the cell already below in this column, and only spawn a
+      // fresh root cell when the cursor is at the bottom of the column.
       const straight = state.straightDown && !isCxSheet(round, node.sheetId);
+      if (straight) {
+        const below = nodeBelowInColumn(round.nodes, node);
+        if (below) {
+          selectNodeInsert({
+            sheetId: below.sheetId,
+            speechId: below.speechId,
+            nodeId: below.id,
+          });
+          return;
+        }
+      }
       const newId = state.addNode({
         sheetId: node.sheetId,
         speechId: node.speechId,

@@ -408,6 +408,28 @@ describe("FlowGrid", () => {
     expect(created!.parentId).toBeNull();
   });
 
+  it("renders the editor on the empty entry cell below the content (straight-down)", () => {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
+    const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
+    const s1NC = fmt.speeches[1].id;
+    useRoundStore.getState().addNode({ sheetId, speechId: s1NC, parentId: null, text: "one" });
+    useRoundStore.getState().addNode({ sheetId, speechId: s1NC, parentId: null, text: "two" });
+
+    // Select the empty entry cell on row 2 (just below the two stacked cells).
+    useRoundStore.setState({ straightDown: true });
+    useRoundStore.getState().setSelection({ sheetId, speechId: s1NC, nodeId: "", row: 2 });
+
+    render(<FlowGrid sheetId={sheetId} />);
+
+    // The entry row must exist and host an empty editor; the content is untouched.
+    expect(screen.getByText("one")).toBeTruthy();
+    expect(screen.getByText("two")).toBeTruthy();
+    expect(screen.getByRole("textbox")).toBeTruthy();
+
+    useRoundStore.setState({ straightDown: false });
+  });
+
   it("dropping a node onto another sets the dragged node's parent to the target", () => {
     const fmt = makeFormatByKey("policy");
     useRoundStore.getState().createRound({ role: "aff", format: fmt });
