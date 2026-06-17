@@ -192,6 +192,23 @@ describe("SettingsPanel", () => {
     useRoundStore.getState().setAutoNumber(true);
   });
 
+  it("toggles straightDown via the display switch", async () => {
+    useRoundStore.getState().setSettingsOpen(true);
+    render(<SettingsPanel />);
+    const sw = screen.getByTestId("toggle-straightDown");
+    await userEvent.click(sw);
+    expect(useRoundStore.getState().straightDown).toBe(true);
+    useRoundStore.getState().setStraightDown(false);
+  });
+
+  it("disables autoNumber and labelDrops toggles when straightDown is on", () => {
+    useRoundStore.setState({ settingsOpen: true, straightDown: true });
+    render(<SettingsPanel />);
+    expect(screen.getByTestId("toggle-autoNumber")).toBeDisabled();
+    expect(screen.getByTestId("toggle-labelDrops")).toBeDisabled();
+    useRoundStore.setState({ straightDown: false });
+  });
+
   it("persists overrides to localStorage and effectiveKeymap uses them", async () => {
     const user = userEvent.setup();
     render(<SettingsPanel />);

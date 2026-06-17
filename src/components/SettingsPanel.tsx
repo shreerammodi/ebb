@@ -45,6 +45,8 @@ export default function SettingsPanel() {
   const labelDrops = useRoundStore((s) => s.labelDrops);
   const setAutoNumber = useRoundStore((s) => s.setAutoNumber);
   const setLabelDrops = useRoundStore((s) => s.setLabelDrops);
+  const straightDown = useRoundStore((s) => s.straightDown);
+  const setStraightDown = useRoundStore((s) => s.setStraightDown);
 
   const [recording, setRecording] = useState<CommandId | null>(null);
   const [category, setCategory] = useState<Category>("display");
@@ -177,6 +179,7 @@ export default function SettingsPanel() {
                   <Switch
                     checked={autoNumber}
                     onCheckedChange={setAutoNumber}
+                    disabled={straightDown}
                     data-testid="toggle-autoNumber"
                     aria-label="Auto-number arguments"
                   />
@@ -186,8 +189,23 @@ export default function SettingsPanel() {
                   <Switch
                     checked={labelDrops}
                     onCheckedChange={setLabelDrops}
+                    disabled={straightDown}
                     data-testid="toggle-labelDrops"
                     aria-label="Label drops"
+                  />
+                </label>
+                <label className="flex items-center justify-between py-1.5 text-[13px] text-zinc-900">
+                  <span className="flex flex-col">
+                    Flow straight down
+                    <span className="text-[11px] text-zinc-400">
+                      Cells stack below; responses, numbering, and drops are off.
+                    </span>
+                  </span>
+                  <Switch
+                    checked={straightDown}
+                    onCheckedChange={setStraightDown}
+                    data-testid="toggle-straightDown"
+                    aria-label="Flow straight down"
                   />
                 </label>
               </div>
