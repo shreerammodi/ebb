@@ -48,6 +48,7 @@ export interface RoundState {
   keymapOverrides: Record<string, string>;
   autoNumber: boolean;
   labelDrops: boolean;
+  straightDown: boolean;
   quickSwitcherOpen: boolean;
   settingsOpen: boolean;
   cheatsheetOpen: boolean;
@@ -100,6 +101,7 @@ export interface RoundActions {
   clearKeymapOverride(commandId: CommandId): void;
   setAutoNumber(v: boolean): void;
   setLabelDrops(v: boolean): void;
+  setStraightDown(v: boolean): void;
   setQuickSwitcherOpen(open: boolean): void;
   setSettingsOpen(open: boolean): void;
   setCheatsheetOpen(open: boolean): void;
@@ -164,10 +166,11 @@ const DISPLAY_SETTINGS_KEY = "df-display-settings";
 interface DisplaySettings {
   autoNumber: boolean;
   labelDrops: boolean;
+  straightDown: boolean;
 }
 
 function loadDisplaySettings(): DisplaySettings {
-  const fallback: DisplaySettings = { autoNumber: true, labelDrops: true };
+  const fallback: DisplaySettings = { autoNumber: true, labelDrops: true, straightDown: false };
   if (typeof window === "undefined") return fallback;
   try {
     const raw = window.localStorage.getItem(DISPLAY_SETTINGS_KEY);
@@ -176,6 +179,7 @@ function loadDisplaySettings(): DisplaySettings {
     return {
       autoNumber: typeof p.autoNumber === "boolean" ? p.autoNumber : true,
       labelDrops: typeof p.labelDrops === "boolean" ? p.labelDrops : true,
+      straightDown: typeof p.straightDown === "boolean" ? p.straightDown : false,
     };
   } catch {
     return fallback;
@@ -212,6 +216,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   keymapOverrides: initialKeymapSettings.keymapOverrides,
   autoNumber: initialDisplaySettings.autoNumber,
   labelDrops: initialDisplaySettings.labelDrops,
+  straightDown: initialDisplaySettings.straightDown,
   quickSwitcherOpen: false,
   settingsOpen: false,
   cheatsheetOpen: false,
@@ -499,13 +504,31 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setAutoNumber ──────────────────────────────────────────────────────────
   setAutoNumber(v) {
     set({ autoNumber: v });
-    saveDisplaySettings({ autoNumber: v, labelDrops: get().labelDrops });
+    saveDisplaySettings({
+      autoNumber: v,
+      labelDrops: get().labelDrops,
+      straightDown: get().straightDown,
+    });
   },
 
   // ── setLabelDrops ──────────────────────────────────────────────────────────
   setLabelDrops(v) {
     set({ labelDrops: v });
-    saveDisplaySettings({ autoNumber: get().autoNumber, labelDrops: v });
+    saveDisplaySettings({
+      autoNumber: get().autoNumber,
+      labelDrops: v,
+      straightDown: get().straightDown,
+    });
+  },
+
+  // ── setStraightDown ────────────────────────────────────────────────────────
+  setStraightDown(v) {
+    set({ straightDown: v });
+    saveDisplaySettings({
+      autoNumber: get().autoNumber,
+      labelDrops: get().labelDrops,
+      straightDown: v,
+    });
   },
 
   // ── setQuickSwitcherOpen ───────────────────────────────────────────────────

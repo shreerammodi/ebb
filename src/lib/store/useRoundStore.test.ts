@@ -23,6 +23,30 @@ function setupRound() {
   return { sheetId, sp, a, b };
 }
 
+describe("straightDown display setting", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    useRoundStore.setState({ straightDown: false });
+  });
+
+  it("defaults to false", () => {
+    expect(useRoundStore.getState().straightDown).toBe(false);
+  });
+
+  it("setStraightDown updates state and persists all three display flags", () => {
+    useRoundStore.getState().setAutoNumber(true);
+    useRoundStore.getState().setLabelDrops(true);
+    useRoundStore.getState().setStraightDown(true);
+
+    expect(useRoundStore.getState().straightDown).toBe(true);
+
+    const raw = window.localStorage.getItem("df-display-settings");
+    expect(raw).toBeTruthy();
+    const parsed = JSON.parse(raw!);
+    expect(parsed).toEqual({ autoNumber: true, labelDrops: true, straightDown: true });
+  });
+});
+
 describe("Group Actions (Task 2)", () => {
   beforeEach(resetStore);
 
