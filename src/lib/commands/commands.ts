@@ -129,10 +129,13 @@ export function executeCommand(id: CommandId): void {
       if (!sel || sel.nodeId === "") return;
       const node = round.nodes.find((n) => n.id === sel.nodeId);
       if (!node) return;
+      // Straight-down (flow sheets only): every Enter spawns a fresh root cell
+      // directly below, ignoring any existing parent link.
+      const straight = state.straightDown && !isCxSheet(round, node.sheetId);
       const newId = state.addNode({
         sheetId: node.sheetId,
         speechId: node.speechId,
-        parentId: node.parentId,
+        parentId: straight ? null : node.parentId,
         insertAfterOrder: node.order,
       });
       selectNodeInsert({ sheetId: node.sheetId, speechId: node.speechId, nodeId: newId });
@@ -145,6 +148,8 @@ export function executeCommand(id: CommandId): void {
       if (!sel || sel.nodeId === "") return;
       const node = round.nodes.find((n) => n.id === sel.nodeId);
       if (!node) return;
+      // Straight-down disables responses on flow sheets; CX Q→Response is unaffected.
+      if (state.straightDown && !isCxSheet(round, node.sheetId)) return;
       let targetSpeechId: string | null;
       if (isCxSheet(round, node.sheetId)) {
         targetSpeechId = responseColumnFor(node.speechId); // Q → its Response column

@@ -5,7 +5,7 @@
  * and asserts the resulting store state.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { makeFormatByKey } from "@/lib/format/presets";
 import { executeCommand } from "./commands";
@@ -573,9 +573,46 @@ describe("sheet.rename", () => {
   });
 });
 
-describe("Group Commands", () => {
-  beforeEach(resetStore);
+describe("straightDown behavior", () => {
+  beforeEach(() => {
+    resetStore();
+    useRoundStore.setState({ straightDown: true });
+  });
+  afterEach(() => {
+    useRoundStore.setState({ straightDown: false });
+  });
 
+  it("node.addAnswer creates a ROOT cell below even from a child node", () => {
+    const { sheetId, speeches } = setupRound();
+    const affSp = speeches[0].id; // 1AC aff
+    const negSp = speeches[1].id; // 1NC neg
+    const root = useRoundStore.getState().addNode({ sheetId, speechId: affSp, parentId: null });
+    // A pre-existing child (e.g. created before straight-down was turned on).
+    const child = useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: negSp, parentId: root });
+    useRoundStore.getState().setSelection({ sheetId, speechId: negSp, nodeId: child });
+
+    executeCommand("node.addAnswer");
+    const st = useRoundStore.getState();
+    const created = st.round!.nodes.find((n) => n.id === st.selection!.nodeId);
+    expect(created?.parentId).toBeNull();
+    expect(created?.speechId).toBe(negSp);
+  });
+
+  it("node.answerAcross is a no-op on a flow sheet", () => {
+    const { sheetId, speeches } = setupRound();
+    const affSp = speeches[0].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: affSp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: affSp, nodeId: a });
+    const before = useRoundStore.getState().round!.nodes.length;
+
+    executeCommand("node.answerAcross");
+    expect(useRoundStore.getState().round!.nodes.length).toBe(before);
+  });
+});
+
+describe("Group Commands", () => {
   function setupWithTwoNodes() {
     const { sheetId, speeches } = setupRound();
     const sp = speeches[1].id; // 1NC
