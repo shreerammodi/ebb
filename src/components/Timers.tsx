@@ -89,7 +89,7 @@ export default function Timers() {
       <div className="timers__speech">
         {activeSpeech && <span className="timers__speech-name">{activeSpeech.name}</span>}
         {timers.speechRemaining !== null && (
-          <span className="timers__speech-time" data-testid="speech-time">
+          <span className="timers__speech-time tabular-nums" data-testid="speech-time">
             {formatTime(timers.speechRemaining)}
           </span>
         )}
@@ -106,7 +106,7 @@ export default function Timers() {
       {/* Aff prep timer */}
       <div className="timers__prep timers__prep--aff">
         <span className="timers__prep-label">Aff prep</span>
-        <span className="timers__prep-time" data-testid="aff-prep-time">
+        <span className="timers__prep-time tabular-nums" data-testid="aff-prep-time">
           {formatTime(timers.prepRemaining.aff)}
         </span>
         <button
@@ -121,7 +121,7 @@ export default function Timers() {
       {/* Neg prep timer */}
       <div className="timers__prep timers__prep--neg">
         <span className="timers__prep-label">Neg prep</span>
-        <span className="timers__prep-time" data-testid="neg-prep-time">
+        <span className="timers__prep-time tabular-nums" data-testid="neg-prep-time">
           {formatTime(timers.prepRemaining.neg)}
         </span>
         <button
