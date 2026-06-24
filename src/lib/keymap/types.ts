@@ -1,6 +1,6 @@
 import type { CommandId } from "@/lib/commands/registry";
 
-export type Mode = "normal" | "insert";
+export type Mode = "normal" | "insert" | "move";
 
 /**
  * Canonical chord string for a key event.

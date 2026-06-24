@@ -27,9 +27,12 @@ export function useKeymap(): void {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const keymap = effectiveKeymap();
-      const { mode } = useRoundStore.getState();
+      const { mode, moveSource } = useRoundStore.getState();
+      const moveActive = moveSource !== null;
 
-      const editable = isEditableTarget(e.target);
+      // In move mode cells aren't editable, so route every key to the 'move' map
+      // (don't let the editable-typing filter swallow Enter/Escape/letters).
+      const editable = !moveActive && isEditableTarget(e.target);
       if (editable) {
         pendingPrefix = null;
         const { keymapName } = useRoundStore.getState();
@@ -62,7 +65,7 @@ export function useKeymap(): void {
       // Default keymap is always-insert: navigation bindings only exist in 'normal'.
       // Using the raw `mode` here would silently drop all commands when mode='insert'.
       const { keymapName } = useRoundStore.getState();
-      const effectiveMode = keymapName === "default" ? "normal" : mode;
+      const effectiveMode = moveActive ? "move" : keymapName === "default" ? "normal" : mode;
       const modeBindings = keymap.bindings[effectiveMode] ?? {};
 
       // ── Two-key chord resolution ─────────────────────────────────────────────

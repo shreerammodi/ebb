@@ -40,7 +40,10 @@ export type CommandId =
   | "info.open"
   | "help.open"
   | "group.withBelow"
-  | "group.ungroup";
+  | "group.ungroup"
+  | "move.grab"
+  | "move.commit"
+  | "move.cancel";
 
 export interface CommandDef {
   id: CommandId;
@@ -83,4 +86,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
   "help.open": { id: "help.open", label: "Show keybindings" },
   "group.withBelow": { id: "group.withBelow", label: "Group with node below" },
   "group.ungroup": { id: "group.ungroup", label: "Remove from group" },
+  "move.grab": { id: "move.grab", label: "Grab to move/reparent" },
+  "move.commit": { id: "move.commit", label: "Drop here (move mode)" },
+  "move.cancel": { id: "move.cancel", label: "Cancel move" },
 };

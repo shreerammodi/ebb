@@ -6,7 +6,7 @@
  * Reads selection/mode/actions from the zustand store directly.
  */
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import type { ArgumentNode } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { numberFor } from "@/lib/model/numbering";
@@ -23,6 +23,9 @@ export interface GridCellProps {
   hasChildren: boolean;
   /** True when rendered inside a CX sheet — suppresses numbering and badges. */
   isCx?: boolean;
+  /** Called after a drag-drop reparents another node under this one, with the
+   *  dragged node's id, so the parent can confirm the move (e.g. a flash). */
+  onReparent?: (draggedId: string) => void;
 }
 
 export default function GridCell({
@@ -33,6 +36,7 @@ export default function GridCell({
   sheetNodes,
   hasChildren,
   isCx,
+  onReparent,
 }: GridCellProps) {
   const selection = useRoundStore((s) => s.selection);
   const mode = useRoundStore((s) => s.mode);
@@ -42,6 +46,7 @@ export default function GridCell({
   const setMode = useRoundStore((s) => s.setMode);
   const autoNumber = useRoundStore((s) => s.autoNumber);
   const labelDrops = useRoundStore((s) => s.labelDrops);
+  const moveActive = useRoundStore((s) => s.moveSource !== null);
 
   const isSelected =
     selection?.sheetId === sheetId &&
@@ -49,7 +54,8 @@ export default function GridCell({
     selection?.nodeId === node.id;
 
   // Default keymap: always editable when selected (no modal insert mode).
-  const isInsertMode = isSelected && (mode === "insert" || keymapName === "default");
+  // Move mode suppresses editing entirely so keys route to the move bindings.
+  const isInsertMode = !moveActive && isSelected && (mode === "insert" || keymapName === "default");
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Grow the textarea to fit its content so it occupies the same space the
@@ -77,6 +83,8 @@ export default function GridCell({
   const handleClick = () => {
     setSelection({ sheetId, speechId, nodeId: node.id });
   };
+
+  const [isDragging, setIsDragging] = useState(false);
 
   const num = numberFor(sheetNodes, node.id);
   const showExtended = node.statuses.includes("extended");
@@ -120,16 +128,21 @@ export default function GridCell({
   return (
     <span
       draggable
+      className={isDragging ? "arg-dragging" : undefined}
       onDragStart={(e) => {
         e.dataTransfer.setData("text/df-node", node.id);
         e.dataTransfer.effectAllowed = "move";
+        setIsDragging(true);
       }}
+      onDragEnd={() => setIsDragging(false)}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
+        setIsDragging(false);
         const dragged = e.dataTransfer.getData("text/df-node");
         if (dragged && dragged !== node.id) {
           useRoundStore.getState().setNodeParent(dragged, node.id);
+          onReparent?.(dragged);
         }
       }}
       onClick={handleClick}

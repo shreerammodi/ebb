@@ -51,6 +51,9 @@
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
   --radius: 0.625rem;
+
+  /* Motion: natural deceleration for state-conveying transitions (drag, flash). */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Legacy aliases — consumed by .flow and .cell-* rules; do not remove */
@@ -123,6 +126,20 @@ body {
   table-layout: fixed;
 }
 
+/* Screen-reader caption — visually hidden, announced to assistive tech so the
+   grid's structure (speeches × arguments) is understandable without sight. */
+.flow-caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .flow th {
   position: relative;
   text-align: left;
@@ -158,15 +175,21 @@ body {
   color: var(--muted);
   font-weight: 700;
   cursor: pointer;
-  opacity: 0;
+  /* Faintly persistent so the "add argument" affordance is discoverable at a
+     glance (and present on touch), without competing with the flow content. */
+  opacity: 0.3;
   transition: opacity 0.12s;
   line-height: 1;
   padding: 2px 4px;
 }
-.flow th:hover .th-add {
+.flow th:hover .th-add,
+.flow th:focus-within .th-add {
   opacity: 0.7;
 }
-.th-add:hover {
+/* Keyboard parity: a tabbed-to "+" must be visible, not an outline around an
+   opacity:0 target. Keyboard-first operability is a core product requirement. */
+.th-add:hover,
+.th-add:focus-visible {
   opacity: 1 !important;
 }
 
@@ -197,7 +220,89 @@ body {
   outline-offset: -2px;
 }
 
-/* Dropped argument — dashed amber left border */
+/* Drag-and-drop feedback ----------------------------------------------------
+   Dashed violet target (distinct from the solid selected outline) + faint wash
+   so it's obvious where a dragged argument will land. */
+.flow td.drag-over {
+  outline: 2px dashed var(--sel);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--sel) 8%, transparent);
+  transition: background 150ms var(--ease-out-quart);
+}
+
+/* The argument being dragged dims while in flight. */
+.arg-dragging {
+  opacity: 0.4;
+  transition: opacity 150ms var(--ease-out-quart);
+}
+
+/* Confirm a reparent: the moved argument pulses violet once in its new home. */
+@keyframes cell-flash {
+  from {
+    background: color-mix(in srgb, var(--sel) 28%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+.flow td.cell-flash {
+  animation: cell-flash 600ms var(--ease-out-quart);
+}
+
+/* Keyboard move mode: the grabbed argument's cell dims while it's "in hand",
+   mirroring the mouse drag's .arg-dragging lift. */
+.flow td.cell-moving {
+  opacity: 0.4;
+}
+
+/* Move-mode status banner — compact, non-intrusive, announced via aria-live. */
+.move-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink);
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  border: 1px solid var(--sel);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--sel) 8%, transparent);
+}
+.move-banner-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: var(--sel);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.move-banner kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 4px;
+  background: var(--panel);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No pulse/dim choreography; the structural change still applies instantly. */
+  .flow td.cell-flash {
+    animation: none;
+  }
+  .flow td.drag-over,
+  .arg-dragging {
+    transition: none;
+  }
+}
+
+/* Dropped argument — dashed amber left border. Deliberate: drop status overrides
+   the side's colored left edge here. Side is over-determined (text color + header
+   + column position) so it survives; the amber dash is the always-on, scannable
+   "dropped" cue, independent of the optional drop badge. */
 .cell-drop {
   border-left: 2px dashed var(--warn) !important;
 }
@@ -215,9 +320,13 @@ body {
   font-weight: 600;
 }
 
-/* Drop badge — small inline indicator */
+/* Drop badge — small inline indicator. A dropped argument is often the
+   round-winning fact, so it must stay legible: 10px (not a sub-readable 8px),
+   with the amber border + fill carrying the compactness. Contrast of --warn on
+   the amber fill is ~4.7:1 (WCAG AA for normal text). */
 .badge-drop {
-  font-size: 8px;
+  font-size: 10px;
+  line-height: 1.4;
   font-weight: 800;
   color: var(--warn);
   border: 1px solid var(--warn);
@@ -282,10 +391,26 @@ body {
   min-height: 1.4em;
 }
 
-/* Em-dash placeholder — marks a blank, inaccessible cell (no argument can go here). */
-.dash {
+/* Accessible empty cell — a place an argument can actually go. Signal that it's
+   interactive (a spreadsheet-style entry cell) with a text caret and a faint
+   hover wash, so the entry point is discoverable without any chrome. */
+.flow td.cell-open {
+  cursor: text;
+}
+.flow td.cell-open:hover {
+  background: color-mix(in srgb, var(--sel) 6%, transparent);
+}
+
+/* First-run prompt shown in the entry cell of a brand-new sheet. Muted and
+   italic so it reads as guidance, not content; disappears on first keystroke.
+   No opacity dimming: --muted on white is ~4.84:1, but fading it would drop
+   below the WCAG AA floor this product commits to. */
+.cell-hint {
+  display: block;
   color: var(--muted);
-  opacity: 0.6;
+  font-style: italic;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* ------------------------------------------------------------

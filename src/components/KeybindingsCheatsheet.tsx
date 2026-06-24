@@ -27,6 +27,14 @@ const GROUPS = [
     ],
   },
   {
+    label: "Move",
+    rows: [
+      { commandId: "move.grab" as CommandId },
+      { commandId: "move.commit" as CommandId, moveMode: true },
+      { commandId: "move.cancel" as CommandId, moveMode: true },
+    ],
+  },
+  {
     label: "Status",
     rows: [
       { commandId: "status.toggleConceded" as CommandId },
@@ -87,12 +95,16 @@ export default function KeybindingsCheatsheet() {
   const keymap = effectiveKeymap();
   const normalBindings = keymap.bindings.normal;
   const insertBindings = keymap.bindings.insert;
+  const moveBindings = keymap.bindings.move;
 
   const chordFor: Partial<Record<CommandId, string>> = {};
   for (const [chord, cmd] of Object.entries(normalBindings)) {
     if (!chordFor[cmd as CommandId]) chordFor[cmd as CommandId] = chord;
   }
   for (const [chord, cmd] of Object.entries(insertBindings)) {
+    if (!chordFor[cmd as CommandId]) chordFor[cmd as CommandId] = chord;
+  }
+  for (const [chord, cmd] of Object.entries(moveBindings)) {
     if (!chordFor[cmd as CommandId]) chordFor[cmd as CommandId] = chord;
   }
 
@@ -133,6 +145,7 @@ export default function KeybindingsCheatsheet() {
                 {group.rows.map((row) => {
                   const { commandId } = row;
                   const insertMode = "insertMode" in row ? row.insertMode : undefined;
+                  const moveMode = "moveMode" in row ? row.moveMode : undefined;
                   const chord = chordFor[commandId];
                   const isJumpAnchor = commandId === "sheet.jump1";
                   if (!chord && !isJumpAnchor) return null;
@@ -151,6 +164,11 @@ export default function KeybindingsCheatsheet() {
                         {insertMode && (
                           <span className="rounded border border-zinc-200 bg-zinc-50 px-1 text-[10px] leading-4 text-zinc-400">
                             insert
+                          </span>
+                        )}
+                        {moveMode && (
+                          <span className="rounded border border-zinc-200 bg-zinc-50 px-1 text-[10px] leading-4 text-zinc-400">
+                            move
                           </span>
                         )}
                       </span>

@@ -715,3 +715,116 @@ describe("Group Commands", () => {
     expect(useRoundStore.getState().round!.groups).toHaveLength(0);
   });
 });
+
+describe("keyboard grab & move", () => {
+  beforeEach(resetStore);
+
+  // An AFF sheet's columns == fmt.speeches in order (1AC, 1NC, 2AC, ...), so
+  // speech indices map directly to grid columns. A neg sheet would slice from
+  // the first neg speech and shift the indices.
+  function setupAff() {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "aff", format: fmt });
+    const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+    return { fmt, sheetId, speeches: fmt.speeches };
+  }
+
+  it("move.grab sets moveSource for a selected node", () => {
+    const { sheetId, speeches } = setupAff();
+    const sp = speeches[1].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: a });
+
+    executeCommand("move.grab");
+    expect(useRoundStore.getState().moveSource).toBe(a);
+  });
+
+  it("move.grab no-ops on an empty cell", () => {
+    const { sheetId, speeches } = setupAff();
+    useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, nodeId: "" });
+
+    executeCommand("move.grab");
+    expect(useRoundStore.getState().moveSource).toBeNull();
+  });
+
+  it("move.cancel clears moveSource and reselects the source", () => {
+    const { sheetId, speeches } = setupAff();
+    const sp = speeches[1].id;
+    const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp, nodeId: a });
+    executeCommand("move.grab");
+    // Cursor navigated away to some other cell.
+    useRoundStore
+      .getState()
+      .setSelection({ sheetId, speechId: speeches[0].id, nodeId: "", row: 0 });
+
+    executeCommand("move.cancel");
+    expect(useRoundStore.getState().moveSource).toBeNull();
+    expect(useRoundStore.getState().selection?.nodeId).toBe(a);
+  });
+
+  it("move.commit reparents the grabbed node under a valid earlier-column target", () => {
+    const { sheetId, speeches } = setupAff();
+    const root = useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: speeches[0].id, parentId: null, text: "root" });
+    const child = useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: speeches[2].id, parentId: null, text: "child" });
+    useRoundStore.getState().setSelection({ sheetId, speechId: speeches[2].id, nodeId: child });
+    executeCommand("move.grab");
+    // Target cursor lands on the col-0 root.
+    useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, nodeId: root });
+
+    executeCommand("move.commit");
+    expect(useRoundStore.getState().moveSource).toBeNull();
+    expect(useRoundStore.getState().round!.nodes.find((n) => n.id === child)!.parentId).toBe(root);
+    expect(useRoundStore.getState().flashNodeId).toBe(child);
+  });
+
+  it("move.commit stays in move mode on an invalid (later-column) target", () => {
+    const { sheetId, speeches } = setupAff();
+    const root = useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: speeches[0].id, parentId: null, text: "root" });
+    const later = useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: speeches[2].id, parentId: null, text: "later" });
+    useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, nodeId: root });
+    executeCommand("move.grab");
+    useRoundStore.getState().setSelection({ sheetId, speechId: speeches[2].id, nodeId: later });
+
+    executeCommand("move.commit");
+    // A later-column node can't be a parent → no-op, still grabbed.
+    expect(useRoundStore.getState().moveSource).toBe(root);
+    expect(useRoundStore.getState().round!.nodes.find((n) => n.id === root)!.parentId).toBeNull();
+  });
+
+  it("move.grab no-ops on a CX sheet", () => {
+    setupAff();
+    const cxId = useRoundStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
+    const q = useRoundStore
+      .getState()
+      .addNode({ sheetId: cxId, speechId: "cx-1ac-q", parentId: null });
+    useRoundStore.getState().setSelection({ sheetId: cxId, speechId: "cx-1ac-q", nodeId: q });
+
+    executeCommand("move.grab");
+    expect(useRoundStore.getState().moveSource).toBeNull();
+  });
+
+  it("spatial nav: move.right steps the target cursor to the next column while moving", () => {
+    const { sheetId, speeches } = setupAff();
+    const a = useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: speeches[0].id, parentId: null, text: "a" });
+    const b = useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: speeches[1].id, parentId: a, text: "b" });
+    useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, nodeId: a });
+    executeCommand("move.grab");
+
+    executeCommand("move.right");
+    expect(useRoundStore.getState().selection?.speechId).toBe(speeches[1].id);
+    expect(useRoundStore.getState().selection?.nodeId).toBe(b);
+  });
+});

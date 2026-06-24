@@ -42,6 +42,19 @@ const COMMON_NORMAL: Record<Chord, CommandId> = {
 // Arrow keys navigate between cells even while a cell is focused.
 // Ctrl+ shortcuts work from anywhere.
 
+/**
+ * Move mode (keyboard grab & move): arrows steer the target cursor spatially,
+ * Enter drops, Escape cancels. Shared across presets; vim adds hjkl.
+ */
+const MOVE_COMMON: Record<Chord, CommandId> = {
+  ArrowLeft: "move.left",
+  ArrowDown: "move.down",
+  ArrowUp: "move.up",
+  ArrowRight: "move.right",
+  Enter: "move.commit",
+  Escape: "move.cancel",
+};
+
 export const DEFAULT_KEYMAP: Keymap = {
   name: "default",
   bindings: {
@@ -55,10 +68,13 @@ export const DEFAULT_KEYMAP: Keymap = {
       "Alt+Enter": "arg.newRoot",
       "Ctrl+Shift+x": "status.toggleConceded",
       "Ctrl+e": "status.toggleExtended",
+      // Bare letters type into always-editable cells, so grab is a chord.
+      "Ctrl+m": "move.grab",
       Delete: "node.delete",
       ...COMMON_NORMAL,
     },
     insert: {},
+    move: MOVE_COMMON,
   },
 };
 
@@ -80,10 +96,18 @@ export const VIM_KEYMAP: Keymap = {
       c: "status.toggleConceded",
       e: "status.toggleExtended",
       x: "node.delete",
+      m: "move.grab",
       "g r": "sheet.rename",
       ...COMMON_NORMAL,
     },
     insert: { Escape: "edit.exit" },
+    move: {
+      h: "move.left",
+      j: "move.down",
+      k: "move.up",
+      l: "move.right",
+      ...MOVE_COMMON,
+    },
   },
 };
 

@@ -18,6 +18,7 @@ import {
 } from "@/lib/grid/navigation";
 import { buildLayout } from "@/lib/grid/layout";
 import { columnsForSheet } from "@/lib/grid/columns";
+import { stepMoveCursor, isValidMoveTarget, type MoveTarget } from "@/lib/grid/move";
 import { responseColumnFor, CX_COLUMNS } from "@/lib/model/cxColumns";
 import type { CommandId } from "./registry";
 
@@ -60,6 +61,32 @@ export function executeCommand(id: CommandId): void {
       if (!round) return;
       const sel = state.selection;
       if (!sel) return;
+
+      // Move mode: arrows steer a target cursor spatially (column/row), not by
+      // the tree, so any cell is reachable as a drop target.
+      if (state.moveSource) {
+        const sheet = round.sheets.find((s) => s.id === sel.sheetId);
+        if (!sheet || sheet.kind === "cx") return;
+        const speeches = columnsForSheet(round.format, sheet);
+        const sheetNodes = round.nodes.filter((n) => n.sheetId === sel.sheetId);
+        const dir =
+          id === "move.up"
+            ? "up"
+            : id === "move.down"
+              ? "down"
+              : id === "move.left"
+                ? "left"
+                : "right";
+        const next = stepMoveCursor(
+          sheetNodes,
+          speeches,
+          { speechId: sel.speechId, nodeId: sel.nodeId, row: sel.row },
+          dir,
+        );
+        state.setSelection({ sheetId: sel.sheetId, ...next });
+        return;
+      }
+
       const straight = state.straightDown && !isCxSheet(round, sel.sheetId);
 
       // Empty entry cell (Excel-style cell below the content, straight-down only):
@@ -364,6 +391,74 @@ export function executeCommand(id: CommandId): void {
       const sel = state.selection;
       if (!sel || sel.nodeId === "") return;
       state.ungroupNode(sel.nodeId);
+      return;
+    }
+
+    // ── Keyboard grab & move (reparent / rehome) ───────────────────────────────
+    case "move.grab": {
+      if (!round) return;
+      const sel = state.selection;
+      // Need a real node selected, and not on a CX sheet (fixed Q/R grid).
+      if (!sel || sel.nodeId === "") return;
+      if (isCxSheet(round, sel.sheetId)) return;
+      state.setMoveSource(sel.nodeId);
+      return;
+    }
+
+    case "move.cancel": {
+      const src = state.moveSource;
+      state.setMoveSource(null);
+      if (src && round) {
+        const node = round.nodes.find((n) => n.id === src);
+        if (node) {
+          state.setSelection({
+            sheetId: node.sheetId,
+            speechId: node.speechId,
+            nodeId: node.id,
+          });
+        }
+      }
+      return;
+    }
+
+    case "move.commit": {
+      const src = state.moveSource;
+      const sel = state.selection;
+      if (!round || !src || !sel) {
+        state.setMoveSource(null);
+        return;
+      }
+      const sheet = round.sheets.find((s) => s.id === sel.sheetId);
+      if (!sheet) {
+        state.setMoveSource(null);
+        return;
+      }
+      const speeches = columnsForSheet(round.format, sheet);
+      const target: MoveTarget =
+        sel.nodeId === ""
+          ? { kind: "empty", speechId: sel.speechId, row: sel.row ?? 0 }
+          : { kind: "node", nodeId: sel.nodeId };
+
+      // Invalid target (self, descendant, later column): stay in move mode so the
+      // user can keep steering or press Escape. Silent, per the brief.
+      if (!isValidMoveTarget(round.nodes, speeches, src, target)) return;
+
+      if (target.kind === "node") {
+        state.setNodeParent(src, target.nodeId);
+      } else {
+        state.rehomeNode(src, target.speechId, null);
+      }
+      state.setMoveSource(null);
+      // Re-read: rehome changes the node's speech; select it in its new home and flash.
+      const moved = useRoundStore.getState().round?.nodes.find((n) => n.id === src);
+      if (moved) {
+        state.setSelection({
+          sheetId: moved.sheetId,
+          speechId: moved.speechId,
+          nodeId: moved.id,
+        });
+      }
+      state.setFlashNode(src);
       return;
     }
 

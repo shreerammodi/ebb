@@ -59,6 +59,14 @@ export interface RoundState {
   cheatsheetOpen: boolean;
   renamingSheetId: string | null;
   infoOpen: boolean;
+  /**
+   * Keyboard "grab & move": the id of the argument currently being moved, or
+   * null. While set, the grid is in move mode — cells are not editable, the
+   * selection acts as a target cursor, and the grabbed node shows dimmed.
+   */
+  moveSource: string | null;
+  /** A node id to briefly flash (drop/move confirm), or null. Transient UI. */
+  flashNodeId: string | null;
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -114,6 +122,8 @@ export interface RoundActions {
   setCheatsheetOpen(open: boolean): void;
   setRenamingSheet(id: string | null): void;
   setInfoOpen(open: boolean): void;
+  setMoveSource(id: string | null): void;
+  setFlashNode(id: string | null): void;
 
   setScouting(patch: Partial<Scouting>): void;
 }
@@ -223,6 +233,8 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   cheatsheetOpen: false,
   renamingSheetId: null,
   infoOpen: false,
+  moveSource: null,
+  flashNodeId: null,
 
   // ── createRound ────────────────────────────────────────────────────────────
   createRound({ role, format }) {
@@ -251,6 +263,8 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       cheatsheetOpen: false,
       renamingSheetId: null,
       infoOpen: false,
+      moveSource: null,
+      flashNodeId: null,
     });
   },
 
@@ -540,6 +554,16 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   // ── setRenamingSheet ───────────────────────────────────────────────────────
   setRenamingSheet(id) {
     set({ renamingSheetId: id });
+  },
+
+  // ── setMoveSource ──────────────────────────────────────────────────────────
+  setMoveSource(id) {
+    set({ moveSource: id });
+  },
+
+  // ── setFlashNode ───────────────────────────────────────────────────────────
+  setFlashNode(id) {
+    set({ flashNodeId: id });
   },
 
   // ── setInfoOpen ────────────────────────────────────────────────────────────

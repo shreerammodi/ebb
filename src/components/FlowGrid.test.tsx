@@ -284,7 +284,7 @@ describe("FlowGrid", () => {
       );
     });
     expect(emptyTd).toBeDefined();
-    // An accessible empty cell stays clean — the em-dash is only for inaccessible cells.
+    // Empty cells carry no em-dash glyph (gridline-only voids).
     expect(emptyTd!.querySelector(".dash")).toBeNull();
 
     // Click it
@@ -495,21 +495,180 @@ describe("FlowGrid", () => {
     expect(affBlockHeader!.classList.contains("side-aff")).toBe(true);
   });
 
-  it("renders a gray em-dash in blank, inaccessible cells", () => {
+  it("renders inaccessible cells as gridline-only with no em-dash glyph", () => {
     const fmt = makeFormatByKey("policy");
     useRoundStore.getState().createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
     // A single root in the first column. On that row, cells two-or-more columns
-    // to the right have no argument to their left, so they are inaccessible and
-    // must show the em-dash placeholder (".dash").
+    // to the right have no argument to their left, so they are inaccessible →
+    // marked .cell-void, but carry no glyph; the gridlines read as empty space.
     useRoundStore
       .getState()
       .addNode({ sheetId, speechId: fmt.speeches[0].id, parentId: null, text: "Adv" });
 
     const { container } = render(<FlowGrid sheetId={sheetId} />);
 
-    const dashes = container.querySelectorAll("span.dash");
-    expect(dashes.length).toBeGreaterThan(0);
-    dashes.forEach((d) => expect(d.textContent).toBe("—"));
+    // No em-dash placeholder anywhere.
+    expect(container.querySelector("span.dash")).toBeNull();
+    // The unreachable cells are still distinguished structurally as voids.
+    expect(container.querySelectorAll("td.cell-void").length).toBeGreaterThan(0);
+  });
+
+  // ── Accessibility: table semantics ─────────────────────────────────────────
+
+  it('gives every speech column header scope="col"', () => {
+    const { sheetId } = setupScenario();
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const speechHeaders = screen
+      .getAllByRole("columnheader")
+      .filter((h) => h.querySelector(".th-label"));
+    expect(speechHeaders.length).toBeGreaterThan(0);
+    speechHeaders.forEach((h) => expect(h.getAttribute("scope")).toBe("col"));
+  });
+
+  it('gives a spanning group header scope="colgroup"', () => {
+    const fmt = makeFormat({
+      name: "Custom",
+      speeches: [
+        { name: "NC", side: "neg", seconds: 420 },
+        { name: "AR1", side: "aff", seconds: 240, group: "Aff block" },
+        { name: "AR2", side: "aff", seconds: 180, group: "Aff block" },
+        { name: "NR", side: "neg", seconds: 360 },
+      ],
+      prepSeconds: { aff: 240, neg: 240 },
+    });
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
+    const sheetId = useRoundStore.getState().addSheet({ title: "AffGroup", group: "aff" });
+
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const groupHeader = screen
+      .getAllByRole("columnheader")
+      .find((h) => h.textContent === "Aff block");
+    expect(groupHeader).toBeDefined();
+    expect(groupHeader!.getAttribute("scope")).toBe("colgroup");
+  });
+
+  it("renders a caption naming the sheet for screen readers", () => {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
+    const sheetId = useRoundStore.getState().addSheet({ title: "Disad", group: "neg" });
+
+    const { container } = render(<FlowGrid sheetId={sheetId} />);
+
+    const caption = container.querySelector("table.flow > caption");
+    expect(caption).not.toBeNull();
+    expect(caption!.textContent).toContain("Disad");
+  });
+
+  // ── Onboarding: discoverable entry points ──────────────────────────────────
+
+  it("marks accessible empty cells with .cell-open and leaves inaccessible ones without it", () => {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "aff", format: fmt });
+    const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const row0 = document.querySelector("tbody tr")!;
+    const cells = row0.querySelectorAll("td");
+    // col 0 (1AC) is the always-reachable entry column → looks interactive.
+    expect(cells[0].classList.contains("cell-open")).toBe(true);
+    // col 1 (1NC) has nothing to respond to → not an entry point, not cell-open.
+    expect(cells[1].classList.contains("cell-open")).toBe(false);
+    expect(cells[1].classList.contains("cell-void")).toBe(true);
+  });
+
+  it("shows a first-run hint in the entry cell of an empty sheet", () => {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "aff", format: fmt });
+    const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+
+    const { container } = render(<FlowGrid sheetId={sheetId} />);
+
+    const hint = container.querySelector(".cell-hint");
+    expect(hint).not.toBeNull();
+    expect(hint!.textContent?.toLowerCase()).toContain("argument");
+  });
+
+  it("hides the first-run hint once the sheet has a node", () => {
+    const { sheetId } = setupScenario();
+    const { container } = render(<FlowGrid sheetId={sheetId} />);
+    expect(container.querySelector(".cell-hint")).toBeNull();
+  });
+
+  it("shows no first-run hint on a CX sheet", () => {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "neg", format: fmt });
+    const cxId = useRoundStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
+    const { container } = render(<FlowGrid sheetId={cxId} />);
+    expect(container.querySelector(".cell-hint")).toBeNull();
+  });
+
+  // ── Drag feedback (state-conveying motion) ─────────────────────────────────
+
+  it("highlights a node cell as a drop target while a drag is over it", () => {
+    const { sheetId } = setupScenario();
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const targetTd = screen.getByText("Topicality").closest("td")!;
+    expect(targetTd.classList.contains("drag-over")).toBe(false);
+
+    fireEvent.dragOver(targetTd);
+    expect(targetTd.classList.contains("drag-over")).toBe(true);
+
+    // A drag-end anywhere clears the highlight.
+    fireEvent.dragEnd(targetTd);
+    expect(targetTd.classList.contains("drag-over")).toBe(false);
+  });
+
+  it("lifts (dims) the dragged argument while it is in flight", () => {
+    const { sheetId } = setupScenario();
+    render(<FlowGrid sheetId={sheetId} />);
+
+    const source = screen.getByText("Topicality").closest("[draggable]")!;
+    fireEvent.dragStart(source, { dataTransfer: { setData() {}, getData: () => "" } });
+    expect(source.classList.contains("arg-dragging")).toBe(true);
+
+    fireEvent.dragEnd(source);
+    expect(source.classList.contains("arg-dragging")).toBe(false);
+  });
+
+  it("flashes the moved argument in its new home after a reparent drop", () => {
+    const fmt = makeFormatByKey("policy");
+    useRoundStore.getState().createRound({ role: "aff", format: fmt });
+    const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+    const idA = useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: fmt.speeches[0].id, parentId: null, text: "A-text" });
+    useRoundStore
+      .getState()
+      .addNode({ sheetId, speechId: fmt.speeches[1].id, parentId: null, text: "B-text" });
+
+    const { container } = render(<FlowGrid sheetId={sheetId} />);
+
+    const dropEl = screen.getByText("B-text").closest("[draggable]")!;
+    const store: Record<string, string> = {};
+    const dataTransfer = {
+      effectAllowed: "move",
+      setData: (t: string, v: string) => {
+        store[t] = v;
+      },
+      getData: (t: string) => store[t] ?? "",
+    };
+    const dragEl = screen.getByText("A-text").closest("[draggable]")!;
+    fireEvent.dragStart(dragEl, { dataTransfer });
+    fireEvent.drop(dropEl, { dataTransfer });
+
+    // The moved node (A) is now nested under B; its cell carries the flash class.
+    const movedTd = screen.getByText("A-text").closest("td")!;
+    expect(movedTd.classList.contains("cell-flash")).toBe(true);
+    expect(
+      useRoundStore.getState().round!.nodes.find((n) => n.id === idA)!.parentId,
+    ).not.toBeNull();
+    // The flash clears itself when the animation ends.
+    fireEvent.animationEnd(movedTd);
+    expect(container.querySelector(".cell-flash")).toBeNull();
   });
 });

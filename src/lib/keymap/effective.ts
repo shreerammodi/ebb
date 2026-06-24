@@ -33,6 +33,7 @@ export function effectiveKeymap(
     bindings: {
       normal: normalBindings,
       insert: { ...preset.bindings.insert },
+      move: { ...preset.bindings.move },
     },
   };
 }
