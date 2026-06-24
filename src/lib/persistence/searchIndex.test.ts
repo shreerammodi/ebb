@@ -18,7 +18,6 @@ function round(overrides: Partial<Round> = {}): Round {
       { id: "n1", sheetId: "s", speechId: "1ac", parentId: null, order: 0, text: "perm do both", statuses: [], bold: false },
     ],
     groups: [],
-    timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 240, neg: 240 }, prepRunning: null },
     ...overrides,
   };
 }

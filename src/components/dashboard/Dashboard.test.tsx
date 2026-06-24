@@ -18,7 +18,6 @@ function mk(id: string, over: Partial<Round> = {}): Round {
     format: { id: "f", name: "Policy", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
     scouting: { ...emptyScouting(), affSchool: id === "a" ? "Westwood" : "Mission", tournament: "Berkeley" },
     sheets: [], nodes: [], groups: [],
-    timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 240, neg: 240 }, prepRunning: null },
     ...over,
   };
 }

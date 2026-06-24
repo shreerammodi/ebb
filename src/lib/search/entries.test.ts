@@ -32,7 +32,6 @@ function makeRound(): Round {
       { id: "n3", sheetId: "s2", speechId: "1ac", parentId: null, order: 1, text: "   ", statuses: [], bold: false },
     ],
     groups: [],
-    timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 0, neg: 0 }, prepRunning: null },
   };
 }
 

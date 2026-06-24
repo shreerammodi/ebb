@@ -49,13 +49,6 @@ describe("columnsForSheet", () => {
       ],
       nodes: [],
       groups: [],
-      timers: {
-        activeSpeechId: null,
-        speechRemaining: null,
-        running: false,
-        prepRemaining: { aff: 0, neg: 0 },
-        prepRunning: null,
-      },
     };
   }
   it("returns CX columns for a cx sheet", () => {

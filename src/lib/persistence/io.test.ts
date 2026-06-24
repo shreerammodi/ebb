@@ -32,13 +32,6 @@ function makeRound(overrides: Partial<Round> = {}): Round {
         bold: false,
       },
     ],
-    timers: {
-      activeSpeechId: null,
-      speechRemaining: null,
-      running: false,
-      prepRemaining: { aff: 480, neg: 480 },
-      prepRunning: null,
-    },
     ...overrides,
   };
 }
@@ -79,7 +72,6 @@ describe("importRoundJSON", () => {
     expect(imported.sheets).toEqual(normalized.sheets);
     expect(imported.nodes).toEqual(normalized.nodes);
     expect(imported.groups).toEqual(normalized.groups);
-    expect(imported.timers).toEqual(normalized.timers);
     expect(imported.scouting).toEqual(normalized.scouting);
     // Verify identity is fresh
     expect(imported.id).not.toBe(round.id);
@@ -175,12 +167,6 @@ describe("importRoundJSON", () => {
     expect(() => importRoundJSON(payload)).toThrow("Invalid round file");
   });
 
-  it('throws "Invalid round file" when round.timers is missing', () => {
-    const { timers: _timers, ...roundNoTimers } = makeRound();
-    const payload = JSON.stringify({ version: FILE_VERSION, round: roundNoTimers });
-    expect(() => importRoundJSON(payload)).toThrow("Invalid round file");
-  });
-
   it('throws "Invalid round file" when version field is not a number', () => {
     const payload = JSON.stringify({ version: "1", round: makeRound() });
     expect(() => importRoundJSON(payload)).toThrow("Invalid round file");
@@ -208,7 +194,6 @@ describe("importRoundJSON", () => {
     expect(back.sheets).toEqual(r.sheets);
     expect(back.nodes).toEqual(r.nodes);
     expect(back.groups).toEqual(r.groups);
-    expect(back.timers).toEqual(r.timers);
     expect(back.scouting).toEqual(r.scouting);
     expect(back.deletedAt).toBeNull();
   });
@@ -270,7 +255,6 @@ describe("importRoundJSON assigns a fresh identity", () => {
         sheets: [],
         nodes: [],
         groups: [],
-        timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 240, neg: 240 }, prepRunning: null },
       },
     };
     const r = importRoundJSON(JSON.stringify(original));

@@ -12,13 +12,6 @@ function legacy(): any {
     meta: {},
     sheets: [{ id: "s1", title: "Aff", group: "aff", order: 0 }],
     nodes: [],
-    timers: {
-      activeSpeechId: null,
-      speechRemaining: null,
-      running: false,
-      prepRemaining: { aff: 0, neg: 0 },
-      prepRunning: null,
-    },
     topic: "old topic",
   };
 }
@@ -56,10 +49,6 @@ describe("normalizeRound", () => {
       sheets: [],
       nodes: [],
       groups: [],
-      timers: {
-        activeSpeechId: null, speechRemaining: null, running: false,
-        prepRemaining: { aff: 0, neg: 0 }, prepRunning: null,
-      },
     } as unknown as Parameters<typeof normalizeRound>[0];
 
     const r = normalizeRound(legacy);
@@ -83,13 +72,6 @@ describe("normalizeRound deletedAt", () => {
       sheets: [],
       nodes: [],
       groups: [],
-      timers: {
-        activeSpeechId: null,
-        speechRemaining: null,
-        running: false,
-        prepRemaining: { aff: 240, neg: 240 },
-        prepRunning: null,
-      },
     } as unknown as Round;
     expect(normalizeRound(raw).deletedAt).toBe(1234);
   });
@@ -105,13 +87,6 @@ describe("normalizeRound deletedAt", () => {
       sheets: [],
       nodes: [],
       groups: [],
-      timers: {
-        activeSpeechId: null,
-        speechRemaining: null,
-        running: false,
-        prepRemaining: { aff: 240, neg: 240 },
-        prepRunning: null,
-      },
     } as unknown as Round;
     expect(normalizeRound(raw).deletedAt ?? null).toBeNull();
   });

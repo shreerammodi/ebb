@@ -45,13 +45,6 @@ function makeRound(overrides: Partial<Round> = {}): Round {
     sheets: [],
     nodes: [],
     groups: [],
-    timers: {
-      activeSpeechId: null,
-      speechRemaining: null,
-      running: false,
-      prepRemaining: { aff: 240, neg: 240 },
-      prepRunning: null,
-    },
     ...overrides,
   };
 }
@@ -302,7 +295,6 @@ function mkRound(id: string, over: Partial<Round> = {}): Round {
     sheets: [],
     nodes: [{ id: "n", sheetId: "s", speechId: "1ac", parentId: null, order: 0, text: "kritik", statuses: [], bold: false }],
     groups: [],
-    timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 240, neg: 240 }, prepRunning: null },
     ...over,
   };
 }

@@ -69,9 +69,7 @@ export function importRoundJSON(text: string): Round {
     typeof r.format !== "object" ||
     r.format === null ||
     !Array.isArray(r.sheets) ||
-    !Array.isArray(r.nodes) ||
-    typeof r.timers !== "object" ||
-    r.timers === null
+    !Array.isArray(r.nodes)
   ) {
     throw new Error("Invalid round file");
   }

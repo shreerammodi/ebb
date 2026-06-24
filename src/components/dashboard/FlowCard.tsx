@@ -35,11 +35,11 @@ export default function FlowCard({ summary, onOpen, menu, snippet }: FlowCardPro
     <div
       data-testid={`flow-card-${summary.id}`}
       onClick={() => onOpen(summary.id)}
-      className="group relative cursor-pointer rounded-xl border border-border bg-card p-5 transition hover:-translate-y-px hover:border-zinc-300 hover:shadow-md"
+      className="group relative cursor-pointer rounded-xl border border-border bg-card p-5 transition hover:-translate-y-px hover:border-zinc-300 hover:shadow-md active:scale-[0.98]"
     >
       {menu}
       <div className="flex items-center justify-between gap-2">
-        <span className="pr-7 text-[15px] font-semibold tracking-tight">
+        <span className="pr-7 text-[15px] font-semibold tracking-tight text-pretty">
           <span className={cn(affBlank ? "text-zinc-400 italic" : "text-blue-600")}>{aff}</span>
           <span className="px-1.5 text-[13px] font-normal text-zinc-400">vs</span>
           <span className={cn(negBlank ? "text-zinc-400 italic" : "text-red-600")}>{neg}</span>

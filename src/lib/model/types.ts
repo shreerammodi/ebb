@@ -67,16 +67,6 @@ export interface Sheet {
   startSpeechId?: string;
 }
 
-/** Live timer state for the current round. */
-export interface TimerState {
-  activeSpeechId: string | null;
-  speechRemaining: number | null;
-  running: boolean;
-  prepRemaining: { aff: number; neg: number };
-  /** Which side's prep timer is currently counting down, or null if neither. */
-  prepRunning: Side | null;
-}
-
 /** One debater's name. */
 export interface Debater {
   first: string;
@@ -117,5 +107,4 @@ export interface Round {
   sheets: Sheet[];
   nodes: ArgumentNode[];
   groups: ArgGroup[];
-  timers: TimerState;
 }

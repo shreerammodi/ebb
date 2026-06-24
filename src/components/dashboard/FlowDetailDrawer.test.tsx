@@ -18,7 +18,6 @@ function mk(id: string): Round {
     scouting: { ...emptyScouting(), affSchool: "Westwood", tournament: "Berkeley", judge: "K. Strange", decision: { vote: "aff", rfd: "clear" } },
     sheets: [{ id: "s", title: "Aff", group: "aff", order: 0, kind: "flow" }],
     nodes: [], groups: [],
-    timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 240, neg: 240 }, prepRunning: null },
   };
 }
 

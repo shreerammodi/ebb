@@ -87,6 +87,7 @@ body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-wrap: pretty;
 }
 
 /* Keyboard-first focus ring — violet, never browser default */

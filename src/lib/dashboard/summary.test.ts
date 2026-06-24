@@ -14,13 +14,6 @@ function baseRound(overrides: Partial<Round> = {}): Round {
     sheets: [],
     nodes: [],
     groups: [],
-    timers: {
-      activeSpeechId: null,
-      speechRemaining: null,
-      running: false,
-      prepRemaining: { aff: 240, neg: 240 },
-      prepRunning: null,
-    },
     ...overrides,
   };
 }

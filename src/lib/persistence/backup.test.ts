@@ -8,7 +8,6 @@ function mk(id: string): Round {
     id, createdAt: 1, updatedAt: 1, role: "aff",
     format: { id: "f", name: "T", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
     scouting: emptyScouting(), sheets: [], nodes: [], groups: [],
-    timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 240, neg: 240 }, prepRunning: null },
   };
 }
 

@@ -13,7 +13,6 @@ import type {
   ArgumentNode,
   Format,
   Role,
-  Side,
   NodeStatus,
   Scouting,
 } from "@/lib/model/types";
@@ -117,12 +116,6 @@ export interface RoundActions {
   setInfoOpen(open: boolean): void;
 
   setScouting(patch: Partial<Scouting>): void;
-
-  startSpeech(speechId: string): void;
-  tickSpeech(): void;
-  startPrep(side: Side): void;
-  stopPrep(): void;
-  tickPrep(): void;
 }
 
 export type RoundStore = RoundState & RoundActions;
@@ -244,16 +237,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
       sheets: [makeCxSheet()],
       nodes: [],
       groups: [],
-      timers: {
-        activeSpeechId: null,
-        speechRemaining: null,
-        running: false,
-        prepRemaining: {
-          aff: format.prepSeconds.aff,
-          neg: format.prepSeconds.neg,
-        },
-        prepRunning: null,
-      },
     };
     set({
       round,
@@ -568,97 +551,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
   setScouting(patch) {
     if (!get().round) return;
     get()._commit("scouting", (r) => ({ ...r, scouting: { ...r.scouting, ...patch } }));
-  },
-
-  // ── startSpeech ────────────────────────────────────────────────────────────
-  startSpeech(speechId) {
-    const { round } = get();
-    if (!round) return;
-    const speech = round.format.speeches.find((s) => s.id === speechId);
-    if (!speech) return;
-    set({
-      round: {
-        ...round,
-        timers: {
-          ...round.timers,
-          activeSpeechId: speechId,
-          speechRemaining: speech.seconds,
-          running: true,
-        },
-        updatedAt: Date.now(),
-      },
-    });
-  },
-
-  // ── tickSpeech ─────────────────────────────────────────────────────────────
-  tickSpeech() {
-    const { round } = get();
-    if (!round) return;
-    const { speechRemaining } = round.timers;
-    if (speechRemaining === null) return;
-    set({
-      round: {
-        ...round,
-        timers: {
-          ...round.timers,
-          speechRemaining: Math.max(0, speechRemaining - 1),
-        },
-        updatedAt: Date.now(),
-      },
-    });
-  },
-
-  // ── startPrep ──────────────────────────────────────────────────────────────
-  startPrep(side) {
-    const { round } = get();
-    if (!round) return;
-    set({
-      round: {
-        ...round,
-        timers: {
-          ...round.timers,
-          prepRunning: side,
-        },
-        updatedAt: Date.now(),
-      },
-    });
-  },
-
-  // ── stopPrep ───────────────────────────────────────────────────────────────
-  stopPrep() {
-    const { round } = get();
-    if (!round) return;
-    set({
-      round: {
-        ...round,
-        timers: {
-          ...round.timers,
-          prepRunning: null,
-        },
-        updatedAt: Date.now(),
-      },
-    });
-  },
-
-  // ── tickPrep ───────────────────────────────────────────────────────────────
-  tickPrep() {
-    const { round } = get();
-    if (!round) return;
-    const { prepRunning, prepRemaining } = round.timers;
-    if (!prepRunning) return;
-    set({
-      round: {
-        ...round,
-        timers: {
-          ...round.timers,
-          prepRemaining: {
-            ...prepRemaining,
-            [prepRunning]: Math.max(0, prepRemaining[prepRunning] - 1),
-          },
-        },
-        updatedAt: Date.now(),
-      },
-    });
   },
 }));
 

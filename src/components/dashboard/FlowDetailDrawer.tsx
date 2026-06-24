@@ -38,7 +38,7 @@ export default function FlowDetailDrawer({ id, onClose }: FlowDetailDrawerProps)
         {round && sc ? (
           <div className="flex h-full flex-col">
             <div className="border-b border-border p-5">
-              <SheetTitle className="text-[15px] font-semibold">
+              <SheetTitle className="text-[15px] font-semibold text-pretty">
                 <span className="text-blue-600">
                   {teamCode(sc.affSchool ?? "", sc.aff.first, sc.aff.second) || "Untitled Aff"}
                 </span>

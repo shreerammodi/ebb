@@ -14,7 +14,6 @@ function round(): Round {
       { id: "a", sheetId: "cx", speechId: "cx-1ac-r", parentId: "q", order: 0, text: "A1", statuses: [], bold: false },
     ],
     groups: [],
-    timers: { activeSpeechId: null, speechRemaining: null, running: false, prepRemaining: { aff: 0, neg: 0 }, prepRunning: null },
   } as Round;
 }
 

@@ -21,13 +21,6 @@ describe("IndexedDB v1→v2 migration", () => {
       role: "aff",
       format: { id: "f", name: "T", speeches: [], prepSeconds: { aff: 240, neg: 240 } },
       nodes: [],
-      timers: {
-        activeSpeechId: null,
-        speechRemaining: null,
-        running: false,
-        prepRemaining: { aff: 240, neg: 240 },
-        prepRunning: null,
-      },
       sheets: [
         { id: "sh1", title: "Case", group: "case", order: 0 },
         { id: "sh2", title: "DA", group: "offcase", order: 1 },
@@ -71,13 +64,6 @@ describe("IndexedDB v4 migration", () => {
           numberOverride: null,
         },
       ],
-      timers: {
-        activeSpeechId: null,
-        speechRemaining: null,
-        running: false,
-        prepRemaining: { aff: 240, neg: 240 },
-        prepRunning: null,
-      },
       sheets: [],
     });
     await v1.close();
