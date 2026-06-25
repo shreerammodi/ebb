@@ -12,28 +12,28 @@ import type { Keymap } from "./types";
 import type { CommandId } from "@/lib/commands/registry";
 
 export function effectiveKeymap(
-  keymapName: KeymapName,
-  overrides: Record<string, string>, // commandId → chord
+    keymapName: KeymapName,
+    overrides: Record<string, string>, // commandId → chord
 ): Keymap {
-  const preset = getPresetKeymap(keymapName);
-  const normalBindings = { ...preset.bindings.normal };
+    const preset = getPresetKeymap(keymapName);
+    const normalBindings = { ...preset.bindings.normal };
 
-  for (const [commandId, overrideChord] of Object.entries(overrides)) {
-    if (!overrideChord) continue;
-    // Remove existing preset chord(s) bound to this command.
-    for (const [chord, cmd] of Object.entries(normalBindings)) {
-      if (cmd === commandId) delete normalBindings[chord];
+    for (const [commandId, overrideChord] of Object.entries(overrides)) {
+        if (!overrideChord) continue;
+        // Remove existing preset chord(s) bound to this command.
+        for (const [chord, cmd] of Object.entries(normalBindings)) {
+            if (cmd === commandId) delete normalBindings[chord];
+        }
+        // Bind the override chord.
+        normalBindings[overrideChord] = commandId as CommandId;
     }
-    // Bind the override chord.
-    normalBindings[overrideChord] = commandId as CommandId;
-  }
 
-  return {
-    name: `${preset.name}+overrides`,
-    bindings: {
-      normal: normalBindings,
-      insert: { ...preset.bindings.insert },
-      move: { ...preset.bindings.move },
-    },
-  };
+    return {
+        name: `${preset.name}+overrides`,
+        bindings: {
+            normal: normalBindings,
+            insert: { ...preset.bindings.insert },
+            move: { ...preset.bindings.move },
+        },
+    };
 }

@@ -2,14 +2,14 @@
 @import "tw-animate-css";
 
 @theme {
-  --font-sans: var(--font-dm-sans);
-  --font-mono: var(--font-dm-mono);
+    --font-sans: var(--font-dm-sans);
+    --font-mono: var(--font-dm-mono);
 
-  --color-aff: #1d4ed8;
-  --color-neg: #c0271f;
-  --color-sel: #7c3aed;
-  --color-warn: #b45309;
-  --color-good: #047857;
+    --color-aff: #1d4ed8;
+    --color-neg: #c0271f;
+    --color-sel: #7c3aed;
+    --color-warn: #b45309;
+    --color-good: #047857;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -20,56 +20,56 @@
    ============================================================ */
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --chart-1: oklch(0.871 0.006 286.286);
-  --chart-2: oklch(0.552 0.016 285.938);
-  --chart-3: oklch(0.442 0.017 285.786);
-  --chart-4: oklch(0.37 0.013 285.805);
-  --chart-5: oklch(0.274 0.006 286.033);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
-  --radius: 0.625rem;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.141 0.005 285.823);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.141 0.005 285.823);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.141 0.005 285.823);
+    --primary: oklch(0.21 0.006 285.885);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.967 0.001 286.375);
+    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --muted-foreground: oklch(0.552 0.016 285.938);
+    --accent: oklch(0.967 0.001 286.375);
+    --accent-foreground: oklch(0.21 0.006 285.885);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.92 0.004 286.32);
+    --input: oklch(0.92 0.004 286.32);
+    --ring: oklch(0.705 0.015 286.067);
+    --chart-1: oklch(0.871 0.006 286.286);
+    --chart-2: oklch(0.552 0.016 285.938);
+    --chart-3: oklch(0.442 0.017 285.786);
+    --chart-4: oklch(0.37 0.013 285.805);
+    --chart-5: oklch(0.274 0.006 286.033);
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.141 0.005 285.823);
+    --sidebar-primary: oklch(0.21 0.006 285.885);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.967 0.001 286.375);
+    --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+    --sidebar-border: oklch(0.92 0.004 286.32);
+    --sidebar-ring: oklch(0.705 0.015 286.067);
+    --radius: 0.625rem;
 
-  /* Motion: natural deceleration for state-conveying transitions (drag, flash). */
-  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    /* Motion: natural deceleration for state-conveying transitions (drag, flash). */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Legacy aliases — consumed by .flow and .cell-* rules; do not remove */
 :root {
-  --bg: var(--background);
-  --panel: var(--card);
-  --ink: var(--foreground);
-  --muted: var(--muted-foreground);
-  --line: var(--border);
+    --bg: var(--background);
+    --panel: var(--card);
+    --ink: var(--foreground);
+    --muted: var(--muted-foreground);
+    --line: var(--border);
 
-  /* Semantic color aliases — consumed by .side-aff/.side-neg, .badge-drop, .cell-drop, etc. */
-  --aff: #1d4ed8;
-  --neg: #c0271f;
-  --sel: #7c3aed;
-  --warn: #b45309;
-  --good: #047857;
+    /* Semantic color aliases — consumed by .side-aff/.side-neg, .badge-drop, .cell-drop, etc. */
+    --aff: #1d4ed8;
+    --neg: #c0271f;
+    --sel: #7c3aed;
+    --warn: #b45309;
+    --good: #047857;
 }
 
 /* ------------------------------------------------------------
@@ -78,37 +78,37 @@
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.5;
-  margin: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-wrap: pretty;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-wrap: pretty;
 }
 
 /* Keyboard-first focus ring — violet, never browser default */
 :focus-visible {
-  outline: 2px solid var(--sel);
-  outline-offset: 2px;
-  border-radius: 3px;
+    outline: 2px solid var(--sel);
+    outline-offset: 2px;
+    border-radius: 3px;
 }
 
 /* Remove outline on mouse/touch focus */
 :focus:not(:focus-visible) {
-  outline: none;
+    outline: none;
 }
 
 /* Text selection */
 ::selection {
-  background: color-mix(in srgb, var(--sel) 20%, transparent);
-  color: var(--ink);
+    background: color-mix(in srgb, var(--sel) 20%, transparent);
+    color: var(--ink);
 }
 
 /* ------------------------------------------------------------
@@ -119,91 +119,91 @@ body {
    4. FLOW GRID (core flowing table)
    ------------------------------------------------------------ */
 .flow {
-  border-collapse: collapse;
-  font-size: 12.5px;
-  width: 100%;
-  font-family: var(--font-sans);
-  table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    width: 100%;
+    font-family: var(--font-sans);
+    table-layout: fixed;
 }
 
 /* Screen-reader caption — visually hidden, announced to assistive tech so the
    grid's structure (speeches × arguments) is understandable without sight. */
 .flow-caption {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .flow th {
-  position: relative;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  padding: 5px 8px;
-  border: 1px solid var(--line);
-  border-bottom-width: 2px;
-  white-space: nowrap;
-  font-family: var(--font-mono);
+    position: relative;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    white-space: nowrap;
+    font-family: var(--font-mono);
 }
 
 .flow td {
-  vertical-align: top;
-  padding: 5px 8px;
-  border: 1px solid var(--line);
-  line-height: 1.35;
-  background: transparent;
-  color: var(--ink);
+    vertical-align: top;
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    line-height: 1.35;
+    background: transparent;
+    color: var(--ink);
 }
 
 /* Header "+" add button (appears on column-header hover) */
 .th-add {
-  position: absolute;
-  right: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 700;
-  cursor: pointer;
-  /* Faintly persistent so the "add argument" affordance is discoverable at a
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 700;
+    cursor: pointer;
+    /* Faintly persistent so the "add argument" affordance is discoverable at a
      glance (and present on touch), without competing with the flow content. */
-  opacity: 0.3;
-  transition: opacity 0.12s;
-  line-height: 1;
-  padding: 2px 4px;
+    opacity: 0.3;
+    transition: opacity 0.12s;
+    line-height: 1;
+    padding: 2px 4px;
 }
 .flow th:hover .th-add,
 .flow th:focus-within .th-add {
-  opacity: 0.7;
+    opacity: 0.7;
 }
 /* Keyboard parity: a tabbed-to "+" must be visible, not an outline around an
    opacity:0 target. Keyboard-first operability is a core product requirement. */
 .th-add:hover,
 .th-add:focus-visible {
-  opacity: 1 !important;
+    opacity: 1 !important;
 }
 
 /* Side coloring — TEXT + thin left edge only, no background tints */
 .flow th.side-aff,
 .flow td.side-aff {
-  color: var(--aff);
-  border-left: 2px solid var(--aff);
+    color: var(--aff);
+    border-left: 2px solid var(--aff);
 }
 
 .flow th.side-neg,
 .flow td.side-neg {
-  color: var(--neg);
-  border-left: 2px solid var(--neg);
+    color: var(--neg);
+    border-left: 2px solid var(--neg);
 }
 
 /* Inaccessible empty cell — no argument can be placed here (no parent to its
@@ -211,92 +211,92 @@ body {
    grid, keep the faint gridlines so unreachable cells read as empty grid space
    rather than borderless gaps. */
 .flow td.cell-void {
-  border-color: var(--line);
+    border-color: var(--line);
 }
 
 /* Selected cell */
 .cell-sel {
-  outline: 2px solid var(--sel);
-  outline-offset: -2px;
+    outline: 2px solid var(--sel);
+    outline-offset: -2px;
 }
 
 /* Drag-and-drop feedback ----------------------------------------------------
    Dashed violet target (distinct from the solid selected outline) + faint wash
    so it's obvious where a dragged argument will land. */
 .flow td.drag-over {
-  outline: 2px dashed var(--sel);
-  outline-offset: -2px;
-  background: color-mix(in srgb, var(--sel) 8%, transparent);
-  transition: background 150ms var(--ease-out-quart);
+    outline: 2px dashed var(--sel);
+    outline-offset: -2px;
+    background: color-mix(in srgb, var(--sel) 8%, transparent);
+    transition: background 150ms var(--ease-out-quart);
 }
 
 /* The argument being dragged dims while in flight. */
 .arg-dragging {
-  opacity: 0.4;
-  transition: opacity 150ms var(--ease-out-quart);
+    opacity: 0.4;
+    transition: opacity 150ms var(--ease-out-quart);
 }
 
 /* Confirm a reparent: the moved argument pulses violet once in its new home. */
 @keyframes cell-flash {
-  from {
-    background: color-mix(in srgb, var(--sel) 28%, transparent);
-  }
-  to {
-    background: transparent;
-  }
+    from {
+        background: color-mix(in srgb, var(--sel) 28%, transparent);
+    }
+    to {
+        background: transparent;
+    }
 }
 .flow td.cell-flash {
-  animation: cell-flash 600ms var(--ease-out-quart);
+    animation: cell-flash 600ms var(--ease-out-quart);
 }
 
 /* Keyboard move mode: the grabbed argument's cell dims while it's "in hand",
    mirroring the mouse drag's .arg-dragging lift. */
 .flow td.cell-moving {
-  opacity: 0.4;
+    opacity: 0.4;
 }
 
 /* Move-mode status banner — compact, non-intrusive, announced via aria-live. */
 .move-banner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--ink);
-  padding: 4px 8px;
-  margin-bottom: 6px;
-  border: 1px solid var(--sel);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--sel) 8%, transparent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--ink);
+    padding: 4px 8px;
+    margin-bottom: 6px;
+    border: 1px solid var(--sel);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--sel) 8%, transparent);
 }
 .move-banner-tag {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #fff;
-  background: var(--sel);
-  padding: 1px 6px;
-  border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #fff;
+    background: var(--sel);
+    padding: 1px 6px;
+    border-radius: 999px;
 }
 .move-banner kbd {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 0 4px;
-  background: var(--panel);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0 4px;
+    background: var(--panel);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* No pulse/dim choreography; the structural change still applies instantly. */
-  .flow td.cell-flash {
-    animation: none;
-  }
-  .flow td.drag-over,
-  .arg-dragging {
-    transition: none;
-  }
+    /* No pulse/dim choreography; the structural change still applies instantly. */
+    .flow td.cell-flash {
+        animation: none;
+    }
+    .flow td.drag-over,
+    .arg-dragging {
+        transition: none;
+    }
 }
 
 /* Dropped argument — dashed amber left border. Deliberate: drop status overrides
@@ -304,20 +304,20 @@ body {
    + column position) so it survives; the amber dash is the always-on, scannable
    "dropped" cue, independent of the optional drop badge. */
 .cell-drop {
-  border-left: 2px dashed var(--warn) !important;
+    border-left: 2px dashed var(--warn) !important;
 }
 
 /* Response number prefix (e.g. "1.") */
 .arg-num {
-  display: inline-block;
-  min-width: 15px;
-  opacity: 0.7;
-  font-weight: 700;
+    display: inline-block;
+    min-width: 15px;
+    opacity: 0.7;
+    font-weight: 700;
 }
 
 /* Original argument cell header */
 .arg-parent {
-  font-weight: 600;
+    font-weight: 600;
 }
 
 /* Drop badge — small inline indicator. A dropped argument is often the
@@ -325,37 +325,37 @@ body {
    with the amber border + fill carrying the compactness. Contrast of --warn on
    the amber fill is ~4.7:1 (WCAG AA for normal text). */
 .badge-drop {
-  font-size: 10px;
-  line-height: 1.4;
-  font-weight: 800;
-  color: var(--warn);
-  border: 1px solid var(--warn);
-  border-radius: 4px;
-  padding: 0 4px;
-  background: #fff7ed;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+    font-size: 10px;
+    line-height: 1.4;
+    font-weight: 800;
+    color: var(--warn);
+    border: 1px solid var(--warn);
+    border-radius: 4px;
+    padding: 0 4px;
+    background: #fff7ed;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 /* Conceded / extended status */
 .status-good {
-  color: var(--good);
-  font-weight: 700;
+    color: var(--good);
+    font-weight: 700;
 }
 
 .arg-crossed {
-  text-decoration: line-through;
-  text-decoration-thickness: 1px;
-  opacity: 0.6;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    opacity: 0.6;
 }
 
 .arg-bold {
-  font-weight: 700;
+    font-weight: 700;
 }
 
 .arg-ext {
-  margin-right: 3px;
-  font-weight: 700;
+    margin-right: 3px;
+    font-weight: 700;
 }
 
 /* Inline cell editor — borderless textarea that IS the cell.
@@ -363,42 +363,42 @@ body {
    and selection outline are the only visible box. Matches the rendered
    text's font + line-height so editing causes no layout shift. */
 .cell-input {
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  resize: none;
-  overflow: hidden;
-  font: inherit;
-  line-height: 1.35;
-  color: inherit;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    resize: none;
+    overflow: hidden;
+    font: inherit;
+    line-height: 1.35;
+    color: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 }
 
 .cell-input::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 /* Empty cell spacer */
 .cell-empty {
-  display: block;
-  width: 100%;
-  min-height: 1.4em;
+    display: block;
+    width: 100%;
+    min-height: 1.4em;
 }
 
 /* Accessible empty cell — a place an argument can actually go. Signal that it's
    interactive (a spreadsheet-style entry cell) with a text caret and a faint
    hover wash, so the entry point is discoverable without any chrome. */
 .flow td.cell-open {
-  cursor: text;
+    cursor: text;
 }
 .flow td.cell-open:hover {
-  background: color-mix(in srgb, var(--sel) 6%, transparent);
+    background: color-mix(in srgb, var(--sel) 6%, transparent);
 }
 
 /* First-run prompt shown in the entry cell of a brand-new sheet. Muted and
@@ -406,11 +406,11 @@ body {
    No opacity dimming: --muted on white is ~4.84:1, but fading it would drop
    below the WCAG AA floor this product commits to. */
 .cell-hint {
-  display: block;
-  color: var(--muted);
-  font-style: italic;
-  pointer-events: none;
-  user-select: none;
+    display: block;
+    color: var(--muted);
+    font-style: italic;
+    pointer-events: none;
+    user-select: none;
 }
 
 /* ------------------------------------------------------------
@@ -427,109 +427,109 @@ body {
 
 /* Hidden on screen; visible only during print */
 .print-only {
-  display: none;
+    display: none;
 }
 
 @media print {
-  /* Hide chrome; print on white */
-  .no-print {
-    display: none !important;
-  }
+    /* Hide chrome; print on white */
+    .no-print {
+        display: none !important;
+    }
 
-  /* Show print-only elements */
-  .print-only {
-    display: block !important;
-  }
+    /* Show print-only elements */
+    .print-only {
+        display: block !important;
+    }
 
-  body {
-    background: #fff;
-    color: #000;
-  }
+    body {
+        background: #fff;
+        color: #000;
+    }
 
-  /* Full-width layout for print */
-  .flow {
-    width: 100%;
-  }
+    /* Full-width layout for print */
+    .flow {
+        width: 100%;
+    }
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --chart-1: oklch(0.871 0.006 286.286);
-  --chart-2: oklch(0.552 0.016 285.938);
-  --chart-3: oklch(0.442 0.017 285.786);
-  --chart-4: oklch(0.37 0.013 285.805);
-  --chart-5: oklch(0.274 0.006 286.033);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+    --background: oklch(0.141 0.005 285.823);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.21 0.006 285.885);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.21 0.006 285.885);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.92 0.004 286.32);
+    --primary-foreground: oklch(0.21 0.006 285.885);
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.274 0.006 286.033);
+    --muted-foreground: oklch(0.705 0.015 286.067);
+    --accent: oklch(0.274 0.006 286.033);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.552 0.016 285.938);
+    --chart-1: oklch(0.871 0.006 286.286);
+    --chart-2: oklch(0.552 0.016 285.938);
+    --chart-3: oklch(0.442 0.017 285.786);
+    --chart-4: oklch(0.37 0.013 285.805);
+    --chart-5: oklch(0.274 0.006 286.033);
+    --sidebar: oklch(0.21 0.006 285.885);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.274 0.006 286.033);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
+    * {
+        @apply border-border outline-ring/50;
+    }
 
-  body {
-    @apply bg-background text-foreground;
-  }
+    body {
+        @apply bg-background text-foreground;
+    }
 }

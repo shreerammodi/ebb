@@ -4,9 +4,9 @@ Guidance for AI agents working in this repository.
 
 ## Project
 
-**Debate Flow** is a local-first, privacy-centric, keyboard-first web app for flowing
-competitive debate rounds. All data lives in the browser (IndexedDB via Dexie); there is no
-backend. The app is built as a static export.
+**Debate Flow** is a local-first, privacy-centric, keyboard-first web app for
+flowing competitive debate rounds. All data lives in the browser (IndexedDB via
+Dexie); there is no backend. The app is built as a static export.
 
 ## Tech stack
 
@@ -57,21 +57,23 @@ src/
 
 ## Conventions
 
-- **2-space indent, LF, UTF-8, final newline** (enforced by `.editorconfig` + Prettier).
-- **Prettier**: `printWidth: 100`, prose wrap always, Tailwind class sorting plugin enabled.
-  Let Prettier format — don't hand-format.
-- **Tests are colocated** next to source as `*.test.ts(x)`. Most `lib/` modules have a sibling
-  test; keep new logic covered and test-driven where practical.
-- **Pure logic goes in `src/lib`**, not in components. Keep `lib/` framework-agnostic and
-  testable; components wire it to React.
-- **Local-first**: never add network calls, telemetry, or backend dependencies. All state is
-  client-side.
-- Keyboard-first UX is a core product value — preserve and extend keybindings rather than
-  replacing them with mouse-only flows.
+- **2-space indent, LF, UTF-8, final newline** (enforced by `.editorconfig` +
+  Prettier).
+- **Prettier**: `printWidth: 100`, prose wrap always, Tailwind class sorting
+  plugin enabled. Let Prettier format — don't hand-format.
+- **Tests are colocated** next to source as `*.test.ts(x)`. Most `lib/` modules
+  have a sibling test; keep new logic covered and test-driven where practical.
+- **Pure logic goes in `src/lib`**, not in components. Keep `lib/`
+  framework-agnostic and testable; components wire it to React.
+- **Local-first**: never add network calls, telemetry, or backend dependencies.
+  All state is client-side.
+- Keyboard-first UX is a core product value — preserve and extend keybindings
+  rather than replacing them with mouse-only flows.
 
 ## Notes for agents
 
 - There is no server; `npm run build` produces a static site in `./out`.
-- When adding a UI primitive, follow the existing `components/ui` (shadcn-style) patterns;
-  `components.json` configures the generator.
-- Do not commit unless asked. Never add Claude/Anthropic attribution trailers to commits.
+- When adding a UI primitive, follow the existing `components/ui` (shadcn-style)
+  patterns; `components.json` configures the generator.
+- Do not commit unless asked. Never add Claude/Anthropic attribution trailers to
+  commits.

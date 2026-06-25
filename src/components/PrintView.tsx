@@ -14,45 +14,52 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 import FlowGrid from "./FlowGrid";
 
 export default function PrintView() {
-  const round = useRoundStore((s) => s.round);
+    const round = useRoundStore((s) => s.round);
 
-  if (!round) return null;
+    if (!round) return null;
 
-  const sheets = round.sheets.slice().sort((a, b) => a.order - b.order);
+    const sheets = round.sheets.slice().sort((a, b) => a.order - b.order);
 
-  return (
-    <div className="print-only" data-testid="print-view" style={styles.container}>
-      {sheets.map((sheet) => (
-        <div key={sheet.id} style={styles.sheet}>
-          <h2 style={styles.sheetTitle} data-testid={`print-sheet-title-${sheet.id}`}>
-            {sheet.title}
-          </h2>
-          <FlowGrid sheetId={sheet.id} />
+    return (
+        <div
+            className="print-only"
+            data-testid="print-view"
+            style={styles.container}
+        >
+            {sheets.map((sheet) => (
+                <div key={sheet.id} style={styles.sheet}>
+                    <h2
+                        style={styles.sheetTitle}
+                        data-testid={`print-sheet-title-${sheet.id}`}
+                    >
+                        {sheet.title}
+                    </h2>
+                    <FlowGrid sheetId={sheet.id} />
+                </div>
+            ))}
         </div>
-      ))}
-    </div>
-  );
+    );
 }
 
 // ─── Inline styles ────────────────────────────────────────────────────────────
 
 const styles = {
-  container: {
-    padding: "16px",
-    background: "white",
-    color: "black",
-  } as React.CSSProperties,
+    container: {
+        padding: "16px",
+        background: "white",
+        color: "black",
+    } as React.CSSProperties,
 
-  sheet: {
-    marginBottom: "32px",
-    pageBreakAfter: "auto",
-  } as React.CSSProperties,
+    sheet: {
+        marginBottom: "32px",
+        pageBreakAfter: "auto",
+    } as React.CSSProperties,
 
-  sheetTitle: {
-    fontSize: "16px",
-    fontWeight: 700,
-    marginBottom: "8px",
-    marginTop: 0,
-    color: "black",
-  } as React.CSSProperties,
+    sheetTitle: {
+        fontSize: "16px",
+        fontWeight: 700,
+        marginBottom: "8px",
+        marginTop: 0,
+        color: "black",
+    } as React.CSSProperties,
 } as const;

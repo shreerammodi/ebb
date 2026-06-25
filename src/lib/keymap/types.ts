@@ -10,6 +10,6 @@ export type Mode = "normal" | "insert" | "move";
 export type Chord = string;
 
 export interface Keymap {
-  name: string;
-  bindings: Record<Mode, Record<Chord, CommandId>>;
+    name: string;
+    bindings: Record<Mode, Record<Chord, CommandId>>;
 }
