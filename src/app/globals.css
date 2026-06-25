@@ -68,6 +68,7 @@
     --aff: #1d4ed8;
     --neg: #c0271f;
     --sel: #7c3aed;
+    --sel-rel: color-mix(in srgb, var(--sel) 55%, transparent);
     --warn: #b45309;
     --good: #047857;
 }
@@ -218,6 +219,15 @@ body {
 .cell-sel {
     outline: 2px solid var(--sel);
     outline-offset: -2px;
+}
+
+/* Relationship highlight: parent (heavier) / children (lighter) of the
+   selected cell's occupant, shown only while a cell is selected. */
+.flow td.cell-rel-parent {
+    box-shadow: inset 0 0 0 2px var(--sel-rel);
+}
+.flow td.cell-rel-child {
+    box-shadow: inset 0 0 0 1px var(--sel-rel);
 }
 
 /* Drag-and-drop feedback ----------------------------------------------------
