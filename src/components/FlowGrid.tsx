@@ -332,6 +332,26 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                     col === 0 ||
                                     cellMap.has(`${row},${col - 1}`);
 
+                                // When a non-straight-down empty cell sits directly right of a
+                                // node, the first keystroke should create a response (child) of
+                                // that node rather than a new root. Rowspan-covered cells are
+                                // resolved to the spanning node above them.
+                                let responseParentId: string | null = null;
+                                if (!straightDown && !isCx && col > 0) {
+                                    const leftEntry = cellMap.get(`${row},${col - 1}`);
+                                    if (leftEntry && leftEntry !== "covered") {
+                                        responseParentId = leftEntry.node.id;
+                                    } else if (leftEntry === "covered") {
+                                        const spanning = placed.find(
+                                            (p) =>
+                                                p.col === col - 1 &&
+                                                p.startRow <= row &&
+                                                row < p.startRow + p.rowSpan,
+                                        );
+                                        if (spanning) responseParentId = spanning.node.id;
+                                    }
+                                }
+
                                 const isSelected =
                                     activeEmptyCol === col &&
                                     activeEmptyRow === row;
@@ -396,6 +416,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                             <EmptyCellEditor
                                                 sheetId={sheetId}
                                                 speechId={speech.id}
+                                                parentId={responseParentId}
                                             />
                                         ) : showHint ? (
                                             <span className="cell-hint">

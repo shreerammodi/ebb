@@ -10,9 +10,11 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 export default function EmptyCellEditor({
     sheetId,
     speechId,
+    parentId = null,
 }: {
     sheetId: string;
     speechId: string;
+    parentId?: string | null;
 }) {
     const ref = useRef<HTMLTextAreaElement>(null);
     const addNode = useRoundStore((s) => s.addNode);
@@ -34,7 +36,7 @@ export default function EmptyCellEditor({
                 const id = addNode({
                     sheetId,
                     speechId,
-                    parentId: null,
+                    parentId,
                     text: e.target.value,
                 });
                 updateNodeText(id, e.target.value);
