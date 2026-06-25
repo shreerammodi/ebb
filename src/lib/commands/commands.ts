@@ -519,6 +519,45 @@ export function executeCommand(id: CommandId): void {
             return;
         }
 
+        // ── Column navigation ─────────────────────────────────────────────────────
+        case "nav.nextSpeech":
+        case "nav.prevSpeech": {
+            if (!round) return;
+            const sel = state.selection;
+            if (!sel) return;
+            const sheet = round.sheets.find((s) => s.id === sel.sheetId);
+            if (!sheet) return;
+            const speeches = isCxSheet(round, sel.sheetId)
+                ? CX_COLUMNS
+                : columnsForSheet(round.format, sheet);
+            const currentIdx = speeches.findIndex((s) => s.id === sel.speechId);
+            if (currentIdx === -1) return;
+            const targetIdx =
+                id === "nav.nextSpeech" ? currentIdx + 1 : currentIdx - 1;
+            if (targetIdx < 0 || targetIdx >= speeches.length) return;
+            const targetSpeech = speeches[targetIdx];
+            const sheetNodes = round.nodes.filter((n) => n.sheetId === sel.sheetId);
+            const { placed } = buildLayout(sheetNodes, speeches);
+            const colNodes = placed
+                .filter((p) => p.col === targetIdx)
+                .sort((a, b) => a.startRow - b.startRow);
+            if (colNodes.length > 0) {
+                state.setSelection({
+                    sheetId: sel.sheetId,
+                    speechId: targetSpeech.id,
+                    nodeId: colNodes[0].node.id,
+                });
+            } else {
+                state.setSelection({
+                    sheetId: sel.sheetId,
+                    speechId: targetSpeech.id,
+                    nodeId: "",
+                    row: 0,
+                });
+            }
+            return;
+        }
+
         // ── Help ─────────────────────────────────────────────────────────────────
         case "help.open": {
             state.setCheatsheetOpen(!state.cheatsheetOpen);

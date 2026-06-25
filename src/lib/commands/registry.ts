@@ -41,7 +41,9 @@ export type CommandId =
     | "help.open"
     | "move.grab"
     | "move.commit"
-    | "move.cancel";
+    | "move.cancel"
+    | "nav.nextSpeech"
+    | "nav.prevSpeech";
 
 export interface CommandDef {
     id: CommandId;
@@ -97,4 +99,6 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "move.grab": { id: "move.grab", label: "Grab to move/reparent" },
     "move.commit": { id: "move.commit", label: "Drop here (move mode)" },
     "move.cancel": { id: "move.cancel", label: "Cancel move" },
+    "nav.nextSpeech": { id: "nav.nextSpeech", label: "Next speech (column)" },
+    "nav.prevSpeech": { id: "nav.prevSpeech", label: "Previous speech (column)" },
 };

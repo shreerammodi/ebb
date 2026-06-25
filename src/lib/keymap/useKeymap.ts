@@ -50,9 +50,10 @@ export function useKeymap(): void {
                     const isModifierChord = e.metaKey || e.ctrlKey || e.altKey;
                     if (!isNavKey && !isModifierChord) return;
                 } else {
-                    // Vim: only intercept Escape (edit.exit) and Enter (commit + sibling
-                    // response); everything else is regular typing into the cell.
-                    if (e.key !== "Escape" && e.key !== "Enter") return;
+                    // Vim: only intercept Escape (edit.exit), Enter (commit + sibling
+                    // response), and Tab/Shift+Tab (column navigation); everything else
+                    // is regular typing into the cell.
+                    if (e.key !== "Escape" && e.key !== "Enter" && e.key !== "Tab") return;
                 }
             }
 

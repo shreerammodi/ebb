@@ -66,6 +66,8 @@ export const DEFAULT_KEYMAP: Keymap = {
             Enter: "node.addAnswer",
             "Shift+Enter": "node.answerAcross",
             "Alt+Enter": "arg.newRoot",
+            Tab: "nav.nextSpeech",
+            "Shift+Tab": "nav.prevSpeech",
             "Ctrl+Shift+x": "status.toggleConceded",
             "Ctrl+e": "status.toggleExtended",
             // Bare letters type into always-editable cells, so grab is a chord.
@@ -100,7 +102,7 @@ export const VIM_KEYMAP: Keymap = {
             "g r": "sheet.rename",
             ...COMMON_NORMAL,
         },
-        insert: { Escape: "edit.exit", Enter: "node.addAnswer" },
+        insert: { Escape: "edit.exit", Enter: "node.addAnswer", Tab: "nav.nextSpeech", "Shift+Tab": "nav.prevSpeech" },
         move: {
             h: "move.left",
             j: "move.down",
