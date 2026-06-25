@@ -1,11 +1,14 @@
 import type { Format, Sheet, Speech } from "@/lib/model/types";
+import { CX_COLUMNS } from "@/lib/model/cxColumns";
 
 /**
- * The speech columns a flow sheet shows: from its leftmost speech to the end of
- * the format. The leftmost is `sheet.startSpeechId` if set; otherwise it is
- * derived from the sheet's side (aff → first speech; neg → first neg speech).
+ * The columns a sheet shows. CX sheets use the fixed Question/Response column
+ * set; flow sheets show from their leftmost speech to the end of the format.
+ * The leftmost is `sheet.startSpeechId` if set; otherwise it is derived from
+ * the sheet's side (aff → first speech; neg → first neg speech).
  */
 export function columnsForSheet(format: Format, sheet: Sheet): Speech[] {
+    if (sheet.kind === "cx") return CX_COLUMNS;
     const speeches = format.speeches;
     let startId = sheet.startSpeechId;
     if (!startId) {

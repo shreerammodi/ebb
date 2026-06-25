@@ -15,7 +15,6 @@ import { detectDrops } from "@/lib/model/drops";
 import GridCell from "./GridCell";
 import EmptyCellEditor from "./EmptyCellEditor";
 import { columnsForSheet } from "@/lib/grid/columns";
-import { CX_COLUMNS } from "@/lib/model/cxColumns";
 import { occupantAt, maxRow } from "@/lib/grid/coords";
 
 const TRAILING_BUFFER_ROWS = 8;
@@ -39,10 +38,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
     const sheet = sheets.find((s) => s.id === sheetId);
     if (!format || !sheet) return null;
 
-    const speeches =
-        sheet.kind === "cx"
-            ? CX_COLUMNS
-            : columnsForSheet(format, sheet);
+    const speeches = columnsForSheet(format, sheet);
 
     const sheetNodes = nodes.filter((n) => n.sheetId === sheetId);
     const droppedIds = new Set(detectDrops(nodes, format, sheetId));
@@ -280,12 +276,13 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                                     "text/df-node",
                                                 );
                                             if (dragged) {
+                                                // Single-cell drag: move the node to this cell.
                                                 useRoundStore
                                                     .getState()
-                                                    .rehomeNode(
+                                                    .moveCellTo(
                                                         dragged,
                                                         speech.id,
-                                                        null,
+                                                        row,
                                                     );
                                                 setFlashNode(dragged);
                                             }
