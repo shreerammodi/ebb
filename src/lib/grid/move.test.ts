@@ -19,7 +19,7 @@ function node(
     return {
         sheetId: "sh",
         parentId: null,
-        order: 0,
+        row: 0,
         text: "",
         statuses: [],
         bold: false,

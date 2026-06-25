@@ -107,6 +107,8 @@ export interface RoundActions {
     clearCell(): void;
     deleteSubtreeAt(): void;
     commitSubtreeMove(dCol: number, dRow: number): void;
+    /** Move a single node to a new cell (no subtree translation). */
+    moveCellTo(nodeId: string, speechId: string, row: number): void;
 
     groupNodes(sheetId: string, nodeIds: string[], label: string): void;
     ungroupNode(nodeId: string): void;
@@ -415,17 +417,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         }));
     },
 
-    // ── removeNode ───────────────────────────────────────────────────────────
-    removeNode(nodeId) {
-        const { round, selection } = get();
-        if (!round) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: orphanNode(r.nodes, nodeId),
-            groups: removeMemberOrDelete(r.groups, nodeId),
-        }));
-    },
-
     // ── Coordinate-based actions ──────────────────────────────────────────────
 
     placeBareNode(cell, text) {
@@ -599,6 +590,29 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         get()._commit(null, (r) => ({ ...r, nodes }));
     },
 
+    /** Move a single node to a new cell (no subtree translation). */
+    moveCellTo(nodeId, speechId, row) {
+        const { round } = get();
+        if (!round) return;
+        const node = round.nodes.find((n) => n.id === nodeId);
+        if (!node) return;
+        // Reject collision with another node.
+        const collide = round.nodes.some(
+            (n) =>
+                n.id !== nodeId &&
+                n.sheetId === node.sheetId &&
+                n.speechId === speechId &&
+                n.row === row,
+        );
+        if (collide) return;
+        get()._commit(null, (r) => ({
+            ...r,
+            nodes: r.nodes.map((n) =>
+                n.id === nodeId ? { ...n, speechId, row } : n,
+            ),
+        }));
+    },
+
     // ── groupNodes ─────────────────────────────────────────────────────────────
     groupNodes(sheetId, nodeIds, label) {
         if (!get().round) return;
@@ -705,7 +719,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         delete overrides[commandId];
         set({ keymapOverrides: overrides });
         saveKeymapSettings({
-            keymapOverrides: overrides,
             keymapOverrides: overrides,
         });
     },
