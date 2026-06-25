@@ -1,5 +1,5 @@
 /**
- * Command handlers.
+ * Command handlers for the fully modeless grid editor.
  *
  * `executeCommand` reads and writes `useRoundStore.getState()`. All handlers
  * silently no-op when the round or selection is missing so the keyboard layer
@@ -7,47 +7,13 @@
  */
 
 import { useRoundStore } from "@/lib/store/useRoundStore";
-import type { Sheet, ArgumentNode } from "@/lib/model/types";
-import {
-    parentOf,
-    firstChildOf,
-    nodeAboveInColumn,
-    nodeBelowInColumn,
-    nextOpposingSpeech,
-    adjacentInColumn,
-} from "@/lib/grid/navigation";
-import { buildLayout } from "@/lib/grid/layout";
+import type { Sheet, Round } from "@/lib/model/types";
 import { columnsForSheet } from "@/lib/grid/columns";
-import {
-    stepMoveCursor,
-    isValidMoveTarget,
-    type MoveTarget,
-} from "@/lib/grid/move";
-import { responseColumnFor, CX_COLUMNS } from "@/lib/model/cxColumns";
 import type { CommandId } from "./registry";
 
 /** Sheets sorted ascending by order. */
 function sortedSheets(sheets: Sheet[]): Sheet[] {
     return sheets.slice().sort((a, b) => a.order - b.order);
-}
-
-/** Returns true when the given sheet is a CX sheet. */
-function isCxSheet(
-    round: { sheets: { id: string; kind?: string }[] },
-    sheetId: string,
-): boolean {
-    return round.sheets.find((s) => s.id === sheetId)?.kind === "cx";
-}
-
-/** Selects a node by its ids and switches to insert mode. */
-function selectNodeInsert(ids: {
-    sheetId: string;
-    speechId: string;
-    nodeId: string;
-}): void {
-    const { setSelection, setMode } = useRoundStore.getState();
-    setSelection(ids);
-    setMode("insert");
 }
 
 /** Jumps to the Nth (1-indexed, order-sorted) flow sheet, no-op if out of range. */
@@ -59,304 +25,117 @@ function jumpToSheet(n: number): void {
     if (target) setActiveSheet(target.id);
 }
 
+/** Column stepping helper. */
+function columnStep(state: { selection: { sheetId: string; speechId: string; row: number } | null; round: Round | null }, dir: "up" | "down" | "left" | "right"): void {
+    const { round, selection } = state;
+    if (!round || !selection) return;
+    const sheet = round.sheets.find((s) => s.id === selection.sheetId);
+    if (!sheet) return;
+    const speeches = columnsForSheet(round.format, sheet);
+    const colIdx = speeches.findIndex((s) => s.id === selection.speechId);
+    if (colIdx === -1) return;
+
+    let nCol = colIdx;
+    let nRow = selection.row;
+
+    if (dir === "up") nRow = Math.max(0, selection.row - 1);
+    else if (dir === "down") nRow = selection.row + 1;
+    else if (dir === "left") nCol = Math.max(0, colIdx - 1);
+    else nCol = Math.min(speeches.length - 1, colIdx + 1);
+
+    state.setSelection({
+        sheetId: selection.sheetId,
+        speechId: speeches[nCol].id,
+        row: nRow,
+    });
+}
+
 export function executeCommand(id: CommandId): void {
     const state = useRoundStore.getState();
     const { round } = state;
 
     switch (id) {
-        // ── Navigation ───────────────────────────────────────────────────────────
+        // ── Navigation (coordinate stepping) ──────────────────────────────────
         case "move.up":
+            columnStep(state, "up");
+            return;
         case "move.down":
+            columnStep(state, "down");
+            return;
         case "move.left":
-        case "move.right": {
-            if (!round) return;
-            const sel = state.selection;
-            if (!sel) return;
+            columnStep(state, "left");
+            return;
+        case "move.right":
+            columnStep(state, "right");
+            return;
 
-            // Move mode: arrows steer a target cursor spatially (column/row), not by
-            // the tree, so any cell is reachable as a drop target.
-            if (state.moveSource) {
-                const sheet = round.sheets.find((s) => s.id === sel.sheetId);
-                if (!sheet || sheet.kind === "cx") return;
-                const speeches = columnsForSheet(round.format, sheet);
-                const sheetNodes = round.nodes.filter(
-                    (n) => n.sheetId === sel.sheetId,
-                );
-                const dir =
-                    id === "move.up"
-                        ? "up"
-                        : id === "move.down"
-                          ? "down"
-                          : id === "move.left"
-                            ? "left"
-                            : "right";
-                const next = stepMoveCursor(
-                    sheetNodes,
-                    speeches,
-                    {
-                        speechId: sel.speechId,
-                        nodeId: sel.nodeId,
-                        row: sel.row,
-                    },
-                    dir,
-                );
-                state.setSelection({ sheetId: sel.sheetId, ...next });
-                return;
-            }
-
-            const straight =
-                state.straightDown && !isCxSheet(round, sel.sheetId);
-
-            // Empty entry cell (Excel-style cell below the content, straight-down only):
-            // ↑ jumps back to the bottom node in the column; other moves no-op.
-            if (sel.nodeId === "") {
-                if (straight && id === "move.up") {
-                    const colNodes = round.nodes.filter(
-                        (n) =>
-                            n.sheetId === sel.sheetId &&
-                            n.speechId === sel.speechId,
-                    );
-                    if (colNodes.length === 0) return;
-                    const bottom = colNodes.reduce((best, n) =>
-                        n.order > best.order ? n : best,
-                    );
-                    state.setSelection({
-                        sheetId: bottom.sheetId,
-                        speechId: bottom.speechId,
-                        nodeId: bottom.id,
-                    });
-                }
-                return;
-            }
-
-            const node = round.nodes.find((n) => n.id === sel.nodeId);
-            if (!node) return;
-
-            let target: ArgumentNode | null = null;
-            if (id === "move.up" || id === "move.down") {
-                const sheetNodes = round.nodes.filter(
-                    (n) => n.sheetId === node.sheetId,
-                );
-                const sheet = round.sheets.find((s) => s.id === node.sheetId);
-                const speeches = isCxSheet(round, node.sheetId)
-                    ? CX_COLUMNS
-                    : sheet
-                      ? columnsForSheet(round.format, sheet)
-                      : round.format.speeches;
-                const { placed } = buildLayout(sheetNodes, speeches);
-                target = adjacentInColumn(
-                    placed,
-                    node.id,
-                    id === "move.up" ? "up" : "down",
-                );
-
-                // Straight-down: ↓ off the bottom node lands on the empty entry cell
-                // directly below it (the row just past this node's placement).
-                if (!target && straight && id === "move.down") {
-                    const cur = placed.find((p) => p.node.id === node.id);
-                    if (cur) {
-                        state.setSelection({
-                            sheetId: node.sheetId,
-                            speechId: node.speechId,
-                            nodeId: "",
-                            row: cur.startRow + cur.rowSpan,
-                        });
-                    }
-                    return;
-                }
-            } else if (id === "move.left") {
-                target = parentOf(round.nodes, node.id);
-            } else {
-                target = firstChildOf(round.nodes, node.id, node.sheetId);
-            }
-
-            if (target) {
-                state.setSelection({
-                    sheetId: target.sheetId,
-                    speechId: target.speechId,
-                    nodeId: target.id,
-                });
+        // ── Node creation ─────────────────────────────────────────────────────
+        case "node.sibling": {
+            const id = state.spawnSibling();
+            if (id) {
+                // Selection already moved by spawnSibling; editor takes over.
             }
             return;
         }
-
-        // ── Editing ──────────────────────────────────────────────────────────────
-        case "edit.enter": {
-            if (!round) return;
-            const sel = state.selection;
-            if (!sel) return;
-            if (sel.nodeId === "") {
-                const newId = state.addNode({
-                    sheetId: sel.sheetId,
-                    speechId: sel.speechId,
-                    parentId: null,
-                });
-                state.setSelection({
-                    sheetId: sel.sheetId,
-                    speechId: sel.speechId,
-                    nodeId: newId,
-                });
-            }
-            state.setMode("insert");
+        case "node.response": {
+            state.spawnResponse();
             return;
         }
 
-        case "edit.exit": {
-            state.setMode("normal");
+        // ── Row operations ────────────────────────────────────────────────────
+        case "row.insertAbove":
+            state.insertRowAbove();
             return;
-        }
+        case "row.insertBelow":
+            state.insertRowBelow();
+            return;
+        case "row.delete":
+            state.deleteRow();
+            return;
 
-        case "edit.undo": {
+        // ── Cell operations ───────────────────────────────────────────────────
+        case "cell.clear":
+            state.clearCell();
+            return;
+        case "node.deleteSubtree":
+            state.deleteSubtreeAt();
+            return;
+
+        // ── Edit ──────────────────────────────────────────────────────────────
+        case "edit.undo":
             useRoundStore.getState().undo();
             return;
-        }
-
-        case "edit.redo": {
+        case "edit.redo":
             useRoundStore.getState().redo();
             return;
-        }
 
-        // ── Node creation ────────────────────────────────────────────────────────
-        case "node.addAnswer": {
-            if (!round) return;
-            const sel = state.selection;
-            if (!sel || sel.nodeId === "") return;
-            const node = round.nodes.find((n) => n.id === sel.nodeId);
-            if (!node) return;
-            // Straight-down (flow sheets only): behave like Excel's Enter — move the
-            // cursor DOWN to the cell already below in this column, and only spawn a
-            // fresh root cell when the cursor is at the bottom of the column.
-            const straight =
-                state.straightDown && !isCxSheet(round, node.sheetId);
-            if (straight) {
-                const below = nodeBelowInColumn(round.nodes, node);
-                if (below) {
-                    selectNodeInsert({
-                        sheetId: below.sheetId,
-                        speechId: below.speechId,
-                        nodeId: below.id,
-                    });
-                    return;
-                }
-            }
-            const newId = state.addNode({
-                sheetId: node.sheetId,
-                speechId: node.speechId,
-                parentId: straight ? null : node.parentId,
-                insertAfterOrder: node.order,
-            });
-            selectNodeInsert({
-                sheetId: node.sheetId,
-                speechId: node.speechId,
-                nodeId: newId,
-            });
-            return;
-        }
-
-        case "node.answerAcross": {
-            if (!round) return;
-            const sel = state.selection;
-            if (!sel || sel.nodeId === "") return;
-            const node = round.nodes.find((n) => n.id === sel.nodeId);
-            if (!node) return;
-            // Straight-down disables responses on flow sheets; CX Q→Response is unaffected.
-            if (state.straightDown && !isCxSheet(round, node.sheetId)) return;
-            let targetSpeechId: string | null;
-            if (isCxSheet(round, node.sheetId)) {
-                targetSpeechId = responseColumnFor(node.speechId); // Q → its Response column
-            } else {
-                targetSpeechId =
-                    nextOpposingSpeech(round.format, node.speechId)?.id ?? null;
-            }
-            if (!targetSpeechId) return;
-            const newId = state.addNode({
-                sheetId: node.sheetId,
-                speechId: targetSpeechId,
-                parentId: node.id,
-            });
-            selectNodeInsert({
-                sheetId: node.sheetId,
-                speechId: targetSpeechId,
-                nodeId: newId,
-            });
-            return;
-        }
-
-        case "arg.newRoot": {
-            if (!round) return;
-            const sel = state.selection;
-            const sheetId = sel?.sheetId ?? state.activeSheetId;
-            if (!sheetId) return;
-            const onCx = isCxSheet(round, sheetId);
-            const speechId =
-                sel?.speechId ??
-                (onCx ? CX_COLUMNS[0].id : round.format.speeches[0]?.id);
-            if (!speechId) return;
-            const selNode = sel?.nodeId
-                ? round.nodes.find((n) => n.id === sel.nodeId)
-                : undefined;
-            const insertAfterOrder =
-                selNode?.speechId === speechId ? selNode.order : undefined;
-            const newId = state.addNode({
-                sheetId,
-                speechId,
-                parentId: null,
-                insertAfterOrder,
-            });
-            selectNodeInsert({ sheetId, speechId, nodeId: newId });
-            return;
-        }
-
-        case "node.delete": {
-            if (!round) return;
-            const sel = state.selection;
-            if (!sel || sel.nodeId === "") return;
-            const node = round.nodes.find((n) => n.id === sel.nodeId);
-            if (!node) return;
-            // Pick a neighbor so the cursor stays in the flow after deletion.
-            // above/below/parent are never descendants of `node`, so they survive removal.
-            const neighbor =
-                nodeAboveInColumn(round.nodes, node) ??
-                nodeBelowInColumn(round.nodes, node) ??
-                parentOf(round.nodes, node.id);
-            state.removeNode(sel.nodeId);
-            if (neighbor) {
-                state.setSelection({
-                    sheetId: neighbor.sheetId,
-                    speechId: neighbor.speechId,
-                    nodeId: neighbor.id,
-                });
-            } else {
-                // No neighbor — keep the cursor on the now-empty cell in the same column.
-                state.setSelection({
-                    sheetId: node.sheetId,
-                    speechId: node.speechId,
-                    nodeId: "",
-                });
-            }
-            return;
-        }
-
-        // ── Status / format ────────────────────────────────────────────────────────
+        // ── Status / format ───────────────────────────────────────────────────
         case "status.toggleConceded":
         case "status.toggleExtended":
         case "format.toggleBold": {
             if (!round) return;
             const sel = state.selection;
-            if (!sel || sel.nodeId === "") return;
-            if (isCxSheet(round, sel.sheetId)) return;
+            if (!sel) return;
+            // Find the occupant node at the selected coordinate.
+            const node = round.nodes.find(
+                (n) =>
+                    n.sheetId === sel.sheetId &&
+                    n.speechId === sel.speechId &&
+                    n.row === sel.row,
+            );
+            if (!node) return;
             if (id === "format.toggleBold") {
-                state.toggleNodeBold(sel.nodeId);
+                state.toggleNodeBold(node.id);
             } else {
                 state.toggleNodeStatus(
-                    sel.nodeId,
+                    node.id,
                     id === "status.toggleConceded" ? "conceded" : "extended",
                 );
             }
             return;
         }
 
-        // ── Sheets ───────────────────────────────────────────────────────────────
+        // ── Sheets ────────────────────────────────────────────────────────────
         case "sheet.next":
         case "sheet.prev": {
             if (!round) return;
@@ -373,7 +152,6 @@ export function executeCommand(id: CommandId): void {
             state.setActiveSheet(sheets[next].id);
             return;
         }
-
         case "sheet.newAff": {
             if (!round) return;
             const newSheetId = state.addSheet({
@@ -381,11 +159,8 @@ export function executeCommand(id: CommandId): void {
                 group: "aff",
             });
             state.setActiveSheet(newSheetId);
-            // Selection not pre-set for aff (by design) — newNeg sets selection because
-            // the user lands on an empty neg sheet and needs a column focused to start typing.
             return;
         }
-
         case "sheet.newNeg": {
             if (!round) return;
             const newSheetId = state.addSheet({
@@ -400,24 +175,20 @@ export function executeCommand(id: CommandId): void {
                 state.setSelection({
                     sheetId: newSheetId,
                     speechId: firstNegSpeech.id,
-                    nodeId: "",
+                    row: 0,
                 });
             }
             return;
         }
-
         case "sheet.rename": {
             const { activeSheetId } = state;
             if (!activeSheetId) return;
             state.setRenamingSheet(activeSheetId);
             return;
         }
-
-        case "sheet.quickSwitch": {
+        case "sheet.quickSwitch":
             state.setQuickSwitcherOpen(true);
             return;
-        }
-
         case "sheet.jump1":
         case "sheet.jump2":
         case "sheet.jump3":
@@ -427,35 +198,37 @@ export function executeCommand(id: CommandId): void {
         case "sheet.jump7":
         case "sheet.jump8":
         case "sheet.jump9": {
-            if (!round) return;
             const n = Number(id.slice("sheet.jump".length));
             jumpToSheet(n);
             return;
         }
 
-        // ── Settings ─────────────────────────────────────────────────────────────
-        case "settings.open": {
+        // ── Settings ──────────────────────────────────────────────────────────
+        case "settings.open":
             state.setSettingsOpen(true);
             return;
-        }
-
-        // ── Info ──────────────────────────────────────────────────────────────────
-        case "info.open": {
+        case "info.open":
             state.setInfoOpen(true);
             return;
-        }
+        case "help.open":
+            state.setCheatsheetOpen(!state.cheatsheetOpen);
+            return;
 
-        // ── Keyboard grab & move (reparent / rehome) ───────────────────────────────
+        // ── Keyboard grab & move ──────────────────────────────────────────────
         case "move.grab": {
             if (!round) return;
             const sel = state.selection;
-            // Need a real node selected, and not on a CX sheet (fixed Q/R grid).
-            if (!sel || sel.nodeId === "") return;
-            if (isCxSheet(round, sel.sheetId)) return;
-            state.setMoveSource(sel.nodeId);
+            if (!sel) return;
+            const node = round.nodes.find(
+                (n) =>
+                    n.sheetId === sel.sheetId &&
+                    n.speechId === sel.speechId &&
+                    n.row === sel.row,
+            );
+            if (!node) return;
+            state.setMoveSource(node.id);
             return;
         }
-
         case "move.cancel": {
             const src = state.moveSource;
             state.setMoveSource(null);
@@ -465,13 +238,12 @@ export function executeCommand(id: CommandId): void {
                     state.setSelection({
                         sheetId: node.sheetId,
                         speechId: node.speechId,
-                        nodeId: node.id,
+                        row: node.row,
                     });
                 }
             }
             return;
         }
-
         case "move.commit": {
             const src = state.moveSource;
             const sel = state.selection;
@@ -479,32 +251,24 @@ export function executeCommand(id: CommandId): void {
                 state.setMoveSource(null);
                 return;
             }
-            const sheet = round.sheets.find((s) => s.id === sel.sheetId);
-            if (!sheet) {
+            const srcNode = round.nodes.find((n) => n.id === src);
+            if (!srcNode) {
                 state.setMoveSource(null);
                 return;
             }
-            const speeches = columnsForSheet(round.format, sheet);
-            const target: MoveTarget =
-                sel.nodeId === ""
-                    ? {
-                          kind: "empty",
-                          speechId: sel.speechId,
-                          row: sel.row ?? 0,
-                      }
-                    : { kind: "node", nodeId: sel.nodeId };
-
-            // Invalid target (self, descendant, later column): stay in move mode so the
-            // user can keep steering or press Escape. Silent, per the brief.
-            if (!isValidMoveTarget(round.nodes, speeches, src, target)) return;
-
-            if (target.kind === "node") {
-                state.setNodeParent(src, target.nodeId);
-            } else {
-                state.rehomeNode(src, target.speechId, null);
-            }
+            const dCol =
+                columnsForSheet(
+                    round.format,
+                    round.sheets.find((s) => s.id === sel.sheetId)!,
+                ).findIndex((s) => s.id === sel.speechId) -
+                columnsForSheet(
+                    round.format,
+                    round.sheets.find((s) => s.id === srcNode.sheetId)!,
+                ).findIndex((s) => s.id === srcNode.speechId);
+            const dRow = sel.row - srcNode.row;
+            state.commitSubtreeMove(dCol, dRow);
             state.setMoveSource(null);
-            // Re-read: rehome changes the node's speech; select it in its new home and flash.
+            // Re-read after commit
             const moved = useRoundStore
                 .getState()
                 .round?.nodes.find((n) => n.id === src);
@@ -512,14 +276,14 @@ export function executeCommand(id: CommandId): void {
                 state.setSelection({
                     sheetId: moved.sheetId,
                     speechId: moved.speechId,
-                    nodeId: moved.id,
+                    row: moved.row,
                 });
             }
             state.setFlashNode(src);
             return;
         }
 
-        // ── Column navigation ─────────────────────────────────────────────────────
+        // ── Column navigation ─────────────────────────────────────────────────
         case "nav.nextSpeech":
         case "nav.prevSpeech": {
             if (!round) return;
@@ -527,40 +291,17 @@ export function executeCommand(id: CommandId): void {
             if (!sel) return;
             const sheet = round.sheets.find((s) => s.id === sel.sheetId);
             if (!sheet) return;
-            const speeches = isCxSheet(round, sel.sheetId)
-                ? CX_COLUMNS
-                : columnsForSheet(round.format, sheet);
+            const speeches = columnsForSheet(round.format, sheet);
             const currentIdx = speeches.findIndex((s) => s.id === sel.speechId);
             if (currentIdx === -1) return;
             const targetIdx =
                 id === "nav.nextSpeech" ? currentIdx + 1 : currentIdx - 1;
             if (targetIdx < 0 || targetIdx >= speeches.length) return;
-            const targetSpeech = speeches[targetIdx];
-            const sheetNodes = round.nodes.filter((n) => n.sheetId === sel.sheetId);
-            const { placed } = buildLayout(sheetNodes, speeches);
-            const colNodes = placed
-                .filter((p) => p.col === targetIdx)
-                .sort((a, b) => a.startRow - b.startRow);
-            if (colNodes.length > 0) {
-                state.setSelection({
-                    sheetId: sel.sheetId,
-                    speechId: targetSpeech.id,
-                    nodeId: colNodes[0].node.id,
-                });
-            } else {
-                state.setSelection({
-                    sheetId: sel.sheetId,
-                    speechId: targetSpeech.id,
-                    nodeId: "",
-                    row: 0,
-                });
-            }
-            return;
-        }
-
-        // ── Help ─────────────────────────────────────────────────────────────────
-        case "help.open": {
-            state.setCheatsheetOpen(!state.cheatsheetOpen);
+            state.setSelection({
+                sheetId: sel.sheetId,
+                speechId: speeches[targetIdx].id,
+                row: sel.row,
+            });
             return;
         }
     }

@@ -1,8 +1,10 @@
 /**
  * Command registry — the canonical set of commands the keyboard layer can fire.
  *
- * CommandIds are keymap-agnostic: keymaps (vim/excel/basic) bind chords to
- * these ids, and command handlers (commands.ts) implement the behavior.
+ * CommandIds are keymap-agnostic: keymaps bind chords to these ids, and
+ * command handlers (commands.ts) implement the behavior.
+ *
+ * The grid is fully modeless — no normal/insert/move mode layers.
  */
 
 export type CommandId =
@@ -10,14 +12,18 @@ export type CommandId =
     | "move.down"
     | "move.up"
     | "move.right"
-    | "edit.enter"
-    | "edit.exit"
+    | "node.sibling"
+    | "node.response"
+    | "row.insertAbove"
+    | "row.insertBelow"
+    | "row.delete"
+    | "cell.clear"
+    | "node.deleteSubtree"
+    | "move.grab"
+    | "move.commit"
+    | "move.cancel"
     | "edit.undo"
     | "edit.redo"
-    | "node.addAnswer"
-    | "node.answerAcross"
-    | "arg.newRoot"
-    | "node.delete"
     | "status.toggleConceded"
     | "status.toggleExtended"
     | "format.toggleBold"
@@ -39,9 +45,6 @@ export type CommandId =
     | "settings.open"
     | "info.open"
     | "help.open"
-    | "move.grab"
-    | "move.commit"
-    | "move.cancel"
     | "nav.nextSpeech"
     | "nav.prevSpeech";
 
@@ -51,21 +54,25 @@ export interface CommandDef {
 }
 
 export const COMMANDS: Record<CommandId, CommandDef> = {
-    "move.left": { id: "move.left", label: "Move left (to parent)" },
+    "move.left": { id: "move.left", label: "Move left" },
     "move.down": { id: "move.down", label: "Move down" },
     "move.up": { id: "move.up", label: "Move up" },
-    "move.right": { id: "move.right", label: "Move right (to child)" },
-    "edit.enter": { id: "edit.enter", label: "Edit cell" },
-    "edit.exit": { id: "edit.exit", label: "Exit edit" },
+    "move.right": { id: "move.right", label: "Move right" },
+    "node.sibling": { id: "node.sibling", label: "Spawn sibling below" },
+    "node.response": { id: "node.response", label: "Spawn response across" },
+    "row.insertAbove": { id: "row.insertAbove", label: "Insert row above" },
+    "row.insertBelow": { id: "row.insertBelow", label: "Insert row below" },
+    "row.delete": { id: "row.delete", label: "Delete row" },
+    "cell.clear": { id: "cell.clear", label: "Clear cell" },
+    "node.deleteSubtree": {
+        id: "node.deleteSubtree",
+        label: "Delete subtree",
+    },
+    "move.grab": { id: "move.grab", label: "Grab to move" },
+    "move.commit": { id: "move.commit", label: "Drop here" },
+    "move.cancel": { id: "move.cancel", label: "Cancel move" },
     "edit.undo": { id: "edit.undo", label: "Undo" },
     "edit.redo": { id: "edit.redo", label: "Redo" },
-    "node.addAnswer": { id: "node.addAnswer", label: "Add answer (sibling)" },
-    "node.answerAcross": {
-        id: "node.answerAcross",
-        label: "Answer across (next speech)",
-    },
-    "arg.newRoot": { id: "arg.newRoot", label: "New root argument" },
-    "node.delete": { id: "node.delete", label: "Delete node" },
     "status.toggleConceded": {
         id: "status.toggleConceded",
         label: "Toggle conceded",
@@ -96,9 +103,6 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "settings.open": { id: "settings.open", label: "Open settings" },
     "info.open": { id: "info.open", label: "Open round info" },
     "help.open": { id: "help.open", label: "Show keybindings" },
-    "move.grab": { id: "move.grab", label: "Grab to move/reparent" },
-    "move.commit": { id: "move.commit", label: "Drop here (move mode)" },
-    "move.cancel": { id: "move.cancel", label: "Cancel move" },
     "nav.nextSpeech": { id: "nav.nextSpeech", label: "Next speech (column)" },
     "nav.prevSpeech": { id: "nav.prevSpeech", label: "Previous speech (column)" },
 };
