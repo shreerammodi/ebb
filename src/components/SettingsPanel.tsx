@@ -16,11 +16,6 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-const PRESETS: { name: "default" | "vim"; label: string }[] = [
-    { name: "default", label: "Default" },
-    { name: "vim", label: "Vim" },
-];
-
 const COMMAND_LIST = Object.values(COMMANDS);
 
 type Category = "display" | "keyboard";
@@ -42,9 +37,7 @@ function chordForCommand(
 
 export default function SettingsPanel() {
     const open = useRoundStore((s) => s.settingsOpen);
-    const keymapName = useRoundStore((s) => s.keymapName);
     const keymapOverrides = useRoundStore((s) => s.keymapOverrides);
-    const setKeymapName = useRoundStore((s) => s.setKeymapName);
     const setKeymapOverride = useRoundStore((s) => s.setKeymapOverride);
     const clearKeymapOverride = useRoundStore((s) => s.clearKeymapOverride);
     const setSettingsOpen = useRoundStore((s) => s.setSettingsOpen);
@@ -52,8 +45,6 @@ export default function SettingsPanel() {
     const labelDrops = useRoundStore((s) => s.labelDrops);
     const setAutoNumber = useRoundStore((s) => s.setAutoNumber);
     const setLabelDrops = useRoundStore((s) => s.setLabelDrops);
-    const straightDown = useRoundStore((s) => s.straightDown);
-    const setStraightDown = useRoundStore((s) => s.setStraightDown);
 
     const [recording, setRecording] = useState<CommandId | null>(null);
     const [category, setCategory] = useState<Category>("display");
@@ -69,9 +60,9 @@ export default function SettingsPanel() {
     }, [open]);
 
     const chordByCommand = useMemo(() => {
-        const keymap = effectiveKeymap(keymapName, keymapOverrides);
-        return chordForCommand(keymap.bindings.normal);
-    }, [keymapName, keymapOverrides]);
+        const keymap = effectiveKeymap(keymapOverrides);
+        return chordForCommand(keymap.bindings);
+    }, [keymapOverrides]);
 
     const visibleCommands = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -81,14 +72,6 @@ export default function SettingsPanel() {
 
     function close() {
         setSettingsOpen(false);
-    }
-
-    function selectPreset(name: "default" | "vim") {
-        for (const commandId of Object.keys(keymapOverrides)) {
-            clearKeymapOverride(commandId as CommandId);
-        }
-        setKeymapName(name);
-        setRecording(null);
     }
 
     function onPanelKeyDown(e: React.KeyboardEvent) {
@@ -188,7 +171,6 @@ export default function SettingsPanel() {
                                     <Switch
                                         checked={autoNumber}
                                         onCheckedChange={setAutoNumber}
-                                        disabled={straightDown}
                                         data-testid="toggle-autoNumber"
                                         aria-label="Auto-number arguments"
                                     />
@@ -198,65 +180,13 @@ export default function SettingsPanel() {
                                     <Switch
                                         checked={labelDrops}
                                         onCheckedChange={setLabelDrops}
-                                        disabled={straightDown}
                                         data-testid="toggle-labelDrops"
                                         aria-label="Label drops"
-                                    />
-                                </label>
-                                <label className="flex items-center justify-between py-1.5 text-[13px] text-zinc-900">
-                                    <span className="flex flex-col">
-                                        Flow straight down
-                                        <span className="text-[11px] text-zinc-400">
-                                            Cells stack below; responses,
-                                            numbering, and drops are off.
-                                        </span>
-                                    </span>
-                                    <Switch
-                                        checked={straightDown}
-                                        onCheckedChange={setStraightDown}
-                                        data-testid="toggle-straightDown"
-                                        aria-label="Flow straight down"
                                     />
                                 </label>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-3">
-                                {/* Preset switcher */}
-                                <div className="flex items-center gap-2.5">
-                                    <span className="text-[13px] text-zinc-500">
-                                        Preset
-                                    </span>
-                                    <div
-                                        className="flex gap-1.5"
-                                        role="group"
-                                        aria-label="Keymap preset"
-                                    >
-                                        {PRESETS.map((p) => {
-                                            const active =
-                                                p.name === keymapName;
-                                            return (
-                                                <Button
-                                                    key={p.name}
-                                                    type="button"
-                                                    variant={
-                                                        active
-                                                            ? "default"
-                                                            : "outline"
-                                                    }
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        selectPreset(p.name)
-                                                    }
-                                                    aria-pressed={active}
-                                                    data-testid={`preset-${p.name}`}
-                                                >
-                                                    {p.label}
-                                                </Button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
                                 {/* Filter */}
                                 <Input
                                     value={query}

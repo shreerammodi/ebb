@@ -7,6 +7,10 @@
 
 import Dexie, { type EntityTable } from "dexie";
 import type { Round } from "@/lib/model/types";
+import {
+    assignRowsFromLegacyTree,
+    type LegacyRound,
+} from "@/lib/grid/migrateRows";
 
 /** A precomputed fuzzy-search haystack for one round (scouting + all node text). */
 export interface SearchIndexRow {
@@ -77,6 +81,18 @@ export class DebateFlowDB extends Dexie {
             rounds: "id, updatedAt, deletedAt",
             searchIndex: "id",
         });
+        // Grid-owns-position migration: assign each node a `row` coordinate from
+        // the legacy parentId+order tree (and drop `order`).
+        this.version(6).upgrade((tx) =>
+            tx
+                .table("rounds")
+                .toCollection()
+                .modify((r: LegacyRound) => {
+                    if (!Array.isArray(r.nodes) || !Array.isArray(r.sheets))
+                        return;
+                    assignRowsFromLegacyTree(r);
+                }),
+        );
     }
 }
 

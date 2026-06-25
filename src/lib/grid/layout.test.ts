@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildLayout } from "./layout";
-import type { ArgumentNode, Speech } from "@/lib/model/types";
+import { buildLayout, type LegacyNode } from "./layout";
+import type { Speech } from "@/lib/model/types";
 
 const speeches: Speech[] = [
     { id: "s0", name: "1AC", side: "aff", seconds: 0 },
@@ -8,12 +8,13 @@ const speeches: Speech[] = [
 ];
 
 function node(
-    p: Partial<ArgumentNode> & { id: string; speechId: string },
-): ArgumentNode {
+    p: Partial<LegacyNode> & { id: string; speechId: string },
+): LegacyNode {
     return {
         sheetId: "sh",
         parentId: null,
         order: 0,
+        row: 0,
         text: "",
         statuses: [],
         bold: false,

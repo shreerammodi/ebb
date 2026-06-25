@@ -1,5 +1,10 @@
 import type { Round, Scouting, Sheet } from "./types";
 import { uid } from "./ids";
+import {
+    assignRowsFromLegacyTree,
+    needsRowMigration,
+    type LegacyNode,
+} from "@/lib/grid/migrateRows";
 
 const emptyDebater = () => ({ first: "", last: "" });
 
@@ -54,6 +59,10 @@ export function normalizeRound(raw: Round): Round {
     if (!Array.isArray(r.groups)) r.groups = [];
     if (!r.sheets.some((s) => s.kind === "cx")) {
         r.sheets = [makeCxSheet(), ...r.sheets];
+    }
+    // Backfill row coordinates for pre-migration (order-based) imports.
+    if (Array.isArray(r.nodes) && needsRowMigration(r.nodes as LegacyNode[])) {
+        assignRowsFromLegacyTree(r);
     }
     return r;
 }

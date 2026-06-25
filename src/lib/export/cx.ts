@@ -39,7 +39,7 @@ export function cxPeriods(round: Round): CxPeriod[] {
     return CX_PERIODS.map((p) => {
         const questions = cxNodes
             .filter((n) => n.speechId === p.qId)
-            .sort((a, b) => a.order - b.order);
+            .sort((a, b) => a.row - b.row);
         const pairs = questions.map((q) => {
             const resp = cxNodes.find(
                 (n) => n.parentId === q.id && n.speechId === p.rId,

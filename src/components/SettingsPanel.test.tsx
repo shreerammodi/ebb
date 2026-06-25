@@ -21,7 +21,6 @@ const KEY = "df-keymap-settings";
 
 function resetStore() {
     useRoundStore.setState({
-        keymapName: "vim",
         keymapOverrides: {},
         settingsOpen: true,
     });
@@ -58,46 +57,17 @@ describe("SettingsPanel", () => {
         expect(screen.queryByTestId("settings-panel")).toBeNull();
     });
 
-    it("renders nothing when settings are closed", () => {
-        useRoundStore.setState({ settingsOpen: false });
-        render(<SettingsPanel />);
-        expect(screen.queryByTestId("settings-panel")).toBeNull();
-    });
-
-    it("lists commands with their current binding from the active keymap", async () => {
+    it("lists commands with their current binding from the flat keymap", async () => {
         const user = userEvent.setup();
         render(<SettingsPanel />);
         await gotoKeyboard(user);
 
-        // The vim preset binds move.down to "j".
+        // The flat keymap binds move.down to "ArrowDown".
         const row = screen.getByTestId("cmd-move.down");
         expect(within(row).getByText(COMMANDS["move.down"].label)).toBeTruthy();
-        expect(screen.getByTestId("chord-move.down").textContent).toBe("j");
-    });
-
-    it("switching preset updates keymapName in the store", async () => {
-        const user = userEvent.setup();
-        render(<SettingsPanel />);
-        await gotoKeyboard(user);
-
-        await user.click(screen.getByTestId("preset-default"));
-
-        expect(useRoundStore.getState().keymapName).toBe("default");
-        // Default binds move.down to ArrowDown.
         expect(screen.getByTestId("chord-move.down").textContent).toBe(
             "ArrowDown",
         );
-    });
-
-    it("switching preset clears existing overrides", async () => {
-        const user = userEvent.setup();
-        useRoundStore.getState().setKeymapOverride("move.down", "Meta+j");
-        render(<SettingsPanel />);
-        await gotoKeyboard(user);
-
-        await user.click(screen.getByTestId("preset-default"));
-
-        expect(useRoundStore.getState().keymapOverrides).toEqual({});
     });
 
     it("records a chord override: click Record then press a key", async () => {
@@ -155,7 +125,9 @@ describe("SettingsPanel", () => {
         expect(
             useRoundStore.getState().keymapOverrides["move.down"],
         ).toBeUndefined();
-        expect(screen.getByTestId("chord-move.down").textContent).toBe("j");
+        expect(screen.getByTestId("chord-move.down").textContent).toBe(
+            "ArrowDown",
+        );
     });
 
     it("shows shortcuts only in the Keyboard pane", async () => {
@@ -207,21 +179,13 @@ describe("SettingsPanel", () => {
         useRoundStore.getState().setAutoNumber(true);
     });
 
-    it("toggles straightDown via the display switch", async () => {
+    it("toggles labelDrops via the display switch", async () => {
         useRoundStore.getState().setSettingsOpen(true);
         render(<SettingsPanel />);
-        const sw = screen.getByTestId("toggle-straightDown");
+        const sw = screen.getByTestId("toggle-labelDrops");
         await userEvent.click(sw);
-        expect(useRoundStore.getState().straightDown).toBe(true);
-        useRoundStore.getState().setStraightDown(false);
-    });
-
-    it("disables autoNumber and labelDrops toggles when straightDown is on", () => {
-        useRoundStore.setState({ settingsOpen: true, straightDown: true });
-        render(<SettingsPanel />);
-        expect(screen.getByTestId("toggle-autoNumber")).toBeDisabled();
-        expect(screen.getByTestId("toggle-labelDrops")).toBeDisabled();
-        useRoundStore.setState({ straightDown: false });
+        expect(useRoundStore.getState().labelDrops).toBe(false);
+        useRoundStore.getState().setLabelDrops(true);
     });
 
     it("persists overrides to localStorage and effectiveKeymap uses them", async () => {
@@ -237,14 +201,10 @@ describe("SettingsPanel", () => {
         expect(raw).toBeTruthy();
         const parsed = JSON.parse(raw!);
         expect(parsed.keymapOverrides["move.down"]).toBe("g");
-        expect(parsed.keymapName).toBe("vim");
 
-        // effectiveKeymap reflects the override: "g" → move.down, old "j" removed.
-        const keymap = effectiveKeymap(
-            parsed.keymapName,
-            parsed.keymapOverrides,
-        );
-        expect(keymap.bindings.normal["g"]).toBe("move.down");
-        expect(keymap.bindings.normal["j"]).toBeUndefined();
+        // effectiveKeymap reflects the override: "g" → move.down, ArrowDown removed.
+        const keymap = effectiveKeymap(parsed.keymapOverrides);
+        expect(keymap.bindings["g"]).toBe("move.down");
+        expect(keymap.bindings["ArrowDown"]).toBeUndefined();
     });
 });

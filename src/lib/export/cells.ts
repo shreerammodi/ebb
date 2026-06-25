@@ -6,9 +6,7 @@
  */
 
 import type { Round, Sheet, Speech } from "@/lib/model/types";
-import { buildLayout } from "@/lib/grid/layout";
 import { columnsForSheet } from "@/lib/grid/columns";
-import { CX_COLUMNS } from "@/lib/model/cxColumns";
 import { numberFor } from "@/lib/model/numbering";
 import type { ExportOptions } from "./options";
 
@@ -50,33 +48,36 @@ export function buildExportSheets(
         .slice()
         .sort((a, b) => a.order - b.order)
         .map((sheet) => {
-            const columns =
-                sheet.kind === "cx"
-                    ? CX_COLUMNS
-                    : columnsForSheet(round.format, sheet);
+            const columns = columnsForSheet(round.format, sheet);
             const sheetNodes = round.nodes.filter(
                 (n) => n.sheetId === sheet.id,
             );
-            const { placed, totalRows } = buildLayout(sheetNodes, columns);
 
-            const cells: ExportCell[] = placed.map((p) => {
+            // Grid owns position: each node renders at its stored (col, row);
+            // one node = one cell = one row (rowSpan is always 1).
+            const cells: ExportCell[] = sheetNodes.flatMap((node) => {
+                const col = columns.findIndex((s) => s.id === node.speechId);
+                if (col === -1) return [];
                 const num = opts.autoNumber
-                    ? numberFor(sheetNodes, p.node.id)
+                    ? numberFor(sheetNodes, node.id)
                     : null;
                 const prefix = num !== null ? `${num}. ` : "";
-                return {
-                    nodeId: p.node.id,
-                    col: p.col,
-                    speechName: columns[p.col]?.name ?? "",
-                    row: p.startRow,
-                    rowSpan: p.rowSpan,
-                    text: prefix + p.node.text,
-                    bold: p.node.bold,
-                    crossed: p.node.statuses.includes("conceded"),
-                    extended: p.node.statuses.includes("extended"),
-                };
+                return [
+                    {
+                        nodeId: node.id,
+                        col,
+                        speechName: columns[col]?.name ?? "",
+                        row: node.row,
+                        rowSpan: 1,
+                        text: prefix + node.text,
+                        bold: node.bold,
+                        crossed: node.statuses.includes("conceded"),
+                        extended: node.statuses.includes("extended"),
+                    },
+                ];
             });
 
-            return { sheet, columns, cells, rowCount: totalRows };
+            const rowCount = cells.reduce((m, c) => Math.max(m, c.row + 1), 0);
+            return { sheet, columns, cells, rowCount };
         });
 }

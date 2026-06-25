@@ -14,15 +14,18 @@
 
 import type { ArgumentNode, Speech } from "@/lib/model/types";
 
+/** A pre-migration node carrying the legacy `order` field (row not yet assigned). */
+export type LegacyNode = ArgumentNode & { order?: number };
+
 export interface PlacedNode {
-    node: ArgumentNode;
+    node: LegacyNode;
     startRow: number;
     rowSpan: number;
     col: number;
 }
 
 export function buildLayout(
-    nodes: ArgumentNode[],
+    nodes: LegacyNode[],
     speeches: Speech[],
 ): { placed: PlacedNode[]; totalRows: number } {
     if (nodes.length === 0) {
@@ -36,7 +39,7 @@ export function buildLayout(
     const validNodes = nodes.filter((n) => colIndex.has(n.speechId));
 
     // Build children map
-    const childrenByParent = new Map<string | null, ArgumentNode[]>();
+    const childrenByParent = new Map<string | null, LegacyNode[]>();
     for (const node of validNodes) {
         const key = node.parentId;
         if (!childrenByParent.has(key)) childrenByParent.set(key, []);
@@ -44,19 +47,19 @@ export function buildLayout(
     }
     // Sort children by order
     for (const children of childrenByParent.values()) {
-        children.sort((a, b) => a.order - b.order);
+        children.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
 
     // Roots: nodes with parentId === null, stacked by their sheet-wide order so a
     // root created in any column can sit anywhere vertically (roots-anywhere).
     const roots = (childrenByParent.get(null) ?? [])
         .slice()
-        .sort((a, b) => a.order - b.order);
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     // Leaf count (memoized) with cycle guard
     const leafCountCache = new Map<string, number>();
     function leafCount(
-        node: ArgumentNode,
+        node: LegacyNode,
         visiting: Set<string> = new Set(),
     ): number {
         if (leafCountCache.has(node.id)) return leafCountCache.get(node.id)!;
@@ -77,7 +80,7 @@ export function buildLayout(
     const placed: PlacedNode[] = [];
     const visited = new Set<string>(); // cycle guard
 
-    function place(node: ArgumentNode, startRow: number): void {
+    function place(node: LegacyNode, startRow: number): void {
         if (visited.has(node.id)) return;
         visited.add(node.id);
 

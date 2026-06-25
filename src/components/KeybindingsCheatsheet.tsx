@@ -3,6 +3,7 @@
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { effectiveKeymap } from "@/lib/keymap/useKeymap";
+import { GRAB_BINDINGS } from "@/lib/keymap/presets";
 import {
     Dialog,
     DialogContent,
@@ -23,12 +24,12 @@ const GROUPS = [
     {
         label: "Edit",
         rows: [
-            { commandId: "edit.enter" as CommandId },
-            { commandId: "edit.exit" as CommandId, insertMode: true },
-            { commandId: "node.addAnswer" as CommandId },
-            { commandId: "node.answerAcross" as CommandId },
-            { commandId: "arg.newRoot" as CommandId },
-            { commandId: "node.delete" as CommandId },
+            { commandId: "node.sibling" as CommandId },
+            { commandId: "node.response" as CommandId },
+            { commandId: "row.insertAbove" as CommandId },
+            { commandId: "row.delete" as CommandId },
+            { commandId: "cell.clear" as CommandId },
+            { commandId: "node.deleteSubtree" as CommandId },
         ],
     },
     {
@@ -101,18 +102,13 @@ export default function KeybindingsCheatsheet() {
     }
 
     const keymap = effectiveKeymap();
-    const normalBindings = keymap.bindings.normal;
-    const insertBindings = keymap.bindings.insert;
-    const moveBindings = keymap.bindings.move;
 
     const chordFor: Partial<Record<CommandId, string>> = {};
-    for (const [chord, cmd] of Object.entries(normalBindings)) {
+    for (const [chord, cmd] of Object.entries(keymap.bindings)) {
         if (!chordFor[cmd as CommandId]) chordFor[cmd as CommandId] = chord;
     }
-    for (const [chord, cmd] of Object.entries(insertBindings)) {
-        if (!chordFor[cmd as CommandId]) chordFor[cmd as CommandId] = chord;
-    }
-    for (const [chord, cmd] of Object.entries(moveBindings)) {
+    // Grab sub-state bindings (Enter=commit, Esc=cancel) live outside the flat map.
+    for (const [chord, cmd] of Object.entries(GRAB_BINDINGS)) {
         if (!chordFor[cmd as CommandId]) chordFor[cmd as CommandId] = chord;
     }
 
@@ -152,10 +148,6 @@ export default function KeybindingsCheatsheet() {
                             <div className="flex flex-col gap-0.5">
                                 {group.rows.map((row) => {
                                     const { commandId } = row;
-                                    const insertMode =
-                                        "insertMode" in row
-                                            ? row.insertMode
-                                            : undefined;
                                     const moveMode =
                                         "moveMode" in row
                                             ? row.moveMode
@@ -183,11 +175,6 @@ export default function KeybindingsCheatsheet() {
                                             </kbd>
                                             <span className="flex items-center gap-1 text-[12px] text-zinc-700">
                                                 {label}
-                                                {insertMode && (
-                                                    <span className="rounded border border-zinc-200 bg-zinc-50 px-1 text-[10px] leading-4 text-zinc-400">
-                                                        insert
-                                                    </span>
-                                                )}
                                                 {moveMode && (
                                                     <span className="rounded border border-zinc-200 bg-zinc-50 px-1 text-[10px] leading-4 text-zinc-400">
                                                         move
