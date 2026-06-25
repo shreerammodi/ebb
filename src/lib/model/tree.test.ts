@@ -3,15 +3,14 @@ import type { ArgumentNode, NodeStatus } from "@/lib/model/types";
 import {
     childrenOf,
     rootsOf,
-    addNode,
+    placeNodeAt,
+    orphanNode,
+    deleteSubtree,
     setParent,
     updateText,
     toggleStatus,
     toggleBold,
-    removeNode,
-    moveNode,
-    rehomeNode,
-} from "@/lib/model/tree";
+} from "./tree";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -22,7 +21,7 @@ function makeNode(
         sheetId: "sheet1",
         speechId: "speech1",
         parentId: null,
-        order: 0,
+        row: 0,
         text: "",
         statuses: [],
         bold: false,
@@ -34,20 +33,22 @@ function makeNode(
 // ─── bold ─────────────────────────────────────────────────────────────────────
 
 describe("bold", () => {
-    it("addNode defaults bold to false", () => {
-        const { node } = addNode([], {
+    it("placeNodeAt defaults bold to false", () => {
+        const { node } = placeNodeAt([], {
             sheetId: "s1",
             speechId: "1ac",
             parentId: null,
+            row: 0,
         });
         expect(node.bold).toBe(false);
     });
 
     it("toggleBold flips bold and is pure", () => {
-        const { nodes, node } = addNode([], {
+        const { nodes, node } = placeNodeAt([], {
             sheetId: "s1",
             speechId: "1ac",
             parentId: null,
+            row: 0,
         });
         const on = toggleBold(nodes, node.id);
         expect(on.find((n) => n.id === node.id)!.bold).toBe(true);
@@ -57,33 +58,14 @@ describe("bold", () => {
     });
 });
 
-describe("rehomeNode", () => {
-    it("rehomeNode moves a node to a new column as a root", () => {
-        const a = addNode([], {
-            sheetId: "s",
-            speechId: "1ac",
-            parentId: null,
-        });
-        const b = addNode(a.nodes, {
-            sheetId: "s",
-            speechId: "1ac",
-            parentId: a.node.id,
-        });
-        const moved = rehomeNode(b.nodes, b.node.id, "2ac", null);
-        const n = moved.find((x) => x.id === b.node.id)!;
-        expect(n.speechId).toBe("2ac");
-        expect(n.parentId).toBeNull();
-    });
-});
-
 // ─── childrenOf ─────────────────────────────────────────────────────────────
 
 describe("childrenOf", () => {
-    it("returns children of a node sorted by order ascending", () => {
+    it("returns children of a node sorted by row ascending", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "root", order: 2 }),
-            makeNode({ id: "b", parentId: "root", order: 0 }),
-            makeNode({ id: "c", parentId: "root", order: 1 }),
+            makeNode({ id: "a", parentId: "root", row: 2 }),
+            makeNode({ id: "b", parentId: "root", row: 0 }),
+            makeNode({ id: "c", parentId: "root", row: 1 }),
         ];
         const result = childrenOf(nodes, "root", "sheet1");
         expect(result.map((n) => n.id)).toEqual(["b", "c", "a"]);
@@ -91,8 +73,8 @@ describe("childrenOf", () => {
 
     it("excludes nodes with different parentId", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "root", order: 0 }),
-            makeNode({ id: "b", parentId: "other", order: 0 }),
+            makeNode({ id: "a", parentId: "root", row: 0 }),
+            makeNode({ id: "b", parentId: "other", row: 0 }),
         ];
         const result = childrenOf(nodes, "root", "sheet1");
         expect(result).toHaveLength(1);
@@ -104,13 +86,13 @@ describe("childrenOf", () => {
             makeNode({
                 id: "a",
                 parentId: "root",
-                order: 0,
+                row: 0,
                 sheetId: "sheet1",
             }),
             makeNode({
                 id: "b",
                 parentId: "root",
-                order: 1,
+                row: 1,
                 sheetId: "sheet2",
             }),
         ];
@@ -127,8 +109,8 @@ describe("childrenOf", () => {
 
     it("does not mutate the input array", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "root", order: 2 }),
-            makeNode({ id: "b", parentId: "root", order: 0 }),
+            makeNode({ id: "a", parentId: "root", row: 2 }),
+            makeNode({ id: "b", parentId: "root", row: 0 }),
         ];
         const original = [...nodes];
         childrenOf(nodes, "root", "sheet1");
@@ -139,26 +121,26 @@ describe("childrenOf", () => {
 // ─── rootsOf ────────────────────────────────────────────────────────────────
 
 describe("rootsOf", () => {
-    it("returns nodes with null parentId for a given sheet and speech, sorted by order", () => {
+    it("returns nodes with null parentId for a given sheet and speech, sorted by row", () => {
         const nodes: ArgumentNode[] = [
             makeNode({
                 id: "a",
                 parentId: null,
-                order: 2,
+                row: 2,
                 sheetId: "sheet1",
                 speechId: "speech1",
             }),
             makeNode({
                 id: "b",
                 parentId: null,
-                order: 0,
+                row: 0,
                 sheetId: "sheet1",
                 speechId: "speech1",
             }),
             makeNode({
                 id: "c",
                 parentId: null,
-                order: 1,
+                row: 1,
                 sheetId: "sheet1",
                 speechId: "speech1",
             }),
@@ -169,8 +151,8 @@ describe("rootsOf", () => {
 
     it("excludes nodes with non-null parentId", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: null, order: 0 }),
-            makeNode({ id: "b", parentId: "parent", order: 0 }),
+            makeNode({ id: "a", parentId: null, row: 0 }),
+            makeNode({ id: "b", parentId: "parent", row: 0 }),
         ];
         const result = rootsOf(nodes, "sheet1", "speech1");
         expect(result).toHaveLength(1);
@@ -182,14 +164,14 @@ describe("rootsOf", () => {
             makeNode({
                 id: "a",
                 parentId: null,
-                order: 0,
+                row: 0,
                 sheetId: "sheet1",
                 speechId: "speech1",
             }),
             makeNode({
                 id: "b",
                 parentId: null,
-                order: 0,
+                row: 0,
                 sheetId: "sheet2",
                 speechId: "speech1",
             }),
@@ -204,14 +186,14 @@ describe("rootsOf", () => {
             makeNode({
                 id: "a",
                 parentId: null,
-                order: 0,
+                row: 0,
                 sheetId: "sheet1",
                 speechId: "speech1",
             }),
             makeNode({
                 id: "b",
                 parentId: null,
-                order: 0,
+                row: 0,
                 sheetId: "sheet1",
                 speechId: "speech2",
             }),
@@ -228,24 +210,28 @@ describe("rootsOf", () => {
     });
 });
 
-// ─── addNode ─────────────────────────────────────────────────────────────────
+// ─── placeNodeAt ─────────────────────────────────────────────────────────────
 
-describe("addNode", () => {
-    it("returns the new node in the returned nodes array", () => {
-        const nodes: ArgumentNode[] = [];
-        const { nodes: newNodes, node } = addNode(nodes, {
-            sheetId: "sheet1",
-            speechId: "speech1",
+describe("placeNodeAt", () => {
+    it("creates a node at an exact cell", () => {
+        const { nodes, node } = placeNodeAt([], {
+            sheetId: "s1",
+            speechId: "a",
             parentId: null,
+            row: 3,
         });
-        expect(newNodes).toContain(node);
+        expect(node.row).toBe(3);
+        expect(node.speechId).toBe("a");
+        expect(node.parentId).toBeNull();
+        expect(nodes).toHaveLength(1);
     });
 
     it("creates a node with the provided sheetId, speechId, and parentId", () => {
-        const { node } = addNode([], {
+        const { node } = placeNodeAt([], {
             sheetId: "sheet1",
             speechId: "speech1",
             parentId: "p1",
+            row: 0,
         });
         expect(node.sheetId).toBe("sheet1");
         expect(node.speechId).toBe("speech1");
@@ -253,126 +239,58 @@ describe("addNode", () => {
     });
 
     it("creates a node with empty statuses and null numberOverride", () => {
-        const { node } = addNode([], {
+        const { node } = placeNodeAt([], {
             sheetId: "sheet1",
             speechId: "speech1",
             parentId: null,
+            row: 0,
         });
         expect(node.statuses).toEqual([]);
-        expect(
-            node.numberOverride === null || node.numberOverride === undefined,
-        ).toBe(true);
+        expect(node.numberOverride).toBeNull();
     });
 
     it("uses empty string for text when not provided", () => {
-        const { node } = addNode([], {
+        const { node } = placeNodeAt([], {
             sheetId: "sheet1",
             speechId: "speech1",
             parentId: null,
+            row: 0,
         });
         expect(node.text).toBe("");
     });
 
     it("uses provided text", () => {
-        const { node } = addNode([], {
+        const { node } = placeNodeAt([], {
             sheetId: "sheet1",
             speechId: "speech1",
             parentId: null,
+            row: 0,
             text: "hello",
         });
         expect(node.text).toBe("hello");
     });
 
-    it("assigns order 0 when no existing nodes in same column", () => {
-        const { node } = addNode([], {
-            sheetId: "sheet1",
-            speechId: "speech1",
-            parentId: null,
-        });
-        expect(node.order).toBe(0);
-    });
-
-    it("assigns order = maxOrder + 1 within same sheet+speech column", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({
-                id: "a",
-                order: 0,
-                sheetId: "sheet1",
-                speechId: "speech1",
-            }),
-            makeNode({
-                id: "b",
-                order: 3,
-                sheetId: "sheet1",
-                speechId: "speech1",
-            }),
-            makeNode({
-                id: "c",
-                order: 1,
-                sheetId: "sheet1",
-                speechId: "speech1",
-            }),
-        ];
-        const { node } = addNode(nodes, {
-            sheetId: "sheet1",
-            speechId: "speech1",
-            parentId: null,
-        });
-        expect(node.order).toBe(4);
-    });
-
-    it("does not count nodes from other sheets when computing root order", () => {
-        // Roots order sheet-wide: a root on the same sheet (even a different speech)
-        // counts, but roots on other sheets do not.
-        const nodes: ArgumentNode[] = [
-            makeNode({
-                id: "a",
-                order: 99,
-                sheetId: "sheet2",
-                speechId: "speech1",
-                parentId: null,
-            }),
-            makeNode({
-                id: "b",
-                order: 50,
-                sheetId: "sheet1",
-                speechId: "speech2",
-                parentId: null,
-            }),
-        ];
-        const { node } = addNode(nodes, {
-            sheetId: "sheet1",
-            speechId: "speech1",
-            parentId: null,
-        });
-        // sheet2 root (a) is excluded; sheet1 root (b, order 50) counts → 51.
-        expect(node.order).toBe(51);
-    });
-
     it('creates a node id prefixed with "node"', () => {
-        const { node } = addNode([], {
+        const { node } = placeNodeAt([], {
             sheetId: "sheet1",
             speechId: "speech1",
             parentId: null,
+            row: 0,
         });
         expect(node.id).toMatch(/^node_/);
     });
 
     it("does not mutate the original nodes array", () => {
         const nodes: ArgumentNode[] = [
-            makeNode({
-                id: "a",
-                order: 0,
-                sheetId: "sheet1",
-                speechId: "speech1",
-            }),
+            makeNode({ id: "a", row: 0, sheetId: "sheet1", speechId: "speech1" }),
         ];
         const original = [...nodes];
         const originalNode = { ...nodes[0] };
-        addNode(nodes, {
+        placeNodeAt(nodes, {
             sheetId: "sheet1",
             speechId: "speech1",
             parentId: null,
+            row: 1,
         });
         expect(nodes).toEqual(original);
         expect(nodes[0]).toEqual(originalNode);
@@ -383,55 +301,13 @@ describe("addNode", () => {
             makeNode({ id: "a" }),
             makeNode({ id: "b" }),
         ];
-        const { nodes: newNodes } = addNode(nodes, {
+        const { nodes: newNodes } = placeNodeAt(nodes, {
             sheetId: "sheet1",
             speechId: "speech1",
             parentId: null,
+            row: 1,
         });
         expect(newNodes).toHaveLength(3);
-    });
-});
-
-describe("addNode root ordering (sheet-wide)", () => {
-    it("orders roots across the whole sheet, not per column", () => {
-        let nodes: ArgumentNode[] = [];
-        const a = addNode(nodes, {
-            sheetId: "s",
-            speechId: "1ac",
-            parentId: null,
-        });
-        nodes = a.nodes;
-        const b = addNode(nodes, {
-            sheetId: "s",
-            speechId: "1nc",
-            parentId: null,
-        });
-        nodes = b.nodes;
-        expect(a.node.order).toBe(0);
-        expect(b.node.order).toBe(1); // sheet-wide, not 0 again for a new column
-    });
-
-    it("still orders children within their own column", () => {
-        let nodes: ArgumentNode[] = [];
-        const root = addNode(nodes, {
-            sheetId: "s",
-            speechId: "1ac",
-            parentId: null,
-        });
-        nodes = root.nodes;
-        const c1 = addNode(nodes, {
-            sheetId: "s",
-            speechId: "1nc",
-            parentId: root.node.id,
-        });
-        nodes = c1.nodes;
-        const c2 = addNode(nodes, {
-            sheetId: "s",
-            speechId: "1nc",
-            parentId: root.node.id,
-        });
-        expect(c1.node.order).toBe(0);
-        expect(c2.node.order).toBe(1);
     });
 });
 
@@ -443,7 +319,7 @@ describe("updateText single-line", () => {
                 sheetId: "s",
                 speechId: "1ac",
                 parentId: null,
-                order: 0,
+                row: 0,
                 text: "",
                 statuses: [],
                 bold: false,
@@ -452,6 +328,73 @@ describe("updateText single-line", () => {
         ] as any;
         const out = updateText(nodes, "n1", "tag\ncite\r\nmore");
         expect(out[0].text).toBe("tag cite more");
+    });
+});
+
+// ─── orphanNode ──────────────────────────────────────────────────────────────
+
+describe("orphanNode", () => {
+    it("removes the node and nulls its children's parentId in place", () => {
+        const parent = {
+            id: "p",
+            sheetId: "s1",
+            speechId: "a",
+            parentId: null,
+            row: 0,
+            text: "p",
+            statuses: [],
+            bold: false,
+            numberOverride: null,
+        };
+        const child = { ...parent, id: "c", speechId: "b", parentId: "p", row: 0 };
+        const out = orphanNode([parent, child], "p");
+        expect(out.find((n) => n.id === "p")).toBeUndefined();
+        const c = out.find((n) => n.id === "c")!;
+        expect(c.parentId).toBeNull();
+        expect(c.row).toBe(0); // coordinate preserved
+    });
+
+    it("re-parents direct children to null when removed node was a root", () => {
+        const nodes: ArgumentNode[] = [
+            makeNode({ id: "root", parentId: null }),
+            makeNode({ id: "child", parentId: "root" }),
+        ];
+        const result = orphanNode(nodes, "root");
+        expect(result.find((n) => n.id === "child")!.parentId).toBeNull();
+    });
+
+    it("handles removing a leaf node (no children)", () => {
+        const nodes: ArgumentNode[] = [
+            makeNode({ id: "a" }),
+            makeNode({ id: "b" }),
+        ];
+        const result = orphanNode(nodes, "b");
+        expect(result).toHaveLength(1);
+        expect(result[0].id).toBe("a");
+    });
+});
+
+// ─── deleteSubtree ───────────────────────────────────────────────────────────
+
+describe("deleteSubtree", () => {
+    it("removes the node and all descendants", () => {
+        const base = {
+            sheetId: "s1",
+            parentId: null,
+            row: 0,
+            text: "",
+            statuses: [],
+            bold: false,
+            numberOverride: null,
+        };
+        const nodes: ArgumentNode[] = [
+            { ...base, id: "root", speechId: "a" },
+            { ...base, id: "c", speechId: "b", parentId: "root" },
+            { ...base, id: "gc", speechId: "c", parentId: "c" },
+            { ...base, id: "keep", speechId: "a", row: 1 },
+        ];
+        const out = deleteSubtree(nodes, "root");
+        expect(out.map((n) => n.id)).toEqual(["keep"]);
     });
 });
 
@@ -566,114 +509,5 @@ describe("toggleStatus", () => {
         expect(result.find((n) => n.id === "a")!.statuses).toContain(
             "extended",
         );
-    });
-});
-
-// ─── removeNode ──────────────────────────────────────────────────────────────
-
-describe("removeNode", () => {
-    it("removes the target node from the array", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "a" }),
-            makeNode({ id: "b" }),
-        ];
-        const result = removeNode(nodes, "a");
-        expect(result.find((n) => n.id === "a")).toBeUndefined();
-    });
-
-    it("re-parents direct children to the removed node's parentId", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "grandparent", parentId: null }),
-            makeNode({ id: "parent", parentId: "grandparent" }),
-            makeNode({ id: "child1", parentId: "parent" }),
-            makeNode({ id: "child2", parentId: "parent" }),
-        ];
-        const result = removeNode(nodes, "parent");
-        expect(result.find((n) => n.id === "child1")!.parentId).toBe(
-            "grandparent",
-        );
-        expect(result.find((n) => n.id === "child2")!.parentId).toBe(
-            "grandparent",
-        );
-    });
-
-    it("re-parents direct children to null when removed node was a root", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "root", parentId: null }),
-            makeNode({ id: "child", parentId: "root" }),
-        ];
-        const result = removeNode(nodes, "root");
-        expect(result.find((n) => n.id === "child")!.parentId).toBeNull();
-    });
-
-    it("does not touch grandchildren (they still point to their direct parents)", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "grandparent", parentId: null }),
-            makeNode({ id: "parent", parentId: "grandparent" }),
-            makeNode({ id: "child", parentId: "parent" }),
-            makeNode({ id: "grandchild", parentId: "child" }),
-        ];
-        const result = removeNode(nodes, "parent");
-        // child is re-parented to grandparent
-        expect(result.find((n) => n.id === "child")!.parentId).toBe(
-            "grandparent",
-        );
-        // grandchild still points to child
-        expect(result.find((n) => n.id === "grandchild")!.parentId).toBe(
-            "child",
-        );
-    });
-
-    it("does not mutate original nodes array", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "a" }),
-            makeNode({ id: "b", parentId: "a" }),
-        ];
-        const originalLength = nodes.length;
-        const originalChildParent = nodes[1].parentId;
-        removeNode(nodes, "a");
-        expect(nodes).toHaveLength(originalLength);
-        expect(nodes[1].parentId).toBe(originalChildParent);
-    });
-
-    it("handles removing a leaf node (no children)", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "a" }),
-            makeNode({ id: "b" }),
-        ];
-        const result = removeNode(nodes, "b");
-        expect(result).toHaveLength(1);
-        expect(result[0].id).toBe("a");
-    });
-});
-
-// ─── moveNode ────────────────────────────────────────────────────────────────
-
-describe("moveNode", () => {
-    it("sets the order of the target node to newOrder", () => {
-        const nodes: ArgumentNode[] = [makeNode({ id: "a", order: 0 })];
-        const result = moveNode(nodes, "a", 5);
-        expect(result.find((n) => n.id === "a")!.order).toBe(5);
-    });
-
-    it("does not affect other nodes' order", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", order: 0 }),
-            makeNode({ id: "b", order: 1 }),
-        ];
-        const result = moveNode(nodes, "a", 10);
-        expect(result.find((n) => n.id === "b")!.order).toBe(1);
-    });
-
-    it("does not mutate original nodes", () => {
-        const nodes: ArgumentNode[] = [makeNode({ id: "a", order: 0 })];
-        moveNode(nodes, "a", 5);
-        expect(nodes[0].order).toBe(0);
-    });
-
-    it("can move to order 0", () => {
-        const nodes: ArgumentNode[] = [makeNode({ id: "a", order: 3 })];
-        const result = moveNode(nodes, "a", 0);
-        expect(result.find((n) => n.id === "a")!.order).toBe(0);
     });
 });

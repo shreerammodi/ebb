@@ -1,8 +1,13 @@
 /**
  * Pure clash-tree operations.
  *
- * All functions are pure: they take an array of ArgumentNode and return
- * new arrays without mutating their input.
+ * The `parentId` tree is relationship metadata only — it does NOT drive layout.
+ * Position lives on the grid via `(speechId, row)`. These helpers sort children
+ * by `row`, create nodes at exact cells, and restructure the tree (orphan /
+ * delete) without touching coordinates.
+ *
+ * All functions are pure: they take an array of ArgumentNode and return new
+ * arrays without mutating their input.
  */
 
 import type { ArgumentNode, NodeStatus } from "@/lib/model/types";
@@ -10,7 +15,7 @@ import { uid } from "@/lib/model/ids";
 
 /**
  * Returns children of a node (nodes whose parentId === parentId and
- * sheetId === sheetId), sorted ascending by order.
+ * sheetId === sheetId), sorted ascending by row.
  */
 export function childrenOf(
     nodes: ArgumentNode[],
@@ -19,12 +24,12 @@ export function childrenOf(
 ): ArgumentNode[] {
     return nodes
         .filter((n) => n.parentId === parentId && n.sheetId === sheetId)
-        .sort((a, b) => a.order - b.order);
+        .sort((a, b) => a.row - b.row);
 }
 
 /**
  * Returns root-level nodes (parentId === null) for the given sheet and speech,
- * sorted ascending by order.
+ * sorted ascending by row.
  */
 export function rootsOf(
     nodes: ArgumentNode[],
@@ -38,66 +43,73 @@ export function rootsOf(
                 n.sheetId === sheetId &&
                 n.speechId === speechId,
         )
-        .sort((a, b) => a.order - b.order);
+        .sort((a, b) => a.row - b.row);
 }
 
 /**
- * Creates a new ArgumentNode and returns the updated nodes array alongside
- * the created node.
- *
- * If `insertAfterOrder` is provided, the new node is inserted immediately after
- * that position and all nodes in the same column with a higher order are shifted
- * up by one. Otherwise the node is appended at the end of the column.
+ * Creates a new ArgumentNode at an exact cell and returns the updated nodes
+ * array alongside the created node. Caller guarantees (speechId, row) is free.
  */
-export function addNode(
+export function placeNodeAt(
     nodes: ArgumentNode[],
     input: {
         sheetId: string;
         speechId: string;
         parentId: string | null;
+        row: number;
         text?: string;
-        insertAfterOrder?: number;
     },
 ): { nodes: ArgumentNode[]; node: ArgumentNode } {
-    const isRoot = input.parentId === null;
-    // Roots order against ALL roots on the sheet (roots-anywhere); children order
-    // within their own (sheet, speech) column.
-    const inScope = (n: ArgumentNode): boolean =>
-        isRoot
-            ? n.sheetId === input.sheetId && n.parentId === null
-            : n.sheetId === input.sheetId && n.speechId === input.speechId;
-
-    const scope = nodes.filter(inScope);
-
-    let newOrder: number;
-    let updatedNodes: ArgumentNode[];
-
-    if (input.insertAfterOrder !== undefined) {
-        newOrder = input.insertAfterOrder + 1;
-        updatedNodes = nodes.map((n) =>
-            inScope(n) && n.order >= newOrder
-                ? { ...n, order: n.order + 1 }
-                : n,
-        );
-    } else {
-        newOrder =
-            scope.length > 0 ? Math.max(...scope.map((n) => n.order)) + 1 : 0;
-        updatedNodes = [...nodes];
-    }
-
     const node: ArgumentNode = {
         id: uid("node"),
         sheetId: input.sheetId,
         speechId: input.speechId,
         parentId: input.parentId,
-        order: newOrder,
+        row: input.row,
         text: input.text ?? "",
         statuses: [],
         bold: false,
         numberOverride: null,
     };
+    return { nodes: [...nodes, node], node };
+}
 
-    return { nodes: [...updatedNodes, node], node };
+/**
+ * Removes a node; its direct children become bare roots (parentId = null) in
+ * place — their coordinates are preserved. Replaces the old grandparent-
+ * reparenting removeNode (per spec: deleting an argument never vaporizes the
+ * answers written under it).
+ */
+export function orphanNode(
+    nodes: ArgumentNode[],
+    nodeId: string,
+): ArgumentNode[] {
+    return nodes
+        .filter((n) => n.id !== nodeId)
+        .map((n) => (n.parentId === nodeId ? { ...n, parentId: null } : n));
+}
+
+/** Removes a node and every transitive descendant. */
+export function deleteSubtree(
+    nodes: ArgumentNode[],
+    rootId: string,
+): ArgumentNode[] {
+    const childrenBy = new Map<string, string[]>();
+    for (const n of nodes) {
+        if (n.parentId === null) continue;
+        const arr = childrenBy.get(n.parentId);
+        if (arr) arr.push(n.id);
+        else childrenBy.set(n.parentId, [n.id]);
+    }
+    const doomed = new Set<string>();
+    const stack = [rootId];
+    while (stack.length) {
+        const id = stack.pop()!;
+        if (doomed.has(id)) continue;
+        doomed.add(id);
+        for (const c of childrenBy.get(id) ?? []) stack.push(c);
+    }
+    return nodes.filter((n) => !doomed.has(n.id));
 }
 
 /**
@@ -145,38 +157,6 @@ export function toggleStatus(
 }
 
 /**
- * Removes the target node and re-parents its direct children to the removed
- * node's parentId (so sub-answers are not orphaned).
- * Children of children are untouched (they still point at their parents).
- */
-export function removeNode(
-    nodes: ArgumentNode[],
-    nodeId: string,
-): ArgumentNode[] {
-    const target = nodes.find((n) => n.id === nodeId);
-    if (!target) return [...nodes];
-
-    const grandparentId = target.parentId;
-
-    return nodes
-        .filter((n) => n.id !== nodeId)
-        .map((n) =>
-            n.parentId === nodeId ? { ...n, parentId: grandparentId } : n,
-        );
-}
-
-/**
- * Sets a node's order to newOrder (simple reorder; no renormalization).
- */
-export function moveNode(
-    nodes: ArgumentNode[],
-    nodeId: string,
-    newOrder: number,
-): ArgumentNode[] {
-    return nodes.map((n) => (n.id === nodeId ? { ...n, order: newOrder } : n));
-}
-
-/**
  * Toggles the bold decoration on the target node.
  */
 export function toggleBold(
@@ -184,30 +164,4 @@ export function toggleBold(
     nodeId: string,
 ): ArgumentNode[] {
     return nodes.map((n) => (n.id === nodeId ? { ...n, bold: !n.bold } : n));
-}
-
-/**
- * Moves a node to a different column (speechId) and parent, appending it at the
- * end of the destination column. Used by drag-to-move.
- */
-export function rehomeNode(
-    nodes: ArgumentNode[],
-    nodeId: string,
-    speechId: string,
-    parentId: string | null,
-): ArgumentNode[] {
-    const column = nodes.filter((n) => {
-        const target = nodes.find((x) => x.id === nodeId);
-        return (
-            target &&
-            n.sheetId === target.sheetId &&
-            n.speechId === speechId &&
-            n.id !== nodeId
-        );
-    });
-    const newOrder =
-        column.length > 0 ? Math.max(...column.map((n) => n.order)) + 1 : 0;
-    return nodes.map((n) =>
-        n.id === nodeId ? { ...n, speechId, parentId, order: newOrder } : n,
-    );
 }
