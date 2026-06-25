@@ -76,10 +76,13 @@ export default function SearchPalette() {
         }
     }, [open]);
 
-    // Rebuild the index only when the underlying data changes.
+    // Rebuild only when sheets or nodes change, not on cursor/selection mutations.
+    const sheets = round?.sheets;
+    const nodes = round?.nodes;
     const entries = useMemo(
         () => buildSearchEntries(round),
-        [round?.sheets, round?.nodes],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [sheets, nodes],
     );
 
     const rows = useMemo<Row[]>(() => {
