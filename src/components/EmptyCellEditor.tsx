@@ -2,7 +2,8 @@
 
 /**
  * EmptyCellEditor — shown when a blank cell is selected. The first keystroke
- * creates a real node (root in this column) and hands editing off to GridCell.
+ * creates a BARE node (parentId: null) at the exact cell and hands editing
+ * off to GridCell by setting selection to the now-occupied cell.
  */
 import { useEffect, useRef } from "react";
 import { useRoundStore } from "@/lib/store/useRoundStore";
@@ -10,20 +11,23 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 export default function EmptyCellEditor({
     sheetId,
     speechId,
-    parentId = null,
 }: {
     sheetId: string;
     speechId: string;
     parentId?: string | null;
 }) {
     const ref = useRef<HTMLTextAreaElement>(null);
-    const addNode = useRoundStore((s) => s.addNode);
-    const setSelection = useRoundStore((s) => s.setSelection);
-    const updateNodeText = useRoundStore((s) => s.updateNodeText);
+    // Read selection to discover which row we're editing.
+    const selection = useRoundStore((s) => s.selection);
 
     useEffect(() => {
         ref.current?.focus();
     }, []);
+
+    const row =
+        selection?.sheetId === sheetId && selection?.speechId === speechId
+            ? selection.row
+            : 0;
 
     return (
         <textarea
@@ -33,14 +37,11 @@ export default function EmptyCellEditor({
             spellCheck={false}
             value=""
             onChange={(e) => {
-                const id = addNode({
-                    sheetId,
-                    speechId,
-                    parentId,
-                    text: e.target.value,
-                });
-                updateNodeText(id, e.target.value);
-                setSelection({ sheetId, speechId, nodeId: id });
+                const id = useRoundStore
+                    .getState()
+                    .placeBareNode({ sheetId, speechId, row }, e.target.value);
+                useRoundStore.getState().updateNodeText(id, e.target.value);
+                // Selection stays on the cell; GridCell now renders.
             }}
         />
     );

@@ -3,7 +3,9 @@
 /**
  * GridCell — renders a single argument node cell in the flow grid.
  *
- * Reads selection/mode/actions from the zustand store directly.
+ * Modeless: a cell enters edit mode when it is selected. The first printable
+ * keystroke on an EMPTY cell is handled by EmptyCellEditor; here we just
+ * render a textarea when selected.
  */
 
 import { useRef, useEffect, useState } from "react";
@@ -17,15 +19,8 @@ export interface GridCellProps {
     sheetId: string;
     speechId: string;
     isDropped: boolean;
-    /** All nodes on this sheet (needed for numberFor). */
     sheetNodes: ArgumentNode[];
-    /** True if this node has children (is a parent). */
     hasChildren: boolean;
-    /** True when rendered inside a CX sheet — suppresses numbering and badges. */
-    isCx?: boolean;
-    /** Called after a drag-drop reparents another node under this one, with the
-     *  dragged node's id, so the parent can confirm the move (e.g. a flash). */
-    onReparent?: (draggedId: string) => void;
 }
 
 export default function GridCell({
@@ -35,15 +30,10 @@ export default function GridCell({
     isDropped,
     sheetNodes,
     hasChildren,
-    isCx,
-    onReparent,
 }: GridCellProps) {
     const selection = useRoundStore((s) => s.selection);
-    const mode = useRoundStore((s) => s.mode);
-    const keymapName = useRoundStore((s) => s.keymapName);
     const setSelection = useRoundStore((s) => s.setSelection);
     const updateNodeText = useRoundStore((s) => s.updateNodeText);
-    const setMode = useRoundStore((s) => s.setMode);
     const autoNumber = useRoundStore((s) => s.autoNumber);
     const labelDrops = useRoundStore((s) => s.labelDrops);
     const moveActive = useRoundStore((s) => s.moveSource !== null);
@@ -51,18 +41,11 @@ export default function GridCell({
     const isSelected =
         selection?.sheetId === sheetId &&
         selection?.speechId === speechId &&
-        selection?.nodeId === node.id;
+        selection?.row === node.row;
 
-    // Default keymap: always editable when selected (no modal insert mode).
-    // Move mode suppresses editing entirely so keys route to the move bindings.
-    const isInsertMode =
-        !moveActive &&
-        isSelected &&
-        (mode === "insert" || keymapName === "default");
+    const isEditing = !moveActive && isSelected;
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    // Grow the textarea to fit its content so it occupies the same space the
-    // rendered text would — the cell itself is the only visible box.
     const autoHeight = () => {
         const el = inputRef.current;
         if (!el) return;
@@ -71,20 +54,17 @@ export default function GridCell({
     };
 
     useEffect(() => {
-        if (isInsertMode && inputRef.current) {
+        if (isEditing && inputRef.current) {
             const el = inputRef.current;
             el.focus();
-            // A freshly-mounted textarea defaults its caret to position 0. When editing
-            // is handed off from EmptyCellEditor (first keystroke creates the node), that
-            // would drop the caret to the LEFT of the just-typed letter — put it at the end.
             const end = el.value.length;
             el.setSelectionRange(end, end);
             autoHeight();
         }
-    }, [isInsertMode]);
+    }, [isEditing]);
 
     const handleClick = () => {
-        setSelection({ sheetId, speechId, nodeId: node.id });
+        setSelection({ sheetId, speechId, row: node.row });
     };
 
     const [isDragging, setIsDragging] = useState(false);
@@ -92,7 +72,7 @@ export default function GridCell({
     const num = numberFor(sheetNodes, node.id);
     const showExtended = node.statuses.includes("extended");
 
-    if (isInsertMode) {
+    if (isEditing) {
         return (
             <textarea
                 ref={inputRef}
@@ -104,17 +84,22 @@ export default function GridCell({
                     updateNodeText(node.id, e.target.value);
                     autoHeight();
                 }}
-                onBlur={() => setMode("normal")}
                 onKeyDown={(e) => {
-                    // Single-line cells: never insert a literal newline.
-                    // Backspace on an empty cell deletes the node (and reselects a neighbor).
-                    if (e.key === "Backspace" && node.text === "") {
+                    if (e.key === "Escape") {
                         e.preventDefault();
-                        executeCommand("node.delete");
+                        inputRef.current?.blur();
                         return;
                     }
-                    // Plain Enter / Shift+Enter are handled by the global keymap layer
-                    // (node.addAnswer / node.answerAcross). Do not intercept them here.
+                    if (e.key === "Backspace" && node.text === "") {
+                        e.preventDefault();
+                        executeCommand("cell.clear");
+                        return;
+                    }
+                    // Plain Enter / Shift+Enter / Tab are handled by the keymap.
+                    if (e.key === "Tab" || e.key === "Enter") {
+                        // Don't intercept; let global keymap handle.
+                        return;
+                    }
                 }}
             />
         );
@@ -145,18 +130,18 @@ export default function GridCell({
                 const dragged = e.dataTransfer.getData("text/df-node");
                 if (dragged && dragged !== node.id) {
                     useRoundStore.getState().setNodeParent(dragged, node.id);
-                    onReparent?.(dragged);
+                    useRoundStore.getState().setFlashNode(dragged);
                 }
             }}
             onClick={handleClick}
             style={{ display: "block", width: "100%", cursor: "pointer" }}
         >
-            {!isCx && autoNumber && num !== null && (
+            {autoNumber && num !== null && (
                 <span className="arg-num">{num}.</span>
             )}
-            {!isCx && showExtended && <span className="arg-ext">↳</span>}
+            {showExtended && <span className="arg-ext">↳</span>}
             <span className={classes || undefined}>{node.text}</span>
-            {!isCx && labelDrops && isDropped && (
+            {labelDrops && isDropped && (
                 <>
                     {" "}
                     <span className="badge-drop">⚠ dropped</span>

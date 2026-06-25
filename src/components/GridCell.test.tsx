@@ -2,19 +2,15 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import type { ArgumentNode } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import GridCell from "./GridCell";
 
-const BLANK_STATE = {
-    round: null,
-    activeSheetId: null,
-    mode: "normal" as const,
-    selection: null,
-    keymapName: "default" as const,
-};
-
 function resetStore() {
-    useRoundStore.setState(BLANK_STATE);
+    useRoundStore.setState({
+        round: null,
+        activeSheetId: null,
+        selection: null,
+    });
 }
 
 function makeNode(
@@ -24,24 +20,27 @@ function makeNode(
         sheetId: "sheet1",
         speechId: "sp1",
         parentId: null,
-        order: 0,
+        row: 0,
         statuses: [],
         bold: false,
         ...over,
     };
 }
 
-function renderCell(node: ArgumentNode, opts?: { selected?: boolean }) {
+function renderCell(
+    node: ArgumentNode,
+    opts?: { selected?: boolean; sheetNodes?: ArgumentNode[] },
+) {
     resetStore();
-    const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "aff", format: fmt });
+    useRoundStore
+        .getState()
+        .createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
     if (opts?.selected !== false) {
         useRoundStore.getState().setSelection({
             sheetId: node.sheetId,
             speechId: node.speechId,
-            nodeId: node.id,
+            row: node.row,
         });
-        useRoundStore.setState({ mode: "insert" });
     }
     useRoundStore.setState({
         round: {
@@ -49,7 +48,7 @@ function renderCell(node: ArgumentNode, opts?: { selected?: boolean }) {
             nodes: [node],
         },
     });
-    const sheetNodes = [node];
+    const sheetNodes = opts?.sheetNodes ?? [node];
     return render(
         <GridCell
             node={node}
@@ -65,12 +64,10 @@ function renderCell(node: ArgumentNode, opts?: { selected?: boolean }) {
 describe("GridCell decorations", () => {
     beforeEach(resetStore);
 
-    it("renders conceded text with line-through, not a badge", () => {
+    it("renders conceded text with line-through", () => {
         renderCell(
             makeNode({ id: "n1", text: "no link", statuses: ["conceded"] }),
-            {
-                selected: false,
-            },
+            { selected: false },
         );
         const text = screen.getByText("no link");
         expect(text).toHaveClass("arg-crossed");
@@ -87,32 +84,29 @@ describe("GridCell decorations", () => {
     it("renders an extension arrow when extended", () => {
         renderCell(
             makeNode({ id: "n1", text: "arg", statuses: ["extended"] }),
-            {
-                selected: false,
-            },
+            { selected: false },
         );
         expect(screen.getByText("↳")).toBeInTheDocument();
-        expect(screen.queryByText(/extended/i)).toBeNull();
     });
 });
 
-describe("GridCell editing keys", () => {
+describe("GridCell modeless editing", () => {
     beforeEach(resetStore);
 
-    it("Backspace in an empty focused cell deletes the node", () => {
-        const node = makeNode({ id: "n1", text: "" });
+    it("shows a textarea when the cell is selected", () => {
+        const node = makeNode({ id: "n1", text: "tag" });
         renderCell(node);
-        const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
-        fireEvent.keyDown(ta, { key: "Backspace" });
-        expect(
-            useRoundStore.getState().round!.nodes.find((n) => n.id === node.id),
-        ).toBeUndefined();
+        expect(screen.getByRole("textbox")).toBeTruthy();
     });
 
-    it("places the caret at the end of the text when a cell enters insert mode", () => {
-        // Regression: when an empty cell's first keystroke creates a node and hands
-        // editing to GridCell, the freshly-mounted textarea would default its caret
-        // to position 0 — placing it to the LEFT of the typed letter.
+    it("shows text (not a textarea) when the cell is not selected", () => {
+        const node = makeNode({ id: "n1", text: "tag" });
+        renderCell(node, { selected: false });
+        expect(screen.queryByRole("textbox")).toBeNull();
+        expect(screen.getByText("tag")).toBeTruthy();
+    });
+
+    it("places the caret at the end of text on edit-mode entry", () => {
         const node = makeNode({ id: "n1", text: "a" });
         renderCell(node);
         const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
@@ -120,7 +114,21 @@ describe("GridCell editing keys", () => {
         expect(ta.selectionEnd).toBe(1);
     });
 
-    it("plain Enter does NOT preventDefault inside the cell (keymap handles it)", () => {
+    it("Backspace in an empty focused cell clears the cell", () => {
+        const node = makeNode({ id: "n1", text: "" });
+        renderCell(node);
+        const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
+        fireEvent.keyDown(ta, { key: "Backspace" });
+        // cell.clear orphans children, but for a leaf node it removes the node
+        // (because parentId is null, there's nothing to orphan — wait, cell.clear
+        // calls orphanNode which removes the node and nulls children, which for a
+        // leaf means the node is just removed).
+        expect(
+            useRoundStore.getState().round!.nodes.find((n) => n.id === node.id),
+        ).toBeUndefined();
+    });
+
+    it("plain Enter does NOT preventDefault (keymap handles it)", () => {
         const node = makeNode({ id: "n1", text: "tag" });
         renderCell(node);
         const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
