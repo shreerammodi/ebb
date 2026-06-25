@@ -19,17 +19,24 @@ import type {
 import { uid } from "@/lib/model/ids";
 import { emptyScouting, makeCxSheet } from "@/lib/model/normalize";
 import {
-    addNode as treeAddNode,
+    placeNodeAt,
+    orphanNode,
+    deleteSubtree as treeDeleteSubtree,
     updateText,
     toggleStatus,
     toggleBold,
     setParent,
-    removeNode as treeRemoveNode,
-    moveNode as treeMoveNode,
-    rehomeNode as treeRehomeNode,
 } from "@/lib/model/tree";
 import { detectDrops } from "@/lib/model/drops";
 import { createGroup, removeMemberOrDelete } from "@/lib/model/groups";
+import { columnsForSheet } from "@/lib/grid/columns";
+import {
+    occupantAt,
+    placeForSpawn,
+    rippleDown,
+    rippleUp,
+    translateSubtree,
+} from "@/lib/grid/coords";
 
 // ─── State shape ──────────────────────────────────────────────────────────────
 
@@ -40,25 +47,20 @@ export interface RoundState {
     /** Internal: identifies the last commit so consecutive same-key commits coalesce. */
     lastCommitKey: string | null;
     activeSheetId: string | null;
-    mode: "normal" | "insert";
     /**
-     * The focused cell. `nodeId: ""` means an empty cell is focused; `row` (if
-     * present) identifies which physical row that empty cell occupies, so the
-     * grid can place the editor on a specific blank row (Excel-style entry cell
-     * below the content). `row` is ignored when `nodeId` refers to a real node.
+     * The focused cell as a grid coordinate. `nodeId` is no longer stored —
+     * derived via `occupantAt` when needed.
      */
     selection: {
         sheetId: string;
         speechId: string;
-        nodeId: string;
-        row?: number;
+        row: number;
     } | null;
     keymapName: "default" | "vim";
     /** CommandId → custom chord (normal mode), overriding the preset binding. */
     keymapOverrides: Record<string, string>;
     autoNumber: boolean;
     labelDrops: boolean;
-    straightDown: boolean;
     quickSwitcherOpen: boolean;
     settingsOpen: boolean;
     cheatsheetOpen: boolean;
@@ -89,27 +91,32 @@ export interface RoundActions {
         sheetId: string;
         speechId: string;
         parentId: string | null;
+        row?: number;
         text?: string;
-        insertAfterOrder?: number;
     }): string;
     updateNodeText(nodeId: string, text: string): void;
     toggleNodeStatus(nodeId: string, status: NodeStatus): void;
     toggleNodeBold(nodeId: string): void;
     setNodeParent(nodeId: string, parentId: string | null): void;
-    rehomeNode(nodeId: string, speechId: string, parentId: string | null): void;
-    removeNode(nodeId: string): void;
-    moveNode(nodeId: string, newOrder: number): void;
+
+    placeBareNode(cell: { sheetId: string; speechId: string; row: number }, text?: string): string;
+    spawnSibling(): string | null;
+    spawnResponse(): string | null;
+    insertRowAbove(): void;
+    insertRowBelow(): void;
+    deleteRow(): void;
+    clearCell(): void;
+    deleteSubtreeAt(): void;
+    commitSubtreeMove(dCol: number, dRow: number): void;
 
     groupNodes(sheetId: string, nodeIds: string[], label: string): void;
     ungroupNode(nodeId: string): void;
 
-    setMode(mode: "normal" | "insert"): void;
     setSelection(
         selection: {
             sheetId: string;
             speechId: string;
-            nodeId: string;
-            row?: number;
+            row: number;
         } | null,
     ): void;
 
@@ -129,7 +136,6 @@ export interface RoundActions {
     clearKeymapOverride(commandId: CommandId): void;
     setAutoNumber(v: boolean): void;
     setLabelDrops(v: boolean): void;
-    setStraightDown(v: boolean): void;
     setQuickSwitcherOpen(open: boolean): void;
     setSettingsOpen(open: boolean): void;
     setCheatsheetOpen(open: boolean): void;
@@ -198,14 +204,12 @@ const DISPLAY_SETTINGS_KEY = "df-display-settings";
 interface DisplaySettings {
     autoNumber: boolean;
     labelDrops: boolean;
-    straightDown: boolean;
 }
 
 function loadDisplaySettings(): DisplaySettings {
     const fallback: DisplaySettings = {
         autoNumber: true,
         labelDrops: true,
-        straightDown: false,
     };
     if (typeof window === "undefined") return fallback;
     try {
@@ -215,8 +219,6 @@ function loadDisplaySettings(): DisplaySettings {
         return {
             autoNumber: typeof p.autoNumber === "boolean" ? p.autoNumber : true,
             labelDrops: typeof p.labelDrops === "boolean" ? p.labelDrops : true,
-            straightDown:
-                typeof p.straightDown === "boolean" ? p.straightDown : false,
         };
     } catch {
         return fallback;
@@ -247,13 +249,11 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     future: [],
     lastCommitKey: null,
     activeSheetId: null,
-    mode: "normal",
     selection: null,
     keymapName: initialKeymapSettings.keymapName,
     keymapOverrides: initialKeymapSettings.keymapOverrides,
     autoNumber: initialDisplaySettings.autoNumber,
     labelDrops: initialDisplaySettings.labelDrops,
-    straightDown: initialDisplaySettings.straightDown,
     quickSwitcherOpen: false,
     settingsOpen: false,
     cheatsheetOpen: false,
@@ -282,7 +282,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             future: [],
             lastCommitKey: null,
             activeSheetId: null,
-            mode: "normal",
             selection: null,
             quickSwitcherOpen: false,
             settingsOpen: false,
@@ -376,12 +375,18 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         set({ activeSheetId: sheetId });
     },
 
-    // ── addNode ────────────────────────────────────────────────────────────────
+    // ── addNode (legacy wrapper, prefer placeBareNode) ──────────────────────
     addNode(input) {
         const { round } = get();
         if (!round) throw new Error("No active round");
-
-        const { nodes, node } = treeAddNode(round.nodes, input);
+        const row = input.row ?? 0;
+        const { nodes, node } = placeNodeAt(round.nodes, {
+            sheetId: input.sheetId,
+            speechId: input.speechId,
+            parentId: input.parentId,
+            row,
+            text: input.text,
+        });
         get()._commit(null, (r) => ({ ...r, nodes }));
         return node.id;
     },
@@ -422,33 +427,188 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         }));
     },
 
-    // ── removeNode ─────────────────────────────────────────────────────────────
+    // ── removeNode ───────────────────────────────────────────────────────────
     removeNode(nodeId) {
         const { round, selection } = get();
         if (!round) return;
         get()._commit(null, (r) => ({
             ...r,
-            nodes: treeRemoveNode(r.nodes, nodeId),
+            nodes: orphanNode(r.nodes, nodeId),
             groups: removeMemberOrDelete(r.groups, nodeId),
         }));
-        if (selection?.nodeId === nodeId) set({ selection: null });
     },
 
-    // ── moveNode ───────────────────────────────────────────────────────────────
-    moveNode(nodeId, newOrder) {
-        if (!get().round) return;
+    // ── Coordinate-based actions ──────────────────────────────────────────────
+
+    placeBareNode(cell, text) {
+        const { round } = get();
+        if (!round) throw new Error("No active round");
+        const { nodes, node } = placeNodeAt(round.nodes, {
+            ...cell,
+            parentId: null,
+            text,
+        });
+        get()._commit(null, (r) => ({ ...r, nodes }));
+        return node.id;
+    },
+
+    spawnSibling() {
+        const { round, selection } = get();
+        if (!round || !selection) return null;
+        const cur = occupantAt(
+            round.nodes,
+            selection.sheetId,
+            selection.speechId,
+            selection.row,
+        );
+        if (!cur) return null;
+        const sheet = round.sheets.find((s) => s.id === selection.sheetId);
+        if (!sheet) return null;
+        const speeches = columnsForSheet(round.format, sheet);
+        const placed = placeForSpawn(
+            round.nodes,
+            selection.sheetId,
+            speeches,
+            cur,
+            "sibling",
+        );
+        if (!placed) return null;
+        const { nodes, node } = placeNodeAt(placed.nodes, {
+            sheetId: selection.sheetId,
+            speechId: placed.speechId,
+            parentId: cur.parentId,
+            row: placed.row,
+        });
+        get()._commit(null, (r) => ({ ...r, nodes }));
+        set({
+            selection: {
+                sheetId: selection.sheetId,
+                speechId: placed.speechId,
+                row: placed.row,
+            },
+        });
+        return node.id;
+    },
+
+    spawnResponse() {
+        const { round, selection } = get();
+        if (!round || !selection) return null;
+        const cur = occupantAt(
+            round.nodes,
+            selection.sheetId,
+            selection.speechId,
+            selection.row,
+        );
+        if (!cur) return null;
+        const sheet = round.sheets.find((s) => s.id === selection.sheetId);
+        if (!sheet) return null;
+        const speeches = columnsForSheet(round.format, sheet);
+        const placed = placeForSpawn(
+            round.nodes,
+            selection.sheetId,
+            speeches,
+            cur,
+            "response",
+        );
+        if (!placed) return null;
+        const { nodes, node } = placeNodeAt(placed.nodes, {
+            sheetId: selection.sheetId,
+            speechId: placed.speechId,
+            parentId: cur.id,
+            row: placed.row,
+        });
+        get()._commit(null, (r) => ({ ...r, nodes }));
+        set({
+            selection: {
+                sheetId: selection.sheetId,
+                speechId: placed.speechId,
+                row: placed.row,
+            },
+        });
+        return node.id;
+    },
+
+    insertRowAbove() {
+        const { round, selection } = get();
+        if (!round || !selection) return;
         get()._commit(null, (r) => ({
             ...r,
-            nodes: treeMoveNode(r.nodes, nodeId, newOrder),
+            nodes: rippleDown(r.nodes, selection.sheetId, selection.row, 1),
         }));
     },
 
-    rehomeNode(nodeId, speechId, parentId) {
-        if (!get().round) return;
+    insertRowBelow() {
+        const { round, selection } = get();
+        if (!round || !selection) return;
         get()._commit(null, (r) => ({
             ...r,
-            nodes: treeRehomeNode(r.nodes, nodeId, speechId, parentId),
+            nodes: rippleDown(r.nodes, selection.sheetId, selection.row + 1, 1),
         }));
+    },
+
+    deleteRow() {
+        const { round, selection } = get();
+        if (!round || !selection) return;
+        get()._commit(null, (r) => {
+            const kept = r.nodes.filter(
+                (n) =>
+                    !(n.sheetId === selection.sheetId && n.row === selection.row),
+            );
+            return {
+                ...r,
+                nodes: rippleUp(kept, selection.sheetId, selection.row + 1, 1),
+            };
+        });
+    },
+
+    clearCell() {
+        const { round, selection } = get();
+        if (!round || !selection) return;
+        const cur = occupantAt(
+            round.nodes,
+            selection.sheetId,
+            selection.speechId,
+            selection.row,
+        );
+        if (!cur) return;
+        get()._commit(null, (r) => ({
+            ...r,
+            nodes: orphanNode(r.nodes, cur.id),
+            groups: removeMemberOrDelete(r.groups, cur.id),
+        }));
+    },
+
+    deleteSubtreeAt() {
+        const { round, selection } = get();
+        if (!round || !selection) return;
+        const cur = occupantAt(
+            round.nodes,
+            selection.sheetId,
+            selection.speechId,
+            selection.row,
+        );
+        if (!cur) return;
+        get()._commit(null, (r) => ({
+            ...r,
+            nodes: treeDeleteSubtree(r.nodes, cur.id),
+        }));
+    },
+
+    commitSubtreeMove(dCol, dRow) {
+        const { round, selection, moveSource } = get();
+        if (!round || !selection || !moveSource) return;
+        const sheet = round.sheets.find((s) => s.id === selection.sheetId);
+        if (!sheet) return;
+        const speeches = columnsForSheet(round.format, sheet);
+        const { nodes, ok } = translateSubtree(
+            round.nodes,
+            speeches,
+            moveSource,
+            dCol,
+            dRow,
+        );
+        if (!ok) return;
+        get()._commit(null, (r) => ({ ...r, nodes }));
     },
 
     // ── groupNodes ─────────────────────────────────────────────────────────────
@@ -471,11 +631,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             ...r,
             groups: removeMemberOrDelete(r.groups, nodeId),
         }));
-    },
-
-    // ── setMode ────────────────────────────────────────────────────────────────
-    setMode(mode) {
-        set({ mode, lastCommitKey: null });
     },
 
     // ── setSelection ───────────────────────────────────────────────────────────
@@ -540,9 +695,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
               null);
         const selValid =
             selection &&
-            round.sheets.some((s) => s.id === selection.sheetId) &&
-            (selection.nodeId === "" ||
-                round.nodes.some((n) => n.id === selection.nodeId));
+            round.sheets.some((s) => s.id === selection.sheetId);
         set({
             activeSheetId: nextActive,
             selection: selValid ? selection : null,
@@ -585,7 +738,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         saveDisplaySettings({
             autoNumber: v,
             labelDrops: get().labelDrops,
-            straightDown: get().straightDown,
         });
     },
 
@@ -595,17 +747,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         saveDisplaySettings({
             autoNumber: get().autoNumber,
             labelDrops: v,
-            straightDown: get().straightDown,
-        });
-    },
-
-    // ── setStraightDown ────────────────────────────────────────────────────────
-    setStraightDown(v) {
-        set({ straightDown: v });
-        saveDisplaySettings({
-            autoNumber: get().autoNumber,
-            labelDrops: get().labelDrops,
-            straightDown: v,
         });
     },
 
