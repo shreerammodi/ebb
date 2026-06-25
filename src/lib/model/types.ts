@@ -26,17 +26,17 @@ export interface Format {
     prepSeconds: { aff: number; neg: number };
 }
 
-/** A single argument on the flow; forms a tree via parentId. */
+/** A single argument on the flow. Position is grid-owned: (speechId, row). */
 export interface ArgumentNode {
     id: string;
     /** The sheet (flow page) this node belongs to. */
     sheetId: string;
     /** The speech column this node belongs to. */
     speechId: string;
-    /** Parent node id, or null for root-level arguments. */
+    /** Parent node id, or null. Relationship metadata only — does NOT drive layout. */
     parentId: string | null;
-    /** Vertical sort key within a (sheet, speech) column. */
-    order: number;
+    /** Global grid row within the sheet (shared across all columns). */
+    row: number;
     text: string;
     statuses: NodeStatus[];
     /** Emphasis decoration (renders bold). */
