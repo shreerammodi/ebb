@@ -39,8 +39,6 @@ export type CommandId =
     | "settings.open"
     | "info.open"
     | "help.open"
-    | "group.withBelow"
-    | "group.ungroup"
     | "move.grab"
     | "move.commit"
     | "move.cancel";
@@ -96,11 +94,6 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "settings.open": { id: "settings.open", label: "Open settings" },
     "info.open": { id: "info.open", label: "Open round info" },
     "help.open": { id: "help.open", label: "Show keybindings" },
-    "group.withBelow": {
-        id: "group.withBelow",
-        label: "Group with node below",
-    },
-    "group.ungroup": { id: "group.ungroup", label: "Remove from group" },
     "move.grab": { id: "move.grab", label: "Grab to move/reparent" },
     "move.commit": { id: "move.commit", label: "Drop here (move mode)" },
     "move.cancel": { id: "move.cancel", label: "Cancel move" },

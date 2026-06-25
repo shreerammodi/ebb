@@ -805,63 +805,6 @@ describe("straightDown behavior", () => {
     });
 });
 
-describe("Group Commands", () => {
-    function setupWithTwoNodes() {
-        const { sheetId, speeches } = setupRound();
-        const sp = speeches[1].id; // 1NC
-        const a = useRoundStore
-            .getState()
-            .addNode({ sheetId, speechId: sp, parentId: null });
-        const b = useRoundStore
-            .getState()
-            .addNode({ sheetId, speechId: sp, parentId: null });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp, nodeId: a });
-        return { sheetId, sp, a, b };
-    }
-
-    it("group.withBelow groups the selected node with the node below it", () => {
-        const { a, b } = setupWithTwoNodes();
-
-        executeCommand("group.withBelow");
-        const groups = useRoundStore.getState().round!.groups;
-        expect(groups).toHaveLength(1);
-        expect(new Set(groups[0].memberIds)).toEqual(new Set([a, b]));
-    });
-
-    it("group.withBelow no-ops when there is no node below", () => {
-        const { sheetId, speeches } = setupRound();
-        const sp = speeches[1].id;
-        const a = useRoundStore
-            .getState()
-            .addNode({ sheetId, speechId: sp, parentId: null });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp, nodeId: a });
-
-        executeCommand("group.withBelow");
-        expect(useRoundStore.getState().round!.groups).toHaveLength(0);
-    });
-
-    it("group.ungroup removes the selected node's group", () => {
-        const { sheetId, sp, a, b } = setupWithTwoNodes();
-
-        useRoundStore.getState().groupNodes(sheetId, [a, b], "");
-        expect(useRoundStore.getState().round!.groups).toHaveLength(1);
-
-        executeCommand("group.ungroup");
-        expect(useRoundStore.getState().round!.groups).toHaveLength(0);
-    });
-
-    it("group.ungroup no-ops when the node has no group", () => {
-        const { sp, sheetId, a } = setupWithTwoNodes();
-
-        executeCommand("group.ungroup");
-        expect(useRoundStore.getState().round!.groups).toHaveLength(0);
-    });
-});
-
 describe("keyboard grab & move", () => {
     beforeEach(resetStore);
 
