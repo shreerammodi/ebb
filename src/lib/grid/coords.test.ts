@@ -58,3 +58,95 @@ describe("coords", () => {
         expect(out.find((m) => m.id === "o")!.row).toBe(1);
     });
 });
+
+import {
+    spawnTarget,
+    placeForSpawn,
+    descendantIds,
+    translateSubtree,
+} from "./coords";
+
+describe("spawn placement", () => {
+    it("sibling targets next row, same column", () => {
+        const nodes = [n("p", "a", 0)];
+        const t = spawnTarget(nodes, "s1", speeches, nodes[0], "sibling");
+        expect(t).toEqual({ speechId: "a", row: 1 });
+    });
+
+    it("response targets same row, next column", () => {
+        const nodes = [n("p", "a", 0)];
+        const t = spawnTarget(nodes, "s1", speeches, nodes[0], "response");
+        expect(t).toEqual({ speechId: "b", row: 0 });
+    });
+
+    it("response off the last column is null", () => {
+        const nodes = [n("p", "c", 0)];
+        expect(spawnTarget(nodes, "s1", speeches, nodes[0], "response")).toBeNull();
+    });
+
+    it("placeForSpawn ripples when the sibling row is occupied", () => {
+        // contentions at a:0,1,2 ; first response already at b:0
+        const nodes = [
+            n("c1", "a", 0),
+            n("c2", "a", 1),
+            n("c3", "a", 2),
+            n("r1", "b", 0),
+        ];
+        const res = placeForSpawn(nodes, "s1", speeches, nodes[3], "sibling")!;
+        expect({ speechId: res.speechId, row: res.row }).toEqual({
+            speechId: "b",
+            row: 1,
+        });
+        // c2 and c3 rippled down to keep alignment
+        expect(res.nodes.find((m) => m.id === "c2")!.row).toBe(2);
+        expect(res.nodes.find((m) => m.id === "c3")!.row).toBe(3);
+    });
+
+    it("placeForSpawn does NOT ripple when the target cell is free", () => {
+        const nodes = [n("p", "a", 0)];
+        const res = placeForSpawn(nodes, "s1", speeches, nodes[0], "response")!;
+        expect({ speechId: res.speechId, row: res.row }).toEqual({
+            speechId: "b",
+            row: 0,
+        });
+        expect(res.nodes).toEqual(nodes); // untouched
+    });
+});
+
+describe("subtree", () => {
+    it("descendantIds collects root + transitive children", () => {
+        const nodes = [
+            n("root", "a", 0),
+            { ...n("c", "b", 0), parentId: "root" },
+            { ...n("gc", "c", 0), parentId: "c" },
+            n("other", "a", 1),
+        ];
+        expect(descendantIds(nodes, "root")).toEqual(
+            new Set(["root", "c", "gc"]),
+        );
+    });
+
+    it("translateSubtree shifts the whole subtree by delta", () => {
+        const nodes = [
+            n("root", "a", 0),
+            { ...n("c", "b", 0), parentId: "root" },
+        ];
+        const res = translateSubtree(nodes, speeches, "root", 0, 2);
+        expect(res.ok).toBe(true);
+        expect(res.nodes.find((m) => m.id === "root")!.row).toBe(2);
+        expect(res.nodes.find((m) => m.id === "c")!.row).toBe(2);
+    });
+
+    it("translateSubtree rejects a collision with a non-subtree node", () => {
+        const nodes = [n("root", "a", 0), n("blocker", "a", 2)];
+        const res = translateSubtree(nodes, speeches, "root", 0, 2);
+        expect(res.ok).toBe(false);
+        expect(res.nodes).toEqual(nodes);
+    });
+
+    it("translateSubtree rejects moving out of column bounds", () => {
+        const nodes = [n("root", "c", 0)];
+        const res = translateSubtree(nodes, speeches, "root", 1, 0);
+        expect(res.ok).toBe(false);
+    });
+});
