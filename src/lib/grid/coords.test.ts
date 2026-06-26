@@ -232,3 +232,88 @@ describe("isReservedCell", () => {
         expect(isReservedCell(nodes, "s1", "b", 2)).toBe(false); // r3 lives here
     });
 });
+
+// ── Excel data-edge jump + corner navigation ─────────────────────────────────
+
+import { jumpTarget, cornerTarget } from "./coords";
+
+describe("jumpTarget (Excel Ctrl/Cmd+Arrow)", () => {
+    it("extends to the end of a contiguous run downward", () => {
+        // a:0,1,2 filled, a:3 empty, a:5 filled
+        const nodes = [
+            n("x0", "a", 0),
+            n("x1", "a", 1),
+            n("x2", "a", 2),
+            n("x5", "a", 5),
+        ];
+        const t = jumpTarget(nodes, "s1", speeches, { speechId: "a", row: 0 }, "down");
+        expect(t).toEqual({ speechId: "a", row: 2 }); // end of the 0..2 run
+    });
+
+    it("from the end of a run, skips the gap to the next filled cell", () => {
+        const nodes = [n("x2", "a", 2), n("x5", "a", 5)];
+        const t = jumpTarget(nodes, "s1", speeches, { speechId: "a", row: 2 }, "down");
+        expect(t).toEqual({ speechId: "a", row: 5 });
+    });
+
+    it("from an empty cell, jumps to the next filled cell", () => {
+        const nodes = [n("x5", "a", 5)];
+        const t = jumpTarget(nodes, "s1", speeches, { speechId: "a", row: 0 }, "down");
+        expect(t).toEqual({ speechId: "a", row: 5 });
+    });
+
+    it("stays put when already at the bottom of the used range", () => {
+        const nodes = [n("x5", "a", 5)];
+        const t = jumpTarget(nodes, "s1", speeches, { speechId: "a", row: 5 }, "down");
+        expect(t).toEqual({ speechId: "a", row: 5 });
+    });
+
+    it("jumps up to row 0 when no filled cell lies above", () => {
+        const nodes = [n("x5", "a", 5)];
+        const t = jumpTarget(nodes, "s1", speeches, { speechId: "a", row: 3 }, "up");
+        expect(t).toEqual({ speechId: "a", row: 0 });
+    });
+
+    it("jumps right across columns to the next filled cell", () => {
+        const nodes = [n("x", "c", 0)];
+        const t = jumpTarget(nodes, "s1", speeches, { speechId: "a", row: 0 }, "right");
+        expect(t).toEqual({ speechId: "c", row: 0 });
+    });
+
+    it("never lands on a reserved cell (stays put)", () => {
+        // arg in col a with a two-row response band in col b → a:1 reserved.
+        const nodes = [
+            n("arg", "a", 0),
+            cn("r1", "b", 0, "arg"),
+            cn("r2", "b", 1, "arg"),
+        ];
+        // From the second response, jump left: a:1 is reserved, nothing else left.
+        const t = jumpTarget(nodes, "s1", speeches, { speechId: "b", row: 1 }, "left");
+        expect(t).toEqual({ speechId: "b", row: 1 });
+    });
+});
+
+describe("cornerTarget", () => {
+    it("home jumps to the top-left cell", () => {
+        const nodes = [n("x", "c", 4)];
+        expect(cornerTarget(nodes, "s1", speeches, "home")).toEqual({
+            speechId: "a",
+            row: 0,
+        });
+    });
+
+    it("end jumps to the bottom-right-most filled cell", () => {
+        const nodes = [n("x", "a", 5), n("y", "c", 5), n("z", "b", 2)];
+        expect(cornerTarget(nodes, "s1", speeches, "end")).toEqual({
+            speechId: "c",
+            row: 5,
+        });
+    });
+
+    it("end falls back to top-left on an empty sheet", () => {
+        expect(cornerTarget([], "s1", speeches, "end")).toEqual({
+            speechId: "a",
+            row: 0,
+        });
+    });
+});

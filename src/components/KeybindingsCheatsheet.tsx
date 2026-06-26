@@ -22,6 +22,17 @@ const GROUPS = [
         ],
     },
     {
+        label: "Jump",
+        rows: [
+            { commandId: "nav.jumpUp" as CommandId },
+            { commandId: "nav.jumpDown" as CommandId },
+            { commandId: "nav.jumpLeft" as CommandId },
+            { commandId: "nav.jumpRight" as CommandId },
+            { commandId: "nav.jumpHome" as CommandId },
+            { commandId: "nav.jumpEnd" as CommandId },
+        ],
+    },
+    {
         label: "Edit",
         rows: [
             { commandId: "node.sibling" as CommandId },

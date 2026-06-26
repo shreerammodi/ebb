@@ -34,3 +34,15 @@ it("flat keymap binds Delete to cell.clear and Ctrl+Backspace to row.delete", ()
     expect(FLAT_KEYMAP.bindings["Delete"]).toBe("cell.clear");
     expect(FLAT_KEYMAP.bindings["Ctrl+Backspace"]).toBe("row.delete");
 });
+
+it("binds Excel-style jump navigation (directional + corners)", () => {
+    const cmds = Object.values(FLAT_KEYMAP.bindings);
+    // Directional jumps bound to a modifier+Arrow chord (Ctrl on non-Mac CI).
+    expect(cmds).toContain("nav.jumpUp");
+    expect(cmds).toContain("nav.jumpDown");
+    expect(cmds).toContain("nav.jumpLeft");
+    expect(cmds).toContain("nav.jumpRight");
+    // Corner jumps on Ctrl+Home / Ctrl+End regardless of platform.
+    expect(FLAT_KEYMAP.bindings["Ctrl+Home"]).toBe("nav.jumpHome");
+    expect(FLAT_KEYMAP.bindings["Ctrl+End"]).toBe("nav.jumpEnd");
+});

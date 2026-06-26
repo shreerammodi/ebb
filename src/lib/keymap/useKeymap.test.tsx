@@ -35,9 +35,7 @@ function freshRound() {
     useRoundStore
         .getState()
         .createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
-    const id = useRoundStore
-        .getState()
-        .addSheet({ title: "DA", group: "aff" });
+    const id = useRoundStore.getState().addSheet({ title: "DA", group: "aff" });
     useRoundStore.getState().setActiveSheet(id);
     return id;
 }
@@ -48,15 +46,9 @@ describe("useKeymap — flat modeless navigation", () => {
     it("ArrowDown moves selection to the next row", () => {
         const sheetId = freshRound();
         const speechId = useRoundStore.getState().round!.format.speeches[0].id;
-        useRoundStore
-            .getState()
-            .placeBareNode({ sheetId, speechId, row: 0 });
-        useRoundStore
-            .getState()
-            .placeBareNode({ sheetId, speechId, row: 1 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 1 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
 
         render(<Harness />);
         dispatchKey("ArrowDown");
@@ -67,12 +59,8 @@ describe("useKeymap — flat modeless navigation", () => {
     it("Enter spawns a sibling below", () => {
         const sheetId = freshRound();
         const speechId = useRoundStore.getState().round!.format.speeches[0].id;
-        useRoundStore
-            .getState()
-            .placeBareNode({ sheetId, speechId, row: 0 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
 
         render(<Harness />);
         dispatchKey("Enter");
@@ -102,6 +90,14 @@ describe("useKeymap — flat modeless navigation", () => {
     it("Tab steps to the next column, Shift+Tab to the previous", () => {
         const sheetId = freshRound();
         const speeches = useRoundStore.getState().round!.format.speeches;
+        // Place nodes in both columns so Tab has somewhere to land — arrow
+        // navigation skips empty cells.
+        useRoundStore
+            .getState()
+            .placeBareNode({ sheetId, speechId: speeches[0].id, row: 0 });
+        useRoundStore
+            .getState()
+            .placeBareNode({ sheetId, speechId: speeches[1].id, row: 0 });
         useRoundStore
             .getState()
             .setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
@@ -124,9 +120,7 @@ describe("useKeymap — flat modeless navigation", () => {
         const nodeId = useRoundStore
             .getState()
             .placeBareNode({ sheetId, speechId, row: 0 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
 
         render(<Harness />);
         dispatchKey("m", { ctrlKey: true });
@@ -137,15 +131,9 @@ describe("useKeymap — flat modeless navigation", () => {
     it("cleans up its listener on unmount", () => {
         const sheetId = freshRound();
         const speechId = useRoundStore.getState().round!.format.speeches[0].id;
-        useRoundStore
-            .getState()
-            .placeBareNode({ sheetId, speechId, row: 0 });
-        useRoundStore
-            .getState()
-            .placeBareNode({ sheetId, speechId, row: 1 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 1 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
 
         const { unmount } = render(<Harness />);
         unmount();

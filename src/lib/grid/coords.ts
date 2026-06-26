@@ -66,6 +66,97 @@ export function isReservedCell(
     return false;
 }
 
+export type JumpDir = "up" | "down" | "left" | "right";
+
+/**
+ * Excel "Ctrl/Cmd+Arrow" data-edge jump. Treats the sheet's used range as
+ * rows [0 .. max(lastFilledRow, cursorRow)] × columns [0 .. last speech].
+ *
+ * - From a filled cell whose neighbour in `dir` is also filled → jump to the end
+ *   of that contiguous run.
+ * - Otherwise → jump to the next filled cell in `dir`, skipping empties.
+ * - If no filled cell lies ahead → jump to the used-range edge in `dir`.
+ *
+ * Reserved (greyed) cells count as empty and are never a landing spot: if the
+ * computed target is reserved, the cursor stays put.
+ */
+export function jumpTarget(
+    nodes: ArgumentNode[],
+    sheetId: string,
+    speeches: Speech[],
+    from: { speechId: string; row: number },
+    dir: JumpDir,
+): { speechId: string; row: number } {
+    const cols = speeches.length;
+    const col = colIndexOf(speeches, from.speechId);
+    if (col < 0) return from;
+
+    const bottom = Math.max(maxRow(nodes, sheetId), from.row, 0);
+    const dc = dir === "left" ? -1 : dir === "right" ? 1 : 0;
+    const dr = dir === "up" ? -1 : dir === "down" ? 1 : 0;
+
+    const inB = (c: number, r: number) =>
+        c >= 0 && c < cols && r >= 0 && r <= bottom;
+    const filled = (c: number, r: number) =>
+        occupantAt(nodes, sheetId, speeches[c].id, r) !== null;
+
+    // Already at the edge in this direction → stay.
+    if (!inB(col + dc, from.row + dr)) return from;
+
+    let c = col + dc;
+    let r = from.row + dr;
+
+    if (filled(col, from.row) && filled(c, r)) {
+        // Extend through the contiguous filled run.
+        while (inB(c + dc, r + dr) && filled(c + dc, r + dr)) {
+            c += dc;
+            r += dr;
+        }
+    } else {
+        // Skip empties to the next filled cell.
+        while (inB(c, r) && !filled(c, r)) {
+            c += dc;
+            r += dr;
+        }
+        if (!inB(c, r) || !filled(c, r)) {
+            // Nothing filled ahead — land on the used-range edge.
+            c = dc > 0 ? cols - 1 : dc < 0 ? 0 : col;
+            r = dr > 0 ? bottom : dr < 0 ? 0 : from.row;
+        }
+    }
+
+    if (isReservedCell(nodes, sheetId, speeches[c].id, r)) return from;
+    return { speechId: speeches[c].id, row: r };
+}
+
+/**
+ * Corner jump. "home" → top-left of the sheet (first column, row 0). "end" →
+ * the bottom-right-most filled cell (deepest row, then rightmost column). Empty
+ * sheet → top-left.
+ */
+export function cornerTarget(
+    nodes: ArgumentNode[],
+    sheetId: string,
+    speeches: Speech[],
+    which: "home" | "end",
+): { speechId: string; row: number } {
+    if (which === "home" || speeches.length === 0) {
+        return { speechId: speeches[0]?.id ?? "", row: 0 };
+    }
+    const inSheet = nodes.filter(
+        (n) => n.sheetId === sheetId && colIndexOf(speeches, n.speechId) >= 0,
+    );
+    if (inSheet.length === 0) return { speechId: speeches[0].id, row: 0 };
+    const maxR = inSheet.reduce((m, n) => Math.max(m, n.row), 0);
+    const atBottom = inSheet.filter((n) => n.row === maxR);
+    const best = atBottom.reduce((b, n) =>
+        colIndexOf(speeches, n.speechId) > colIndexOf(speeches, b.speechId)
+            ? n
+            : b,
+    );
+    return { speechId: best.speechId, row: best.row };
+}
+
 /** Shift every node in the sheet with row >= fromRow DOWN by `by` (default 1). */
 export function rippleDown(
     nodes: ArgumentNode[],

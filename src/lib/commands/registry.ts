@@ -22,6 +22,12 @@ export type CommandId =
     | "move.grab"
     | "move.commit"
     | "move.cancel"
+    | "nav.jumpUp"
+    | "nav.jumpDown"
+    | "nav.jumpLeft"
+    | "nav.jumpRight"
+    | "nav.jumpHome"
+    | "nav.jumpEnd"
     | "edit.undo"
     | "edit.redo"
     | "status.toggleConceded"
@@ -71,6 +77,12 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "move.grab": { id: "move.grab", label: "Grab to move" },
     "move.commit": { id: "move.commit", label: "Drop here" },
     "move.cancel": { id: "move.cancel", label: "Cancel move" },
+    "nav.jumpUp": { id: "nav.jumpUp", label: "Jump up to edge" },
+    "nav.jumpDown": { id: "nav.jumpDown", label: "Jump down to edge" },
+    "nav.jumpLeft": { id: "nav.jumpLeft", label: "Jump left to edge" },
+    "nav.jumpRight": { id: "nav.jumpRight", label: "Jump right to edge" },
+    "nav.jumpHome": { id: "nav.jumpHome", label: "Jump to top-left" },
+    "nav.jumpEnd": { id: "nav.jumpEnd", label: "Jump to last cell" },
     "edit.undo": { id: "edit.undo", label: "Undo" },
     "edit.redo": { id: "edit.redo", label: "Redo" },
     "status.toggleConceded": {

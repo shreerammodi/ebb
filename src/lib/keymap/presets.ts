@@ -9,6 +9,33 @@
 import type { CommandId } from "@/lib/commands/registry";
 import type { Chord, Keymap } from "./types";
 
+/**
+ * True on macOS. The directional jump uses Cmd (Meta) on Mac because Ctrl+↑/↓
+ * are reserved by the system (Mission Control); Windows/Linux use Ctrl.
+ */
+function isMacPlatform(): boolean {
+    if (typeof navigator === "undefined") return false;
+    const p = navigator.platform || navigator.userAgent || "";
+    return /Mac|iPhone|iPad|iPod/i.test(p);
+}
+
+/**
+ * Excel-style data-edge jumps. Directional jumps use the platform modifier
+ * (Cmd on Mac, Ctrl elsewhere); corner jumps use Ctrl+Home/End on all platforms
+ * (Home/End aren't system-reserved, unlike Ctrl+Arrow on macOS).
+ */
+const JUMP_BINDINGS: Record<Chord, CommandId> = (() => {
+    const mod = isMacPlatform() ? "Meta" : "Ctrl";
+    return {
+        [`${mod}+ArrowUp`]: "nav.jumpUp",
+        [`${mod}+ArrowDown`]: "nav.jumpDown",
+        [`${mod}+ArrowLeft`]: "nav.jumpLeft",
+        [`${mod}+ArrowRight`]: "nav.jumpRight",
+        "Ctrl+Home": "nav.jumpHome",
+        "Ctrl+End": "nav.jumpEnd",
+    };
+})();
+
 /** Ctrl+1 .. Ctrl+9 → sheet.jump1 .. sheet.jump9 */
 const SHEET_JUMPS: Record<Chord, CommandId> = {
     "Ctrl+1": "sheet.jump1",
@@ -37,6 +64,7 @@ export const FLAT_KEYMAP: Keymap = {
         ArrowRight: "move.right",
         Tab: "move.right",
         "Shift+Tab": "move.left",
+        ...JUMP_BINDINGS,
 
         // ── Node creation ─────────────────────────────────────────────────────
         Enter: "node.sibling",

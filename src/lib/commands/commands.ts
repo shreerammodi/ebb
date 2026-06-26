@@ -9,6 +9,12 @@
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import type { Sheet, Round } from "@/lib/model/types";
 import { columnsForSheet } from "@/lib/grid/columns";
+import {
+    isReservedCell,
+    jumpTarget,
+    cornerTarget,
+    type JumpDir,
+} from "@/lib/grid/coords";
 import type { CommandId } from "./registry";
 
 /** Sheets sorted ascending by order. */
@@ -25,18 +31,31 @@ function jumpToSheet(n: number): void {
     if (target) setActiveSheet(target.id);
 }
 
-/** Column stepping helper. */
+/**
+ * Column stepping helper.
+ *
+ * In normal navigation (not in grab-move), arrows step one cell in the direction
+ * of motion and land on the first NON-reserved cell — empty (white) cells are
+ * valid landing spots, only reserved/greyed cells (the rows beside another
+ * argument's responses) are skipped over. If the only cells in that direction
+ * are reserved or the edge is reached, the selection stays put.
+ *
+ * In grab-move (moveSource !== null), the selection IS the drop target, and any
+ * cell is a legal destination. Arrows therefore step one cell at a time with
+ * edge clamping.
+ */
 function columnStep(
     state: {
         selection: { sheetId: string; speechId: string; row: number } | null;
         round: Round | null;
+        moveSource: string | null;
         setSelection: (
             s: { sheetId: string; speechId: string; row: number } | null,
         ) => void;
     },
     dir: "up" | "down" | "left" | "right",
 ): void {
-    const { round, selection } = state;
+    const { round, selection, moveSource } = state;
     if (!round || !selection) return;
     const sheet = round.sheets.find((s) => s.id === selection.sheetId);
     if (!sheet) return;
@@ -44,19 +63,96 @@ function columnStep(
     const colIdx = speeches.findIndex((s) => s.id === selection.speechId);
     if (colIdx === -1) return;
 
-    let nCol = colIdx;
-    let nRow = selection.row;
+    // In grab-move, the selection is a drop target — empty cells are legal,
+    // so we step one cell at a time with edge clamping.
+    if (moveSource !== null) {
+        let nCol = colIdx;
+        let nRow = selection.row;
+        if (dir === "up") nRow = Math.max(0, selection.row - 1);
+        else if (dir === "down") nRow = selection.row + 1;
+        else if (dir === "left") nCol = Math.max(0, colIdx - 1);
+        else nCol = Math.min(speeches.length - 1, colIdx + 1);
+        state.setSelection({
+            sheetId: selection.sheetId,
+            speechId: speeches[nCol].id,
+            row: nRow,
+        });
+        return;
+    }
 
-    if (dir === "up") nRow = Math.max(0, selection.row - 1);
-    else if (dir === "down") nRow = selection.row + 1;
-    else if (dir === "left") nCol = Math.max(0, colIdx - 1);
-    else nCol = Math.min(speeches.length - 1, colIdx + 1);
+    // Normal navigation: step one cell in `dir`, skipping only reserved (greyed)
+    // cells. Land on the first non-reserved cell — empty cells included. Stay put
+    // if the edge is reached without finding one.
+    const sheetNodes = round.nodes.filter((n) => n.sheetId === sheet.id);
+    const dRow = dir === "up" ? -1 : dir === "down" ? 1 : 0;
+    const dCol = dir === "left" ? -1 : dir === "right" ? 1 : 0;
 
-    state.setSelection({
-        sheetId: selection.sheetId,
-        speechId: speeches[nCol].id,
-        row: nRow,
-    });
+    let c = colIdx;
+    let r = selection.row;
+    while (true) {
+        c += dCol;
+        r += dRow;
+        if (c < 0 || c >= speeches.length || r < 0) return; // edge — stay put
+        if (!isReservedCell(sheetNodes, sheet.id, speeches[c].id, r)) {
+            state.setSelection({
+                sheetId: selection.sheetId,
+                speechId: speeches[c].id,
+                row: r,
+            });
+            return;
+        }
+        // reserved cell — keep skipping in the same direction
+    }
+}
+
+/** Excel data-edge jump (Ctrl/Cmd+Arrow). No-op during grab-move. */
+function jumpStep(
+    state: {
+        selection: { sheetId: string; speechId: string; row: number } | null;
+        round: Round | null;
+        moveSource: string | null;
+        setSelection: (
+            s: { sheetId: string; speechId: string; row: number } | null,
+        ) => void;
+    },
+    dir: JumpDir,
+): void {
+    const { round, selection, moveSource } = state;
+    if (!round || !selection || moveSource !== null) return;
+    const sheet = round.sheets.find((s) => s.id === selection.sheetId);
+    if (!sheet) return;
+    const speeches = columnsForSheet(round.format, sheet);
+    const sheetNodes = round.nodes.filter((n) => n.sheetId === sheet.id);
+    const target = jumpTarget(
+        sheetNodes,
+        sheet.id,
+        speeches,
+        { speechId: selection.speechId, row: selection.row },
+        dir,
+    );
+    state.setSelection({ sheetId: selection.sheetId, ...target });
+}
+
+/** Corner jump (Ctrl+Home / Ctrl+End). No-op during grab-move. */
+function cornerJump(
+    state: {
+        selection: { sheetId: string; speechId: string; row: number } | null;
+        round: Round | null;
+        moveSource: string | null;
+        setSelection: (
+            s: { sheetId: string; speechId: string; row: number } | null,
+        ) => void;
+    },
+    which: "home" | "end",
+): void {
+    const { round, selection, moveSource } = state;
+    if (!round || !selection || moveSource !== null) return;
+    const sheet = round.sheets.find((s) => s.id === selection.sheetId);
+    if (!sheet) return;
+    const speeches = columnsForSheet(round.format, sheet);
+    const sheetNodes = round.nodes.filter((n) => n.sheetId === sheet.id);
+    const target = cornerTarget(sheetNodes, sheet.id, speeches, which);
+    state.setSelection({ sheetId: selection.sheetId, ...target });
 }
 
 export function executeCommand(id: CommandId): void {
@@ -76,6 +172,26 @@ export function executeCommand(id: CommandId): void {
             return;
         case "move.right":
             columnStep(state, "right");
+            return;
+
+        // ── Jump navigation (Excel data-edge) ─────────────────────────────────
+        case "nav.jumpUp":
+            jumpStep(state, "up");
+            return;
+        case "nav.jumpDown":
+            jumpStep(state, "down");
+            return;
+        case "nav.jumpLeft":
+            jumpStep(state, "left");
+            return;
+        case "nav.jumpRight":
+            jumpStep(state, "right");
+            return;
+        case "nav.jumpHome":
+            cornerJump(state, "home");
+            return;
+        case "nav.jumpEnd":
+            cornerJump(state, "end");
             return;
 
         // ── Node creation ─────────────────────────────────────────────────────
