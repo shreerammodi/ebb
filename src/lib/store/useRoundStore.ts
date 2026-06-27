@@ -7,6 +7,11 @@
 
 import { create } from "zustand";
 import type { CommandId } from "@/lib/commands/registry";
+import {
+    type FontId,
+    DEFAULT_FONT_ID,
+    resolveFontId,
+} from "@/lib/fonts/registry";
 import type {
     Round,
     Sheet,
@@ -61,6 +66,7 @@ export interface RoundState {
     keymapOverrides: Record<string, string>;
     autoNumber: boolean;
     labelDrops: boolean;
+    flowFont: FontId;
     quickSwitcherOpen: boolean;
     settingsOpen: boolean;
     cheatsheetOpen: boolean;
@@ -116,7 +122,10 @@ export interface RoundActions {
     toggleNodeBold(nodeId: string): void;
     setNodeParent(nodeId: string, parentId: string | null): void;
 
-    placeBareNode(cell: { sheetId: string; speechId: string; row: number }, text?: string): string;
+    placeBareNode(
+        cell: { sheetId: string; speechId: string; row: number },
+        text?: string,
+    ): string;
     spawnSibling(): string | null;
     spawnResponse(): string | null;
     insertRowAbove(): void;
@@ -154,6 +163,7 @@ export interface RoundActions {
     clearKeymapOverride(commandId: CommandId): void;
     setAutoNumber(v: boolean): void;
     setLabelDrops(v: boolean): void;
+    setFlowFont: (id: FontId) => void;
     setQuickSwitcherOpen(open: boolean): void;
     setSettingsOpen(open: boolean): void;
     setCheatsheetOpen(open: boolean): void;
@@ -213,12 +223,14 @@ const DISPLAY_SETTINGS_KEY = "df-display-settings";
 interface DisplaySettings {
     autoNumber: boolean;
     labelDrops: boolean;
+    flowFont: FontId;
 }
 
 function loadDisplaySettings(): DisplaySettings {
     const fallback: DisplaySettings = {
         autoNumber: true,
         labelDrops: true,
+        flowFont: DEFAULT_FONT_ID,
     };
     if (typeof window === "undefined") return fallback;
     try {
@@ -228,6 +240,7 @@ function loadDisplaySettings(): DisplaySettings {
         return {
             autoNumber: typeof p.autoNumber === "boolean" ? p.autoNumber : true,
             labelDrops: typeof p.labelDrops === "boolean" ? p.labelDrops : true,
+            flowFont: resolveFontId(p.flowFont),
         };
     } catch {
         return fallback;
@@ -262,6 +275,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     keymapOverrides: initialKeymapSettings.keymapOverrides,
     autoNumber: initialDisplaySettings.autoNumber,
     labelDrops: initialDisplaySettings.labelDrops,
+    flowFont: initialDisplaySettings.flowFont,
     quickSwitcherOpen: false,
     settingsOpen: false,
     cheatsheetOpen: false,
@@ -574,7 +588,10 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         get()._commit(null, (r) => {
             const kept = r.nodes.filter(
                 (n) =>
-                    !(n.sheetId === selection.sheetId && n.row === selection.row),
+                    !(
+                        n.sheetId === selection.sheetId &&
+                        n.row === selection.row
+                    ),
             );
             return {
                 ...r,
@@ -739,8 +756,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
               round.sheets[0]?.id ??
               null);
         const selValid =
-            selection &&
-            round.sheets.some((s) => s.id === selection.sheetId);
+            selection && round.sheets.some((s) => s.id === selection.sheetId);
         set({
             activeSheetId: nextActive,
             selection: selValid ? selection : null,
@@ -772,6 +788,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         saveDisplaySettings({
             autoNumber: v,
             labelDrops: get().labelDrops,
+            flowFont: get().flowFont,
         });
     },
 
@@ -781,6 +798,17 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         saveDisplaySettings({
             autoNumber: get().autoNumber,
             labelDrops: v,
+            flowFont: get().flowFont,
+        });
+    },
+
+    // ── setFlowFont ──────────────────────────────────────────────────────────
+    setFlowFont(id) {
+        set({ flowFont: id });
+        saveDisplaySettings({
+            autoNumber: get().autoNumber,
+            labelDrops: get().labelDrops,
+            flowFont: id,
         });
     },
 

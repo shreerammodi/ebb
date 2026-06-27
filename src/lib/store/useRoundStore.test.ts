@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { makeFormatByKey } from "@/lib/format/presets";
+import { DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 
 const BLANK_STATE = {
     round: null,
@@ -104,9 +105,7 @@ describe("coordinate store actions", () => {
         const sheetId = s.activeSheetId!;
         const speechId = s.round!.format.speeches[0].id;
         const a = s.placeBareNode({ sheetId, speechId, row: 0 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
         const b = useRoundStore.getState().spawnSibling()!;
         const nb = useRoundStore
             .getState()
@@ -182,8 +181,12 @@ describe("coordinate store actions", () => {
             .setSelection({ sheetId, speechId: sp[0].id, row: 0 });
         useRoundStore.getState().insertRowAbove();
         const nodes = useRoundStore.getState().round!.nodes;
-        expect(nodes.find((n) => n.row === 0 && n.speechId === sp[0].id)).toBeUndefined(); // row 0 is now empty
-        expect(nodes.find((n) => n.row === 1 && n.speechId === sp[0].id)).toBeDefined(); // old row 0 shifted to row 1
+        expect(
+            nodes.find((n) => n.row === 0 && n.speechId === sp[0].id),
+        ).toBeUndefined(); // row 0 is now empty
+        expect(
+            nodes.find((n) => n.row === 1 && n.speechId === sp[0].id),
+        ).toBeDefined(); // old row 0 shifted to row 1
     });
 
     it("deleteSubtreeAt removes the node and all descendants", () => {
@@ -220,7 +223,9 @@ describe("REGRESSION: sibling does not split a response band", () => {
 
         // arg1 in 1AC, then six responses stacked in 1NC (Enter on the first).
         const arg1 = s.placeBareNode({ sheetId, speechId: c0, row: 0 });
-        useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+        useRoundStore
+            .getState()
+            .setSelection({ sheetId, speechId: c0, row: 0 });
         useRoundStore.getState().spawnResponse(); // response1 at (1NC, 0)
         for (let i = 0; i < 5; i++) {
             // Enter on the last response stacks the next one below it.
@@ -235,7 +240,9 @@ describe("REGRESSION: sibling does not split a response band", () => {
         expect(responses.every((n) => n.parentId === arg1)).toBe(true);
 
         // Now add a sibling of arg1 (select arg1, Enter).
-        useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+        useRoundStore
+            .getState()
+            .setSelection({ sheetId, speechId: c0, row: 0 });
         const arg2 = useRoundStore.getState().spawnSibling()!;
 
         nodes = useRoundStore.getState().round!.nodes;
@@ -295,22 +302,33 @@ describe("removeSheet + restoreSheet", () => {
         const round = useRoundStore.getState().round!;
         expect(round.sheets.some((s) => s.id === sheetId)).toBe(true);
         expect(
-            round.nodes.filter((n) => n.sheetId === sheetId).map((n) => n.id).sort(),
+            round.nodes
+                .filter((n) => n.sheetId === sheetId)
+                .map((n) => n.id)
+                .sort(),
         ).toEqual([a, b].sort());
-        expect(round.groups.filter((g) => g.sheetId === sheetId)).toHaveLength(1);
+        expect(round.groups.filter((g) => g.sheetId === sheetId)).toHaveLength(
+            1,
+        );
         expect(useRoundStore.getState().activeSheetId).toBe(sheetId);
     });
 
     it("restoreSheet is order-independent: an edit between delete and undo is preserved", () => {
         const { sheetId: daId } = setupRound();
         // A second sheet that we'll edit after deleting the first.
-        const caseId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+        const caseId = useRoundStore
+            .getState()
+            .addSheet({ title: "Case", group: "aff" });
         const removed = useRoundStore.getState().removeSheet(daId)!;
         // User keeps working on the other sheet before clicking Undo.
         const fmt = useRoundStore.getState().round!.format;
         const newNode = useRoundStore
             .getState()
-            .addNode({ sheetId: caseId, speechId: fmt.speeches[0].id, parentId: null });
+            .addNode({
+                sheetId: caseId,
+                speechId: fmt.speeches[0].id,
+                parentId: null,
+            });
 
         useRoundStore.getState().restoreSheet(removed);
 
@@ -327,5 +345,33 @@ describe("removeSheet + restoreSheet", () => {
         useRoundStore.getState().restoreSheet(removed);
         const round = useRoundStore.getState().round!;
         expect(round.sheets.filter((s) => s.id === sheetId)).toHaveLength(1);
+    });
+});
+
+describe("flow font preference", () => {
+    beforeEach(() => {
+        window.localStorage.clear();
+    });
+
+    it("defaults to commit-mono", () => {
+        expect(useRoundStore.getState().flowFont).toBe(DEFAULT_FONT_ID);
+    });
+
+    it("setFlowFont updates state and persists to df-display-settings", () => {
+        useRoundStore.getState().setFlowFont("inter");
+        expect(useRoundStore.getState().flowFont).toBe("inter");
+        const raw = window.localStorage.getItem("df-display-settings");
+        expect(raw).toBeTruthy();
+        expect(JSON.parse(raw as string).flowFont).toBe("inter");
+    });
+
+    it("setFlowFont preserves the other display settings", () => {
+        useRoundStore.getState().setAutoNumber(false);
+        useRoundStore.getState().setFlowFont("dm-sans");
+        const saved = JSON.parse(
+            window.localStorage.getItem("df-display-settings") as string,
+        );
+        expect(saved.autoNumber).toBe(false);
+        expect(saved.flowFont).toBe("dm-sans");
     });
 });
