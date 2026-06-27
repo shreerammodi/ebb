@@ -238,7 +238,7 @@ export default function SettingsPanel() {
                                         }}
                                         data-testid="flow-font-sample"
                                     >
-                                        Perm do both — solves the link
+                                        Perm do both, solves the link
                                     </p>
                                 </div>
 
