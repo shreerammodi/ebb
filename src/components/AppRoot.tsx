@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { useSaveStatus } from "@/lib/store/useSaveStatus";
 import { attachAutosave, loadRound } from "@/lib/persistence/autosave";
+import { applyFlowFont } from "@/lib/fonts/applyFlowFont";
 import { Skeleton } from "@/components/ui/skeleton";
 import Workspace from "./Workspace";
 
@@ -18,7 +19,12 @@ export default function AppRoot() {
     const params = useSearchParams();
     const id = params.get("id");
     const round = useRoundStore((s) => s.round);
+    const flowFont = useRoundStore((s) => s.flowFont);
     const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        applyFlowFont(flowFont);
+    }, [flowFont]);
 
     useEffect(() => {
         let mounted = true;
