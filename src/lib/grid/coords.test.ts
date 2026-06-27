@@ -101,6 +101,25 @@ describe("spawn placement", () => {
     });
     expect(res.nodes).toEqual(nodes); // untouched
   });
+
+  it("response does NOT ripple just because the parent's row holds other columns", () => {
+    // A (a:0) → B (b:0, child of A). Responding to B lands in c:0 (the empty
+    // cell beside B). The row is "occupied" by A, but A is the PARENT chain, not
+    // a collision. Rippling here would push B (and A) down a row while the new
+    // response stayed put — leaving the response ABOVE its parent (the bug).
+    const nodes = [n("A", "a", 0), cnResp("B", "b", 0, "A")];
+    const res = placeForSpawn(nodes, "s1", speeches, nodes[1], "response")!;
+    expect({ speechId: res.speechId, row: res.row }).toEqual({ speechId: "c", row: 0 });
+    // A and B stay on row 0 — the response will join their row beside B.
+    expect(res.nodes.find((m) => m.id === "A")!.row).toBe(0);
+    expect(res.nodes.find((m) => m.id === "B")!.row).toBe(0);
+  });
+});
+
+/** Node with an explicit parent, local to the spawn-placement block. */
+const cnResp = (id: string, speechId: string, row: number, parentId: string): ArgumentNode => ({
+  ...n(id, speechId, row),
+  parentId,
 });
 
 describe("subtree", () => {

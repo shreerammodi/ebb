@@ -217,14 +217,22 @@ export function placeForSpawn(
 ): { nodes: ArgumentNode[]; speechId: string; row: number } | null {
   const target = spawnTarget(nodes, sheetId, speeches, current, kind);
   if (!target) return null;
-  // Ripple the whole global row when it is occupied by any node OTHER than the
-  // current one. For a response this means the current (parent) node sharing the
-  // row does not trigger a ripple; a genuinely occupied adjacent cell does
-  // (which shifts the parent with the inserted row — an accepted edge).
-  const rowOccupied = nodes.some(
-    (n) => n.sheetId === sheetId && n.row === target.row && n.id !== current.id,
-  );
-  const next = rowOccupied ? rippleDown(nodes, sheetId, target.row, 1) : nodes;
+  // Decide when to ripple a full-width row in to make room.
+  //
+  // A response lands in the next column ON THE PARENT'S ROW — that row IS meant
+  // to hold an argument and its responses together. So a response only needs its
+  // own destination CELL free; the row being filled by the parent (or the
+  // parent's own parent in an earlier column) is the normal, desired state. If
+  // we rippled on row occupancy here, rippleDown would shift the parent down a
+  // row while the new response stayed put, leaving the response ABOVE its parent.
+  //
+  // A sibling lands on a fresh row below the current subtree's band, so it
+  // needs that whole row free — ripple when any other node occupies it.
+  const needsRipple =
+    kind === "response"
+      ? occupantAt(nodes, sheetId, target.speechId, target.row) !== null
+      : nodes.some((n) => n.sheetId === sheetId && n.row === target.row && n.id !== current.id);
+  const next = needsRipple ? rippleDown(nodes, sheetId, target.row, 1) : nodes;
   return { nodes: next, speechId: target.speechId, row: target.row };
 }
 
