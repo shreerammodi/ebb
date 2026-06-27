@@ -42,4 +42,25 @@ describe("GuideDialog", () => {
         await userEvent.keyboard("{Escape}");
         expect(useRoundStore.getState().guideOpen).toBe(false);
     });
+
+    it("keyboard section renders ? hint from live keymap via help.open", async () => {
+        useRoundStore.getState().setGuideOpen(true);
+        render(<GuideDialog />);
+        await userEvent.click(screen.getByTestId("guide-section-keys"));
+        const hint = keyHintFor("help.open");
+        expect(hint).toBeTruthy();
+        expect(screen.getByTestId("guide-content")).toHaveTextContent(hint!);
+    });
+
+    it("ArrowDown on section rail advances the active section", async () => {
+        useRoundStore.getState().setGuideOpen(true);
+        render(<GuideDialog />);
+        // The dialog opens to Welcome; focus its rail button and press ArrowDown.
+        screen.getByTestId("guide-section-welcome").focus();
+        await userEvent.keyboard("{ArrowDown}");
+        // Second section is Dashboard.
+        expect(screen.getByTestId("guide-content")).toHaveTextContent(
+            /dashboard lists every flow/i,
+        );
+    });
 });

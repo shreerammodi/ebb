@@ -247,7 +247,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                 </p>
                 <p>
                     For the complete, always-current list of shortcuts, press{" "}
-                    <Kbd k="?" /> anywhere in the editor.
+                    <Kbd cmd="help.open" /> anywhere in the editor.
                 </p>
             </>
         ),
