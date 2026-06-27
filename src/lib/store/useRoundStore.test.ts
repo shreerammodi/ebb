@@ -4,68 +4,62 @@ import { makeFormatByKey } from "@/lib/format/presets";
 import { DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 
 const BLANK_STATE = {
-    round: null,
-    activeSheetId: null,
-    selection: null,
+  round: null,
+  activeSheetId: null,
+  selection: null,
 };
 
 function resetStore() {
-    useRoundStore.setState(BLANK_STATE);
+  useRoundStore.setState(BLANK_STATE);
 }
 
 function setupRound() {
-    const fmt = makeFormatByKey("policy");
-    useRoundStore.getState().createRound({ role: "aff", format: fmt });
-    const sheetId = useRoundStore
-        .getState()
-        .addSheet({ title: "DA", group: "neg" });
-    const sp = fmt.speeches[1].id; // 1NC
-    const a = useRoundStore
-        .getState()
-        .addNode({ sheetId, speechId: sp, parentId: null });
-    const b = useRoundStore
-        .getState()
-        .addNode({ sheetId, speechId: sp, parentId: null });
-    return { sheetId, sp, a, b };
+  const fmt = makeFormatByKey("policy");
+  useRoundStore.getState().createRound({ role: "aff", format: fmt });
+  const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
+  const sp = fmt.speeches[1].id; // 1NC
+  const a = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+  const b = useRoundStore.getState().addNode({ sheetId, speechId: sp, parentId: null });
+  return { sheetId, sp, a, b };
 }
 
 describe("display settings", () => {
-    beforeEach(() => {
-        window.localStorage.clear();
-    });
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
 
-    it("setAutoNumber persists", () => {
-        useRoundStore.getState().setAutoNumber(true);
-        const raw = window.localStorage.getItem("df-display-settings");
-        expect(raw).toBeTruthy();
-        const parsed = JSON.parse(raw!);
-        expect(parsed.autoNumber).toBe(true);
-    });
+  it("setAutoNumber persists", () => {
+    useRoundStore.getState().setAutoNumber(true);
+    const raw = window.localStorage.getItem("df-display-settings");
+    expect(raw).toBeTruthy();
+    const parsed = JSON.parse(raw!);
+    expect(parsed.autoNumber).toBe(true);
+  });
 });
 
 describe("Group Actions (Task 2)", () => {
-    beforeEach(resetStore);
+  beforeEach(resetStore);
 
-    it("groupNodes bundles two nodes and is undoable", () => {
-        const { sheetId, a, b } = setupRound();
+  it("groupNodes bundles two nodes and is undoable", () => {
+    const { sheetId, a, b } = setupRound();
 
-        useRoundStore.getState().groupNodes(sheetId, [a, b], "DAs");
-        const groups = useRoundStore.getState().round!.groups;
-        expect(groups).toHaveLength(1);
-        expect(groups[0].memberIds).toEqual([a, b]);
+    useRoundStore.getState().groupNodes(sheetId, [a, b], "DAs");
+    const groups = useRoundStore.getState().round!.groups;
+    expect(groups).toHaveLength(1);
+    expect(groups[0].memberIds).toEqual([a, b]);
 
-        useRoundStore.getState().undo();
-        expect(useRoundStore.getState().round!.groups).toHaveLength(0);
-    });
+    useRoundStore.getState().undo();
+    expect(useRoundStore.getState().round!.groups).toHaveLength(0);
+  });
 
-    it("ungroupNode removes a node from its group", () => {
-        const { sheetId, a, b } = setupRound();
+  it("ungroupNode removes a node from its group", () => {
+    const { sheetId, a, b } = setupRound();
 
-        useRoundStore.getState().groupNodes(sheetId, [a, b], "");
-        useRoundStore.getState().ungroupNode(a);
-        const groups = useRoundStore.getState().round!.groups;
-        expect(groups).toHaveLength(0); // Dissolved because <2 remain.
-    });
+    useRoundStore.getState().groupNodes(sheetId, [a, b], "");
+    useRoundStore.getState().ungroupNode(a);
+    const groups = useRoundStore.getState().round!.groups;
+    expect(groups).toHaveLength(0); // Dissolved because <2 remain.
+  });
 });
 
 // ─── Coordinate-based store actions (Task 6) ─────────────────────────────
@@ -73,315 +67,271 @@ describe("Group Actions (Task 2)", () => {
 import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 
 function freshRound() {
-    useRoundStore
-        .getState()
-        .createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
-    const id = useRoundStore
-        .getState()
-        .addSheet({ title: "1AC", group: "aff" });
-    useRoundStore.getState().setActiveSheet(id);
-    return id;
+  useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
+  const id = useRoundStore.getState().addSheet({ title: "1AC", group: "aff" });
+  useRoundStore.getState().setActiveSheet(id);
+  return id;
 }
 
 describe("coordinate store actions", () => {
-    beforeEach(resetStore);
+  beforeEach(resetStore);
 
-    it("placeBareNode creates a null-parent node at the exact cell", () => {
-        freshRound();
-        const s = useRoundStore.getState();
-        const sheetId = s.activeSheetId!;
-        const speechId = s.round!.format.speeches[0].id;
-        const id = s.placeBareNode({ sheetId, speechId, row: 4 });
-        const node = useRoundStore
-            .getState()
-            .round!.nodes.find((n) => n.id === id)!;
-        expect(node.row).toBe(4);
-        expect(node.parentId).toBeNull();
-    });
+  it("placeBareNode creates a null-parent node at the exact cell", () => {
+    freshRound();
+    const s = useRoundStore.getState();
+    const sheetId = s.activeSheetId!;
+    const speechId = s.round!.format.speeches[0].id;
+    const id = s.placeBareNode({ sheetId, speechId, row: 4 });
+    const node = useRoundStore.getState().round!.nodes.find((n) => n.id === id)!;
+    expect(node.row).toBe(4);
+    expect(node.parentId).toBeNull();
+  });
 
-    it("spawnSibling places below with inherited parentId", () => {
-        freshRound();
-        const s = useRoundStore.getState();
-        const sheetId = s.activeSheetId!;
-        const speechId = s.round!.format.speeches[0].id;
-        const a = s.placeBareNode({ sheetId, speechId, row: 0 });
-        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
-        const b = useRoundStore.getState().spawnSibling()!;
-        const nb = useRoundStore
-            .getState()
-            .round!.nodes.find((n) => n.id === b)!;
-        expect(nb.row).toBe(1);
-        expect(nb.speechId).toBe(speechId);
-        expect(nb.parentId).toBeNull(); // inherited from root a
-    });
+  it("spawnSibling places below with inherited parentId", () => {
+    freshRound();
+    const s = useRoundStore.getState();
+    const sheetId = s.activeSheetId!;
+    const speechId = s.round!.format.speeches[0].id;
+    const a = s.placeBareNode({ sheetId, speechId, row: 0 });
+    useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+    const b = useRoundStore.getState().spawnSibling()!;
+    const nb = useRoundStore.getState().round!.nodes.find((n) => n.id === b)!;
+    expect(nb.row).toBe(1);
+    expect(nb.speechId).toBe(speechId);
+    expect(nb.parentId).toBeNull(); // inherited from root a
+  });
 
-    it("spawnResponse places same-row next column, parent = current", () => {
-        freshRound();
-        const s = useRoundStore.getState();
-        const sheetId = s.activeSheetId!;
-        const sp = s.round!.format.speeches;
-        const a = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        const r = useRoundStore.getState().spawnResponse()!;
-        const nr = useRoundStore
-            .getState()
-            .round!.nodes.find((n) => n.id === r)!;
-        expect(nr.speechId).toBe(sp[1].id);
-        expect(nr.row).toBe(0);
-        expect(nr.parentId).toBe(a);
-    });
+  it("spawnResponse places same-row next column, parent = current", () => {
+    freshRound();
+    const s = useRoundStore.getState();
+    const sheetId = s.activeSheetId!;
+    const sp = s.round!.format.speeches;
+    const a = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+    const r = useRoundStore.getState().spawnResponse()!;
+    const nr = useRoundStore.getState().round!.nodes.find((n) => n.id === r)!;
+    expect(nr.speechId).toBe(sp[1].id);
+    expect(nr.row).toBe(0);
+    expect(nr.parentId).toBe(a);
+  });
 
-    it("clearCell orphans children in place", () => {
-        freshRound();
-        const s = useRoundStore.getState();
-        const sheetId = s.activeSheetId!;
-        const sp = s.round!.format.speeches;
-        const a = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        const child = useRoundStore.getState().spawnResponse()!;
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        useRoundStore.getState().clearCell();
-        const nodes = useRoundStore.getState().round!.nodes;
-        expect(nodes.find((n) => n.id === a)).toBeUndefined();
-        expect(nodes.find((n) => n.id === child)!.parentId).toBeNull();
-    });
+  it("clearCell orphans children in place", () => {
+    freshRound();
+    const s = useRoundStore.getState();
+    const sheetId = s.activeSheetId!;
+    const sp = s.round!.format.speeches;
+    const a = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+    const child = useRoundStore.getState().spawnResponse()!;
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+    useRoundStore.getState().clearCell();
+    const nodes = useRoundStore.getState().round!.nodes;
+    expect(nodes.find((n) => n.id === a)).toBeUndefined();
+    expect(nodes.find((n) => n.id === child)!.parentId).toBeNull();
+  });
 
-    it("deleteRow removes the row's nodes and ripples up", () => {
-        freshRound();
-        const s = useRoundStore.getState();
-        const sheetId = s.activeSheetId!;
-        const sp = s.round!.format.speeches;
-        s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
-        s.placeBareNode({ sheetId, speechId: sp[0].id, row: 1 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        useRoundStore.getState().deleteRow();
-        const col = useRoundStore
-            .getState()
-            .round!.nodes.filter((n) => n.speechId === sp[0].id);
-        expect(col.map((n) => n.row)).toEqual([0]); // old row-1 node shifted up
-    });
+  it("deleteRow removes the row's nodes and ripples up", () => {
+    freshRound();
+    const s = useRoundStore.getState();
+    const sheetId = s.activeSheetId!;
+    const sp = s.round!.format.speeches;
+    s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+    s.placeBareNode({ sheetId, speechId: sp[0].id, row: 1 });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+    useRoundStore.getState().deleteRow();
+    const col = useRoundStore.getState().round!.nodes.filter((n) => n.speechId === sp[0].id);
+    expect(col.map((n) => n.row)).toEqual([0]); // old row-1 node shifted up
+  });
 
-    it("insertRowAbove ripples nodes down", () => {
-        freshRound();
-        const s = useRoundStore.getState();
-        const sheetId = s.activeSheetId!;
-        const sp = s.round!.format.speeches;
-        s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
-        s.placeBareNode({ sheetId, speechId: sp[0].id, row: 1 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        useRoundStore.getState().insertRowAbove();
-        const nodes = useRoundStore.getState().round!.nodes;
-        expect(
-            nodes.find((n) => n.row === 0 && n.speechId === sp[0].id),
-        ).toBeUndefined(); // row 0 is now empty
-        expect(
-            nodes.find((n) => n.row === 1 && n.speechId === sp[0].id),
-        ).toBeDefined(); // old row 0 shifted to row 1
-    });
+  it("insertRowAbove ripples nodes down", () => {
+    freshRound();
+    const s = useRoundStore.getState();
+    const sheetId = s.activeSheetId!;
+    const sp = s.round!.format.speeches;
+    s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+    s.placeBareNode({ sheetId, speechId: sp[0].id, row: 1 });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+    useRoundStore.getState().insertRowAbove();
+    const nodes = useRoundStore.getState().round!.nodes;
+    expect(nodes.find((n) => n.row === 0 && n.speechId === sp[0].id)).toBeUndefined(); // row 0 is now empty
+    expect(nodes.find((n) => n.row === 1 && n.speechId === sp[0].id)).toBeDefined(); // old row 0 shifted to row 1
+  });
 
-    it("deleteSubtreeAt removes the node and all descendants", () => {
-        freshRound();
-        const s = useRoundStore.getState();
-        const sheetId = s.activeSheetId!;
-        const sp = s.round!.format.speeches;
-        const root = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        useRoundStore.getState().spawnResponse(); // child at sp[1]:0
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        useRoundStore.getState().deleteSubtreeAt();
-        const nodes = useRoundStore.getState().round!.nodes;
-        expect(nodes.find((n) => n.id === root)).toBeUndefined();
-        // response child should also be gone
-        expect(nodes.some((n) => n.parentId === root)).toBe(false);
-    });
+  it("deleteSubtreeAt removes the node and all descendants", () => {
+    freshRound();
+    const s = useRoundStore.getState();
+    const sheetId = s.activeSheetId!;
+    const sp = s.round!.format.speeches;
+    const root = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+    useRoundStore.getState().spawnResponse(); // child at sp[1]:0
+    useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+    useRoundStore.getState().deleteSubtreeAt();
+    const nodes = useRoundStore.getState().round!.nodes;
+    expect(nodes.find((n) => n.id === root)).toBeUndefined();
+    // response child should also be gone
+    expect(nodes.some((n) => n.parentId === root)).toBe(false);
+  });
 });
 
 describe("REGRESSION: sibling does not split a response band", () => {
-    beforeEach(resetStore);
+  beforeEach(resetStore);
 
-    it("Enter on an argument with six responses lands the sibling below the band", () => {
-        freshRound();
-        const s = useRoundStore.getState();
-        const sheetId = s.activeSheetId!;
-        const speeches = s.round!.format.speeches;
-        const c0 = speeches[0].id; // 1AC
-        const c1 = speeches[1].id; // 1NC
+  it("Enter on an argument with six responses lands the sibling below the band", () => {
+    freshRound();
+    const s = useRoundStore.getState();
+    const sheetId = s.activeSheetId!;
+    const speeches = s.round!.format.speeches;
+    const c0 = speeches[0].id; // 1AC
+    const c1 = speeches[1].id; // 1NC
 
-        // arg1 in 1AC, then six responses stacked in 1NC (Enter on the first).
-        const arg1 = s.placeBareNode({ sheetId, speechId: c0, row: 0 });
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: c0, row: 0 });
-        useRoundStore.getState().spawnResponse(); // response1 at (1NC, 0)
-        for (let i = 0; i < 5; i++) {
-            // Enter on the last response stacks the next one below it.
-            useRoundStore.getState().spawnSibling();
-        }
-        // Sanity: six contiguous responses in 1NC at rows 0..5, all children of arg1.
-        let nodes = useRoundStore.getState().round!.nodes;
-        const responses = nodes
-            .filter((n) => n.speechId === c1)
-            .sort((a, b) => a.row - b.row);
-        expect(responses.map((n) => n.row)).toEqual([0, 1, 2, 3, 4, 5]);
-        expect(responses.every((n) => n.parentId === arg1)).toBe(true);
+    // arg1 in 1AC, then six responses stacked in 1NC (Enter on the first).
+    const arg1 = s.placeBareNode({ sheetId, speechId: c0, row: 0 });
+    useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+    useRoundStore.getState().spawnResponse(); // response1 at (1NC, 0)
+    for (let i = 0; i < 5; i++) {
+      // Enter on the last response stacks the next one below it.
+      useRoundStore.getState().spawnSibling();
+    }
+    // Sanity: six contiguous responses in 1NC at rows 0..5, all children of arg1.
+    let nodes = useRoundStore.getState().round!.nodes;
+    const responses = nodes.filter((n) => n.speechId === c1).sort((a, b) => a.row - b.row);
+    expect(responses.map((n) => n.row)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(responses.every((n) => n.parentId === arg1)).toBe(true);
 
-        // Now add a sibling of arg1 (select arg1, Enter).
-        useRoundStore
-            .getState()
-            .setSelection({ sheetId, speechId: c0, row: 0 });
-        const arg2 = useRoundStore.getState().spawnSibling()!;
+    // Now add a sibling of arg1 (select arg1, Enter).
+    useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+    const arg2 = useRoundStore.getState().spawnSibling()!;
 
-        nodes = useRoundStore.getState().round!.nodes;
-        const a2 = nodes.find((n) => n.id === arg2)!;
-        // arg2 lands BELOW the whole band (row 6), not interleaved.
-        expect({ speechId: a2.speechId, row: a2.row }).toEqual({
-            speechId: c0,
-            row: 6,
-        });
-        // The response band is untouched — still contiguous at 0..5.
-        expect(
-            nodes
-                .filter((n) => n.speechId === c1)
-                .sort((a, b) => a.row - b.row)
-                .map((n) => n.row),
-        ).toEqual([0, 1, 2, 3, 4, 5]);
+    nodes = useRoundStore.getState().round!.nodes;
+    const a2 = nodes.find((n) => n.id === arg2)!;
+    // arg2 lands BELOW the whole band (row 6), not interleaved.
+    expect({ speechId: a2.speechId, row: a2.row }).toEqual({
+      speechId: c0,
+      row: 6,
     });
+    // The response band is untouched — still contiguous at 0..5.
+    expect(
+      nodes
+        .filter((n) => n.speechId === c1)
+        .sort((a, b) => a.row - b.row)
+        .map((n) => n.row),
+    ).toEqual([0, 1, 2, 3, 4, 5]);
+  });
 });
 
 // ─── removeSheet / restoreSheet (hardening: discoverable Undo) ────────────
 
 describe("removeSheet + restoreSheet", () => {
-    beforeEach(resetStore);
+  beforeEach(resetStore);
 
-    it("removeSheet returns the removed sheet, its nodes, and groups", () => {
-        const { sheetId, a, b } = setupRound();
-        useRoundStore.getState().groupNodes(sheetId, [a, b], "DAs");
-        useRoundStore.getState().setActiveSheet(sheetId);
+  it("removeSheet returns the removed sheet, its nodes, and groups", () => {
+    const { sheetId, a, b } = setupRound();
+    useRoundStore.getState().groupNodes(sheetId, [a, b], "DAs");
+    useRoundStore.getState().setActiveSheet(sheetId);
 
-        const removed = useRoundStore.getState().removeSheet(sheetId);
+    const removed = useRoundStore.getState().removeSheet(sheetId);
 
-        expect(removed).not.toBeNull();
-        expect(removed!.sheet.id).toBe(sheetId);
-        expect(removed!.nodes.map((n) => n.id).sort()).toEqual([a, b].sort());
-        expect(removed!.groups).toHaveLength(1);
-        expect(removed!.wasActive).toBe(true);
-        // The round no longer has the sheet or its nodes/groups.
-        const round = useRoundStore.getState().round!;
-        expect(round.sheets.some((s) => s.id === sheetId)).toBe(false);
-        expect(round.nodes.some((n) => n.sheetId === sheetId)).toBe(false);
-        expect(round.groups.some((g) => g.sheetId === sheetId)).toBe(false);
+    expect(removed).not.toBeNull();
+    expect(removed!.sheet.id).toBe(sheetId);
+    expect(removed!.nodes.map((n) => n.id).sort()).toEqual([a, b].sort());
+    expect(removed!.groups).toHaveLength(1);
+    expect(removed!.wasActive).toBe(true);
+    // The round no longer has the sheet or its nodes/groups.
+    const round = useRoundStore.getState().round!;
+    expect(round.sheets.some((s) => s.id === sheetId)).toBe(false);
+    expect(round.nodes.some((n) => n.sheetId === sheetId)).toBe(false);
+    expect(round.groups.some((g) => g.sheetId === sheetId)).toBe(false);
+  });
+
+  it("removeSheet returns null for an unknown sheet id", () => {
+    setupRound();
+    expect(useRoundStore.getState().removeSheet("nope")).toBeNull();
+  });
+
+  it("restoreSheet puts the sheet, nodes, and groups back and reactivates it", () => {
+    const { sheetId, a, b } = setupRound();
+    useRoundStore.getState().groupNodes(sheetId, [a, b], "DAs");
+    useRoundStore.getState().setActiveSheet(sheetId);
+
+    const removed = useRoundStore.getState().removeSheet(sheetId)!;
+    useRoundStore.getState().restoreSheet(removed);
+
+    const round = useRoundStore.getState().round!;
+    expect(round.sheets.some((s) => s.id === sheetId)).toBe(true);
+    expect(
+      round.nodes
+        .filter((n) => n.sheetId === sheetId)
+        .map((n) => n.id)
+        .sort(),
+    ).toEqual([a, b].sort());
+    expect(round.groups.filter((g) => g.sheetId === sheetId)).toHaveLength(1);
+    expect(useRoundStore.getState().activeSheetId).toBe(sheetId);
+  });
+
+  it("restoreSheet is order-independent: an edit between delete and undo is preserved", () => {
+    const { sheetId: daId } = setupRound();
+    // A second sheet that we'll edit after deleting the first.
+    const caseId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+    const removed = useRoundStore.getState().removeSheet(daId)!;
+    // User keeps working on the other sheet before clicking Undo.
+    const fmt = useRoundStore.getState().round!.format;
+    const newNode = useRoundStore.getState().addNode({
+      sheetId: caseId,
+      speechId: fmt.speeches[0].id,
+      parentId: null,
     });
 
-    it("removeSheet returns null for an unknown sheet id", () => {
-        setupRound();
-        expect(useRoundStore.getState().removeSheet("nope")).toBeNull();
-    });
+    useRoundStore.getState().restoreSheet(removed);
 
-    it("restoreSheet puts the sheet, nodes, and groups back and reactivates it", () => {
-        const { sheetId, a, b } = setupRound();
-        useRoundStore.getState().groupNodes(sheetId, [a, b], "DAs");
-        useRoundStore.getState().setActiveSheet(sheetId);
+    const round = useRoundStore.getState().round!;
+    // The DA sheet is back AND the intervening edit survived.
+    expect(round.sheets.some((s) => s.id === daId)).toBe(true);
+    expect(round.nodes.some((n) => n.id === newNode)).toBe(true);
+  });
 
-        const removed = useRoundStore.getState().removeSheet(sheetId)!;
-        useRoundStore.getState().restoreSheet(removed);
-
-        const round = useRoundStore.getState().round!;
-        expect(round.sheets.some((s) => s.id === sheetId)).toBe(true);
-        expect(
-            round.nodes
-                .filter((n) => n.sheetId === sheetId)
-                .map((n) => n.id)
-                .sort(),
-        ).toEqual([a, b].sort());
-        expect(round.groups.filter((g) => g.sheetId === sheetId)).toHaveLength(
-            1,
-        );
-        expect(useRoundStore.getState().activeSheetId).toBe(sheetId);
-    });
-
-    it("restoreSheet is order-independent: an edit between delete and undo is preserved", () => {
-        const { sheetId: daId } = setupRound();
-        // A second sheet that we'll edit after deleting the first.
-        const caseId = useRoundStore
-            .getState()
-            .addSheet({ title: "Case", group: "aff" });
-        const removed = useRoundStore.getState().removeSheet(daId)!;
-        // User keeps working on the other sheet before clicking Undo.
-        const fmt = useRoundStore.getState().round!.format;
-        const newNode = useRoundStore
-            .getState()
-            .addNode({
-                sheetId: caseId,
-                speechId: fmt.speeches[0].id,
-                parentId: null,
-            });
-
-        useRoundStore.getState().restoreSheet(removed);
-
-        const round = useRoundStore.getState().round!;
-        // The DA sheet is back AND the intervening edit survived.
-        expect(round.sheets.some((s) => s.id === daId)).toBe(true);
-        expect(round.nodes.some((n) => n.id === newNode)).toBe(true);
-    });
-
-    it("restoreSheet ignores a double restore", () => {
-        const { sheetId } = setupRound();
-        const removed = useRoundStore.getState().removeSheet(sheetId)!;
-        useRoundStore.getState().restoreSheet(removed);
-        useRoundStore.getState().restoreSheet(removed);
-        const round = useRoundStore.getState().round!;
-        expect(round.sheets.filter((s) => s.id === sheetId)).toHaveLength(1);
-    });
+  it("restoreSheet ignores a double restore", () => {
+    const { sheetId } = setupRound();
+    const removed = useRoundStore.getState().removeSheet(sheetId)!;
+    useRoundStore.getState().restoreSheet(removed);
+    useRoundStore.getState().restoreSheet(removed);
+    const round = useRoundStore.getState().round!;
+    expect(round.sheets.filter((s) => s.id === sheetId)).toHaveLength(1);
+  });
 });
 
 describe("flow font preference", () => {
-    beforeEach(() => {
-        window.localStorage.clear();
-    });
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
 
-    it("defaults to commit-mono", () => {
-        expect(useRoundStore.getState().flowFont).toBe(DEFAULT_FONT_ID);
-    });
+  it("defaults to commit-mono", () => {
+    expect(useRoundStore.getState().flowFont).toBe(DEFAULT_FONT_ID);
+  });
 
-    it("setFlowFont updates state and persists to df-display-settings", () => {
-        useRoundStore.getState().setFlowFont("inter");
-        expect(useRoundStore.getState().flowFont).toBe("inter");
-        const raw = window.localStorage.getItem("df-display-settings");
-        expect(raw).toBeTruthy();
-        expect(JSON.parse(raw as string).flowFont).toBe("inter");
-    });
+  it("setFlowFont updates state and persists to df-display-settings", () => {
+    useRoundStore.getState().setFlowFont("inter");
+    expect(useRoundStore.getState().flowFont).toBe("inter");
+    const raw = window.localStorage.getItem("df-display-settings");
+    expect(raw).toBeTruthy();
+    expect(JSON.parse(raw as string).flowFont).toBe("inter");
+  });
 
-    it("setFlowFont preserves the other display settings", () => {
-        useRoundStore.getState().setAutoNumber(false);
-        useRoundStore.getState().setFlowFont("dm-sans");
-        const saved = JSON.parse(
-            window.localStorage.getItem("df-display-settings") as string,
-        );
-        expect(saved.autoNumber).toBe(false);
-        expect(saved.flowFont).toBe("dm-sans");
-    });
+  it("setFlowFont preserves the other display settings", () => {
+    useRoundStore.getState().setAutoNumber(false);
+    useRoundStore.getState().setFlowFont("dm-sans");
+    const saved = JSON.parse(window.localStorage.getItem("df-display-settings") as string);
+    expect(saved.autoNumber).toBe(false);
+    expect(saved.flowFont).toBe("dm-sans");
+  });
 });
 
 describe("guide open state", () => {
-    it("defaults to closed and toggles", () => {
-        expect(useRoundStore.getState().guideOpen).toBe(false);
-        useRoundStore.getState().setGuideOpen(true);
-        expect(useRoundStore.getState().guideOpen).toBe(true);
-        useRoundStore.getState().setGuideOpen(false);
-        expect(useRoundStore.getState().guideOpen).toBe(false);
-    });
+  it("defaults to closed and toggles", () => {
+    expect(useRoundStore.getState().guideOpen).toBe(false);
+    useRoundStore.getState().setGuideOpen(true);
+    expect(useRoundStore.getState().guideOpen).toBe(true);
+    useRoundStore.getState().setGuideOpen(false);
+    expect(useRoundStore.getState().guideOpen).toBe(false);
+  });
 });

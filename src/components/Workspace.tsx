@@ -15,72 +15,58 @@ import FlowGrid from "./FlowGrid";
 import PrintView from "./PrintView";
 
 export default function Workspace() {
-    useKeymap();
+  useKeymap();
 
-    const activeSheetId = useRoundStore((s) => s.activeSheetId);
+  const activeSheetId = useRoundStore((s) => s.activeSheetId);
 
-    useEffect(() => {
-        const { round, selection } = useRoundStore.getState();
-        if (!activeSheetId || !round) return;
-        if (selection?.sheetId === activeSheetId) return;
+  useEffect(() => {
+    const { round, selection } = useRoundStore.getState();
+    if (!activeSheetId || !round) return;
+    if (selection?.sheetId === activeSheetId) return;
 
-        const activeSheet = round.sheets.find((s) => s.id === activeSheetId);
-        const columns =
-            activeSheet?.kind === "cx" ? CX_COLUMNS : round.format.speeches;
-        // Land on the topmost-leftmost occupied cell, else the first cell.
-        const sheetNodes = round.nodes
-            .filter((n) => n.sheetId === activeSheetId)
-            .sort((a, b) => {
-                if (a.row !== b.row) return a.row - b.row;
-                const colA = columns.findIndex((s) => s.id === a.speechId);
-                const colB = columns.findIndex((s) => s.id === b.speechId);
-                return colA - colB;
-            });
+    const activeSheet = round.sheets.find((s) => s.id === activeSheetId);
+    const columns = activeSheet?.kind === "cx" ? CX_COLUMNS : round.format.speeches;
+    // Land on the topmost-leftmost occupied cell, else the first cell.
+    const sheetNodes = round.nodes
+      .filter((n) => n.sheetId === activeSheetId)
+      .sort((a, b) => {
+        if (a.row !== b.row) return a.row - b.row;
+        const colA = columns.findIndex((s) => s.id === a.speechId);
+        const colB = columns.findIndex((s) => s.id === b.speechId);
+        return colA - colB;
+      });
 
-        const first = sheetNodes[0];
-        useRoundStore.getState().setSelection({
-            sheetId: activeSheetId,
-            speechId: first ? first.speechId : columns[0].id,
-            row: first ? first.row : 0,
-        });
-    }, [activeSheetId]);
+    const first = sheetNodes[0];
+    useRoundStore.getState().setSelection({
+      sheetId: activeSheetId,
+      speechId: first ? first.speechId : columns[0].id,
+      row: first ? first.row : 0,
+    });
+  }, [activeSheetId]);
 
-    return (
-        <div
-            className="flex h-screen flex-col bg-zinc-50"
-            data-testid="workspace"
-        >
-            <RoundHeader />
-            <div className="flex min-h-0 flex-1">
-                <Sidebar />
-                <main
-                    className="min-w-0 flex-1 overflow-auto p-4"
-                    data-testid="workspace-content"
-                >
-                    {activeSheetId ? (
-                        <FlowGrid sheetId={activeSheetId} />
-                    ) : (
-                        <div className="p-6 text-[13px] text-muted-foreground">
-                            No sheet selected. Choose one from the sidebar, or
-                            add a sheet with{" "}
-                            <span className="font-medium text-foreground">
-                                + Aff
-                            </span>{" "}
-                            /{" "}
-                            <span className="font-medium text-foreground">
-                                + Neg
-                            </span>
-                            .
-                        </div>
-                    )}
-                </main>
+  return (
+    <div className="flex h-screen flex-col bg-zinc-50" data-testid="workspace">
+      <RoundHeader />
+      <div className="flex min-h-0 flex-1">
+        <Sidebar />
+        <main className="min-w-0 flex-1 overflow-auto p-4" data-testid="workspace-content">
+          {activeSheetId ? (
+            <FlowGrid sheetId={activeSheetId} />
+          ) : (
+            <div className="p-6 text-[13px] text-muted-foreground">
+              No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
+              <span className="font-medium text-foreground">+ Aff</span> /{" "}
+              <span className="font-medium text-foreground">+ Neg</span>.
             </div>
-            <SearchPalette />
-            <SettingsPanel />
-            <InfoPanel />
-            <KeybindingsCheatsheet />
-            <GuideDialog />
-            <PrintView />
-        </div>
-    );
+          )}
+        </main>
+      </div>
+      <SearchPalette />
+      <SettingsPanel />
+      <InfoPanel />
+      <KeybindingsCheatsheet />
+      <GuideDialog />
+      <PrintView />
+    </div>
+  );
 }

@@ -10,18 +10,18 @@ import NewFlowButton from "./NewFlowButton";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 beforeEach(() => {
-    push.mockReset();
-    useRoundStore.setState({ round: null });
+  push.mockReset();
+  useRoundStore.setState({ round: null });
 });
 
 describe("NewFlowButton", () => {
-    it("creates a flow with the chosen role and navigates to it", async () => {
-        render(<NewFlowButton />);
-        await userEvent.click(screen.getByTestId("new-flow"));
-        await userEvent.click(screen.getByTestId("new-flow-role-neg"));
-        expect(push).toHaveBeenCalledTimes(1);
-        const arg = push.mock.calls[0][0] as string;
-        expect(arg).toMatch(/^\/flow\?id=round_/);
-        expect(useRoundStore.getState().round?.role).toBe("neg");
-    });
+  it("creates a flow with the chosen role and navigates to it", async () => {
+    render(<NewFlowButton />);
+    await userEvent.click(screen.getByTestId("new-flow"));
+    await userEvent.click(screen.getByTestId("new-flow-role-neg"));
+    expect(push).toHaveBeenCalledTimes(1);
+    const arg = push.mock.calls[0][0] as string;
+    expect(arg).toMatch(/^\/flow\?id=round_/);
+    expect(useRoundStore.getState().round?.role).toBe("neg");
+  });
 });

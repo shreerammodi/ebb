@@ -9,7 +9,7 @@
  *   uid('node')   → "node_lk3x9_4f3"
  */
 export function uid(prefix: string = "id"): string {
-    const time = Date.now().toString(36);
-    const rand = Math.random().toString(36).slice(2, 7);
-    return `${prefix}_${time}_${rand}`;
+  const time = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 7);
+  return `${prefix}_${time}_${rand}`;
 }
