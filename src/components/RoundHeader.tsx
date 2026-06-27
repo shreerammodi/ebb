@@ -1,15 +1,17 @@
 "use client";
 
-import { useRef } from "react";
-import Link from "next/link";
 import { Settings } from "lucide-react";
+import Link from "next/link";
+import { useRef } from "react";
 import { toast } from "sonner";
-import { useRoundStore } from "@/lib/store/useRoundStore";
-import { readRoundFile } from "@/lib/persistence/io";
+
 import { Button } from "@/components/ui/button";
+import { teamCode } from "@/lib/model/teamCode";
+import { readRoundFile } from "@/lib/persistence/io";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+
 import ExportMenu from "./ExportMenu";
 import SaveStatus from "./SaveStatus";
-import { teamCode } from "@/lib/model/teamCode";
 
 export default function RoundHeader() {
     const role = useRoundStore((s) => s.round?.role);
@@ -19,17 +21,9 @@ export default function RoundHeader() {
     if (!role || !scouting) return null;
 
     const affCode =
-        teamCode(
-            scouting.affSchool ?? "",
-            scouting.aff.first,
-            scouting.aff.second,
-        ) || "Aff";
+        teamCode(scouting.affSchool ?? "", scouting.aff.first, scouting.aff.second) || "Aff";
     const negCode =
-        teamCode(
-            scouting.negSchool ?? "",
-            scouting.neg.first,
-            scouting.neg.second,
-        ) || "Neg";
+        teamCode(scouting.negSchool ?? "", scouting.neg.first, scouting.neg.second) || "Neg";
     const participants =
         role === "judge"
             ? `${affCode} (Aff) vs ${negCode} (Neg)`
@@ -52,29 +46,25 @@ export default function RoundHeader() {
                 selection: null,
             });
         } catch {
-            toast.error(
-                "Failed to import: file may be invalid or from an incompatible version.",
-            );
+            toast.error("Failed to import: file may be invalid or from an incompatible version.");
         }
         e.target.value = "";
     }
 
     return (
         <header
-            className="flex h-12 flex-none items-center justify-between border-b border-border bg-card px-4"
+            className="border-border bg-card flex h-12 flex-none items-center justify-between border-b px-4"
             data-testid="round-header"
         >
             <div className="flex items-center gap-3">
                 <Link
                     href="/"
-                    className="text-[13px] text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground text-[13px]"
                     data-testid="back-to-flows"
                 >
                     ← Flows
                 </Link>
-                <span className="text-sm font-semibold text-foreground">
-                    {participants}
-                </span>
+                <span className="text-foreground text-sm font-semibold">{participants}</span>
                 <SaveStatus />
             </div>
             <div className="no-print flex items-center gap-2">
@@ -108,9 +98,7 @@ export default function RoundHeader() {
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() =>
-                        useRoundStore.getState().setSettingsOpen(true)
-                    }
+                    onClick={() => useRoundStore.getState().setSettingsOpen(true)}
                     aria-label="Settings"
                     data-testid="settings-btn"
                 >

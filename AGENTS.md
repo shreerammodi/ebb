@@ -57,10 +57,6 @@ src/
 
 ## Conventions
 
-- **2-space indent, LF, UTF-8, final newline** (enforced by `.editorconfig` +
-  Prettier).
-- **Prettier**: `printWidth: 100`, prose wrap always, Tailwind class sorting
-  plugin enabled. Let Prettier format — don't hand-format.
 - **Tests are colocated** next to source as `*.test.ts(x)`. Most `lib/` modules
   have a sibling test; keep new logic covered and test-driven where practical.
 - **Pure logic goes in `src/lib`**, not in components. Keep `lib/`

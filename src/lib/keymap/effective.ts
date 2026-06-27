@@ -7,28 +7,29 @@
  * chord to it instead.
  */
 
-import { getPresetKeymap } from "./presets";
-import type { Keymap } from "./types";
 import type { CommandId } from "@/lib/commands/registry";
 
+import { getPresetKeymap } from "./presets";
+import type { Keymap } from "./types";
+
 export function effectiveKeymap(
-  overrides: Record<string, string>, // commandId → chord
+    overrides: Record<string, string>, // commandId → chord
 ): Keymap {
-  const preset = getPresetKeymap();
-  const bindings = { ...preset.bindings };
+    const preset = getPresetKeymap();
+    const bindings = { ...preset.bindings };
 
-  for (const [commandId, overrideChord] of Object.entries(overrides)) {
-    if (!overrideChord) continue;
-    // Remove existing preset chord(s) bound to this command.
-    for (const [chord, cmd] of Object.entries(bindings)) {
-      if (cmd === commandId) delete bindings[chord];
+    for (const [commandId, overrideChord] of Object.entries(overrides)) {
+        if (!overrideChord) continue;
+        // Remove existing preset chord(s) bound to this command.
+        for (const [chord, cmd] of Object.entries(bindings)) {
+            if (cmd === commandId) delete bindings[chord];
+        }
+        // Bind the override chord.
+        bindings[overrideChord] = commandId as CommandId;
     }
-    // Bind the override chord.
-    bindings[overrideChord] = commandId as CommandId;
-  }
 
-  return {
-    name: `${preset.name}+overrides`,
-    bindings,
-  };
+    return {
+        name: `${preset.name}+overrides`,
+        bindings,
+    };
 }

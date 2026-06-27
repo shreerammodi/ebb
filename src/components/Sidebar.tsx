@@ -2,15 +2,16 @@
 
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { executeCommand } from "@/lib/commands/commands";
+import type { Sheet } from "@/lib/model/types";
 import {
     useRoundStore,
     selectSheetsByGroup,
     selectSheetDropCount,
 } from "@/lib/store/useRoundStore";
-import { executeCommand } from "@/lib/commands/commands";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Sheet } from "@/lib/model/types";
 
 interface GroupConfig {
     group: "aff" | "neg";
@@ -55,7 +56,7 @@ export default function Sidebar() {
 
     return (
         <nav
-            className="no-print flex h-full w-[220px] shrink-0 flex-col border-r border-border bg-card"
+            className="no-print border-border bg-card flex h-full w-[220px] shrink-0 flex-col border-r"
             aria-label="Sheets"
             data-testid="sidebar"
         >
@@ -87,18 +88,14 @@ export default function Sidebar() {
                     <div className="mb-3">
                         <div
                             data-testid="cx-section-label"
-                            className="px-2 pb-1 font-mono text-[9px] font-bold tracking-widest text-muted-foreground uppercase"
+                            className="text-muted-foreground px-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase"
                         >
                             CX
                         </div>
                         <button
                             type="button"
                             onClick={() => setActiveSheet(cxSheet.id)}
-                            aria-current={
-                                cxSheet.id === activeSheetId
-                                    ? "true"
-                                    : undefined
-                            }
+                            aria-current={cxSheet.id === activeSheetId ? "true" : undefined}
                             data-testid="cx-sheet-row"
                             className={cn(
                                 "flex w-full items-center rounded-md border px-2 py-1.5 text-left text-[13px] text-foreground transition-colors",
@@ -120,11 +117,11 @@ export default function Sidebar() {
                         .filter((s) => s.kind !== "cx");
                     return (
                         <div key={group} className="mb-3">
-                            <div className="px-2 pb-1 font-mono text-[9px] font-bold tracking-widest text-muted-foreground uppercase">
+                            <div className="text-muted-foreground px-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
                                 {label}
                             </div>
                             {groupSheets.length === 0 ? (
-                                <div className="px-2 py-1 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground px-2 py-1 text-xs">
                                     No sheets
                                 </div>
                             ) : (
@@ -133,15 +130,9 @@ export default function Sidebar() {
                                         key={sheet.id}
                                         sheet={sheet}
                                         active={sheet.id === activeSheetId}
-                                        onSelect={() =>
-                                            setActiveSheet(sheet.id)
-                                        }
-                                        isRenaming={
-                                            sheet.id === renamingSheetId
-                                        }
-                                        onStartRename={() =>
-                                            setRenamingSheet(sheet.id)
-                                        }
+                                        onSelect={() => setActiveSheet(sheet.id)}
+                                        isRenaming={sheet.id === renamingSheetId}
+                                        onStartRename={() => setRenamingSheet(sheet.id)}
                                         onDelete={() => deleteSheet(sheet.id)}
                                     />
                                 ))
@@ -163,14 +154,7 @@ interface SheetRowProps {
     onDelete: () => void;
 }
 
-function SheetRow({
-    sheet,
-    active,
-    onSelect,
-    isRenaming,
-    onStartRename,
-    onDelete,
-}: SheetRowProps) {
+function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete }: SheetRowProps) {
     const renameSheet = useRoundStore((s) => s.renameSheet);
     const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
     const labelDrops = useRoundStore((s) => s.labelDrops);
@@ -204,9 +188,7 @@ function SheetRow({
             <div
                 className={cn(
                     "flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5",
-                    active
-                        ? "border-border bg-accent font-semibold"
-                        : "border-transparent",
+                    active ? "border-border bg-accent font-semibold" : "border-transparent",
                 )}
             >
                 <input
@@ -224,7 +206,7 @@ function SheetRow({
                         }
                     }}
                     onBlur={commit}
-                    className="flex-1 rounded-sm border-none bg-transparent px-0.5 font-[inherit] text-[13px] text-foreground outline outline-1 outline-aff"
+                    className="text-foreground outline-aff flex-1 rounded-sm border-none bg-transparent px-0.5 font-[inherit] text-[13px] outline outline-1"
                     data-testid={`rename-input-${sheet.id}`}
                 />
             </div>
@@ -257,10 +239,7 @@ function SheetRow({
                     {sheet.title}
                 </span>
                 {dropCount > 0 && (
-                    <span
-                        className="badge-drop"
-                        data-testid={`drop-badge-${sheet.id}`}
-                    >
+                    <span className="badge-drop" data-testid={`drop-badge-${sheet.id}`}>
                         {dropCount}
                     </span>
                 )}
@@ -273,7 +252,7 @@ function SheetRow({
                     e.stopPropagation();
                     onDelete();
                 }}
-                className="cursor-pointer rounded px-1 text-muted-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
+                className="text-muted-foreground hover:text-destructive cursor-pointer rounded px-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
             >
                 ×
             </button>

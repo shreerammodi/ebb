@@ -10,13 +10,15 @@
  */
 
 import { useState, useMemo } from "react";
-import { useRoundStore } from "@/lib/store/useRoundStore";
-import { detectDrops } from "@/lib/model/drops";
-import type { Sheet } from "@/lib/model/types";
-import GridCell from "./GridCell";
-import EmptyCellEditor from "./EmptyCellEditor";
+
 import { columnsForSheet } from "@/lib/grid/columns";
 import { occupantAt, maxRow, subtreeMaxRow } from "@/lib/grid/coords";
+import { detectDrops } from "@/lib/model/drops";
+import type { Sheet } from "@/lib/model/types";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+
+import EmptyCellEditor from "./EmptyCellEditor";
+import GridCell from "./GridCell";
 
 const TRAILING_BUFFER_ROWS = 8;
 const EMPTY_SHEETS: Sheet[] = [];
@@ -27,9 +29,7 @@ export interface FlowGridProps {
 
 export default function FlowGrid({ sheetId }: FlowGridProps) {
     const structuralKey = useRoundStore((s) => {
-        const filtered = (s.round?.nodes ?? []).filter(
-            (n) => n.sheetId === sheetId,
-        );
+        const filtered = (s.round?.nodes ?? []).filter((n) => n.sheetId === sheetId);
         return filtered
             .map(
                 (n) =>
@@ -100,10 +100,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
 
     // ── Determine effective row count ──────────────────────────────────────────
     const topRow = maxRow(sheetNodes, sheetId);
-    const effectiveRows = Math.max(
-        topRow + 1 + TRAILING_BUFFER_ROWS,
-        TRAILING_BUFFER_ROWS,
-    );
+    const effectiveRows = Math.max(topRow + 1 + TRAILING_BUFFER_ROWS, TRAILING_BUFFER_ROWS);
 
     // ── Children lookup for relationship highlight ────────────────────────────
     const childrenByParent = new Map<string, string[]>();
@@ -141,21 +138,13 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
             const col = colIndexOf.get(n.speechId);
             if (col === undefined) continue;
             const prev = bandStartByRow.get(n.row);
-            bandStartByRow.set(
-                n.row,
-                prev === undefined ? col : Math.min(prev, col),
-            );
+            bandStartByRow.set(n.row, prev === undefined ? col : Math.min(prev, col));
         }
     }
 
     // Selection's occupant for relationship highlight
     const selNode = selection
-        ? occupantAt(
-              sheetNodes,
-              selection.sheetId,
-              selection.speechId,
-              selection.row,
-          )
+        ? occupantAt(sheetNodes, selection.sheetId, selection.speechId, selection.row)
         : null;
     const selChildren = selNode
         ? new Set(childrenByParent.get(selNode.id) ?? [])
@@ -195,15 +184,15 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                 <div className="move-banner" role="status" aria-live="polite">
                     <span className="move-banner-tag">Move</span>
                     <span>
-                        Arrows to choose a target, <kbd>Enter</kbd> to drop,{" "}
-                        <kbd>Esc</kbd> to cancel
+                        Arrows to choose a target, <kbd>Enter</kbd> to drop, <kbd>Esc</kbd> to
+                        cancel
                     </span>
                 </div>
             )}
             <table className="flow" onDragEnd={() => setDragOverKey(null)}>
                 <caption className="flow-caption">
-                    {sheet.title} sheet. Columns are speeches; each row holds an
-                    argument and its responses.
+                    {sheet.title} sheet. Columns are speeches; each row holds an argument and its
+                    responses.
                 </caption>
                 <thead>
                     {hasGroups && (
@@ -214,11 +203,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                         key={idx}
                                         scope="colgroup"
                                         colSpan={cell.span}
-                                        className={
-                                            cell.side === "aff"
-                                                ? "side-aff"
-                                                : "side-neg"
-                                        }
+                                        className={cell.side === "aff" ? "side-aff" : "side-neg"}
                                     >
                                         {cell.label}
                                     </th>
@@ -233,11 +218,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                             <th
                                 key={speech.id}
                                 scope="col"
-                                className={
-                                    speech.side === "aff"
-                                        ? "side-aff"
-                                        : "side-neg"
-                                }
+                                className={speech.side === "aff" ? "side-aff" : "side-neg"}
                             >
                                 <span className="th-label">{speech.name}</span>
                             </th>
@@ -248,24 +229,15 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                     {Array.from({ length: effectiveRows }, (_, row) => (
                         <tr key={row}>
                             {speeches.map((speech, colIdx) => {
-                                const node = occupantAt(
-                                    sheetNodes,
-                                    sheetId,
-                                    speech.id,
-                                    row,
-                                );
+                                const node = occupantAt(sheetNodes, sheetId, speech.id, row);
                                 const isSel =
                                     selection?.sheetId === sheetId &&
                                     selection?.speechId === speech.id &&
                                     selection?.row === row;
-                                const sideClass =
-                                    speech.side === "aff"
-                                        ? "side-aff"
-                                        : "side-neg";
+                                const sideClass = speech.side === "aff" ? "side-aff" : "side-neg";
                                 const bandStartCol = bandStartByRow.get(row);
                                 const bandClass =
-                                    bandStartCol !== undefined &&
-                                    colIdx >= bandStartCol
+                                    bandStartCol !== undefined && colIdx >= bandStartCol
                                         ? "cell-band-start"
                                         : "";
 
@@ -273,10 +245,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                     const isDropped = droppedIds.has(node.id);
                                     const isFlash = flashNodeId === node.id;
                                     const isSource = moveSource === node.id;
-                                    const isMoveCursor =
-                                        moveSource !== null &&
-                                        isSel &&
-                                        !isSource;
+                                    const isMoveCursor = moveSource !== null && isSel && !isSource;
                                     const relClass = selNode
                                         ? node.id === selNode.parentId
                                             ? "cell-rel-parent"
@@ -285,19 +254,13 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                                     const aboveKey = `${node.speechId}:${node.row - 1}`;
                                                     const belowKey = `${node.speechId}:${node.row + 1}`;
                                                     const hasAbove =
-                                                        selChildPositions.has(
-                                                            aboveKey,
-                                                        );
+                                                        selChildPositions.has(aboveKey);
                                                     const hasBelow =
-                                                        selChildPositions.has(
-                                                            belowKey,
-                                                        );
+                                                        selChildPositions.has(belowKey);
                                                     if (!hasAbove && !hasBelow)
                                                         return "cell-rel-child-only";
-                                                    if (!hasAbove)
-                                                        return "cell-rel-child-top";
-                                                    if (!hasBelow)
-                                                        return "cell-rel-child-bot";
+                                                    if (!hasAbove) return "cell-rel-child-top";
+                                                    if (!hasBelow) return "cell-rel-child-bot";
                                                     return "cell-rel-child-mid";
                                                 })()
                                               : ""
@@ -307,9 +270,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                         bandClass,
                                         isDropped ? "cell-drop" : "",
                                         isSource ? "cell-moving" : "",
-                                        isSel && moveSource === null
-                                            ? "cell-sel"
-                                            : "",
+                                        isSel && moveSource === null ? "cell-sel" : "",
                                         isMoveCursor ? "drag-over" : "",
                                         isFlash ? "cell-flash" : "",
                                         relClass,
@@ -323,14 +284,10 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                             className={classes}
                                             onDragOver={(e) => {
                                                 e.preventDefault();
-                                                setDragOverKey(
-                                                    `${row},${speech.id}`,
-                                                );
+                                                setDragOverKey(`${row},${speech.id}`);
                                             }}
                                             onAnimationEnd={
-                                                isFlash
-                                                    ? () => setFlashNode(null)
-                                                    : undefined
+                                                isFlash ? () => setFlashNode(null) : undefined
                                             }
                                         >
                                             <GridCell
@@ -339,9 +296,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                                 speechId={speech.id}
                                                 isDropped={isDropped}
                                                 sheetNodes={sheetNodes}
-                                                hasChildren={childrenByParent.has(
-                                                    node.id,
-                                                )}
+                                                hasChildren={childrenByParent.has(node.id)}
                                             />
                                         </td>
                                     );
@@ -354,22 +309,15 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                 const reserved = reservedKeys.has(cellKey);
                                 const isSelected = isSel && !reserved;
                                 const showHint =
-                                    sheetIsEmpty &&
-                                    row === 0 &&
-                                    speech.id === speeches[0].id;
-                                const isMoveCursor =
-                                    moveSource !== null && isSelected;
+                                    sheetIsEmpty && row === 0 && speech.id === speeches[0].id;
+                                const isMoveCursor = moveSource !== null && isSelected;
                                 const isDragOver = dragOverKey === cellKey;
                                 const classes = [
                                     sideClass,
                                     bandClass,
                                     reserved ? "cell-reserved" : "cell-open",
-                                    isSelected && moveSource === null
-                                        ? "cell-sel"
-                                        : "",
-                                    isMoveCursor || isDragOver
-                                        ? "drag-over"
-                                        : "",
+                                    isSelected && moveSource === null ? "cell-sel" : "",
+                                    isMoveCursor || isDragOver ? "drag-over" : "",
                                 ]
                                     .filter(Boolean)
                                     .join(" ");
@@ -403,18 +351,12 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                                 : (e) => {
                                                       e.preventDefault();
                                                       const dragged =
-                                                          e.dataTransfer.getData(
-                                                              "text/df-node",
-                                                          );
+                                                          e.dataTransfer.getData("text/df-node");
                                                       if (dragged) {
                                                           // Single-cell drag: move the node here.
                                                           useRoundStore
                                                               .getState()
-                                                              .moveCellTo(
-                                                                  dragged,
-                                                                  speech.id,
-                                                                  row,
-                                                              );
+                                                              .moveCellTo(dragged, speech.id, row);
                                                           setFlashNode(dragged);
                                                       }
                                                       setDragOverKey(null);

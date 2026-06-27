@@ -1,72 +1,74 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+
 import { useKeymap } from "@/lib/keymap/useKeymap";
 import { CX_COLUMNS } from "@/lib/model/cxColumns";
-import RoundHeader from "./RoundHeader";
-import Sidebar from "./Sidebar";
-import SearchPalette from "./SearchPalette";
-import SettingsPanel from "./SettingsPanel";
+import { useRoundStore } from "@/lib/store/useRoundStore";
+
+import FlowGrid from "./FlowGrid";
+import GuideDialog from "./guide/GuideDialog";
 import InfoPanel from "./InfoPanel";
 import KeybindingsCheatsheet from "./KeybindingsCheatsheet";
-import GuideDialog from "./guide/GuideDialog";
-import FlowGrid from "./FlowGrid";
 import PrintView from "./PrintView";
+import RoundHeader from "./RoundHeader";
+import SearchPalette from "./SearchPalette";
+import SettingsPanel from "./SettingsPanel";
+import Sidebar from "./Sidebar";
 
 export default function Workspace() {
-  useKeymap();
+    useKeymap();
 
-  const activeSheetId = useRoundStore((s) => s.activeSheetId);
+    const activeSheetId = useRoundStore((s) => s.activeSheetId);
 
-  useEffect(() => {
-    const { round, selection } = useRoundStore.getState();
-    if (!activeSheetId || !round) return;
-    if (selection?.sheetId === activeSheetId) return;
+    useEffect(() => {
+        const { round, selection } = useRoundStore.getState();
+        if (!activeSheetId || !round) return;
+        if (selection?.sheetId === activeSheetId) return;
 
-    const activeSheet = round.sheets.find((s) => s.id === activeSheetId);
-    const columns = activeSheet?.kind === "cx" ? CX_COLUMNS : round.format.speeches;
-    // Land on the topmost-leftmost occupied cell, else the first cell.
-    const sheetNodes = round.nodes
-      .filter((n) => n.sheetId === activeSheetId)
-      .sort((a, b) => {
-        if (a.row !== b.row) return a.row - b.row;
-        const colA = columns.findIndex((s) => s.id === a.speechId);
-        const colB = columns.findIndex((s) => s.id === b.speechId);
-        return colA - colB;
-      });
+        const activeSheet = round.sheets.find((s) => s.id === activeSheetId);
+        const columns = activeSheet?.kind === "cx" ? CX_COLUMNS : round.format.speeches;
+        // Land on the topmost-leftmost occupied cell, else the first cell.
+        const sheetNodes = round.nodes
+            .filter((n) => n.sheetId === activeSheetId)
+            .sort((a, b) => {
+                if (a.row !== b.row) return a.row - b.row;
+                const colA = columns.findIndex((s) => s.id === a.speechId);
+                const colB = columns.findIndex((s) => s.id === b.speechId);
+                return colA - colB;
+            });
 
-    const first = sheetNodes[0];
-    useRoundStore.getState().setSelection({
-      sheetId: activeSheetId,
-      speechId: first ? first.speechId : columns[0].id,
-      row: first ? first.row : 0,
-    });
-  }, [activeSheetId]);
+        const first = sheetNodes[0];
+        useRoundStore.getState().setSelection({
+            sheetId: activeSheetId,
+            speechId: first ? first.speechId : columns[0].id,
+            row: first ? first.row : 0,
+        });
+    }, [activeSheetId]);
 
-  return (
-    <div className="flex h-screen flex-col bg-zinc-50" data-testid="workspace">
-      <RoundHeader />
-      <div className="flex min-h-0 flex-1">
-        <Sidebar />
-        <main className="min-w-0 flex-1 overflow-auto p-4" data-testid="workspace-content">
-          {activeSheetId ? (
-            <FlowGrid sheetId={activeSheetId} />
-          ) : (
-            <div className="p-6 text-[13px] text-muted-foreground">
-              No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
-              <span className="font-medium text-foreground">+ Aff</span> /{" "}
-              <span className="font-medium text-foreground">+ Neg</span>.
+    return (
+        <div className="flex h-screen flex-col bg-zinc-50" data-testid="workspace">
+            <RoundHeader />
+            <div className="flex min-h-0 flex-1">
+                <Sidebar />
+                <main className="min-w-0 flex-1 overflow-auto p-4" data-testid="workspace-content">
+                    {activeSheetId ? (
+                        <FlowGrid sheetId={activeSheetId} />
+                    ) : (
+                        <div className="text-muted-foreground p-6 text-[13px]">
+                            No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
+                            <span className="text-foreground font-medium">+ Aff</span> /{" "}
+                            <span className="text-foreground font-medium">+ Neg</span>.
+                        </div>
+                    )}
+                </main>
             </div>
-          )}
-        </main>
-      </div>
-      <SearchPalette />
-      <SettingsPanel />
-      <InfoPanel />
-      <KeybindingsCheatsheet />
-      <GuideDialog />
-      <PrintView />
-    </div>
-  );
+            <SearchPalette />
+            <SettingsPanel />
+            <InfoPanel />
+            <KeybindingsCheatsheet />
+            <GuideDialog />
+            <PrintView />
+        </div>
+    );
 }

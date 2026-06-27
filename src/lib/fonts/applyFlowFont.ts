@@ -6,6 +6,6 @@ import { type FontId, fontCssVar } from "./registry";
  * the single point that switches the flow typeface. SSR-safe no-op.
  */
 export function applyFlowFont(id: FontId): void {
-  if (typeof document === "undefined") return;
-  document.documentElement.style.setProperty("--font-flow", fontCssVar(id));
+    if (typeof document === "undefined") return;
+    document.documentElement.style.setProperty("--font-flow", fontCssVar(id));
 }

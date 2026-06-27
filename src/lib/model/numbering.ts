@@ -20,30 +20,30 @@ import type { ArgumentNode } from "@/lib/model/types";
  * - Returns null if nodeId is not found in the array.
  */
 export function numberFor(nodes: ArgumentNode[], nodeId: string): number | null {
-  const target = nodes.find((n) => n.id === nodeId);
-  if (!target) return null;
-  if (target.parentId === null) return null;
+    const target = nodes.find((n) => n.id === nodeId);
+    if (!target) return null;
+    if (target.parentId === null) return null;
 
-  // Collect siblings: same parent, sheet, and speech
-  const siblings = nodes
-    .filter(
-      (n) =>
-        n.parentId === target.parentId &&
-        n.sheetId === target.sheetId &&
-        n.speechId === target.speechId,
-    )
-    .sort((a, b) => a.row - b.row);
+    // Collect siblings: same parent, sheet, and speech
+    const siblings = nodes
+        .filter(
+            (n) =>
+                n.parentId === target.parentId &&
+                n.sheetId === target.sheetId &&
+                n.speechId === target.speechId,
+        )
+        .sort((a, b) => a.row - b.row);
 
-  let counter = 0;
-  for (const sibling of siblings) {
-    if (typeof sibling.numberOverride === "number") {
-      counter = sibling.numberOverride;
-    } else {
-      counter += 1;
+    let counter = 0;
+    for (const sibling of siblings) {
+        if (typeof sibling.numberOverride === "number") {
+            counter = sibling.numberOverride;
+        } else {
+            counter += 1;
+        }
+        if (sibling.id === nodeId) return counter;
     }
-    if (sibling.id === nodeId) return counter;
-  }
 
-  // Should not be reachable since target is among siblings
-  return null;
+    // Should not be reachable since target is among siblings
+    return null;
 }

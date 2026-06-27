@@ -1,0 +1,23 @@
+{
+    "ignorePatterns": [
+        "node_modules/",
+        ".next/",
+        "out/",
+        "dist/",
+        "build/",
+        "coverage/",
+        "package-lock.json",
+        "next-env.d.ts",
+        "tsconfig.tsbuildinfo",
+        "*.log",
+        ".superpowers/"
+    ],
+    "semi": true,
+    "singleQuote": false,
+    "sortImports": true,
+    "sortPackageJson": true,
+    "tabWidth": 4,
+    "useTabs": false,
+    "trailingComma": "all",
+    "sortTailwindcss": true
+}

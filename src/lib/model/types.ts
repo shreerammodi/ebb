@@ -9,102 +9,102 @@ export type NodeStatus = "conceded" | "extended";
 
 /** A single speech slot within a debate format. */
 export interface Speech {
-  id: string;
-  name: string;
-  side: Side;
-  /** Allocated speaking time in seconds. */
-  seconds: number;
-  /** Optional grouping label for consecutive speeches that share a column header. */
-  group?: string;
+    id: string;
+    name: string;
+    side: Side;
+    /** Allocated speaking time in seconds. */
+    seconds: number;
+    /** Optional grouping label for consecutive speeches that share a column header. */
+    group?: string;
 }
 
 /** A debate format describing its speeches and prep time allocations. */
 export interface Format {
-  id: string;
-  name: string;
-  speeches: Speech[];
-  prepSeconds: { aff: number; neg: number };
+    id: string;
+    name: string;
+    speeches: Speech[];
+    prepSeconds: { aff: number; neg: number };
 }
 
 /** A single argument on the flow. Position is grid-owned: (speechId, row). */
 export interface ArgumentNode {
-  id: string;
-  /** The sheet (flow page) this node belongs to. */
-  sheetId: string;
-  /** The speech column this node belongs to. */
-  speechId: string;
-  /** Parent node id, or null. Relationship metadata only — does NOT drive layout. */
-  parentId: string | null;
-  /** Global grid row within the sheet (shared across all columns). */
-  row: number;
-  text: string;
-  statuses: NodeStatus[];
-  /** Emphasis decoration (renders bold). */
-  bold: boolean;
-  /** Override the auto-generated display number for this node. */
-  numberOverride?: number | null;
+    id: string;
+    /** The sheet (flow page) this node belongs to. */
+    sheetId: string;
+    /** The speech column this node belongs to. */
+    speechId: string;
+    /** Parent node id, or null. Relationship metadata only — does NOT drive layout. */
+    parentId: string | null;
+    /** Global grid row within the sheet (shared across all columns). */
+    row: number;
+    text: string;
+    statuses: NodeStatus[];
+    /** Emphasis decoration (renders bold). */
+    bold: boolean;
+    /** Override the auto-generated display number for this node. */
+    numberOverride?: number | null;
 }
 
 /** A labeled bracket grouping argument nodes in the same column. */
 export interface ArgGroup {
-  id: string;
-  sheetId: string;
-  label: string;
-  /** Node ids bundled together (same column). */
-  memberIds: string[];
+    id: string;
+    sheetId: string;
+    label: string;
+    /** Node ids bundled together (same column). */
+    memberIds: string[];
 }
 
 /** A flow sheet (page) grouping arguments. */
 export interface Sheet {
-  id: string;
-  title: string;
-  group: "aff" | "neg";
-  /** Display order among sheets. */
-  order: number;
-  /** Sheet variety. Absent / 'flow' = the normal argument grid. 'cx' = the cross-ex sheet. */
-  kind?: "flow" | "cx";
-  /** Leftmost speech column shown (absent = derive from side). */
-  startSpeechId?: string;
+    id: string;
+    title: string;
+    group: "aff" | "neg";
+    /** Display order among sheets. */
+    order: number;
+    /** Sheet variety. Absent / 'flow' = the normal argument grid. 'cx' = the cross-ex sheet. */
+    kind?: "flow" | "cx";
+    /** Leftmost speech column shown (absent = derive from side). */
+    startSpeechId?: string;
 }
 
 /** One debater's name. */
 export interface Debater {
-  first: string;
-  last: string;
+    first: string;
+    last: string;
 }
 
 /** Round result as recorded for scouting. */
 export interface Decision {
-  vote?: "aff" | "neg";
-  rfd?: string;
+    vote?: "aff" | "neg";
+    rfd?: string;
 }
 
 /** Scouting / Info-sheet data, mirroring the Excel Info sheet. */
 export interface Scouting {
-  affSchool?: string;
-  negSchool?: string;
-  /** Aff debaters: first = 1A, second = 2A. */
-  aff: { first: Debater; second: Debater };
-  /** Neg debaters: first = 1N, second = 2N. */
-  neg: { first: Debater; second: Debater };
-  tournament?: string;
-  round?: string;
-  date?: string;
-  judge?: string;
-  decision?: Decision;
+    affSchool?: string;
+    negSchool?: string;
+    /** Aff debaters: first = 1A, second = 2A. */
+    aff: { first: Debater; second: Debater };
+    /** Neg debaters: first = 1N, second = 2N. */
+    neg: { first: Debater; second: Debater };
+    tournament?: string;
+    round?: string;
+    date?: string;
+    judge?: string;
+    decision?: Decision;
 }
 
 /** Top-level aggregate representing a complete debate round. */
 export interface Round {
-  id: string;
-  createdAt: number;
-  updatedAt: number;
-  /** ms timestamp when soft-deleted (moved to Trash); absent/null = live. */
-  deletedAt?: number | null;
-  role: Role;
-  format: Format;
-  scouting: Scouting;
-  sheets: Sheet[];
-  nodes: ArgumentNode[];
-  groups: ArgGroup[];
+    id: string;
+    createdAt: number;
+    updatedAt: number;
+    /** ms timestamp when soft-deleted (moved to Trash); absent/null = live. */
+    deletedAt?: number | null;
+    role: Role;
+    format: Format;
+    scouting: Scouting;
+    sheets: Sheet[];
+    nodes: ArgumentNode[];
+    groups: ArgGroup[];
 }

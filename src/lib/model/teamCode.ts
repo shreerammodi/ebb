@@ -11,19 +11,19 @@ const hasLast = (d: Debater): boolean => d.last.trim().length > 0;
  * No names → just the school. Blank school → "".
  */
 export function teamCode(school: string, first: Debater, second: Debater): string {
-  const s = school.trim();
-  if (!s) return "";
+    const s = school.trim();
+    if (!s) return "";
 
-  const present = [first, second].filter(hasLast);
-  if (present.length === 2) {
-    const inits = present.map((d) => initial(d.last)).sort((a, b) => a.localeCompare(b));
-    return `${s} ${inits[0]}${inits[1]}`;
-  }
-  // Single debater (or fall back to whichever has any name).
-  const solo = present[0] ?? [first, second].find((d) => d.first.trim() || d.last.trim());
-  if (solo) {
-    const code = `${initial(solo.first)}${initial(solo.last)}`;
-    return code ? `${s} ${code}` : s;
-  }
-  return s;
+    const present = [first, second].filter(hasLast);
+    if (present.length === 2) {
+        const inits = present.map((d) => initial(d.last)).sort((a, b) => a.localeCompare(b));
+        return `${s} ${inits[0]}${inits[1]}`;
+    }
+    // Single debater (or fall back to whichever has any name).
+    const solo = present[0] ?? [first, second].find((d) => d.first.trim() || d.last.trim());
+    if (solo) {
+        const code = `${initial(solo.first)}${initial(solo.last)}`;
+        return code ? `${s} ${code}` : s;
+    }
+    return s;
 }

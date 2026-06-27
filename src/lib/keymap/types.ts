@@ -8,7 +8,7 @@ import type { CommandId } from "@/lib/commands/registry";
 export type Chord = string;
 
 export interface Keymap {
-  name: string;
-  /** Flat modeless bindings: chord → command. */
-  bindings: Record<Chord, CommandId>;
+    name: string;
+    /** Flat modeless bindings: chord → command. */
+    bindings: Record<Chord, CommandId>;
 }

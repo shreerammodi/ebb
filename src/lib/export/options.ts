@@ -1,7 +1,7 @@
 /** User display settings that affect export output. Sourced from the store. */
 export interface ExportOptions {
-  /** Apply argument numbering (matches the on-screen autoNumber setting). */
-  autoNumber: boolean;
+    /** Apply argument numbering (matches the on-screen autoNumber setting). */
+    autoNumber: boolean;
 }
 
 /** Conservative default used by callers/tests that don't pass options. */
