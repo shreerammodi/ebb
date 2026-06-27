@@ -60,7 +60,7 @@ export default function GuideDialog() {
       }}
     >
       <DialogContent
-        className="flex h-[80vh] max-h-[80vh] max-w-[760px] flex-col overflow-hidden p-0"
+        className="flex h-[80vh] max-h-[80vh] w-[calc(100%-4rem)] max-w-[840px] flex-col overflow-hidden p-0 sm:max-w-[840px]"
         data-testid="guide-dialog"
       >
         <DialogHeader className="shrink-0 border-b border-border px-[18px] pt-[14px] pb-2.5">

@@ -33,7 +33,7 @@ function GridDiagram() {
         ))}
       </div>
       <div className="grid grid-cols-4 text-[11px] text-foreground">
-        <div className="px-2 py-1.5">Framework</div>
+        <div className="px-2 py-1.5">Net Benefit</div>
         <div className="px-2 py-1.5 text-muted-foreground">→ answer</div>
         <div className="px-2 py-1.5 text-muted-foreground">→ answer</div>
         <div className="px-2 py-1.5" />
@@ -110,20 +110,17 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: "Flowing a round",
     body: (
       <>
-        <p>
-          Arrow to a cell and type to flow an argument. The editor keeps the structure tidy as you
-          go.
-        </p>
+        <p>Use the arrows to navigate to a cell and type to flow an argument.</p>
         <ul className="ml-4 list-disc space-y-1">
-          <li>
-            <Kbd cmd="node.sibling" /> adds a sibling argument in the same speech.
-          </li>
           <li>
             <Kbd cmd="node.response" /> adds a response in the next speech, answering the current
             argument.
           </li>
           <li>
-            <Kbd cmd="row.insertAbove" /> and <Kbd cmd="row.insertBelow" /> add blank rows;{" "}
+            <Kbd cmd="node.sibling" /> adds a sibling argument in the same speech, e.g. a second
+            response.
+          </li>
+          <li>
             <Kbd cmd="row.delete" /> removes a row and <Kbd cmd="cell.clear" /> empties a cell.
           </li>
           <li>
@@ -148,19 +145,22 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: "Navigating",
     body: (
       <>
-        <p>
-          Arrow keys move between cells. Jump keys leap to the edge of the current block, and
-          Home/End reach the ends of a row.
-        </p>
         <ul className="ml-4 list-disc space-y-1">
+          <li>Arrow keys move between cells.</li>
+          <li>
+            <Kbd cmd="nav.jumpUp" /> <Kbd cmd="nav.jumpDown" /> <Kbd cmd="nav.jumpLeft" />{" "}
+            <Kbd cmd="nav.jumpUp" /> leap to the edge of the current block (like in Excel)
+          </li>
+          <li>
+            <Kbd cmd="nav.jumpHome" /> and <Kbd cmd="nav.jumpEnd" /> reach the ends of a row.
+          </li>
           <li>
             <Kbd cmd="nav.nextSpeech" /> and <Kbd cmd="nav.prevSpeech" /> move by speech.
           </li>
           <li>
-            Switch sheets with <Kbd cmd="sheet.prev" /> and <Kbd cmd="sheet.next" />, or{" "}
-            <Kbd cmd="sheet.quickSwitch" /> to jump to any sheet by name.
+            Switch sheets with <Kbd cmd="sheet.prev" /> and <Kbd cmd="sheet.next" />, or use{" "}
+            <Kbd cmd="sheet.quickSwitch" /> to fuzzy find to swap sheets.
           </li>
-          <li>The search palette finds text anywhere in the round.</li>
         </ul>
       </>
     ),
@@ -172,8 +172,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     body: (
       <>
         <p>
-          Info records the teams, schools, side, judge, and result for the round, the same fields
-          the dashboard sorts and groups by.
+          The info panel records round metadata: teams, schools, side, judge, result, etc. This is
+          exported with the flow, and also lets you sort and find flows in the dashboard.
         </p>
         <p>
           Settings is where you change display options and remap keys. Every shortcut shown in this
@@ -188,11 +188,11 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     title: "Saving, exporting, printing",
     body: (
       <>
+        <p>Your work saves automatically as you type, and the save indicator shows the status.</p>
         <p>
-          Your work saves automatically as you type, and the save indicator shows the status. Undo
-          and redo step through changes.
+          You can export any flow to json, which lets other Ebb users import your flows.
+          Alternatively, you can export to Excel.
         </p>
-        <p>Export writes the round to xlsx or csv, and Print produces a clean printable flow.</p>
       </>
     ),
   },
