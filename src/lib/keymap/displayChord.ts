@@ -1,5 +1,5 @@
 /**
- * displayChord — turn a CommandId into a human-readable key hint.
+ * displayChord: turns a CommandId into a human-readable key hint.
  *
  * Single source of truth for key rendering, shared by the keybindings
  * cheatsheet and the Guide. Reads the live keymap so hints reflect user remaps.
