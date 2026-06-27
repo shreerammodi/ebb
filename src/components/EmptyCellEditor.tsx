@@ -14,7 +14,6 @@ export default function EmptyCellEditor({
 }: {
     sheetId: string;
     speechId: string;
-    parentId?: string | null;
 }) {
     const ref = useRef<HTMLTextAreaElement>(null);
     // Read selection to discover which row we're editing.

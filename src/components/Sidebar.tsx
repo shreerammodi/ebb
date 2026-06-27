@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { toast } from "sonner";
 import {
     useRoundStore,
     selectSheetsByGroup,
@@ -29,8 +30,23 @@ export default function Sidebar() {
     const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
     const labelDrops = useRoundStore((s) => s.labelDrops);
     const removeSheet = useRoundStore((s) => s.removeSheet);
+    const restoreSheet = useRoundStore((s) => s.restoreSheet);
 
     if (!round) return null;
+
+    // Deleting a sheet wipes a whole column of a live round, so it must be
+    // reversible at the point of action — not only via a keyboard Undo the user
+    // may not know about. Mirror the dashboard's soft-delete + Undo toast.
+    function deleteSheet(sheetId: string) {
+        const removed = removeSheet(sheetId);
+        if (!removed) return;
+        toast(`Deleted “${removed.sheet.title}”`, {
+            action: {
+                label: "Undo",
+                onClick: () => restoreSheet(removed),
+            },
+        });
+    }
 
     const cxSheet = round.sheets.find((s) => s.kind === "cx") ?? null;
 
@@ -40,12 +56,35 @@ export default function Sidebar() {
             aria-label="Sheets"
             data-testid="sidebar"
         >
+            <div className="flex shrink-0 gap-1 p-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => executeCommand("sheet.newAff")}
+                    data-testid="add-aff"
+                >
+                    + Aff
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => executeCommand("sheet.newNeg")}
+                    data-testid="add-neg"
+                >
+                    + Neg
+                </Button>
+            </div>
+
             <div className="flex-1 overflow-y-auto p-2">
                 {cxSheet && (
                     <div className="mb-3">
                         <div
                             data-testid="cx-section-label"
-                            className="px-2 pb-1 font-mono text-[9px] font-bold tracking-widest text-zinc-400 uppercase"
+                            className="px-2 pb-1 font-mono text-[9px] font-bold tracking-widest text-muted-foreground uppercase"
                         >
                             CX
                         </div>
@@ -59,10 +98,10 @@ export default function Sidebar() {
                             }
                             data-testid="cx-sheet-row"
                             className={cn(
-                                "flex w-full items-center rounded-md border px-2 py-1.5 text-left text-[13px] transition-colors",
+                                "flex w-full items-center rounded-md border px-2 py-1.5 text-left text-[13px] text-foreground transition-colors",
                                 cxSheet.id === activeSheetId
-                                    ? "border-zinc-200 bg-zinc-100 font-semibold text-zinc-900"
-                                    : "border-transparent text-zinc-700 hover:bg-zinc-50",
+                                    ? "border-border bg-accent font-semibold text-foreground"
+                                    : "border-transparent hover:bg-accent/50",
                             )}
                         >
                             <span className="overflow-hidden text-ellipsis whitespace-nowrap">
@@ -77,11 +116,11 @@ export default function Sidebar() {
                     );
                     return (
                         <div key={group} className="mb-3">
-                            <div className="px-2 pb-1 font-mono text-[9px] font-bold tracking-widest text-zinc-400 uppercase">
+                            <div className="px-2 pb-1 font-mono text-[9px] font-bold tracking-widest text-muted-foreground uppercase">
                                 {label}
                             </div>
                             {sheets.length === 0 ? (
-                                <div className="px-2 py-1 text-xs text-zinc-400">
+                                <div className="px-2 py-1 text-xs text-muted-foreground">
                                     No sheets
                                 </div>
                             ) : (
@@ -107,36 +146,13 @@ export default function Sidebar() {
                                         onStartRename={() =>
                                             setRenamingSheet(sheet.id)
                                         }
-                                        onDelete={() => removeSheet(sheet.id)}
+                                        onDelete={() => deleteSheet(sheet.id)}
                                     />
                                 ))
                             )}
                         </div>
                     );
                 })}
-            </div>
-
-            <div className="flex shrink-0 gap-1 p-2">
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => executeCommand("sheet.newAff")}
-                    data-testid="add-aff"
-                >
-                    + Aff
-                </Button>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => executeCommand("sheet.newNeg")}
-                    data-testid="add-neg"
-                >
-                    + Neg
-                </Button>
             </div>
         </nav>
     );
@@ -191,7 +207,7 @@ function SheetRow({
                 className={cn(
                     "flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5",
                     active
-                        ? "border-zinc-200 bg-zinc-100 font-semibold"
+                        ? "border-border bg-accent font-semibold"
                         : "border-transparent",
                 )}
             >
@@ -210,7 +226,7 @@ function SheetRow({
                         }
                     }}
                     onBlur={commit}
-                    className="flex-1 rounded-sm border-none bg-transparent px-0.5 font-[inherit] text-[13px] text-zinc-900 outline outline-1 outline-aff"
+                    className="flex-1 rounded-sm border-none bg-transparent px-0.5 font-[inherit] text-[13px] text-foreground outline outline-1 outline-aff"
                     data-testid={`rename-input-${sheet.id}`}
                 />
             </div>
@@ -225,15 +241,18 @@ function SheetRow({
                 onClick={onSelect}
                 onDoubleClick={onStartRename}
                 onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") onSelect();
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onSelect();
+                    }
                 }}
                 aria-current={active ? "true" : undefined}
                 data-testid={`sheet-${sheet.id}`}
                 className={cn(
-                    "flex w-full flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-md border px-2 py-1.5 text-left text-[13px] text-zinc-700 transition-colors",
+                    "flex w-full flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-md border px-2 py-1.5 text-left text-[13px] text-foreground transition-colors",
                     active
-                        ? "border-zinc-200 bg-zinc-100 font-semibold text-zinc-900"
-                        : "border-transparent hover:bg-zinc-50",
+                        ? "border-border bg-accent font-semibold text-foreground"
+                        : "border-transparent hover:bg-accent/50",
                 )}
             >
                 <span className="overflow-hidden text-ellipsis whitespace-nowrap">
@@ -248,25 +267,18 @@ function SheetRow({
                     </span>
                 )}
             </div>
-            <span
-                role="button"
+            <button
+                type="button"
                 aria-label="Delete sheet"
                 data-testid={`delete-sheet-${sheet.id}`}
                 onClick={(e) => {
                     e.stopPropagation();
                     onDelete();
                 }}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        e.stopPropagation();
-                        onDelete();
-                    }
-                }}
-                tabIndex={0}
-                className="cursor-pointer px-1 text-zinc-400 opacity-0 group-hover:opacity-100 hover:text-red-500"
+                className="cursor-pointer rounded px-1 text-muted-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
             >
                 ×
-            </span>
+            </button>
         </div>
     );
 }

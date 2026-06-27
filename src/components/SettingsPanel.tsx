@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { XIcon } from "lucide-react";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
@@ -121,15 +122,15 @@ export default function SettingsPanel() {
 
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                    <span className="text-[15px] font-semibold text-zinc-900">
+                    <span className="text-[15px] font-semibold text-foreground">
                         Settings
                     </span>
                     <DialogClose
                         data-testid="settings-close"
                         aria-label="Close settings"
-                        className="rounded px-1.5 py-0.5 text-[13px] text-zinc-400 hover:text-zinc-600"
+                        className="rounded text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2"
                     >
-                        ✕
+                        <XIcon className="size-4" />
                     </DialogClose>
                 </div>
 
@@ -153,7 +154,7 @@ export default function SettingsPanel() {
                                         "rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors",
                                         active
                                             ? "bg-accent font-medium text-accent-foreground"
-                                            : "text-zinc-500 hover:bg-accent/50",
+                                            : "text-muted-foreground hover:bg-accent/50",
                                     )}
                                 >
                                     {c.label}
@@ -166,7 +167,7 @@ export default function SettingsPanel() {
                     <div className="flex-1 overflow-y-auto p-4">
                         {category === "display" ? (
                             <div className="flex flex-col gap-1">
-                                <label className="flex items-center justify-between py-1.5 text-[13px] text-zinc-900">
+                                <label className="flex items-center justify-between py-1.5 text-[13px] text-foreground">
                                     Auto-number arguments
                                     <Switch
                                         checked={autoNumber}
@@ -175,7 +176,7 @@ export default function SettingsPanel() {
                                         aria-label="Auto-number arguments"
                                     />
                                 </label>
-                                <label className="flex items-center justify-between py-1.5 text-[13px] text-zinc-900">
+                                <label className="flex items-center justify-between py-1.5 text-[13px] text-foreground">
                                     Label drops
                                     <Switch
                                         checked={labelDrops}
@@ -216,7 +217,7 @@ export default function SettingsPanel() {
                                                 }}
                                                 data-testid={`cmd-${cmd.id}`}
                                             >
-                                                <span className="overflow-hidden text-[13px] text-ellipsis whitespace-nowrap text-zinc-900">
+                                                <span className="overflow-hidden text-[13px] text-ellipsis whitespace-nowrap text-foreground">
                                                     {cmd.label}
                                                 </span>
                                                 <span
@@ -224,7 +225,7 @@ export default function SettingsPanel() {
                                                         "min-w-[64px] rounded-md border bg-zinc-50 px-1.5 py-0.5 text-center font-mono text-[12px] whitespace-nowrap",
                                                         overridden
                                                             ? "border-sel text-sel"
-                                                            : "border-zinc-200 text-zinc-400",
+                                                            : "border-zinc-200 text-muted-foreground",
                                                     )}
                                                     data-testid={`chord-${cmd.id}`}
                                                 >

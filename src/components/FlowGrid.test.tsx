@@ -255,7 +255,9 @@ describe("FlowGrid — coordinate-based rendering", () => {
         // The policy format doesn't have explicit groups, so this just checks
         // the rendering doesn't break. The Block header should be present.
         const headers = screen.getAllByRole("columnheader");
-        expect(headers.some((h) => h.textContent?.includes("Block"))).toBe(true);
+        expect(headers.some((h) => h.textContent?.includes("Block"))).toBe(
+            true,
+        );
     });
 
     it("dropping a node onto another reparent it", () => {
@@ -372,7 +374,9 @@ describe("FlowGrid — reserved cells beside a response band", () => {
         useRoundStore
             .getState()
             .placeBareNode({ sheetId, speechId: c0, row: 0 });
-        useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+        useRoundStore
+            .getState()
+            .setSelection({ sheetId, speechId: c0, row: 0 });
         useRoundStore.getState().spawnResponse();
         useRoundStore.getState().spawnSibling();
         useRoundStore.getState().spawnSibling();

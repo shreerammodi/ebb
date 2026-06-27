@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Settings } from "lucide-react";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { listRounds, type RoundSummary } from "@/lib/persistence/autosave";
 import {
@@ -23,6 +24,8 @@ import ImportExportControls from "./ImportExportControls";
 import SettingsPanel from "@/components/SettingsPanel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
     const router = useRouter();
@@ -72,7 +75,26 @@ export default function Dashboard() {
         [grouped, sorted],
     );
 
-    if (summaries === null) return null;
+    if (summaries === null) {
+        // Held frame, not a blank screen: the chrome stays put and card
+        // placeholders pulse in, so the load never reads as "lost my flows".
+        return (
+            <div className="min-h-screen bg-zinc-50">
+                <div className="flex items-center gap-3 border-b border-border bg-card px-5 py-4">
+                    <span className="text-[15px] font-bold tracking-tight">
+                        Debate
+                        <span className="text-muted-foreground">Flow</span>
+                    </span>
+                    <Skeleton className="h-9 w-[360px]" />
+                </div>
+                <div className="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <Skeleton key={i} className="h-[168px] rounded-lg" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     const empty = summaries.length === 0;
 
@@ -80,7 +102,7 @@ export default function Dashboard() {
         <div className="min-h-screen bg-zinc-50">
             <div className="flex items-center gap-3 border-b border-border bg-card px-5 py-4">
                 <span className="text-[15px] font-bold tracking-tight">
-                    Debate<span className="text-blue-600">Flow</span>
+                    Debate<span className="text-muted-foreground">Flow</span>
                 </span>
                 <Input
                     value={query}
@@ -93,7 +115,7 @@ export default function Dashboard() {
                 <ImportExportControls onChanged={refresh} />
                 <Link
                     href="/trash"
-                    className="text-[13px] text-zinc-500 hover:text-zinc-800"
+                    className="text-[13px] text-muted-foreground hover:text-foreground"
                     data-testid="dashboard-trash-link"
                 >
                     Trash
@@ -107,7 +129,7 @@ export default function Dashboard() {
                         useRoundStore.getState().setSettingsOpen(true)
                     }
                 >
-                    <span className="text-base leading-none">⚙</span>
+                    <Settings className="size-4" />
                 </Button>
                 <NewFlowButton />
             </div>
@@ -118,17 +140,17 @@ export default function Dashboard() {
                         data-testid="dashboard-empty"
                         className="mx-auto mt-20 flex max-w-sm flex-col items-center gap-4 text-center"
                     >
-                        <p className="text-[15px] font-medium text-zinc-700">
+                        <p className="text-[15px] font-medium text-foreground">
                             No flows yet
                         </p>
-                        <p className="text-[13px] text-zinc-500">
+                        <p className="text-[13px] text-muted-foreground">
                             Create your first flow to get started.
                         </p>
                         <NewFlowButton />
                     </div>
                 ) : (
                     <>
-                        <div className="mb-4 flex items-center gap-4 text-[12.5px] text-zinc-500">
+                        <div className="mb-4 flex items-center gap-4 text-[12.5px] text-muted-foreground">
                             <span data-testid="flow-count">
                                 {summaries.length} flows
                             </span>
@@ -141,7 +163,7 @@ export default function Dashboard() {
                                         setSort(e.target.value as SortKey)
                                     }
                                     data-testid="sort-select"
-                                    className="rounded border border-border bg-card px-2 py-1"
+                                    className="rounded-md border border-input bg-card px-2 py-1 text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                                 >
                                     <option value="updated">Last edited</option>
                                     <option value="date">Date</option>
@@ -151,23 +173,21 @@ export default function Dashboard() {
                                     <option value="result">Result</option>
                                 </select>
                             </label>
-                            <label className="flex items-center gap-1.5">
-                                <input
-                                    type="checkbox"
-                                    checked={grouped}
-                                    onChange={(e) =>
-                                        setGrouped(e.target.checked)
-                                    }
-                                    data-testid="group-toggle"
-                                />
+                            <label className="flex items-center gap-2">
                                 Group by tournament
+                                <Switch
+                                    checked={grouped}
+                                    onCheckedChange={setGrouped}
+                                    data-testid="group-toggle"
+                                    aria-label="Group by tournament"
+                                />
                             </label>
                         </div>
 
                         {groups ? (
                             groups.map((g) => (
                                 <section key={g.label} className="mb-6">
-                                    <h2 className="mb-2 text-[11px] font-bold tracking-widest text-zinc-400 uppercase">
+                                    <h2 className="mb-2 text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
                                         {g.label}
                                     </h2>
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

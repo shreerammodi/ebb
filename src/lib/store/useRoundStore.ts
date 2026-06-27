@@ -11,6 +11,7 @@ import type {
     Round,
     Sheet,
     ArgumentNode,
+    ArgGroup,
     Format,
     Role,
     NodeStatus,
@@ -75,6 +76,20 @@ export interface RoundState {
     flashNodeId: string | null;
 }
 
+/**
+ * Everything needed to put a deleted sheet back exactly where it was: the sheet
+ * itself (its original `order` restores its position), the arguments it held,
+ * the groups scoped to it, and whether it was active. Returned by `removeSheet`
+ * so the caller can offer a discoverable Undo without relying on the global
+ * history stack (which is order-dependent if the user edits in the meantime).
+ */
+export interface RemovedSheet {
+    sheet: Sheet;
+    nodes: ArgumentNode[];
+    groups: ArgGroup[];
+    wasActive: boolean;
+}
+
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export interface RoundActions {
@@ -82,7 +97,10 @@ export interface RoundActions {
 
     addSheet(input: { title: string; group: "aff" | "neg" }): string;
     renameSheet(sheetId: string, title: string): void;
-    removeSheet(sheetId: string): void;
+    /** Removes a sheet (and its nodes/groups), returning a payload for Undo. */
+    removeSheet(sheetId: string): RemovedSheet | null;
+    /** Re-inserts a previously removed sheet at its original position. */
+    restoreSheet(removed: RemovedSheet): void;
     reorderSheet(sheetId: string, newOrder: number): void;
     setActiveSheet(sheetId: string): void;
 
@@ -328,7 +346,15 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     // ── removeSheet ────────────────────────────────────────────────────────────
     removeSheet(sheetId) {
         const { round, activeSheetId, selection } = get();
-        if (!round) return;
+        if (!round) return null;
+
+        const sheet = round.sheets.find((s) => s.id === sheetId);
+        if (!sheet) return null;
+
+        // Capture what we're about to drop so the caller can offer Undo.
+        const removedNodes = round.nodes.filter((n) => n.sheetId === sheetId);
+        const removedGroups = round.groups.filter((g) => g.sheetId === sheetId);
+        const wasActive = activeSheetId === sheetId;
 
         const remaining = round.sheets.filter((s) => s.id !== sheetId);
         get()._commit(null, (r) => ({
@@ -337,12 +363,29 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             nodes: r.nodes.filter((n) => n.sheetId !== sheetId),
             groups: r.groups.filter((g) => g.sheetId !== sheetId),
         }));
-        if (activeSheetId === sheetId) {
+        if (wasActive) {
             const nextActive =
                 remaining.find((s) => s.kind !== "cx") ?? remaining[0] ?? null;
             set({ activeSheetId: nextActive?.id ?? null });
         }
         if (selection?.sheetId === sheetId) set({ selection: null });
+
+        return { sheet, nodes: removedNodes, groups: removedGroups, wasActive };
+    },
+
+    // ── restoreSheet ───────────────────────────────────────────────────────────
+    restoreSheet(removed) {
+        const { round } = get();
+        if (!round) return;
+        // Guard against a double restore (e.g. Undo clicked twice).
+        if (round.sheets.some((s) => s.id === removed.sheet.id)) return;
+        get()._commit(null, (r) => ({
+            ...r,
+            sheets: [...r.sheets, removed.sheet],
+            nodes: [...r.nodes, ...removed.nodes],
+            groups: [...r.groups, ...removed.groups],
+        }));
+        if (removed.wasActive) set({ activeSheetId: removed.sheet.id });
     },
 
     // ── reorderSheet ───────────────────────────────────────────────────────────

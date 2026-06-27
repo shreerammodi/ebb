@@ -2,10 +2,13 @@
 
 import { useRef } from "react";
 import Link from "next/link";
+import { Settings } from "lucide-react";
+import { toast } from "sonner";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { readRoundFile } from "@/lib/persistence/io";
 import { Button } from "@/components/ui/button";
 import ExportMenu from "./ExportMenu";
+import SaveStatus from "./SaveStatus";
 import { teamCode } from "@/lib/model/teamCode";
 
 export default function RoundHeader() {
@@ -50,7 +53,7 @@ export default function RoundHeader() {
                 selection: null,
             });
         } catch {
-            alert(
+            toast.error(
                 "Failed to import: file may be invalid or from an incompatible version.",
             );
         }
@@ -65,14 +68,15 @@ export default function RoundHeader() {
             <div className="flex items-center gap-3">
                 <Link
                     href="/"
-                    className="text-[13px] text-zinc-500 hover:text-zinc-800"
+                    className="text-[13px] text-muted-foreground hover:text-foreground"
                     data-testid="back-to-flows"
                 >
                     ← Flows
                 </Link>
-                <span className="text-sm font-semibold text-zinc-900">
+                <span className="text-sm font-semibold text-foreground">
                     {participants}
                 </span>
+                <SaveStatus />
             </div>
             <div className="no-print flex items-center gap-2">
                 <input
@@ -102,7 +106,7 @@ export default function RoundHeader() {
                     aria-label="Settings"
                     data-testid="settings-btn"
                 >
-                    <span className="text-base leading-none">⚙</span>
+                    <Settings className="size-4" />
                 </Button>
                 <ExportMenu />
                 <Button

@@ -142,7 +142,7 @@ export default function KeybindingsCheatsheet() {
                 }}
             >
                 <DialogHeader className="shrink-0 border-b border-border px-[18px] pt-[14px] pb-2.5">
-                    <DialogTitle className="text-sm font-semibold text-zinc-900">
+                    <DialogTitle className="text-sm font-semibold text-foreground">
                         Keyboard shortcuts
                     </DialogTitle>
                 </DialogHeader>
@@ -153,7 +153,7 @@ export default function KeybindingsCheatsheet() {
                 >
                     {GROUPS.map((group) => (
                         <div key={group.label} className="flex flex-col gap-1">
-                            <div className="mb-1 font-mono text-[9px] font-bold tracking-widest text-zinc-400 uppercase">
+                            <div className="mb-1 font-mono text-[9px] font-bold tracking-widest text-muted-foreground uppercase">
                                 {group.label}
                             </div>
                             <div className="flex flex-col gap-0.5">
@@ -181,13 +181,13 @@ export default function KeybindingsCheatsheet() {
                                             key={commandId}
                                             className="flex items-center gap-2"
                                         >
-                                            <kbd className="inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 border-zinc-200 bg-zinc-50 px-1.5 py-px font-mono text-[12px] whitespace-nowrap text-zinc-900">
+                                            <kbd className="inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 border-zinc-200 bg-zinc-50 px-1.5 py-px font-mono text-[12px] whitespace-nowrap text-foreground">
                                                 {displayChord}
                                             </kbd>
-                                            <span className="flex items-center gap-1 text-[12px] text-zinc-700">
+                                            <span className="flex items-center gap-1 text-[12px] text-foreground">
                                                 {label}
                                                 {moveMode && (
-                                                    <span className="rounded border border-zinc-200 bg-zinc-50 px-1 text-[10px] leading-4 text-zinc-400">
+                                                    <span className="rounded border border-zinc-200 bg-zinc-50 px-1 text-[10px] leading-4 text-muted-foreground">
                                                         move
                                                     </span>
                                                 )}

@@ -12,9 +12,15 @@ import { db } from "@/lib/persistence/db";
 import { deleteSearchIndex } from "@/lib/persistence/searchIndex";
 import FlowCard from "./dashboard/FlowCard";
 import { Button } from "./ui/button";
+import { ConfirmDialog } from "./ui/confirm-dialog";
+
+type ConfirmTarget = { type: "one"; id: string } | { type: "all" };
 
 export default function TrashView() {
     const [items, setItems] = useState<RoundSummary[] | null>(null);
+    const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(
+        null,
+    );
 
     const refresh = useCallback(async () => {
         setItems(await listTrash());
@@ -30,14 +36,11 @@ export default function TrashView() {
     }
 
     async function remove(id: string) {
-        if (!confirm("Permanently delete this flow? This cannot be undone."))
-            return;
         await deleteRoundForever(id);
         await refresh();
     }
 
     async function emptyTrash() {
-        if (!confirm("Permanently delete ALL flows in trash?")) return;
         const trashed = (await db.rounds.toArray()).filter(
             (r) => r.deletedAt != null,
         );
@@ -48,6 +51,12 @@ export default function TrashView() {
         await refresh();
     }
 
+    function runConfirm() {
+        if (!confirmTarget) return;
+        if (confirmTarget.type === "one") void remove(confirmTarget.id);
+        else void emptyTrash();
+    }
+
     if (items === null) return null;
 
     return (
@@ -55,7 +64,7 @@ export default function TrashView() {
             <div className="flex items-center gap-3 border-b border-border bg-card px-5 py-4">
                 <Link
                     href="/"
-                    className="text-[13px] text-zinc-500 hover:text-zinc-800"
+                    className="text-[13px] text-muted-foreground hover:text-foreground"
                     data-testid="trash-back"
                 >
                     ← Flows
@@ -67,7 +76,7 @@ export default function TrashView() {
                         variant="ghost"
                         size="sm"
                         data-testid="empty-trash"
-                        onClick={() => void emptyTrash()}
+                        onClick={() => setConfirmTarget({ type: "all" })}
                     >
                         Empty trash
                     </Button>
@@ -76,14 +85,18 @@ export default function TrashView() {
 
             <div className="px-5 py-5">
                 {items.length === 0 ? (
-                    <p className="mt-20 text-center text-[13px] text-zinc-400">
+                    <p className="mt-20 text-center text-[13px] text-muted-foreground">
                         Trash is empty.
                     </p>
                 ) : (
                     <div className="grid grid-cols-1 gap-4 opacity-80 sm:grid-cols-2 lg:grid-cols-3">
                         {items.map((s) => (
                             <div key={s.id} className="flex flex-col gap-2">
-                                <FlowCard summary={s} onOpen={() => {}} />
+                                <FlowCard
+                                    summary={s}
+                                    onOpen={() => {}}
+                                    interactive={false}
+                                />
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
@@ -96,9 +109,14 @@ export default function TrashView() {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-red-600"
+                                        className="text-destructive"
                                         data-testid={`trash-delete-${s.id}`}
-                                        onClick={() => void remove(s.id)}
+                                        onClick={() =>
+                                            setConfirmTarget({
+                                                type: "one",
+                                                id: s.id,
+                                            })
+                                        }
                                     >
                                         Delete forever
                                     </Button>
@@ -108,6 +126,30 @@ export default function TrashView() {
                     </div>
                 )}
             </div>
+
+            <ConfirmDialog
+                open={confirmTarget !== null}
+                onOpenChange={(o) => {
+                    if (!o) setConfirmTarget(null);
+                }}
+                title={
+                    confirmTarget?.type === "all"
+                        ? "Empty trash?"
+                        : "Delete forever?"
+                }
+                description={
+                    confirmTarget?.type === "all"
+                        ? "Permanently delete all flows in trash. This cannot be undone."
+                        : "Permanently delete this flow. This cannot be undone."
+                }
+                confirmLabel={
+                    confirmTarget?.type === "all"
+                        ? "Empty trash"
+                        : "Delete forever"
+                }
+                destructive
+                onConfirm={runConfirm}
+            />
         </div>
     );
 }

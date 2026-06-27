@@ -27,8 +27,10 @@ export default function FlowDetailDrawer({
 
     useEffect(() => {
         let on = true;
+        // Clear immediately so reopening for a new id never flashes the
+        // previous flow's details while the new one loads.
+        setRound(null);
         if (id) loadRound(id).then((r) => on && setRound(r ?? null));
-        else setRound(null);
         return () => {
             on = false;
         };
@@ -44,15 +46,17 @@ export default function FlowDetailDrawer({
                     <div className="flex h-full flex-col">
                         <div className="border-b border-border p-5">
                             <SheetTitle className="text-[15px] font-semibold text-pretty">
-                                <span className="text-blue-600">
+                                <span className="text-aff">
                                     {teamCode(
                                         sc.affSchool ?? "",
                                         sc.aff.first,
                                         sc.aff.second,
                                     ) || "Untitled Aff"}
                                 </span>
-                                <span className="px-1.5 text-zinc-400">vs</span>
-                                <span className="text-red-600">
+                                <span className="px-1.5 text-muted-foreground">
+                                    vs
+                                </span>
+                                <span className="text-neg">
                                     {teamCode(
                                         sc.negSchool ?? "",
                                         sc.neg.first,
@@ -113,7 +117,7 @@ export default function FlowDetailDrawer({
                         </div>
                     </div>
                 ) : (
-                    <div className="p-5 text-[13px] text-zinc-400">
+                    <div className="p-5 text-[13px] text-muted-foreground">
                         Loading…
                     </div>
                 )}
@@ -125,7 +129,7 @@ export default function FlowDetailDrawer({
 function Row({ label, value }: { label: string; value: string }) {
     return (
         <div className="grid grid-cols-[96px_1fr] gap-3">
-            <span className="text-zinc-400">{label}</span>
+            <span className="text-muted-foreground">{label}</span>
             <span>{value}</span>
         </div>
     );

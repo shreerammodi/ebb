@@ -90,7 +90,12 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
 
     // Selection's occupant for relationship highlight
     const selNode = selection
-        ? occupantAt(sheetNodes, selection.sheetId, selection.speechId, selection.row)
+        ? occupantAt(
+              sheetNodes,
+              selection.sheetId,
+              selection.speechId,
+              selection.row,
+          )
         : null;
     const selChildren = selNode
         ? new Set(childrenByParent.get(selNode.id) ?? [])
@@ -237,11 +242,9 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                                 speechId={speech.id}
                                                 isDropped={isDropped}
                                                 sheetNodes={sheetNodes}
-                                                hasChildren={
-                                                    childrenByParent.has(
-                                                        node.id,
-                                                    )
-                                                }
+                                                hasChildren={childrenByParent.has(
+                                                    node.id,
+                                                )}
                                             />
                                         </td>
                                     );
@@ -266,7 +269,9 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                     isSelected && moveSource === null
                                         ? "cell-sel"
                                         : "",
-                                    isMoveCursor || isDragOver ? "drag-over" : "",
+                                    isMoveCursor || isDragOver
+                                        ? "drag-over"
+                                        : "",
                                 ]
                                     .filter(Boolean)
                                     .join(" ");

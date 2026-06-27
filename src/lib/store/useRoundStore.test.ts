@@ -254,3 +254,78 @@ describe("REGRESSION: sibling does not split a response band", () => {
         ).toEqual([0, 1, 2, 3, 4, 5]);
     });
 });
+
+// ─── removeSheet / restoreSheet (hardening: discoverable Undo) ────────────
+
+describe("removeSheet + restoreSheet", () => {
+    beforeEach(resetStore);
+
+    it("removeSheet returns the removed sheet, its nodes, and groups", () => {
+        const { sheetId, a, b } = setupRound();
+        useRoundStore.getState().groupNodes(sheetId, [a, b], "DAs");
+        useRoundStore.getState().setActiveSheet(sheetId);
+
+        const removed = useRoundStore.getState().removeSheet(sheetId);
+
+        expect(removed).not.toBeNull();
+        expect(removed!.sheet.id).toBe(sheetId);
+        expect(removed!.nodes.map((n) => n.id).sort()).toEqual([a, b].sort());
+        expect(removed!.groups).toHaveLength(1);
+        expect(removed!.wasActive).toBe(true);
+        // The round no longer has the sheet or its nodes/groups.
+        const round = useRoundStore.getState().round!;
+        expect(round.sheets.some((s) => s.id === sheetId)).toBe(false);
+        expect(round.nodes.some((n) => n.sheetId === sheetId)).toBe(false);
+        expect(round.groups.some((g) => g.sheetId === sheetId)).toBe(false);
+    });
+
+    it("removeSheet returns null for an unknown sheet id", () => {
+        setupRound();
+        expect(useRoundStore.getState().removeSheet("nope")).toBeNull();
+    });
+
+    it("restoreSheet puts the sheet, nodes, and groups back and reactivates it", () => {
+        const { sheetId, a, b } = setupRound();
+        useRoundStore.getState().groupNodes(sheetId, [a, b], "DAs");
+        useRoundStore.getState().setActiveSheet(sheetId);
+
+        const removed = useRoundStore.getState().removeSheet(sheetId)!;
+        useRoundStore.getState().restoreSheet(removed);
+
+        const round = useRoundStore.getState().round!;
+        expect(round.sheets.some((s) => s.id === sheetId)).toBe(true);
+        expect(
+            round.nodes.filter((n) => n.sheetId === sheetId).map((n) => n.id).sort(),
+        ).toEqual([a, b].sort());
+        expect(round.groups.filter((g) => g.sheetId === sheetId)).toHaveLength(1);
+        expect(useRoundStore.getState().activeSheetId).toBe(sheetId);
+    });
+
+    it("restoreSheet is order-independent: an edit between delete and undo is preserved", () => {
+        const { sheetId: daId } = setupRound();
+        // A second sheet that we'll edit after deleting the first.
+        const caseId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+        const removed = useRoundStore.getState().removeSheet(daId)!;
+        // User keeps working on the other sheet before clicking Undo.
+        const fmt = useRoundStore.getState().round!.format;
+        const newNode = useRoundStore
+            .getState()
+            .addNode({ sheetId: caseId, speechId: fmt.speeches[0].id, parentId: null });
+
+        useRoundStore.getState().restoreSheet(removed);
+
+        const round = useRoundStore.getState().round!;
+        // The DA sheet is back AND the intervening edit survived.
+        expect(round.sheets.some((s) => s.id === daId)).toBe(true);
+        expect(round.nodes.some((n) => n.id === newNode)).toBe(true);
+    });
+
+    it("restoreSheet ignores a double restore", () => {
+        const { sheetId } = setupRound();
+        const removed = useRoundStore.getState().removeSheet(sheetId)!;
+        useRoundStore.getState().restoreSheet(removed);
+        useRoundStore.getState().restoreSheet(removed);
+        const round = useRoundStore.getState().round!;
+        expect(round.sheets.filter((s) => s.id === sheetId)).toHaveLength(1);
+    });
+});

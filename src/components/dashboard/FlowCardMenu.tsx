@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
+import { MoreHorizontal } from "lucide-react";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import {
     loadRound,
@@ -65,9 +66,9 @@ export default function FlowCardMenu({
                     data-testid={`kebab-${id}`}
                     aria-label="Flow actions"
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute top-3.5 right-3.5 flex h-7 w-7 items-center justify-center rounded-md bg-zinc-100 text-zinc-500 opacity-0 group-hover:opacity-100 hover:bg-zinc-200"
+                    className="absolute top-3.5 right-3.5 z-10 flex h-7 w-7 items-center justify-center rounded-md bg-accent text-muted-foreground opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-accent/70 focus-visible:opacity-100"
                 >
-                    ⋯
+                    <MoreHorizontal className="size-4" />
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -98,7 +99,7 @@ export default function FlowCardMenu({
                 <DropdownMenuItem
                     data-testid={`kebab-delete-${id}`}
                     onSelect={() => void del()}
-                    className="text-red-600"
+                    className="text-destructive"
                 >
                     Delete
                 </DropdownMenuItem>

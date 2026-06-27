@@ -36,7 +36,9 @@
     --destructive: oklch(0.577 0.245 27.325);
     --border: oklch(0.92 0.004 286.32);
     --input: oklch(0.92 0.004 286.32);
-    --ring: oklch(0.705 0.015 286.067);
+    /* Focus ring is the selection violet, matching the bare-element :focus-visible
+       outline so shadcn primitives and grid cells share one focus language. */
+    --ring: var(--sel);
     --chart-1: oklch(0.871 0.006 286.286);
     --chart-2: oklch(0.552 0.016 285.938);
     --chart-3: oklch(0.442 0.017 285.786);
@@ -307,6 +309,14 @@ body {
     .arg-dragging {
         transition: none;
     }
+    /* Radix dialogs/sheets animate zoom+fade via tw-animate-css; suppress the
+       motion (the open/close still happens) for reduced-motion users. */
+    [data-slot="dialog-content"],
+    [data-slot="dialog-overlay"],
+    [data-slot="sheet-content"],
+    [data-slot="sheet-overlay"] {
+        animation: none !important;
+    }
 }
 
 /* Dropped argument — dashed amber left border. Deliberate: drop status overrides
@@ -530,7 +540,7 @@ body {
     --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.552 0.016 285.938);
+    --ring: var(--sel);
     --chart-1: oklch(0.871 0.006 286.286);
     --chart-2: oklch(0.552 0.016 285.938);
     --chart-3: oklch(0.442 0.017 285.786);

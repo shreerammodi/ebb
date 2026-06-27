@@ -15,6 +15,7 @@ import {
     deleteRoundForever,
     loadLastRound,
     attachAutosave,
+    saveRoundNow,
     listTrash,
     softDeleteRound,
     restoreRound,
@@ -278,6 +279,43 @@ describe("attachAutosave", () => {
 
         unsubscribe();
         vi.useRealTimers();
+    });
+
+    it("emits 'saving' through onStatus when a debounced save fires", async () => {
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+        const statuses: string[] = [];
+        const unsubscribe = attachAutosave(useRoundStore, (s) =>
+            statuses.push(s),
+        );
+
+        useRoundStore.getState().createRound({ role: "aff", format: FORMAT });
+        useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+
+        vi.advanceTimersByTime(500);
+        // onStatus("saving") is synchronous inside the save; the terminal
+        // saved/error transition is covered deterministically via saveRoundNow.
+        expect(statuses).toContain("saving");
+
+        unsubscribe();
+        vi.useRealTimers();
+    });
+});
+
+describe("saveRoundNow", () => {
+    it("reports saving then saved on success", async () => {
+        const statuses: string[] = [];
+        await saveRoundNow(makeRound(), (s) => statuses.push(s));
+        expect(statuses).toEqual(["saving", "saved"]);
+    });
+
+    it("reports saving then error when the persist throws", async () => {
+        const spy = vi
+            .spyOn(db.rounds, "put")
+            .mockRejectedValueOnce(new Error("quota exceeded"));
+        const statuses: string[] = [];
+        await saveRoundNow(makeRound(), (s) => statuses.push(s));
+        expect(statuses).toEqual(["saving", "error"]);
+        spy.mockRestore();
     });
 });
 

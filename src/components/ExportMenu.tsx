@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+import { ChevronDown } from "lucide-react";
 import type { Round } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { downloadRoundFile } from "@/lib/persistence/io";
@@ -23,7 +25,7 @@ export default function ExportMenu() {
         try {
             await fn(round);
         } catch (err) {
-            alert(
+            toast.error(
                 `Export failed: ${err instanceof Error ? err.message : "unknown error"}`,
             );
         }
@@ -33,7 +35,8 @@ export default function ExportMenu() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" data-testid="export-btn">
-                    Export ▾
+                    Export
+                    <ChevronDown className="size-4 opacity-60" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

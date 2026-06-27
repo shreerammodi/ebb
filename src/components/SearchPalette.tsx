@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { buildSearchEntries } from "@/lib/search/entries";
 import { fuzzySearch, toSegments } from "@/lib/search/fuzzy";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 /** Cap argument rows so a broad query never floods the DOM. */
 const MAX_NODE_RESULTS = 50;
@@ -43,7 +44,7 @@ function Highlighted({ text, ranges }: { text: string; ranges: number[] }) {
                     seg.match ? (
                         <mark
                             key={i}
-                            className="bg-transparent font-semibold text-zinc-900"
+                            className="bg-transparent font-semibold text-foreground"
                         >
                             {seg.text}
                         </mark>
@@ -135,6 +136,18 @@ export default function SearchPalette() {
         setSelectedIndex(0);
     }, [query]);
 
+    // Keep the highlighted row visible when arrowing past the viewport edge.
+    useEffect(() => {
+        if (!open) return;
+        const row = rows[selectedIndex];
+        if (!row) return;
+        const id =
+            row.kind === "sheet"
+                ? `sp-sheet-${row.sheetId}`
+                : `sp-node-${row.nodeId}`;
+        document.getElementById(id)?.scrollIntoView?.({ block: "nearest" });
+    }, [open, selectedIndex, rows]);
+
     if (!open) return null;
 
     const sheetRows = rows.filter((r) => r.kind === "sheet");
@@ -188,34 +201,55 @@ export default function SearchPalette() {
     // node row's is offset by the number of sheet rows.
     const nodeOffset = sheetRows.length;
 
+    // Stable DOM id of the currently highlighted row, for aria-activedescendant
+    // and scroll-into-view (selection lives in the input; the list is virtual).
+    const rowId = (row: Row) =>
+        row.kind === "sheet"
+            ? `sp-sheet-${row.sheetId}`
+            : `sp-node-${row.nodeId}`;
+    const activeRow = rows[selectedIndex];
+    const activeId = activeRow ? rowId(activeRow) : undefined;
+
     return (
-        <div
-            className="fixed inset-0 z-[100] flex items-start justify-center bg-black/30 pt-[12vh]"
-            onClick={() => setOpen(false)}
-            data-testid="search-palette-overlay"
+        <Dialog
+            open={open}
+            onOpenChange={(o) => {
+                if (!o) setOpen(false);
+            }}
         >
-            <div
-                className="w-full max-w-[520px] overflow-hidden rounded-[var(--radius)] border border-border bg-card shadow-lg"
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={onKeyDown}
-                role="dialog"
-                aria-modal="true"
+            {/* Hosted on the shared Dialog primitive for a real focus trap +
+                scroll lock (Tab can't walk into the grid behind it), but
+                top-anchored and chromeless to keep the command-palette feel. */}
+            <DialogContent
+                showCloseButton={false}
                 aria-label="Search flow"
                 data-testid="search-palette"
+                onKeyDown={onKeyDown}
+                className="top-[12vh] w-full max-w-[520px] translate-y-0 gap-0 overflow-hidden p-0"
             >
+                <DialogTitle className="sr-only">Search flow</DialogTitle>
                 <input
                     ref={inputRef}
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search sheets and arguments…"
-                    className="box-border w-full border-b border-border bg-card px-3.5 py-3 text-[14px] text-zinc-900 focus:outline-none"
+                    className="box-border w-full border-b border-border bg-card px-3.5 py-3 text-[14px] text-foreground focus:outline-none"
                     data-testid="search-palette-input"
                     aria-label="Search flow"
+                    role="combobox"
+                    aria-expanded
+                    aria-controls="search-palette-list"
+                    aria-activedescendant={activeId}
                 />
-                <div className="max-h-[55vh] overflow-y-auto p-1.5">
+                <div
+                    id="search-palette-list"
+                    role="listbox"
+                    aria-label="Results"
+                    className="max-h-[55vh] overflow-y-auto p-1.5"
+                >
                     {rows.length === 0 ? (
-                        <div className="px-2.5 py-2 text-[13px] text-zinc-400">
+                        <div className="px-2.5 py-2 text-[13px] text-muted-foreground">
                             No results
                         </div>
                     ) : (
@@ -256,7 +290,7 @@ export default function SearchPalette() {
                                                         ranges={row.ranges}
                                                     />
                                                 </span>
-                                                <span className="block truncate text-[11px] text-zinc-400">
+                                                <span className="block truncate text-[11px] text-muted-foreground">
                                                     {row.crumb}
                                                 </span>
                                             </RowButton>
@@ -267,8 +301,8 @@ export default function SearchPalette() {
                         </>
                     )}
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -281,7 +315,7 @@ function Section({
 }) {
     return (
         <div className="mb-1">
-            <div className="px-2.5 py-1 text-[11px] font-medium tracking-wide text-zinc-400 uppercase">
+            <div className="px-2.5 py-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
                 {label}
             </div>
             <ul className="m-0 list-none p-0">{children}</ul>
@@ -301,11 +335,14 @@ function RowButton({
     children: React.ReactNode;
 }) {
     return (
-        <li>
+        <li role="presentation">
             <button
                 type="button"
-                className={`block w-full cursor-pointer rounded-md border-none px-2.5 py-2 text-left text-[13px] text-zinc-900 ${
-                    active ? "bg-zinc-100" : "bg-transparent hover:bg-zinc-50"
+                id={testId}
+                role="option"
+                aria-selected={active}
+                className={`block w-full cursor-pointer rounded-md border-none px-2.5 py-2 text-left text-[13px] text-foreground ${
+                    active ? "bg-accent" : "bg-transparent hover:bg-accent/50"
                 }`}
                 onClick={onClick}
                 data-testid={testId}

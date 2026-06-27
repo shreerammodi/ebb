@@ -4,12 +4,27 @@
  * Uses the real Zustand store. Resets state between tests for isolation.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { makeFormatByKey } from "@/lib/format/presets";
 import Sidebar from "./Sidebar";
+
+vi.mock("sonner", () => ({
+    toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }),
+}));
+import { toast } from "sonner";
+
+/** Pulls the `action` config out of the most recent `toast(...)` call. */
+function lastToastAction(): { label: string; onClick: () => void } {
+    const calls = vi.mocked(toast).mock.calls;
+    const opts = calls[calls.length - 1]?.[1] as
+        | { action?: { label: string; onClick: () => void } }
+        | undefined;
+    if (!opts?.action) throw new Error("last toast had no action");
+    return opts.action;
+}
 
 function resetStore() {
     useRoundStore.setState({
@@ -238,6 +253,29 @@ describe("Sidebar", () => {
         ).toBe(false);
 
         useRoundStore.getState().undo();
+        expect(
+            useRoundStore.getState().round!.sheets.some((s) => s.id === id),
+        ).toBe(true);
+    });
+
+    it("clicking × raises an Undo toast that restores the sheet", async () => {
+        const user = userEvent.setup();
+        setupRound();
+        const id = useRoundStore
+            .getState()
+            .addSheet({ title: "Case2", group: "aff" });
+
+        render(<Sidebar />);
+
+        await user.click(screen.getByTestId(`delete-sheet-${id}`));
+        expect(
+            useRoundStore.getState().round!.sheets.some((s) => s.id === id),
+        ).toBe(false);
+
+        // The toast carries an Undo action; invoking it brings the sheet back.
+        const action = lastToastAction();
+        expect(action.label).toBe("Undo");
+        action.onClick();
         expect(
             useRoundStore.getState().round!.sheets.some((s) => s.id === id),
         ).toBe(true);

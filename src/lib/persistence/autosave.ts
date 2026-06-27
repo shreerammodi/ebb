@@ -74,18 +74,66 @@ export async function loadLastRound(): Promise<Round | undefined> {
 const DEBOUNCE_MS = 400;
 
 /**
+ * Lifecycle of a single persist, reported to an optional status listener so the
+ * UI can reassure the user their round is safe (and surface a failure, which on
+ * a backend-less app is the difference between trust and silent data loss).
+ */
+export type SaveStatus = "saving" | "saved" | "error";
+
+/**
+ * Persist a round immediately, reporting "saving" then "saved"/"error".
+ * Used by the manual "Retry" affordance when an autosave has failed.
+ */
+export async function saveRoundNow(
+    round: Round,
+    onStatus?: (status: SaveStatus) => void,
+): Promise<void> {
+    onStatus?.("saving");
+    try {
+        await persistRound(round);
+        onStatus?.("saved");
+    } catch {
+        onStatus?.("error");
+    }
+}
+
+/**
  * Subscribe to a zustand store that holds RoundStore state.  Whenever
  * `state.round` exists and its `id` or `updatedAt` has changed since the
  * last save, schedule a debounced persist.
  *
+ * `onStatus`, when given, is notified as each persist moves through
+ * saving → saved | error. Out-of-order completions are ignored so the
+ * reported status always reflects the most recent save.
+ *
  * Returns an unsubscribe function that also flushes any pending save
  * immediately before cancelling the subscription.
  */
-export function attachAutosave(store: StoreApi<RoundStore>): () => void {
+export function attachAutosave(
+    store: StoreApi<RoundStore>,
+    onStatus?: (status: SaveStatus) => void,
+): () => void {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let lastSeenId: string | null = null;
     let lastSeenUpdatedAt: number | null = null;
     let pendingRound: Round | null = null;
+    let saveSeq = 0;
+
+    function doSave(toSave: Round) {
+        const seq = ++saveSeq;
+        onStatus?.("saving");
+        // Fire-and-forget; callers awaiting persistence should use loadRound
+        // after the microtask queue drains. Only the latest save reports a
+        // terminal status, so a slow earlier save can't clobber a newer one.
+        persistRound(toSave).then(
+            () => {
+                if (seq === saveSeq) onStatus?.("saved");
+            },
+            () => {
+                if (seq === saveSeq) onStatus?.("error");
+            },
+        );
+    }
 
     function flush() {
         if (timer !== null) {
@@ -95,9 +143,7 @@ export function attachAutosave(store: StoreApi<RoundStore>): () => void {
         if (pendingRound !== null) {
             const toSave = pendingRound;
             pendingRound = null;
-            // Fire-and-forget; callers awaiting persistence should use
-            // loadRound after the microtask queue drains.
-            void persistRound(toSave);
+            doSave(toSave);
         }
     }
 
@@ -123,7 +169,7 @@ export function attachAutosave(store: StoreApi<RoundStore>): () => void {
             if (pendingRound !== null) {
                 const toSave = pendingRound;
                 pendingRound = null;
-                void persistRound(toSave);
+                doSave(toSave);
             }
         }, DEBOUNCE_MS);
     });

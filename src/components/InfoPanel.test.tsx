@@ -26,4 +26,21 @@ describe("InfoPanel", () => {
         const { container } = render(<InfoPanel />);
         expect(container.firstChild).toBeNull();
     });
+
+    it("sets a vote, and clicking the selected side again clears it", async () => {
+        render(<InfoPanel />);
+        const aff = screen.getByTestId("scout-vote-aff");
+
+        await userEvent.click(aff);
+        expect(useRoundStore.getState().round!.scouting.decision?.vote).toBe(
+            "aff",
+        );
+        expect(aff).toHaveAttribute("aria-pressed", "true");
+
+        // Clicking the selected side again returns to undecided.
+        await userEvent.click(aff);
+        expect(
+            useRoundStore.getState().round!.scouting.decision?.vote,
+        ).toBeUndefined();
+    });
 });

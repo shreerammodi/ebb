@@ -41,7 +41,6 @@ function mk(id: string): Round {
 beforeEach(async () => {
     await db.rounds.clear();
     await db.searchIndex.clear();
-    vi.stubGlobal("confirm", () => true);
 });
 
 describe("TrashView", () => {
@@ -56,14 +55,28 @@ describe("TrashView", () => {
         );
     });
 
-    it("permanently deletes a flow", async () => {
+    it("permanently deletes a flow after confirming in the dialog", async () => {
         await persistRound(mk("a"));
         await softDeleteRound("a");
         render(<TrashView />);
         await waitFor(() => screen.getByTestId("trash-delete-a"));
         await userEvent.click(screen.getByTestId("trash-delete-a"));
+        // A confirm dialog appears; deletion only happens on accept.
+        const accept = await screen.findByTestId("confirm-accept");
+        await userEvent.click(accept);
         await waitFor(async () =>
             expect(await db.rounds.get("a")).toBeUndefined(),
         );
+    });
+
+    it("does not delete when the confirm dialog is cancelled", async () => {
+        await persistRound(mk("a"));
+        await softDeleteRound("a");
+        render(<TrashView />);
+        await waitFor(() => screen.getByTestId("trash-delete-a"));
+        await userEvent.click(screen.getByTestId("trash-delete-a"));
+        await userEvent.click(await screen.findByTestId("confirm-cancel"));
+        // Still present — cancel is safe.
+        expect(await db.rounds.get("a")).toBeDefined();
     });
 });

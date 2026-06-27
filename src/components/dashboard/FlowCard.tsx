@@ -7,9 +7,9 @@ import { toSegments } from "@/lib/search/fuzzy";
 import { cn } from "@/lib/utils";
 
 const rolePill: Record<RoundSummary["role"], { label: string; cls: string }> = {
-    aff: { label: "Aff", cls: "bg-blue-50 text-blue-600" },
-    neg: { label: "Neg", cls: "bg-red-50 text-red-600" },
-    judge: { label: "Judge", cls: "bg-zinc-100 text-zinc-500" },
+    aff: { label: "Aff", cls: "bg-aff/10 text-aff" },
+    neg: { label: "Neg", cls: "bg-neg/10 text-neg" },
+    judge: { label: "Judge", cls: "bg-zinc-100 text-muted-foreground" },
 };
 
 export interface FlowCardProps {
@@ -19,6 +19,11 @@ export interface FlowCardProps {
     menu?: React.ReactNode;
     /** Optional snippet (already segmented) shown when a content match exists. */
     snippet?: ReturnType<typeof toSegments> | null;
+    /**
+     * Whether the card opens a flow on click/Enter. False for read-only
+     * contexts (e.g. Trash) so it isn't announced as an actionable button.
+     */
+    interactive?: boolean;
 }
 
 export default function FlowCard({
@@ -26,6 +31,7 @@ export default function FlowCard({
     onOpen,
     menu,
     snippet,
+    interactive = true,
 }: FlowCardProps) {
     const r = resultLabel(summary.decision);
     const edited = useMemo(
@@ -39,28 +45,51 @@ export default function FlowCard({
     const affBlank = !summary.affTeam;
     const negBlank = !summary.negTeam;
 
+    const interactiveProps = interactive
+        ? {
+              role: "button" as const,
+              tabIndex: 0,
+              "aria-label": `Open ${aff} vs ${neg}`,
+              onClick: () => onOpen(summary.id),
+              onKeyDown: (e: React.KeyboardEvent) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onOpen(summary.id);
+                  }
+              },
+          }
+        : {};
+
     return (
         <div
             data-testid={`flow-card-${summary.id}`}
-            onClick={() => onOpen(summary.id)}
-            className="group relative cursor-pointer rounded-xl border border-border bg-card p-5 transition hover:-translate-y-px hover:border-zinc-300 hover:shadow-md active:scale-[0.98]"
+            {...interactiveProps}
+            className={cn(
+                "group relative rounded-lg border border-border bg-card p-5 transition-colors",
+                interactive &&
+                    "cursor-pointer hover:border-zinc-400 hover:bg-accent/40",
+            )}
         >
             {menu}
             <div className="flex items-center justify-between gap-2">
                 <span className="pr-7 text-[15px] font-semibold tracking-tight text-pretty">
                     <span
                         className={cn(
-                            affBlank ? "text-zinc-400 italic" : "text-blue-600",
+                            affBlank
+                                ? "text-muted-foreground italic"
+                                : "text-aff",
                         )}
                     >
                         {aff}
                     </span>
-                    <span className="px-1.5 text-[13px] font-normal text-zinc-400">
+                    <span className="px-1.5 text-[13px] font-normal text-muted-foreground">
                         vs
                     </span>
                     <span
                         className={cn(
-                            negBlank ? "text-zinc-400 italic" : "text-red-600",
+                            negBlank
+                                ? "text-muted-foreground italic"
+                                : "text-neg",
                         )}
                     >
                         {neg}
@@ -79,25 +108,29 @@ export default function FlowCard({
             <hr className="-mx-5 my-3 border-zinc-100" />
 
             <div className="grid grid-cols-[78px_1fr] gap-x-3 gap-y-1.5 text-[12.5px]">
-                <span className="text-zinc-400">Tournament</span>
-                <span className={summary.tournament ? "" : "text-zinc-400"}>
+                <span className="text-muted-foreground">Tournament</span>
+                <span
+                    className={
+                        summary.tournament ? "" : "text-muted-foreground"
+                    }
+                >
                     {summary.tournament ?? "—"}
                 </span>
-                <span className="text-zinc-400">Round</span>
-                <span className={summary.round ? "" : "text-zinc-400"}>
+                <span className="text-muted-foreground">Round</span>
+                <span className={summary.round ? "" : "text-muted-foreground"}>
                     {summary.round ?? "—"}
                 </span>
-                <span className="text-zinc-400">Judge</span>
-                <span className={summary.judge ? "" : "text-zinc-400"}>
+                <span className="text-muted-foreground">Judge</span>
+                <span className={summary.judge ? "" : "text-muted-foreground"}>
                     {summary.judge ?? "—"}
                 </span>
-                <span className="text-zinc-400">Result</span>
+                <span className="text-muted-foreground">Result</span>
                 <span
                     className={cn(
                         "font-semibold",
-                        r.side === "aff" && "text-blue-600",
-                        r.side === "neg" && "text-red-600",
-                        r.side === null && "font-normal text-zinc-400",
+                        r.side === "aff" && "text-aff",
+                        r.side === "neg" && "text-neg",
+                        r.side === null && "font-normal text-muted-foreground",
                     )}
                 >
                     {r.text}
@@ -105,14 +138,12 @@ export default function FlowCard({
             </div>
 
             {snippet && (
-                <p className="mt-3 line-clamp-2 text-[12px] text-zinc-500">
+                <p className="mt-3 line-clamp-2 text-[12px] text-muted-foreground">
                     {snippet.map((seg, i) => (
                         <span
                             key={i}
                             className={
-                                seg.match
-                                    ? "bg-yellow-100 font-medium text-zinc-800"
-                                    : ""
+                                seg.match ? "font-semibold text-foreground" : ""
                             }
                         >
                             {seg.text}
@@ -122,7 +153,9 @@ export default function FlowCard({
             )}
 
             <hr className="-mx-5 my-3 border-zinc-100" />
-            <div className="text-[12px] text-zinc-500">edited {edited}</div>
+            <div className="text-[12px] text-muted-foreground">
+                edited {edited}
+            </div>
         </div>
     );
 }
