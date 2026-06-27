@@ -50,13 +50,12 @@ export const GUIDE_SECTIONS: GuideSection[] = [
   {
     id: "welcome",
     label: "Welcome",
-    title: "Welcome to Debate Flow",
+    title: "Welcome to Ebb",
     body: (
       <>
         <p>
-          Debate Flow is a keyboard-first tool for flowing competitive rounds. Everything you type
-          stays on this device. Your flows live in your browser, never on a server, and they work
-          offline.
+          Ebb is a keyboard-first tool for flowing competitive rounds. Everything you type stays on
+          this device. Your flows live in your browser, never on a server, and they work offline.
         </p>
         <p>
           This guide covers the whole app, from the dashboard to flowing a live round. You can
@@ -204,9 +203,9 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     body: (
       <>
         <p>
-          Debate Flow is built to run from the keyboard. Some actions are modal: grab an argument
-          with <Kbd cmd="move.grab" />, move it with the arrow keys, then <Kbd cmd="move.commit" />{" "}
-          to drop it or <Kbd cmd="move.cancel" /> to abandon the move.
+          Ebb is built to run from the keyboard. Some actions are modal: grab an argument with{" "}
+          <Kbd cmd="move.grab" />, move it with the arrow keys, then <Kbd cmd="move.commit" /> to
+          drop it or <Kbd cmd="move.cancel" /> to abandon the move.
         </p>
         <p>
           For the complete, always-current list of shortcuts, press <Kbd cmd="help.open" /> anywhere

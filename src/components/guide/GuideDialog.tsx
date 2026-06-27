@@ -65,9 +65,9 @@ export default function GuideDialog() {
       >
         <DialogHeader className="shrink-0 border-b border-border px-[18px] pt-[14px] pb-2.5">
           <DialogTitle className="text-sm font-semibold text-foreground">
-            How to use Debate Flow
+            How to use Ebb
           </DialogTitle>
-          <DialogDescription className="sr-only">Learn how to use Debate Flow.</DialogDescription>
+          <DialogDescription className="sr-only">Learn how to use Ebb.</DialogDescription>
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1">
