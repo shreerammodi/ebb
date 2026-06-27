@@ -2,8 +2,8 @@
 @import "tw-animate-css";
 
 @theme {
-    --font-sans: var(--font-dm-sans);
-    --font-mono: var(--font-dm-mono);
+    --font-sans: var(--font-commit-mono);
+    --font-mono: var(--font-commit-mono);
 
     --color-aff: #1d4ed8;
     --color-neg: #c0271f;
@@ -165,6 +165,11 @@ body {
     line-height: 1.35;
     background: transparent;
     color: var(--ink);
+    /* Fixed column widths mean a long unbroken token (e.g. "?????…") would
+       otherwise overflow into neighbouring cells. Force it to wrap, matching
+       the inline editor's behaviour. */
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Header "+" add button (appears on column-header hover) */
@@ -347,7 +352,7 @@ body {
 .badge-drop {
     font-size: 10px;
     line-height: 1.4;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--warn);
     border: 1px solid var(--warn);
     border-radius: 4px;

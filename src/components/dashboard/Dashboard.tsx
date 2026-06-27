@@ -16,6 +16,7 @@ import {
     groupByTournament,
     type SortKey,
 } from "@/lib/dashboard/organize";
+import { Wordmark } from "@/components/brand/Logo";
 import FlowCard from "./FlowCard";
 import NewFlowButton from "./NewFlowButton";
 import FlowCardMenu from "./FlowCardMenu";
@@ -81,10 +82,7 @@ export default function Dashboard() {
         return (
             <div className="min-h-screen bg-zinc-50">
                 <div className="flex items-center gap-3 border-b border-border bg-card px-5 py-4">
-                    <span className="text-[15px] font-bold tracking-tight">
-                        Debate
-                        <span className="text-muted-foreground">Flow</span>
-                    </span>
+                    <Wordmark className="h-5 w-auto text-foreground" />
                     <Skeleton className="h-9 w-[360px]" />
                 </div>
                 <div className="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -101,9 +99,7 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-zinc-50">
             <div className="flex items-center gap-3 border-b border-border bg-card px-5 py-4">
-                <span className="text-[15px] font-bold tracking-tight">
-                    Debate<span className="text-muted-foreground">Flow</span>
-                </span>
+                <Wordmark className="h-5 w-auto text-foreground" />
                 <Input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
