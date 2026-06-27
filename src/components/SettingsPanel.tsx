@@ -228,7 +228,7 @@ export default function SettingsPanel() {
                                         }}
                                         data-testid="flow-font-sample"
                                     >
-                                        Perm do both, solves the link
+                                        Separation of powers outweighs
                                     </p>
                                 </div>
 
