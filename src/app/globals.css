@@ -74,6 +74,10 @@
   --sel-rel: color-mix(in srgb, var(--sel) 55%, transparent);
   --warn: #b45309;
   --good: #047857;
+
+  /* Boundary rule between stacked sibling argument bands — heavier than the
+     faint --line gridlines so response groups read apart. */
+  --band-divider: color-mix(in srgb, var(--ink) 38%, transparent);
 }
 
 /* ------------------------------------------------------------
@@ -213,6 +217,16 @@ body {
 .flow td.side-neg {
   color: var(--neg);
   border-left: 2px solid var(--neg);
+}
+
+/* Sibling-band boundary — a heavier top rule where one argument's response
+   band ends and the next sibling's begins, so stacked groups read apart at a
+   glance rather than relying on the response numbering alone. Drawn from the
+   sibling's column rightward across its subtree; the parent column to the left
+   stays continuous. border-collapse means the wider edge wins, so this cleanly
+   overrides the shared 1px gridline without a layout shift. */
+.flow td.cell-band-start {
+  border-top: 2px solid var(--band-divider);
 }
 
 /* Inaccessible empty cell — no argument can be placed here (no parent to its

@@ -107,6 +107,37 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
     else childrenByParent.set(node.parentId, [node.id]);
   }
 
+  // ── Sibling-group dividers ────────────────────────────────────────────────
+  // Where sibling argument bands stack in the same column, the boundary between
+  // one argument's responses and the next's is otherwise only legible from the
+  // numbering. Draw a heavier rule at each boundary so the groups read apart.
+  // Only groups that actually carry responses (some sibling has children) are
+  // divided — a flat list of leaf responses to a single argument stays unbroken.
+  // The rule starts at the sibling's column and runs to the table's right edge,
+  // spanning that argument's whole subtree while leaving the parent column(s)
+  // to the left continuous.
+  const colIndexOf = new Map(speeches.map((s, i) => [s.id, i]));
+  const siblingsByParent = new Map<string | null, typeof sheetNodes>();
+  for (const node of sheetNodes) {
+    const arr = siblingsByParent.get(node.parentId);
+    if (arr) arr.push(node);
+    else siblingsByParent.set(node.parentId, [node]);
+  }
+  // row → leftmost column index at which a band boundary begins
+  const bandStartByRow = new Map<number, number>();
+  for (const group of siblingsByParent.values()) {
+    if (group.length < 2) continue;
+    if (!group.some((n) => childrenByParent.has(n.id))) continue;
+    const minRow = Math.min(...group.map((n) => n.row));
+    for (const n of group) {
+      if (n.row === minRow) continue; // first sibling sits at the band's top
+      const col = colIndexOf.get(n.speechId);
+      if (col === undefined) continue;
+      const prev = bandStartByRow.get(n.row);
+      bandStartByRow.set(n.row, prev === undefined ? col : Math.min(prev, col));
+    }
+  }
+
   // Selection's occupant for relationship highlight
   const selNode = selection
     ? occupantAt(sheetNodes, selection.sheetId, selection.speechId, selection.row)
@@ -189,13 +220,16 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         <tbody>
           {Array.from({ length: effectiveRows }, (_, row) => (
             <tr key={row}>
-              {speeches.map((speech) => {
+              {speeches.map((speech, colIdx) => {
                 const node = occupantAt(sheetNodes, sheetId, speech.id, row);
                 const isSel =
                   selection?.sheetId === sheetId &&
                   selection?.speechId === speech.id &&
                   selection?.row === row;
                 const sideClass = speech.side === "aff" ? "side-aff" : "side-neg";
+                const bandStartCol = bandStartByRow.get(row);
+                const bandClass =
+                  bandStartCol !== undefined && colIdx >= bandStartCol ? "cell-band-start" : "";
 
                 if (node) {
                   const isDropped = droppedIds.has(node.id);
@@ -220,6 +254,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                     : "";
                   const classes = [
                     sideClass,
+                    bandClass,
                     isDropped ? "cell-drop" : "",
                     isSource ? "cell-moving" : "",
                     isSel && moveSource === null ? "cell-sel" : "",
@@ -263,6 +298,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                 const isDragOver = dragOverKey === cellKey;
                 const classes = [
                   sideClass,
+                  bandClass,
                   reserved ? "cell-reserved" : "cell-open",
                   isSelected && moveSource === null ? "cell-sel" : "",
                   isMoveCursor || isDragOver ? "drag-over" : "",

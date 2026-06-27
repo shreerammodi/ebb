@@ -138,6 +138,33 @@ describe("FlowGrid — coordinate-based rendering", () => {
     expect(document.querySelector(".badge-drop")).not.toBeNull();
   });
 
+  it("draws a sibling-band divider before each stacked response group, not the first", () => {
+    const { sheetId } = setupScenario();
+    render(<FlowGrid sheetId={sheetId} />);
+    // ac1/ac2/ac3 are siblings whose group bears responses (Block answers), so
+    // the boundary before ac2 and ac3 is ruled; ac1 sits at the band's top.
+    expect(screen.getByText("We meet").closest("td")!.classList.contains("cell-band-start")).toBe(
+      false,
+    );
+    expect(
+      screen.getByText("Counter-interp").closest("td")!.classList.contains("cell-band-start"),
+    ).toBe(true);
+    expect(screen.getByText("Standards").closest("td")!.classList.contains("cell-band-start")).toBe(
+      true,
+    );
+  });
+
+  it("extends the divider rightward across the sibling's subtree columns", () => {
+    const { sheetId } = setupScenario();
+    const { container } = render(<FlowGrid sheetId={sheetId} />);
+    // The boundary before ac2 (2AC, row 1) also rules the Block column to its
+    // right at the same row, since it belongs to ac2's subtree.
+    const row1Cells = container.querySelectorAll("tbody tr:nth-child(2) td.cell-band-start");
+    // 2AC + the Block (2NC) column and beyond are ruled; the parent 1NC column
+    // to the left is not.
+    expect(row1Cells.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("highlights the selected cell with .cell-sel", () => {
     const { sheetId, ac2Id } = setupScenario();
     const fmt = useRoundStore.getState().round!.format;
