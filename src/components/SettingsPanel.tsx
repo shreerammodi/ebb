@@ -170,11 +170,11 @@ export default function SettingsPanel() {
                     <div className="flex-1 overflow-y-auto p-4">
                         {category === "display" ? (
                             <div className="flex flex-col gap-4">
-                                <fieldset className="flex flex-col gap-1">
+                                <div role="radiogroup" aria-labelledby="flow-font-label" className="flex flex-col gap-1">
                                     <div className="flex items-center justify-between">
-                                        <legend className="text-[13px] font-medium text-foreground">
+                                        <span id="flow-font-label" className="text-[13px] font-medium text-foreground">
                                             Flow font
-                                        </legend>
+                                        </span>
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -234,13 +234,13 @@ export default function SettingsPanel() {
                                         style={{
                                             fontFamily: FONTS.find(
                                                 (f) => f.id === flowFont,
-                                            )?.cssVar,
+                                            )?.cssVar ?? FONTS[0].cssVar,
                                         }}
                                         data-testid="flow-font-sample"
                                     >
                                         Perm do both — solves the link
                                     </p>
-                                </fieldset>
+                                </div>
 
                                 <div className="flex flex-col gap-1">
                                     <label className="flex items-center justify-between py-1.5 text-[13px] text-foreground">
