@@ -113,6 +113,18 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
     : null;
   const selChildren = selNode ? new Set(childrenByParent.get(selNode.id) ?? []) : new Set<string>();
 
+  // Build a position lookup for child nodes so we can detect adjacency and
+  // draw a continuous outline box instead of per-cell inset borders.
+  // Key: `${speechId}:${row}` → true when that cell holds a selected child.
+  const selChildPositions = new Set<string>();
+  if (selNode) {
+    for (const node of sheetNodes) {
+      if (selChildren.has(node.id)) {
+        selChildPositions.add(`${node.speechId}:${node.row}`);
+      }
+    }
+  }
+
   const sheetIsEmpty = sheetNodes.length === 0;
 
   // ── Reserved cells ────────────────────────────────────────────────────────
@@ -194,7 +206,16 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                     ? node.id === selNode.parentId
                       ? "cell-rel-parent"
                       : selChildren.has(node.id)
-                        ? "cell-rel-child"
+                        ? (() => {
+                            const aboveKey = `${node.speechId}:${node.row - 1}`;
+                            const belowKey = `${node.speechId}:${node.row + 1}`;
+                            const hasAbove = selChildPositions.has(aboveKey);
+                            const hasBelow = selChildPositions.has(belowKey);
+                            if (!hasAbove && !hasBelow) return "cell-rel-child-only";
+                            if (!hasAbove) return "cell-rel-child-top";
+                            if (!hasBelow) return "cell-rel-child-bot";
+                            return "cell-rel-child-mid";
+                          })()
                         : ""
                     : "";
                   const classes = [
