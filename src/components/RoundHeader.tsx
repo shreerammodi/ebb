@@ -91,6 +91,15 @@ export default function RoundHeader() {
                 <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => useRoundStore.getState().setGuideOpen(true)}
+                    aria-label="Guide"
+                    data-testid="guide-btn"
+                >
+                    Guide
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => useRoundStore.getState().setInfoOpen(true)}
                     aria-label="Round info"
                     data-testid="info-btn"

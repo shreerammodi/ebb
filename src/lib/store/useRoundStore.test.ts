@@ -375,3 +375,13 @@ describe("flow font preference", () => {
         expect(saved.flowFont).toBe("dm-sans");
     });
 });
+
+describe("guide open state", () => {
+    it("defaults to closed and toggles", () => {
+        expect(useRoundStore.getState().guideOpen).toBe(false);
+        useRoundStore.getState().setGuideOpen(true);
+        expect(useRoundStore.getState().guideOpen).toBe(true);
+        useRoundStore.getState().setGuideOpen(false);
+        expect(useRoundStore.getState().guideOpen).toBe(false);
+    });
+});

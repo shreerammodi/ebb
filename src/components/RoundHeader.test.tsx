@@ -119,6 +119,14 @@ describe("RoundHeader", () => {
         );
     });
 
+    it("opens the guide from the Guide button", async () => {
+        setupRound("aff");
+        render(<RoundHeader />);
+        expect(useRoundStore.getState().guideOpen).toBe(false);
+        await userEvent.click(screen.getByTestId("guide-btn"));
+        expect(useRoundStore.getState().guideOpen).toBe(true);
+    });
+
     it("updates store round and resets activeSheetId/selection/mode when a valid file is imported", async () => {
         const { readRoundFile } = await import("@/lib/persistence/io");
 

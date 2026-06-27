@@ -2,8 +2,7 @@
 
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
-import { effectiveKeymap } from "@/lib/keymap/useKeymap";
-import { GRAB_BINDINGS } from "@/lib/keymap/presets";
+import { prettyChord, buildChordMap } from "@/lib/keymap/displayChord";
 import {
     Dialog,
     DialogContent,
@@ -79,31 +78,6 @@ const GROUPS = [
     },
 ] as const;
 
-const KEY_LABELS: Record<string, string> = {
-    Escape: "Esc",
-    ArrowUp: "↑",
-    ArrowDown: "↓",
-    ArrowLeft: "←",
-    ArrowRight: "→",
-    Enter: "↩",
-    Delete: "Del",
-    Backspace: "⌫",
-    Tab: "⇥",
-};
-
-function prettyChord(chord: string): string {
-    return chord
-        .split("+")
-        .map((part) => {
-            if (part === "Meta") return "⌘";
-            if (part === "Ctrl") return "⌃";
-            if (part === "Alt") return "⌥";
-            if (part === "Shift") return "⇧";
-            return KEY_LABELS[part] ?? part;
-        })
-        .join("");
-}
-
 export default function KeybindingsCheatsheet() {
     const open = useRoundStore((s) => s.cheatsheetOpen);
     const setCheatsheetOpen = useRoundStore((s) => s.setCheatsheetOpen);
@@ -112,16 +86,7 @@ export default function KeybindingsCheatsheet() {
         setCheatsheetOpen(false);
     }
 
-    const keymap = effectiveKeymap();
-
-    const chordFor: Partial<Record<CommandId, string>> = {};
-    for (const [chord, cmd] of Object.entries(keymap.bindings)) {
-        if (!chordFor[cmd as CommandId]) chordFor[cmd as CommandId] = chord;
-    }
-    // Grab sub-state bindings (Enter=commit, Esc=cancel) live outside the flat map.
-    for (const [chord, cmd] of Object.entries(GRAB_BINDINGS)) {
-        if (!chordFor[cmd as CommandId]) chordFor[cmd as CommandId] = chord;
-    }
+    const chordFor = buildChordMap();
 
     return (
         <Dialog

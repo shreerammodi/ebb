@@ -10,6 +10,7 @@ import SearchPalette from "./SearchPalette";
 import SettingsPanel from "./SettingsPanel";
 import InfoPanel from "./InfoPanel";
 import KeybindingsCheatsheet from "./KeybindingsCheatsheet";
+import GuideDialog from "./guide/GuideDialog";
 import FlowGrid from "./FlowGrid";
 import PrintView from "./PrintView";
 
@@ -78,6 +79,7 @@ export default function Workspace() {
             <SettingsPanel />
             <InfoPanel />
             <KeybindingsCheatsheet />
+            <GuideDialog />
             <PrintView />
         </div>
     );
