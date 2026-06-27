@@ -140,31 +140,71 @@ describe("FlowGrid — coordinate-based rendering", () => {
         expect(document.querySelector(".badge-drop")).not.toBeNull();
     });
 
-    it("draws a sibling-band divider before each stacked response group, not the first", () => {
-        const { sheetId } = setupScenario();
+    // A parent (1NC) answered by a run of 2AC responses where one of them is a
+    // tall, multi-row exchange (it carries Block answers) and the rest are leaves.
+    function setupTallSibling() {
+        const fmt = makeFormatByKey("policy");
+        useRoundStore.getState().createRound({ role: "neg", format: fmt });
+        const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+        const sp = fmt.speeches;
+        const s1NC = sp[1].id;
+        const s2AC = sp[2].id;
+        const s2NC = sp[3].id;
+
+        const place = (speechId: string, row: number, text: string) => {
+            const id = useRoundStore.getState().placeBareNode({ sheetId, speechId, row });
+            useRoundStore.getState().updateNodeText(id, text);
+            return id;
+        };
+        const setParent = (childId: string, parentId: string) => {
+            const r = useRoundStore.getState().round!;
+            useRoundStore.getState()._commit(null, (rr) => ({
+                ...rr,
+                nodes: r.nodes.map((n) => (n.id === childId ? { ...n, parentId } : n)),
+            }));
+        };
+
+        const nc = place(s1NC, 0, "Topicality");
+        // Four sibling 2AC responses. r3 is tall: its Block answers occupy rows 2-3.
+        const r1 = place(s2AC, 0, "r1-leaf");
+        const r2 = place(s2AC, 1, "r2-leaf");
+        const r3 = place(s2AC, 2, "r3-tall");
+        const r4 = place(s2AC, 4, "r4-leaf");
+        [r1, r2, r3, r4].forEach((id) => setParent(id, nc));
+
+        const b1 = place(s2NC, 2, "blk-1");
+        const b2 = place(s2NC, 3, "blk-2");
+        setParent(b1, r3);
+        setParent(b2, r3);
+
+        return { sheetId };
+    }
+
+    it("rules only the boundaries that touch a tall sibling, not between leaves", () => {
+        const { sheetId } = setupTallSibling();
         render(<FlowGrid sheetId={sheetId} />);
-        // ac1/ac2/ac3 are siblings whose group bears responses (Block answers), so
-        // the boundary before ac2 and ac3 is ruled; ac1 sits at the band's top.
-        expect(
-            screen.getByText("We meet").closest("td")!.classList.contains("cell-band-start"),
-        ).toBe(false);
-        expect(
-            screen.getByText("Counter-interp").closest("td")!.classList.contains("cell-band-start"),
-        ).toBe(true);
-        expect(
-            screen.getByText("Standards").closest("td")!.classList.contains("cell-band-start"),
-        ).toBe(true);
+        const band = (text: string) =>
+            screen.getByText(text).closest("td")!.classList.contains("cell-band-start");
+        // Two adjacent leaves (r1→r2) need no line.
+        expect(band("r2-leaf")).toBe(false);
+        // r3 opens a multi-row exchange → ruled; r4 closes it (previous sibling
+        // is tall) → ruled.
+        expect(band("r3-tall")).toBe(true);
+        expect(band("r4-leaf")).toBe(true);
+        // The first sibling never gets a top rule.
+        expect(band("r1-leaf")).toBe(false);
     });
 
-    it("extends the divider rightward across the sibling's subtree columns", () => {
-        const { sheetId } = setupScenario();
+    it("extends a tall sibling's boundary rightward across its subtree columns", () => {
+        const { sheetId } = setupTallSibling();
         const { container } = render(<FlowGrid sheetId={sheetId} />);
-        // The boundary before ac2 (2AC, row 1) also rules the Block column to its
-        // right at the same row, since it belongs to ac2's subtree.
-        const row1Cells = container.querySelectorAll("tbody tr:nth-child(2) td.cell-band-start");
-        // 2AC + the Block (2NC) column and beyond are ruled; the parent 1NC column
-        // to the left is not.
-        expect(row1Cells.length).toBeGreaterThanOrEqual(2);
+        // r3's boundary at row 2 also rules the Block column to its right, since
+        // that column holds r3's subtree; the parent 1NC column stays continuous.
+        const row3Cells = container.querySelectorAll("tbody tr:nth-child(3) td.cell-band-start");
+        expect(row3Cells.length).toBeGreaterThanOrEqual(2);
+        expect(
+            screen.getByText("Topicality").closest("td")!.classList.contains("cell-band-start"),
+        ).toBe(false);
     });
 
     it("highlights the selected cell with .cell-sel", () => {

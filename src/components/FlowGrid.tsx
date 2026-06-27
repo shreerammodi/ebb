@@ -114,12 +114,14 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
     // ── Sibling-group dividers ────────────────────────────────────────────────
     // Where sibling argument bands stack in the same column, the boundary between
     // one argument's responses and the next's is otherwise only legible from the
-    // numbering. Draw a heavier rule at each boundary so the groups read apart.
-    // Only groups that actually carry responses (some sibling has children) are
-    // divided — a flat list of leaf responses to a single argument stays unbroken.
-    // The rule starts at the sibling's column and runs to the table's right edge,
-    // spanning that argument's whole subtree while leaving the parent column(s)
-    // to the left continuous.
+    // numbering. Draw a heavier rule at each such boundary so the groups read
+    // apart — but only where it earns its keep: a boundary is ruled only when it
+    // touches a *tall* sibling (a subtree spanning more than its own row). A run
+    // of single-row leaf responses to one argument stays unbroken; the rule
+    // appears around the multi-row exchange that needs delineating. The rule
+    // starts at the sibling's column and runs to the table's right edge, spanning
+    // that argument's subtree while leaving the parent column(s) to the left
+    // continuous.
     const colIndexOf = new Map(speeches.map((s, i) => [s.id, i]));
     const siblingsByParent = new Map<string | null, typeof sheetNodes>();
     for (const node of sheetNodes) {
@@ -127,14 +129,17 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         if (arr) arr.push(node);
         else siblingsByParent.set(node.parentId, [node]);
     }
+    const isTall = (n: (typeof sheetNodes)[number]) => subtreeMaxRow(sheetNodes, n.id) > n.row;
     // row → leftmost column index at which a band boundary begins
     const bandStartByRow = new Map<number, number>();
     for (const group of siblingsByParent.values()) {
         if (group.length < 2) continue;
-        if (!group.some((n) => childrenByParent.has(n.id))) continue;
-        const minRow = Math.min(...group.map((n) => n.row));
-        for (const n of group) {
-            if (n.row === minRow) continue; // first sibling sits at the band's top
+        const sorted = [...group].sort((a, b) => a.row - b.row);
+        for (let i = 1; i < sorted.length; i++) {
+            const n = sorted[i];
+            // Rule the boundary only when this sibling or the one above it is a
+            // multi-row band — two adjacent leaves don't need a line between them.
+            if (!isTall(n) && !isTall(sorted[i - 1])) continue;
             const col = colIndexOf.get(n.speechId);
             if (col === undefined) continue;
             const prev = bandStartByRow.get(n.row);
