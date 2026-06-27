@@ -2,8 +2,9 @@
 @import "tw-animate-css";
 
 @theme {
-    --font-sans: var(--font-commit-mono);
+    --font-sans: var(--font-dm-sans);
     --font-mono: var(--font-commit-mono);
+    --font-flow: var(--font-commit-mono);
 
     --color-aff: #1d4ed8;
     --color-neg: #c0271f;
@@ -125,7 +126,7 @@ body {
     border-collapse: collapse;
     font-size: 12.5px;
     width: 100%;
-    font-family: var(--font-sans);
+    font-family: var(--font-flow, var(--font-commit-mono));
     table-layout: fixed;
 }
 
@@ -155,7 +156,7 @@ body {
     border: 1px solid var(--line);
     border-bottom-width: 2px;
     white-space: nowrap;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
 }
 
 .flow td {
