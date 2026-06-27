@@ -6,6 +6,7 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { eventToChord } from "@/lib/keymap/resolve";
+import { FONTS, DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,8 @@ export default function SettingsPanel() {
     const labelDrops = useRoundStore((s) => s.labelDrops);
     const setAutoNumber = useRoundStore((s) => s.setAutoNumber);
     const setLabelDrops = useRoundStore((s) => s.setLabelDrops);
+    const flowFont = useRoundStore((s) => s.flowFont);
+    const setFlowFont = useRoundStore((s) => s.setFlowFont);
 
     const [recording, setRecording] = useState<CommandId | null>(null);
     const [category, setCategory] = useState<Category>("display");
@@ -166,25 +169,99 @@ export default function SettingsPanel() {
                     {/* Right content */}
                     <div className="flex-1 overflow-y-auto p-4">
                         {category === "display" ? (
-                            <div className="flex flex-col gap-1">
-                                <label className="flex items-center justify-between py-1.5 text-[13px] text-foreground">
-                                    Auto-number arguments
-                                    <Switch
-                                        checked={autoNumber}
-                                        onCheckedChange={setAutoNumber}
-                                        data-testid="toggle-autoNumber"
-                                        aria-label="Auto-number arguments"
-                                    />
-                                </label>
-                                <label className="flex items-center justify-between py-1.5 text-[13px] text-foreground">
-                                    Label drops
-                                    <Switch
-                                        checked={labelDrops}
-                                        onCheckedChange={setLabelDrops}
-                                        data-testid="toggle-labelDrops"
-                                        aria-label="Label drops"
-                                    />
-                                </label>
+                            <div className="flex flex-col gap-4">
+                                <fieldset className="flex flex-col gap-1">
+                                    <div className="flex items-center justify-between">
+                                        <legend className="text-[13px] font-medium text-foreground">
+                                            Flow font
+                                        </legend>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                                setFlowFont(DEFAULT_FONT_ID)
+                                            }
+                                            disabled={
+                                                flowFont === DEFAULT_FONT_ID
+                                            }
+                                            data-testid="flow-font-reset"
+                                            aria-label="Reset flow font to default"
+                                        >
+                                            Default
+                                        </Button>
+                                    </div>
+                                    <p className="mb-1 text-[12px] text-muted-foreground">
+                                        Font used for flowed argument text and
+                                        the inline editor.
+                                    </p>
+                                    {FONTS.map((f) => {
+                                        const checked = f.id === flowFont;
+                                        return (
+                                            <label
+                                                key={f.id}
+                                                className={cn(
+                                                    "flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors",
+                                                    checked
+                                                        ? "bg-accent"
+                                                        : "hover:bg-accent/50",
+                                                )}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="flow-font"
+                                                    value={f.id}
+                                                    checked={checked}
+                                                    onChange={() =>
+                                                        setFlowFont(f.id)
+                                                    }
+                                                    data-testid={`flow-font-${f.id}`}
+                                                    className="accent-sel"
+                                                />
+                                                <span
+                                                    className="text-[14px] text-foreground"
+                                                    style={{
+                                                        fontFamily: f.cssVar,
+                                                    }}
+                                                >
+                                                    {f.label}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                    <p
+                                        className="mt-1 rounded-md border border-border bg-zinc-50 px-2.5 py-1.5 text-[13px] text-foreground"
+                                        style={{
+                                            fontFamily: FONTS.find(
+                                                (f) => f.id === flowFont,
+                                            )?.cssVar,
+                                        }}
+                                        data-testid="flow-font-sample"
+                                    >
+                                        Perm do both — solves the link
+                                    </p>
+                                </fieldset>
+
+                                <div className="flex flex-col gap-1">
+                                    <label className="flex items-center justify-between py-1.5 text-[13px] text-foreground">
+                                        Auto-number arguments
+                                        <Switch
+                                            checked={autoNumber}
+                                            onCheckedChange={setAutoNumber}
+                                            data-testid="toggle-autoNumber"
+                                            aria-label="Auto-number arguments"
+                                        />
+                                    </label>
+                                    <label className="flex items-center justify-between py-1.5 text-[13px] text-foreground">
+                                        Label drops
+                                        <Switch
+                                            checked={labelDrops}
+                                            onCheckedChange={setLabelDrops}
+                                            data-testid="toggle-labelDrops"
+                                            aria-label="Label drops"
+                                        />
+                                    </label>
+                                </div>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-3">

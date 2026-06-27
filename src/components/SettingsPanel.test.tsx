@@ -8,13 +8,14 @@
  * so shortcut tests click the Keyboard nav item before asserting.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act } from "react";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { COMMANDS } from "@/lib/commands/registry";
+import { FONTS } from "@/lib/fonts/registry";
 import SettingsPanel from "./SettingsPanel";
 
 const KEY = "df-keymap-settings";
@@ -186,6 +187,35 @@ describe("SettingsPanel", () => {
         await userEvent.click(sw);
         expect(useRoundStore.getState().labelDrops).toBe(false);
         useRoundStore.getState().setLabelDrops(true);
+    });
+
+    describe("flow font picker", () => {
+        it("renders a radio for each curated font with the current one checked", async () => {
+            useRoundStore.getState().setFlowFont("commit-mono");
+            render(<SettingsPanel />);
+            // Display is the default pane — no nav click needed.
+
+            for (const f of FONTS) {
+                expect(
+                    screen.getByTestId(`flow-font-${f.id}`),
+                ).toBeInTheDocument();
+            }
+            expect(screen.getByTestId("flow-font-commit-mono")).toBeChecked();
+        });
+
+        it("calls setFlowFont when a different font is chosen", async () => {
+            useRoundStore.getState().setFlowFont("commit-mono");
+            render(<SettingsPanel />);
+            await userEvent.click(screen.getByTestId("flow-font-inter"));
+            expect(useRoundStore.getState().flowFont).toBe("inter");
+        });
+
+        it("resets to the default font", async () => {
+            useRoundStore.getState().setFlowFont("inter");
+            render(<SettingsPanel />);
+            await userEvent.click(screen.getByTestId("flow-font-reset"));
+            expect(useRoundStore.getState().flowFont).toBe("commit-mono");
+        });
     });
 
     it("persists overrides to localStorage and effectiveKeymap uses them", async () => {
