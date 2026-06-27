@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 
 @theme {
-  --font-sans: var(--font-dm-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-commit-mono);
   --font-flow: var(--font-commit-mono);
 

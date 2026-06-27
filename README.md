@@ -11,9 +11,3 @@ To start a local instance, run:
 npm install
 npm run dev
 ```
-
-## Brand
-
-Brand source files (wordmark, monogram, palette, typography) live in
-[`assets/brand/`](assets/brand/README.md). The in-app marks are rendered as
-inline SVG from `src/components/brand/Logo.tsx`.
