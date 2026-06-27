@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Settings } from "lucide-react";
@@ -22,6 +22,8 @@ import NewFlowButton from "./NewFlowButton";
 import FlowCardMenu from "./FlowCardMenu";
 import FlowDetailDrawer from "./FlowDetailDrawer";
 import ImportExportControls from "./ImportExportControls";
+import { loadGuideSeen, saveGuideSeen } from "@/lib/guide/guideSeen";
+import GuideDialog from "@/components/guide/GuideDialog";
 import SettingsPanel from "@/components/SettingsPanel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,6 +52,16 @@ export default function Dashboard() {
     useEffect(() => {
         void refresh();
     }, [refresh]);
+
+    const firstRunChecked = useRef(false);
+    useEffect(() => {
+        if (summaries === null || firstRunChecked.current) return;
+        firstRunChecked.current = true;
+        if (summaries.length === 0 && !loadGuideSeen()) {
+            useRoundStore.getState().setGuideOpen(true);
+            saveGuideSeen(true);
+        }
+    }, [summaries]);
 
     const open = useCallback(
         (id: string) => router.push(`/flow?id=${id}`),
@@ -126,6 +138,15 @@ export default function Dashboard() {
                     }
                 >
                     <Settings className="size-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Guide"
+                    data-testid="dashboard-guide"
+                    onClick={() => useRoundStore.getState().setGuideOpen(true)}
+                >
+                    Guide
                 </Button>
                 <NewFlowButton />
             </div>
@@ -230,6 +251,7 @@ export default function Dashboard() {
             </div>
 
             <SettingsPanel />
+            <GuideDialog />
             <FlowDetailDrawer
                 id={detailId}
                 onClose={() => setDetailId(null)}
