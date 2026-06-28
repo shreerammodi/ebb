@@ -103,6 +103,14 @@ export default function GridCell({
                         executeCommand("cell.clear");
                         return;
                     }
+                    // Ctrl+A selects all text in the cell; stop propagation so the
+                    // global keymap doesn't fire sheet.newAff.
+                    if (e.key === "a" && e.ctrlKey && !e.shiftKey && !e.altKey) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        inputRef.current?.select();
+                        return;
+                    }
                     // Plain Enter / Shift+Enter / Tab are handled by the keymap.
                     if (e.key === "Tab" || e.key === "Enter") {
                         // Don't intercept; let global keymap handle.
