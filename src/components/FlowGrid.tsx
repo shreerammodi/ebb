@@ -33,7 +33,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         return filtered
             .map(
                 (n) =>
-                    `${n.id}:${n.speechId}:${n.row}:${n.parentId}:${n.bold}:${n.statuses.join(",")}`,
+                    `${n.id}:${n.speechId}:${n.row}:${n.parentId}:${n.bold}:${n.text}:${n.statuses.join(",")}`,
             )
             .join("|");
     });
