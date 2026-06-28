@@ -48,3 +48,7 @@ it("binds Excel-style jump navigation (directional + corners)", () => {
     expect(FLAT_KEYMAP.bindings["Ctrl+Home"]).toBe("nav.jumpHome");
     expect(FLAT_KEYMAP.bindings["Ctrl+End"]).toBe("nav.jumpEnd");
 });
+
+it("flat keymap binds the platform modifier+p to palette.open", () => {
+    expect(FLAT_KEYMAP.bindings[`${mod}+p`]).toBe("palette.open");
+});

@@ -25,6 +25,7 @@ const RESERVED_KEYS = [
     "n", // new neg
     "r", // rename
     "k", // quick switch
+    "p", // command palette (also suppresses browser print)
     // ── Edit ───────────────────────────────────────────────────────────────
     "z", // undo (Ctrl+z / Meta+z)
     // ── Format / status ────────────────────────────────────────────────────
