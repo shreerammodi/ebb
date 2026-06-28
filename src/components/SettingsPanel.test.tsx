@@ -13,12 +13,21 @@ import userEvent from "@testing-library/user-event";
 import { act } from "react";
 import { describe, it, expect, beforeEach } from "vitest";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { COMMANDS } from "@/lib/commands/registry";
 import { FONTS } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import SettingsPanel from "./SettingsPanel";
+
+function renderSettingsPanel() {
+    return render(
+        <TooltipProvider>
+            <SettingsPanel />
+        </TooltipProvider>,
+    );
+}
 
 const KEY = "df-keymap-settings";
 
@@ -56,13 +65,13 @@ describe("SettingsPanel", () => {
 
     it("renders nothing when settings are closed", () => {
         useRoundStore.setState({ settingsOpen: false });
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         expect(screen.queryByTestId("settings-panel")).toBeNull();
     });
 
     it("lists commands with their current binding from the flat keymap", async () => {
         const user = userEvent.setup();
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         await gotoKeyboard(user);
 
         // The flat keymap binds move.down to "ArrowDown".
@@ -73,7 +82,7 @@ describe("SettingsPanel", () => {
 
     it("records a chord override: click Record then press a key", async () => {
         const user = userEvent.setup();
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         await gotoKeyboard(user);
 
         await user.click(screen.getByTestId("record-move.down"));
@@ -86,7 +95,7 @@ describe("SettingsPanel", () => {
 
     it("records a chord with modifiers", async () => {
         const user = userEvent.setup();
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         await gotoKeyboard(user);
 
         await user.click(screen.getByTestId("record-move.up"));
@@ -97,7 +106,7 @@ describe("SettingsPanel", () => {
 
     it("ignores lone modifier keys while recording", async () => {
         const user = userEvent.setup();
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         await gotoKeyboard(user);
 
         await user.click(screen.getByTestId("record-move.down"));
@@ -111,7 +120,7 @@ describe("SettingsPanel", () => {
     it("Reset clears an override back to the preset binding", async () => {
         const user = userEvent.setup();
         useRoundStore.getState().setKeymapOverride("move.down", "g");
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         await gotoKeyboard(user);
 
         expect(screen.getByTestId("chord-move.down").textContent).toBe("g");
@@ -123,7 +132,7 @@ describe("SettingsPanel", () => {
 
     it("shows shortcuts only in the Keyboard pane", async () => {
         const user = userEvent.setup();
-        render(<SettingsPanel />);
+        renderSettingsPanel();
 
         // Display is the default pane — no command rows.
         expect(screen.queryByTestId("cmd-move.down")).toBeNull();
@@ -137,7 +146,7 @@ describe("SettingsPanel", () => {
 
     it("filters the command list by label", async () => {
         const user = userEvent.setup();
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         await gotoKeyboard(user);
 
         await user.type(screen.getByTestId("shortcut-filter"), "Undo");
@@ -148,21 +157,21 @@ describe("SettingsPanel", () => {
     });
 
     it("Escape closes the panel", () => {
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         dispatchPanelKey("Escape");
         expect(useRoundStore.getState().settingsOpen).toBe(false);
     });
 
     it("close button closes the panel", async () => {
         const user = userEvent.setup();
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         await user.click(screen.getByTestId("settings-close"));
         expect(useRoundStore.getState().settingsOpen).toBe(false);
     });
 
     it("toggles autoNumber via the display switch", async () => {
         useRoundStore.getState().setSettingsOpen(true);
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         const sw = screen.getByTestId("toggle-autoNumber");
         await userEvent.click(sw);
         expect(useRoundStore.getState().autoNumber).toBe(false);
@@ -172,7 +181,7 @@ describe("SettingsPanel", () => {
 
     it("toggles labelDrops via the display switch", async () => {
         useRoundStore.getState().setSettingsOpen(true);
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         const sw = screen.getByTestId("toggle-labelDrops");
         await userEvent.click(sw);
         expect(useRoundStore.getState().labelDrops).toBe(false);
@@ -182,7 +191,7 @@ describe("SettingsPanel", () => {
     describe("flow font picker", () => {
         it("renders a radio for each curated font with the current one checked", async () => {
             useRoundStore.getState().setFlowFont("commit-mono");
-            render(<SettingsPanel />);
+            renderSettingsPanel();
             // Display is the default pane — no nav click needed.
 
             for (const f of FONTS) {
@@ -193,14 +202,14 @@ describe("SettingsPanel", () => {
 
         it("calls setFlowFont when a different font is chosen", async () => {
             useRoundStore.getState().setFlowFont("commit-mono");
-            render(<SettingsPanel />);
+            renderSettingsPanel();
             await userEvent.click(screen.getByTestId("flow-font-inter"));
             expect(useRoundStore.getState().flowFont).toBe("inter");
         });
 
         it("resets to the default font", async () => {
             useRoundStore.getState().setFlowFont("inter");
-            render(<SettingsPanel />);
+            renderSettingsPanel();
             await userEvent.click(screen.getByTestId("flow-font-reset"));
             expect(useRoundStore.getState().flowFont).toBe("commit-mono");
         });
@@ -208,7 +217,7 @@ describe("SettingsPanel", () => {
 
     it("persists overrides to localStorage and effectiveKeymap uses them", async () => {
         const user = userEvent.setup();
-        render(<SettingsPanel />);
+        renderSettingsPanel();
         await gotoKeyboard(user);
 
         await user.click(screen.getByTestId("record-move.down"));

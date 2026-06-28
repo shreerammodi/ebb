@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { saveRoundNow } from "@/lib/persistence/autosave";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { useSaveStatus } from "@/lib/store/useSaveStatus";
+import { Tip } from "@/components/ui/tooltip";
 
 /** Coarse "time since save" — exact enough for reassurance, never ticking seconds. */
 function relTime(savedAt: number, now: number): string {
@@ -80,11 +81,11 @@ export default function SaveStatus() {
 
     const saving = state === "saving";
 
-    return (
+    const indicator = (
         <span
             data-testid="save-status"
             data-state={state}
-            title={savedAt ? `Last saved ${new Date(savedAt).toLocaleTimeString()}` : undefined}
+            tabIndex={savedAt ? 0 : undefined}
             className="text-muted-foreground flex items-center gap-1.5 text-xs select-none"
         >
             <span
@@ -98,4 +99,8 @@ export default function SaveStatus() {
             {saving ? "Saving…" : `Saved${savedAt ? ` ${relTime(savedAt, now)}` : ""}`}
         </span>
     );
+
+    if (!savedAt) return indicator;
+
+    return <Tip label={`Last saved ${new Date(savedAt).toLocaleTimeString()}`}>{indicator}</Tip>;
 }

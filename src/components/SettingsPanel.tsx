@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Tip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
@@ -120,13 +121,15 @@ export default function SettingsPanel() {
                 {/* Header */}
                 <div className="border-border flex items-center justify-between border-b px-4 py-3">
                     <span className="text-foreground text-[15px] font-semibold">Settings</span>
-                    <DialogClose
-                        data-testid="settings-close"
-                        aria-label="Close settings"
-                        className="text-muted-foreground hover:text-foreground rounded transition-colors focus-visible:outline-2"
-                    >
-                        <XIcon className="size-4" />
-                    </DialogClose>
+                    <Tip label="Close">
+                        <DialogClose
+                            data-testid="settings-close"
+                            aria-label="Close settings"
+                            className="text-muted-foreground hover:text-foreground rounded transition-colors focus-visible:outline-2"
+                        >
+                            <XIcon className="size-4" />
+                        </DialogClose>
+                    </Tip>
                 </div>
 
                 {/* Two-pane body */}
@@ -305,17 +308,19 @@ export default function SettingsPanel() {
                                                 >
                                                     {isRecording ? "Cancel" : "Record"}
                                                 </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => clearKeymapOverride(cmd.id)}
-                                                    disabled={!overridden}
-                                                    data-testid={`reset-${cmd.id}`}
-                                                    aria-label={`Reset ${cmd.label} binding`}
-                                                >
-                                                    Reset
-                                                </Button>
+                                                <Tip label={`Reset ${cmd.label} binding`}>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => clearKeymapOverride(cmd.id)}
+                                                        disabled={!overridden}
+                                                        data-testid={`reset-${cmd.id}`}
+                                                        aria-label={`Reset ${cmd.label} binding`}
+                                                    >
+                                                        Reset
+                                                    </Button>
+                                                </Tip>
                                             </li>
                                         );
                                     })}

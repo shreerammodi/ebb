@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { loadGuideSeen, saveGuideSeen } from "@/lib/guide/guideSeen";
 import { emptyScouting } from "@/lib/model/normalize";
 import type { Round } from "@/lib/model/types";
@@ -14,6 +15,14 @@ import { db } from "@/lib/persistence/db";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import Dashboard from "./Dashboard";
+
+function renderDashboard() {
+    return render(
+        <TooltipProvider>
+            <Dashboard />
+        </TooltipProvider>,
+    );
+}
 
 function mk(id: string, over: Partial<Round> = {}): Round {
     return {
@@ -63,27 +72,27 @@ describe("Dashboard", () => {
     it("lists live flows and excludes trashed", async () => {
         await persistRound(mk("a", { updatedAt: 5 }));
         await persistRound(mk("b", { updatedAt: 2, deletedAt: 1 }));
-        render(<Dashboard />);
+        renderDashboard();
         await waitFor(() => expect(screen.getByText("Westwood")).toBeInTheDocument());
         expect(screen.queryByText("Mission")).not.toBeInTheDocument();
     });
 
     it("navigates to the editor on card click", async () => {
         await persistRound(mk("a"));
-        render(<Dashboard />);
+        renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
         await userEvent.click(screen.getByTestId("flow-card-a"));
         expect(push).toHaveBeenCalledWith("/flow?id=a");
     });
 
     it("shows the empty state when there are no flows", async () => {
-        render(<Dashboard />);
+        renderDashboard();
         await waitFor(() => expect(screen.getByTestId("dashboard-empty")).toBeInTheDocument());
     });
 
     it("opens settings from the gear", async () => {
         await persistRound(mk("a"));
-        render(<Dashboard />);
+        renderDashboard();
         await waitFor(() => screen.getByTestId("dashboard-settings"));
         await userEvent.click(screen.getByTestId("dashboard-settings"));
         expect(await screen.findByTestId("settings-panel")).toBeInTheDocument();
@@ -97,28 +106,28 @@ describe("Dashboard first-run guide", () => {
     });
 
     it("auto-opens the guide when there are no flows and it is unseen", async () => {
-        render(<Dashboard />);
+        renderDashboard();
         await waitFor(() => expect(useRoundStore.getState().guideOpen).toBe(true));
         expect(loadGuideSeen()).toBe(true);
     });
 
     it("does not auto-open when flows exist", async () => {
         await persistRound(mk("a"));
-        render(<Dashboard />);
+        renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
         expect(useRoundStore.getState().guideOpen).toBe(false);
     });
 
     it("does not auto-open when already seen", async () => {
         saveGuideSeen(true);
-        render(<Dashboard />);
+        renderDashboard();
         await waitFor(() => expect(screen.getByTestId("dashboard-empty")).toBeInTheDocument());
         expect(useRoundStore.getState().guideOpen).toBe(false);
     });
 
     it("opens the guide from the Guide button", async () => {
         await persistRound(mk("a"));
-        render(<Dashboard />);
+        renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
         await userEvent.click(screen.getByTestId("dashboard-guide"));
         expect(useRoundStore.getState().guideOpen).toBe(true);

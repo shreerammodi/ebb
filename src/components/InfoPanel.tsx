@@ -4,6 +4,7 @@ import { XIcon } from "lucide-react";
 
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Tip } from "@/components/ui/tooltip";
 import { teamCode } from "@/lib/model/teamCode";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import { cn } from "@/lib/utils";
@@ -43,13 +44,15 @@ function InfoPanelInner() {
                     <DialogTitle className="text-foreground text-[13px] font-semibold tracking-wide">
                         Round Info
                     </DialogTitle>
-                    <DialogClose
-                        aria-label="Close info"
-                        data-testid="info-close"
-                        className="text-muted-foreground hover:text-foreground rounded transition-colors focus-visible:outline-2"
-                    >
-                        <XIcon className="size-4" />
-                    </DialogClose>
+                    <Tip label="Close">
+                        <DialogClose
+                            aria-label="Close info"
+                            data-testid="info-close"
+                            className="text-muted-foreground hover:text-foreground rounded transition-colors focus-visible:outline-2"
+                        >
+                            <XIcon className="size-4" />
+                        </DialogClose>
+                    </Tip>
                 </div>
 
                 <div className="max-h-[78vh] overflow-y-auto">
