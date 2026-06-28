@@ -36,3 +36,13 @@ if (typeof window !== "undefined" && window.localStorage == null) {
 if (typeof window !== "undefined") {
     (window as unknown as Record<string, unknown>).PointerEvent = window.MouseEvent;
 }
+
+// Radix UI components (Tooltip) use ResizeObserver. jsdom doesn't implement it;
+// provide a minimal polyfill.
+if (typeof window !== "undefined" && !window.ResizeObserver) {
+    window.ResizeObserver = class ResizeObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    } as unknown as typeof window.ResizeObserver;
+}

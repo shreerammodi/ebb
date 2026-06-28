@@ -1,0 +1,82 @@
+"use client";
+
+import { Tooltip as TooltipPrimitive } from "radix-ui";
+import * as React from "react";
+
+import type { CommandId } from "@/lib/commands/registry";
+import { keyHintFor } from "@/lib/keymap/displayChord";
+import { cn } from "@/lib/utils";
+
+function TooltipProvider({
+    delayDuration = 500,
+    ...props
+}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+    return (
+        <TooltipPrimitive.Provider
+            data-slot="tooltip-provider"
+            delayDuration={delayDuration}
+            {...props}
+        />
+    );
+}
+
+function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+    return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
+}
+
+function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
+    return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
+}
+
+function TooltipContent({
+    className,
+    sideOffset = 4,
+    children,
+    ...props
+}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+    return (
+        <TooltipPrimitive.Portal>
+            <TooltipPrimitive.Content
+                data-slot="tooltip-content"
+                sideOffset={sideOffset}
+                className={cn(
+                    "bg-foreground text-background z-50 flex items-center gap-2 rounded-md px-2 py-1 text-xs shadow-md select-none animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+                    className,
+                )}
+                {...props}
+            >
+                {children}
+                <TooltipPrimitive.Arrow className="fill-foreground" />
+            </TooltipPrimitive.Content>
+        </TooltipPrimitive.Portal>
+    );
+}
+
+interface TipProps {
+    label: React.ReactNode;
+    command?: CommandId;
+    side?: React.ComponentProps<typeof TooltipPrimitive.Content>["side"];
+    children: React.ReactNode;
+}
+
+function Tip({ label, command, side, children }: TipProps) {
+    const hint = command ? keyHintFor(command) : null;
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>{children}</TooltipTrigger>
+            <TooltipContent side={side}>
+                <span>{label}</span>
+                {hint && (
+                    <kbd
+                        data-slot="tooltip-kbd"
+                        className="border-background/30 text-background/80 rounded border px-1 font-mono text-[10px]"
+                    >
+                        {hint}
+                    </kbd>
+                )}
+            </TooltipContent>
+        </Tooltip>
+    );
+}
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, Tip };
