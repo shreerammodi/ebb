@@ -26,8 +26,8 @@ npm run build        # static production build (next build → ./out)
 npm test             # run the full Vitest suite once
 npm run test:watch   # watch mode
 npm run lint         # next lint (eslint)
-npm run format       # prettier --write .
-npm run format:check # prettier --check .
+npm run format       # oxfmt .
+npm run format:check # oxfmt --check .
 ```
 
 Run `npm test` and `npm run lint` before considering a change complete.

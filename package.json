@@ -8,8 +8,8 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "lint": "next lint",
-        "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format": "oxfmt .",
+        "format:check": "oxfmt --check ."
     },
     "dependencies": {
         "@leeoniya/ufuzzy": "^1.0.19",
