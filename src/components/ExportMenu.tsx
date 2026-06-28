@@ -10,6 +10,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tip } from "@/components/ui/tooltip";
 import type { ExportOptions } from "@/lib/export/options";
 import { downloadXlsx } from "@/lib/export/xlsx";
 import type { Round } from "@/lib/model/types";
@@ -32,12 +33,14 @@ export default function ExportMenu() {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" data-testid="export-btn">
-                    Export
-                    <ChevronDown className="size-4 opacity-60" />
-                </Button>
-            </DropdownMenuTrigger>
+            <Tip label="Export round">
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" data-testid="export-btn">
+                        Export
+                        <ChevronDown className="size-4 opacity-60" />
+                    </Button>
+                </DropdownMenuTrigger>
+            </Tip>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem
                     data-testid="export-json"

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { makeFormatByKey } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 import ExportMenu from "./ExportMenu";
 
@@ -19,7 +20,11 @@ beforeEach(() => {
 describe("ExportMenu", () => {
     it("opens on click and exposes the two formats", async () => {
         const user = userEvent.setup();
-        render(<ExportMenu />);
+        render(
+            <TooltipProvider>
+                <ExportMenu />
+            </TooltipProvider>
+        );
         await user.click(screen.getByTestId("export-btn"));
         expect(screen.getByTestId("export-json")).toBeInTheDocument();
         expect(screen.getByTestId("export-excel")).toBeInTheDocument();
@@ -28,7 +33,11 @@ describe("ExportMenu", () => {
     it("JSON item invokes downloadRoundFile", async () => {
         const user = userEvent.setup();
         const { downloadRoundFile } = await import("@/lib/persistence/io");
-        render(<ExportMenu />);
+        render(
+            <TooltipProvider>
+                <ExportMenu />
+            </TooltipProvider>
+        );
         await user.click(screen.getByTestId("export-btn"));
         await user.click(screen.getByTestId("export-json"));
         expect(downloadRoundFile).toHaveBeenCalled();
@@ -37,7 +46,11 @@ describe("ExportMenu", () => {
     it("Excel item invokes downloadXlsx", async () => {
         const user = userEvent.setup();
         const { downloadXlsx } = await import("@/lib/export/xlsx");
-        render(<ExportMenu />);
+        render(
+            <TooltipProvider>
+                <ExportMenu />
+            </TooltipProvider>
+        );
         await user.click(screen.getByTestId("export-btn"));
         await user.click(screen.getByTestId("export-excel"));
         expect(downloadXlsx).toHaveBeenCalled();
