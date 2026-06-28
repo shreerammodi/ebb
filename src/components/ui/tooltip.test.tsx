@@ -12,7 +12,11 @@ import { Tip, TooltipProvider } from "./tooltip";
 
 const mockKeyHintFor = vi.mocked(keyHintFor);
 
-function renderTip(props: { label: string; command?: never } | { label: string; command: Parameters<typeof keyHintFor>[0] }) {
+function renderTip(
+    props:
+        | { label: string; command?: never }
+        | { label: string; command: Parameters<typeof keyHintFor>[0] },
+) {
     return render(
         <TooltipProvider delayDuration={0}>
             <Tip {...props}>

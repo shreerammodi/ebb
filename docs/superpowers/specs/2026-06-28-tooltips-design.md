@@ -39,10 +39,10 @@ plus one convenience component:
 
 ```ts
 interface TipProps {
-  label: React.ReactNode;
-  command?: CommandId;   // optional; drives the shortcut hint
-  side?: "top" | "right" | "bottom" | "left";
-  children: React.ReactNode; // the trigger element (asChild)
+    label: React.ReactNode;
+    command?: CommandId; // optional; drives the shortcut hint
+    side?: "top" | "right" | "bottom" | "left";
+    children: React.ReactNode; // the trigger element (asChild)
 }
 ```
 
@@ -66,20 +66,20 @@ inside `TooltipContent`.
 Each control's existing `aria-label` becomes a visible tooltip. Controls that
 map to a command also show the shortcut.
 
-| Area | Controls | Command (shortcut) |
-| --- | --- | --- |
-| RoundHeader | Guide | `help.open` |
-| RoundHeader | Info | `info.open` |
-| RoundHeader | Settings | `settings.open` |
-| RoundHeader | Import, Export trigger | label only |
-| Sidebar | Expand / Collapse | `sidebar.toggle` |
-| Sidebar | Delete sheet | label only |
-| Sidebar | Sheet tabs | full name when truncated (label only) |
-| ExportMenu | menu trigger | label only |
-| SearchPalette | search trigger | label only |
-| InfoPanel | close | label only |
-| SettingsPanel | close, reset-binding buttons | label only |
-| SaveStatus | convert `title=` → tooltip (last-saved time) | label only |
+| Area          | Controls                                     | Command (shortcut)                    |
+| ------------- | -------------------------------------------- | ------------------------------------- |
+| RoundHeader   | Guide                                        | `help.open`                           |
+| RoundHeader   | Info                                         | `info.open`                           |
+| RoundHeader   | Settings                                     | `settings.open`                       |
+| RoundHeader   | Import, Export trigger                       | label only                            |
+| Sidebar       | Expand / Collapse                            | `sidebar.toggle`                      |
+| Sidebar       | Delete sheet                                 | label only                            |
+| Sidebar       | Sheet tabs                                   | full name when truncated (label only) |
+| ExportMenu    | menu trigger                                 | label only                            |
+| SearchPalette | search trigger                               | label only                            |
+| InfoPanel     | close                                        | label only                            |
+| SettingsPanel | close, reset-binding buttons                 | label only                            |
+| SaveStatus    | convert `title=` → tooltip (last-saved time) | label only                            |
 
 ### Sheet-tab truncation tooltips
 
@@ -95,9 +95,9 @@ wrapping a `Tooltip` per cell adds overhead. Revisit as a follow-up if desired.
 ## Testing
 
 - Unit test for `Tip` (`tooltip.test.tsx`):
-  - renders the label,
-  - renders the chord when the command is bound (mock `keyHintFor`),
-  - omits the chord when the command is unbound or absent.
+    - renders the label,
+    - renders the chord when the command is bound (mock `keyHintFor`),
+    - omits the chord when the command is unbound or absent.
 - Existing accessibility tests must continue to pass; `aria-label`s are
   preserved (Radix `TooltipContent` adds its own labelling on top).
 - Run `npm test` and `npm run lint` before considering the change complete.
