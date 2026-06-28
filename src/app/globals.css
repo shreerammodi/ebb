@@ -131,6 +131,11 @@ body {
     font-size: 12.5px;
     font-family: var(--font-flow, var(--font-commit-mono));
     table-layout: fixed;
+    /* Sum of the fixed column widths, so the table grows past the viewport and
+       the container scrolls horizontally instead of squeezing the columns. A
+       fixed-layout table with width:auto would otherwise shrink to fit its
+       container and ignore the per-column widths below. */
+    width: max-content;
 }
 
 /* Screen-reader caption — visually hidden, announced to assistive tech so the
