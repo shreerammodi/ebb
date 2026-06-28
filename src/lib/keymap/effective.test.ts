@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 
+import { isMacPlatform } from "@/lib/platform";
+
 import { effectiveKeymap } from "./effective";
 import { getPresetKeymap } from "./presets";
+
+const mod = isMacPlatform() ? "Meta" : "Ctrl";
 
 describe("effectiveKeymap", () => {
     it("returns the preset bindings when there are no overrides", () => {
@@ -33,19 +37,19 @@ describe("effectiveKeymap", () => {
     });
 });
 
-describe("COMMON_NORMAL bindings", () => {
-    it("Ctrl+A → sheet.newAff", () => {
+describe("platform modifier bindings", () => {
+    it("mod+A → sheet.newAff", () => {
         const km = effectiveKeymap({});
-        expect(km.bindings["Ctrl+A"]).toBe("sheet.newAff");
+        expect(km.bindings[`${mod}+A`]).toBe("sheet.newAff");
     });
 
-    it("Ctrl+N → sheet.newNeg", () => {
+    it("mod+N → sheet.newNeg", () => {
         const km = effectiveKeymap({});
-        expect(km.bindings["Ctrl+N"]).toBe("sheet.newNeg");
+        expect(km.bindings[`${mod}+N`]).toBe("sheet.newNeg");
     });
 
-    it("Ctrl+r → sheet.rename", () => {
+    it("mod+r → sheet.rename", () => {
         const km = effectiveKeymap({});
-        expect(km.bindings["Ctrl+r"]).toBe("sheet.rename");
+        expect(km.bindings[`${mod}+r`]).toBe("sheet.rename");
     });
 });

@@ -13,6 +13,7 @@ import { useRef, useEffect, useState } from "react";
 import { executeCommand } from "@/lib/commands/commands";
 import { numberFor } from "@/lib/model/numbering";
 import type { ArgumentNode } from "@/lib/model/types";
+import { isMacPlatform } from "@/lib/platform";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 export interface GridCellProps {
@@ -103,9 +104,11 @@ export default function GridCell({
                         executeCommand("cell.clear");
                         return;
                     }
-                    // Ctrl+A selects all text in the cell; stop propagation so the
-                    // global keymap doesn't fire sheet.newAff.
-                    if (e.key === "a" && e.ctrlKey && !e.shiftKey && !e.altKey) {
+                    // The platform modifier+A selects all text in the cell;
+                    // stop propagation so the global keymap doesn't fire sheet.newAff.
+                    // On Mac this is Meta+A; elsewhere Ctrl+A.
+                    const modKey = isMacPlatform() ? e.metaKey : e.ctrlKey;
+                    if (e.key === "a" && modKey && !e.shiftKey && !e.altKey) {
                         e.preventDefault();
                         e.stopPropagation();
                         inputRef.current?.select();
@@ -156,11 +159,7 @@ export default function GridCell({
             {showExtended && <span className="arg-ext">↳</span>}
             <span className={classes || undefined}>{node.text}</span>
             {labelDrops && isDropped && (
-                <span
-                    className="mark-drop"
-                    title="dropped"
-                    aria-label="dropped"
-                >
+                <span className="mark-drop" title="dropped" aria-label="dropped">
                     ⚠
                 </span>
             )}

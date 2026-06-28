@@ -200,7 +200,8 @@ export function executeCommand(id: CommandId): void {
             if (!round) return;
             const sel = state.selection;
             if (!sel) return;
-            const onFilledCell = occupantAt(round.nodes, sel.sheetId, sel.speechId, sel.row) !== null;
+            const onFilledCell =
+                occupantAt(round.nodes, sel.sheetId, sel.speechId, sel.row) !== null;
             if (onFilledCell) {
                 state.spawnSibling();
             } else {

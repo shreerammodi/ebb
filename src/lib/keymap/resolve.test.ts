@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 
+import { isMacPlatform } from "@/lib/platform";
+
 import { FLAT_KEYMAP } from "./presets";
 import { eventToChord, resolveCommand } from "./resolve";
+
+const mod = isMacPlatform() ? "Meta" : "Ctrl";
 
 type Ev = {
     key: string;
@@ -67,8 +71,9 @@ describe("resolveCommand (flat keymap)", () => {
         expect(resolveCommand(FLAT_KEYMAP, ev("Enter", { shiftKey: true }))).toBe("node.response");
     });
 
-    it("Ctrl+k resolves to sheet.quickSwitch", () => {
-        expect(resolveCommand(FLAT_KEYMAP, ev("k", { ctrlKey: true }))).toBe("sheet.quickSwitch");
+    it("mod+k resolves to sheet.quickSwitch", () => {
+        const mods = mod === "Meta" ? { metaKey: true } : { ctrlKey: true };
+        expect(resolveCommand(FLAT_KEYMAP, ev("k", mods))).toBe("sheet.quickSwitch");
     });
 
     it("returns null for an unbound chord", () => {

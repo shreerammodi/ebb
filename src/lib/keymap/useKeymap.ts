@@ -7,6 +7,7 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import { effectiveKeymap as computeEffectiveKeymap } from "./effective";
 import { GRAB_BINDINGS } from "./presets";
+import { reservedChords } from "./reserved";
 import { resolveCommand, eventToChord } from "./resolve";
 
 /** Returns the keymap currently in effect: flat preset merged with user overrides. */
@@ -28,6 +29,27 @@ let pendingPrefix: string | null = null;
 
 export function useKeymap(): void {
     useEffect(() => {
+        /**
+         * Capture-phase interceptor for reserved chords. Runs before the
+         * browser's shortcut handler and before any bubble-phase listeners,
+         * calling preventDefault() so the browser never sees the event.
+         */
+        function onKeyDownCapture(e: KeyboardEvent) {
+            const chord = eventToChord({
+                key: e.key,
+                metaKey: e.metaKey,
+                ctrlKey: e.ctrlKey,
+                altKey: e.altKey,
+                shiftKey: e.shiftKey,
+            });
+            if (reservedChords().has(chord)) {
+                // preventDefault stops the browser's shortcut handler.
+                // We do NOT stopPropagation — the event must continue to the
+                // bubble phase so useKeymap's resolver can fire the command.
+                e.preventDefault();
+            }
+        }
+
         function onKeyDown(e: KeyboardEvent) {
             const { moveSource } = useRoundStore.getState();
             const moveActive = moveSource !== null;
@@ -107,8 +129,10 @@ export function useKeymap(): void {
             executeCommand(commandId as any);
         }
 
+        window.addEventListener("keydown", onKeyDownCapture, { capture: true });
         window.addEventListener("keydown", onKeyDown);
         return () => {
+            window.removeEventListener("keydown", onKeyDownCapture, { capture: true });
             window.removeEventListener("keydown", onKeyDown);
             pendingPrefix = null; // clear on unmount
         };

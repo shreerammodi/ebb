@@ -1,10 +1,13 @@
 import { it, expect } from "vitest";
 
 import { FLAT_KEYMAP, GRAB_BINDINGS } from "@/lib/keymap/presets";
+import { isMacPlatform } from "@/lib/platform";
+
+const mod = isMacPlatform() ? "Meta" : "Ctrl";
 
 it("flat keymap binds conceded and extended", () => {
-    expect(FLAT_KEYMAP.bindings["Ctrl+X"]).toBe("status.toggleConceded");
-    expect(FLAT_KEYMAP.bindings["Ctrl+e"]).toBe("status.toggleExtended");
+    expect(FLAT_KEYMAP.bindings[`${mod}+X`]).toBe("status.toggleConceded");
+    expect(FLAT_KEYMAP.bindings[`${mod}+e`]).toBe("status.toggleExtended");
 });
 
 it("grab bindings map Enter to move.commit and Escape to move.cancel", () => {
@@ -29,14 +32,14 @@ it("flat keymap binds Tab to move.right and Shift+Tab to move.left", () => {
     expect(FLAT_KEYMAP.bindings["Shift+Tab"]).toBe("move.left");
 });
 
-it("flat keymap binds Delete to cell.clear and Ctrl+Backspace to row.delete", () => {
+it("flat keymap binds Delete to cell.clear and the platform modifier+Backspace to row.delete", () => {
     expect(FLAT_KEYMAP.bindings["Delete"]).toBe("cell.clear");
-    expect(FLAT_KEYMAP.bindings["Ctrl+Backspace"]).toBe("row.delete");
+    expect(FLAT_KEYMAP.bindings[`${mod}+Backspace`]).toBe("row.delete");
 });
 
 it("binds Excel-style jump navigation (directional + corners)", () => {
     const cmds = Object.values(FLAT_KEYMAP.bindings);
-    // Directional jumps bound to a modifier+Arrow chord (Ctrl on non-Mac CI).
+    // Directional jumps bound to a modifier+Arrow chord.
     expect(cmds).toContain("nav.jumpUp");
     expect(cmds).toContain("nav.jumpDown");
     expect(cmds).toContain("nav.jumpLeft");

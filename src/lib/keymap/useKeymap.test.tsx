@@ -3,9 +3,12 @@ import { act } from "react";
 import { describe, it, expect, beforeEach } from "vitest";
 
 import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
+import { isMacPlatform } from "@/lib/platform";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import { useKeymap } from "./useKeymap";
+
+const mod = isMacPlatform() ? "Meta" : "Ctrl";
 
 function resetStore() {
     useRoundStore.setState({
@@ -98,14 +101,14 @@ describe("useKeymap — flat modeless navigation", () => {
         expect(useRoundStore.getState().selection?.speechId).toBe(speeches[0].id);
     });
 
-    it("Ctrl+m grabs the selected node (sets moveSource)", () => {
+    it("mod+m grabs the selected node (sets moveSource)", () => {
         const sheetId = freshRound();
         const speechId = useRoundStore.getState().round!.format.speeches[0].id;
         const nodeId = useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
 
         render(<Harness />);
-        dispatchKey("m", { ctrlKey: true });
+        dispatchKey("m", mod === "Meta" ? { metaKey: true } : { ctrlKey: true });
 
         expect(useRoundStore.getState().moveSource).toBe(nodeId);
     });

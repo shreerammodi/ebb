@@ -7,18 +7,9 @@
  */
 
 import type { CommandId } from "@/lib/commands/registry";
+import { isMacPlatform } from "@/lib/platform";
 
 import type { Chord, Keymap } from "./types";
-
-/**
- * True on macOS. The directional jump uses Cmd (Meta) on Mac because Ctrl+↑/↓
- * are reserved by the system (Mission Control); Windows/Linux use Ctrl.
- */
-function isMacPlatform(): boolean {
-    if (typeof navigator === "undefined") return false;
-    const p = navigator.platform || navigator.userAgent || "";
-    return /Mac|iPhone|iPad|iPod/i.test(p);
-}
 
 /**
  * Excel-style data-edge jumps. Directional jumps use the platform modifier
@@ -37,18 +28,42 @@ const JUMP_BINDINGS: Record<Chord, CommandId> = (() => {
     };
 })();
 
-/** Ctrl+1 .. Ctrl+9 → sheet.jump1 .. sheet.jump9 */
-const SHEET_JUMPS: Record<Chord, CommandId> = {
-    "Ctrl+1": "sheet.jump1",
-    "Ctrl+2": "sheet.jump2",
-    "Ctrl+3": "sheet.jump3",
-    "Ctrl+4": "sheet.jump4",
-    "Ctrl+5": "sheet.jump5",
-    "Ctrl+6": "sheet.jump6",
-    "Ctrl+7": "sheet.jump7",
-    "Ctrl+8": "sheet.jump8",
-    "Ctrl+9": "sheet.jump9",
-};
+/** Platform modifier letter chords: Meta on Mac, Ctrl elsewhere. */
+const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
+    const mod = isMacPlatform() ? "Meta" : "Ctrl";
+    return {
+        [`${mod}+m`]: "move.grab",
+        [`${mod}+z`]: "edit.undo",
+        [`${mod}+Shift+Z`]: "edit.redo",
+        [`${mod}+b`]: "format.toggleBold",
+        [`${mod}+X`]: "status.toggleConceded",
+        [`${mod}+e`]: "status.toggleExtended",
+        [`${mod}+k`]: "sheet.quickSwitch",
+        [`${mod}+A`]: "sheet.newAff",
+        [`${mod}+N`]: "sheet.newNeg",
+        [`${mod}+r`]: "sheet.rename",
+        [`${mod}+,`]: "settings.open",
+        [`${mod}+\\`]: "sidebar.toggle",
+        [`${mod}+Backspace`]: "row.delete",
+        [`${mod}+Shift+Backspace`]: "node.deleteSubtree",
+    };
+})();
+
+/** Sheet jumps: Meta+1-9 on Mac, Ctrl+1-9 elsewhere. */
+const SHEET_JUMPS: Record<Chord, CommandId> = (() => {
+    const mod = isMacPlatform() ? "Meta" : "Ctrl";
+    return {
+        [`${mod}+1`]: "sheet.jump1",
+        [`${mod}+2`]: "sheet.jump2",
+        [`${mod}+3`]: "sheet.jump3",
+        [`${mod}+4`]: "sheet.jump4",
+        [`${mod}+5`]: "sheet.jump5",
+        [`${mod}+6`]: "sheet.jump6",
+        [`${mod}+7`]: "sheet.jump7",
+        [`${mod}+8`]: "sheet.jump8",
+        [`${mod}+9`]: "sheet.jump9",
+    };
+})();
 
 /**
  * The single flat keymap. All navigation, creation, and utility chords live
@@ -71,34 +86,15 @@ export const FLAT_KEYMAP: Keymap = {
         Enter: "node.sibling",
         "Shift+Enter": "node.response",
 
-        // ── Row operations ────────────────────────────────────────────────────
-        "Ctrl+Backspace": "row.delete",
-
         // ── Cell operations ───────────────────────────────────────────────────
         Delete: "cell.clear",
-        "Ctrl+Shift+Backspace": "node.deleteSubtree",
 
-        // ── Grab move ─────────────────────────────────────────────────────────
-        "Ctrl+m": "move.grab",
-
-        // ── Edit ──────────────────────────────────────────────────────────────
-        "Ctrl+z": "edit.undo",
-        "Ctrl+Z": "edit.redo",
-
-        // ── Status / format ───────────────────────────────────────────────────
-        "Ctrl+b": "format.toggleBold",
-        "Ctrl+X": "status.toggleConceded",
-        "Ctrl+e": "status.toggleExtended",
+        // ── Platform modifier chords (Meta on Mac, Ctrl elsewhere) ─────────
+        ...LETTER_BINDINGS,
 
         // ── Sheets ────────────────────────────────────────────────────────────
         "]": "sheet.next",
         "[": "sheet.prev",
-        "Ctrl+k": "sheet.quickSwitch",
-        "Ctrl+A": "sheet.newAff",
-        "Ctrl+N": "sheet.newNeg",
-        "Ctrl+r": "sheet.rename",
-        "Ctrl+,": "settings.open",
-        "Ctrl+\\": "sidebar.toggle",
         "?": "help.open",
         ...SHEET_JUMPS,
     },
