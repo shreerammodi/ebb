@@ -140,7 +140,8 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
             const n = sorted[i];
             // Rule the boundary only when this sibling or the one above it is a
             // multi-row band — two adjacent leaves don't need a line between them.
-            if (!isTall(n) && !isTall(sorted[i - 1])) continue;
+            // But always rule boundaries between different root arguments (parentId === null).
+            if (n.parentId !== null && !isTall(n) && !isTall(sorted[i - 1])) continue;
             const col = colIndexOf.get(n.speechId);
             if (col === undefined) continue;
             const prev = bandStartByRow.get(n.row);
@@ -273,20 +274,20 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                           ? node.id === selNode.parentId
                                               ? "cell-rel-parent"
                                               : selChildren.has(node.id)
-                                                    ? (() => {
-                                                            const aboveKey = `${node.speechId}:${node.row - 1}`;
-                                                            const belowKey = `${node.speechId}:${node.row + 1}`;
-                                                            const hasAbove =
-                                                                selChildPositions.has(aboveKey);
-                                                            const hasBelow =
-                                                                selChildPositions.has(belowKey);
-                                                            if (!hasAbove && !hasBelow)
-                                                                return "cell-rel-child-only";
-                                                            if (!hasAbove) return "cell-rel-child-top";
-                                                            if (!hasBelow) return "cell-rel-child-bot";
-                                                            return "cell-rel-child-mid";
-                                                        })()
-                                                    : ""
+                                                ? (() => {
+                                                      const aboveKey = `${node.speechId}:${node.row - 1}`;
+                                                      const belowKey = `${node.speechId}:${node.row + 1}`;
+                                                      const hasAbove =
+                                                          selChildPositions.has(aboveKey);
+                                                      const hasBelow =
+                                                          selChildPositions.has(belowKey);
+                                                      if (!hasAbove && !hasBelow)
+                                                          return "cell-rel-child-only";
+                                                      if (!hasAbove) return "cell-rel-child-top";
+                                                      if (!hasBelow) return "cell-rel-child-bot";
+                                                      return "cell-rel-child-mid";
+                                                  })()
+                                                : ""
                                           : "";
                                     const classes = [
                                         sideClass,
@@ -392,14 +393,12 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                                           if (draggedNode) {
                                                               const srcCol = speeches.findIndex(
                                                                   (s) =>
-                                                                      s.id ===
-                                                                      draggedNode.speechId,
+                                                                      s.id === draggedNode.speechId,
                                                               );
                                                               const dCol =
                                                                   colIdx -
                                                                   (srcCol >= 0 ? srcCol : 0);
-                                                              const dRow =
-                                                                  row - draggedNode.row;
+                                                              const dRow = row - draggedNode.row;
                                                               const moved = useRoundStore
                                                                   .getState()
                                                                   .commitSubtreeMove(

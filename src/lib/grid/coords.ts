@@ -157,9 +157,7 @@ export function rippleDown(
     exclude?: Set<string>,
 ): ArgumentNode[] {
     return nodes.map((n) =>
-        n.sheetId === sheetId &&
-        n.row >= fromRow &&
-        (exclude === undefined || !exclude.has(n.id))
+        n.sheetId === sheetId && n.row >= fromRow && (exclude === undefined || !exclude.has(n.id))
             ? { ...n, row: n.row + by }
             : n,
     );
@@ -266,7 +264,6 @@ export function ancestorIds(nodes: ArgumentNode[], nodeId: string): Set<string> 
     }
     return out;
 }
-
 
 /** Root id + all transitive descendant ids (cycle-guarded). */
 export function descendantIds(nodes: ArgumentNode[], rootId: string): Set<string> {

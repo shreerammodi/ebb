@@ -2,7 +2,16 @@ import { describe, it, expect } from "vitest";
 
 import type { ArgumentNode, Speech } from "@/lib/model/types";
 
-import { colIndexOf, occupantAt, maxRow, rippleDown, rippleUp, ancestorIds, descendantIds, translateSubtree } from "./coords";
+import {
+    colIndexOf,
+    occupantAt,
+    maxRow,
+    rippleDown,
+    rippleUp,
+    ancestorIds,
+    descendantIds,
+    translateSubtree,
+} from "./coords";
 
 const sp = (id: string): Speech => ({ id, name: id, side: "aff", seconds: 0 });
 const speeches = [sp("a"), sp("b"), sp("c")];

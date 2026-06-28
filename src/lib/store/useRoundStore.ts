@@ -585,8 +585,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         // outside history, so the undo target is the round BEFORE that shift —
         // restore the exact pre-spawn nodes directly (reversing the ripple by
         // replaying it would be fragile when the ripple excluded the parent chain).
-        const preSpawn =
-            preSpawnNodes !== undefined ? { ...round, nodes: preSpawnNodes } : round;
+        const preSpawn = preSpawnNodes !== undefined ? { ...round, nodes: preSpawnNodes } : round;
         set({
             round: { ...round, nodes, updatedAt: Date.now() },
             past: [...past, preSpawn].slice(-UNDO_DEPTH),

@@ -10,8 +10,8 @@
 
 import { useRef, useEffect, useState } from "react";
 
-import { columnsForSheet } from "@/lib/grid/columns";
 import { executeCommand } from "@/lib/commands/commands";
+import { columnsForSheet } from "@/lib/grid/columns";
 import { numberFor } from "@/lib/model/numbering";
 import type { ArgumentNode } from "@/lib/model/types";
 import { isMacPlatform } from "@/lib/platform";
@@ -160,12 +160,8 @@ export default function GridCell({
                             .round?.sheets.find((s) => s.id === sheetId);
                         if (format && sheet) {
                             const speeches = columnsForSheet(format, sheet);
-                            const srcCol = speeches.findIndex(
-                                (s) => s.id === draggedNode.speechId,
-                            );
-                            const tgtCol = speeches.findIndex(
-                                (s) => s.id === node.speechId,
-                            );
+                            const srcCol = speeches.findIndex((s) => s.id === draggedNode.speechId);
+                            const tgtCol = speeches.findIndex((s) => s.id === node.speechId);
                             const dCol = tgtCol - (srcCol >= 0 ? srcCol : 0);
                             const dRow = node.row - draggedNode.row;
                             const moved = useRoundStore

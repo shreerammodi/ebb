@@ -83,8 +83,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                     <li>Import and Export move flows in and out as files.</li>
                     <li>Trash holds deleted flows until you restore or purge them.</li>
                     <li>
-                        The guide opens automatically on first visit, or any time from the
-                        Guide button.
+                        The guide opens automatically on first visit, or any time from the Guide
+                        button.
                     </li>
                 </ul>
             </>
@@ -122,15 +122,15 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         body: (
             <>
                 <p>
-                    Use the arrows to navigate to a cell and start typing to flow an argument.
-                    Cells appear empty until you type — the node is only created on the first
-                    keystroke, so you can cancel with <Kbd k="Esc" /> before committing.
+                    Use the arrows to navigate to a cell and start typing to flow an argument. Cells
+                    appear empty until you type — the node is only created on the first keystroke,
+                    so you can cancel with <Kbd k="Esc" /> before committing.
                 </p>
                 <ul className="ml-4 list-disc space-y-1">
                     <li>
                         <Kbd cmd="node.response" /> opens a response slot in the next speech,
-                        answering the current argument. The slot stays blank until you type;
-                        press <Kbd k="Esc" /> to abandon it.
+                        answering the current argument. The slot stays blank until you type; press{" "}
+                        <Kbd k="Esc" /> to abandon it.
                     </li>
                     <li>
                         <Kbd cmd="node.sibling" /> adds a sibling argument in the same speech, e.g.
@@ -168,8 +168,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                     <li>Arrow keys move between cells.</li>
                     <li>
                         <Kbd cmd="nav.jumpUp" /> <Kbd cmd="nav.jumpDown" />{" "}
-                        <Kbd cmd="nav.jumpLeft" /> <Kbd cmd="nav.jumpRight" /> leap to the edge
-                        of the current block (like in Excel).
+                        <Kbd cmd="nav.jumpLeft" /> <Kbd cmd="nav.jumpRight" /> leap to the edge of
+                        the current block (like in Excel).
                     </li>
                     <li>
                         <Kbd cmd="nav.jumpHome" /> and <Kbd cmd="nav.jumpEnd" /> reach the ends of a
@@ -200,9 +200,9 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                 </p>
                 <p>
                     Settings is where you change display options and remap keys. Every shortcut
-                    shown in this guide reflects your current keymap. You can also pick a flow
-                    font — choose between mono fonts (Commit Mono, IBM Plex Mono) and sans-serif
-                    fonts (DM Sans, Inter) to match your preference.
+                    shown in this guide reflects your current keymap. You can also pick a flow font
+                    — choose between mono fonts (Commit Mono, IBM Plex Mono) and sans-serif fonts
+                    (DM Sans, Inter) to match your preference.
                 </p>
             </>
         ),
@@ -236,14 +236,14 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                     shortcut adapts automatically.
                 </p>
                 <p>
-                    Some actions are modal: grab an argument with <Kbd cmd="move.grab" />, move
-                    it with the arrow keys, then <Kbd cmd="move.commit" /> to drop it or{" "}
+                    Some actions are modal: grab an argument with <Kbd cmd="move.grab" />, move it
+                    with the arrow keys, then <Kbd cmd="move.commit" /> to drop it or{" "}
                     <Kbd cmd="move.cancel" /> to abandon the move. While moving, the entire subtree
                     (all descendants) is highlighted so you can see what will move together.
                 </p>
                 <p>
-                    You can collapse the sidebar with <Kbd cmd="sidebar.toggle" /> to give the
-                    grid more room, and open it again the same way.
+                    You can collapse the sidebar with <Kbd cmd="sidebar.toggle" /> to give the grid
+                    more room, and open it again the same way.
                 </p>
                 <p>
                     For the complete, always-current list of shortcuts, press{" "}
