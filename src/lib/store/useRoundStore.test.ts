@@ -74,6 +74,20 @@ function freshRound() {
     return id;
 }
 
+/**
+ * Spawn actions are now deferred: they only arm `pendingSpawn`. These helpers
+ * mimic "press Enter (or Shift+Enter) and type", returning the new node's id, for
+ * tests that just need a populated fixture.
+ */
+function spawnSiblingAndType(text = "x"): string {
+    useRoundStore.getState().spawnSibling();
+    return useRoundStore.getState().commitPendingSpawn(text)!;
+}
+function spawnResponseAndType(text = "x"): string {
+    useRoundStore.getState().spawnResponse();
+    return useRoundStore.getState().commitPendingSpawn(text)!;
+}
+
 describe("coordinate store actions", () => {
     beforeEach(resetStore);
 
@@ -88,28 +102,54 @@ describe("coordinate store actions", () => {
         expect(node.parentId).toBeNull();
     });
 
-    it("spawnSibling places below with inherited parentId", () => {
+    it("spawnSibling arms a deferred sibling below with inherited parentId", () => {
         freshRound();
         const s = useRoundStore.getState();
         const sheetId = s.activeSheetId!;
         const speechId = s.round!.format.speeches[0].id;
-        const a = s.placeBareNode({ sheetId, speechId, row: 0 });
+        s.placeBareNode({ sheetId, speechId, row: 0 });
+        const before = useRoundStore.getState().round!.nodes.length;
+
         useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
-        const b = useRoundStore.getState().spawnSibling()!;
+        useRoundStore.getState().spawnSibling();
+
+        // No node yet — only an armed intent and a moved cursor.
+        const armed = useRoundStore.getState();
+        expect(armed.round!.nodes.length).toBe(before);
+        expect(armed.pendingSpawn).toMatchObject({
+            sheetId,
+            speechId,
+            row: 1,
+            parentId: null,
+            kind: "sibling",
+        });
+        expect(armed.selection).toEqual({ sheetId, speechId, row: 1 });
+
+        // The first keystroke creates the node with the inherited parent.
+        const b = useRoundStore.getState().commitPendingSpawn("resp")!;
         const nb = useRoundStore.getState().round!.nodes.find((n) => n.id === b)!;
         expect(nb.row).toBe(1);
         expect(nb.speechId).toBe(speechId);
         expect(nb.parentId).toBeNull(); // inherited from root a
+        expect(nb.text).toBe("resp");
+        expect(useRoundStore.getState().pendingSpawn).toBeNull();
     });
 
-    it("spawnResponse places same-row next column, parent = current", () => {
+    it("spawnResponse arms a deferred response in the next column, parent = current", () => {
         freshRound();
         const s = useRoundStore.getState();
         const sheetId = s.activeSheetId!;
         const sp = s.round!.format.speeches;
         const a = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        const r = useRoundStore.getState().spawnResponse()!;
+        useRoundStore.getState().spawnResponse();
+        expect(useRoundStore.getState().pendingSpawn).toMatchObject({
+            speechId: sp[1].id,
+            row: 0,
+            parentId: a,
+            kind: "response",
+        });
+        const r = useRoundStore.getState().commitPendingSpawn("x")!;
         const nr = useRoundStore.getState().round!.nodes.find((n) => n.id === r)!;
         expect(nr.speechId).toBe(sp[1].id);
         expect(nr.row).toBe(0);
@@ -123,7 +163,7 @@ describe("coordinate store actions", () => {
         const sp = s.round!.format.speeches;
         const a = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        const child = useRoundStore.getState().spawnResponse()!;
+        const child = spawnResponseAndType();
         useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
         useRoundStore.getState().clearCell();
         const nodes = useRoundStore.getState().round!.nodes;
@@ -165,7 +205,7 @@ describe("coordinate store actions", () => {
         const sp = s.round!.format.speeches;
         const root = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
-        useRoundStore.getState().spawnResponse(); // child at sp[1]:0
+        spawnResponseAndType(); // child at sp[1]:0
         useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
         useRoundStore.getState().deleteSubtreeAt();
         const nodes = useRoundStore.getState().round!.nodes;
@@ -189,10 +229,10 @@ describe("REGRESSION: sibling does not split a response band", () => {
         // arg1 in 1AC, then six responses stacked in 1NC (Enter on the first).
         const arg1 = s.placeBareNode({ sheetId, speechId: c0, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
-        useRoundStore.getState().spawnResponse(); // response1 at (1NC, 0)
+        spawnResponseAndType(); // response1 at (1NC, 0)
         for (let i = 0; i < 5; i++) {
             // Enter on the last response stacks the next one below it.
-            useRoundStore.getState().spawnSibling();
+            spawnSiblingAndType();
         }
         // Sanity: six contiguous responses in 1NC at rows 0..5, all children of arg1.
         let nodes = useRoundStore.getState().round!.nodes;
@@ -202,7 +242,7 @@ describe("REGRESSION: sibling does not split a response band", () => {
 
         // Now add a sibling of arg1 (select arg1, Enter).
         useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
-        const arg2 = useRoundStore.getState().spawnSibling()!;
+        const arg2 = spawnSiblingAndType();
 
         nodes = useRoundStore.getState().round!.nodes;
         const a2 = nodes.find((n) => n.id === arg2)!;
@@ -218,6 +258,127 @@ describe("REGRESSION: sibling does not split a response band", () => {
                 .sort((a, b) => a.row - b.row)
                 .map((n) => n.row),
         ).toEqual([0, 1, 2, 3, 4, 5]);
+    });
+});
+
+// ─── Deferred spawn (pendingSpawn) ────────────────────────────────────────
+
+describe("deferred spawn", () => {
+    beforeEach(resetStore);
+
+    it("does not spawn a node and arms nothing on an empty cell", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 3 });
+        const r = useRoundStore.getState().spawnSibling();
+        expect(r).toBeNull();
+        expect(useRoundStore.getState().round!.nodes).toHaveLength(0);
+        expect(useRoundStore.getState().pendingSpawn).toBeNull();
+    });
+
+    it("only allows one pending spawn at a time", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        s.placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        const armed = useRoundStore.getState().pendingSpawn;
+        expect(armed?.kind).toBe("sibling");
+        // A second spawn while one is pending no-ops and leaves the first intact.
+        const r = useRoundStore.getState().spawnResponse();
+        expect(r).toBeNull();
+        expect(useRoundStore.getState().pendingSpawn).toEqual(armed);
+    });
+
+    it("shifts an occupied target down transiently — no autosave, no history", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        const arg1 = s.placeBareNode({ sheetId, speechId, row: 0 });
+        const arg2 = s.placeBareNode({ sheetId, speechId, row: 1 });
+
+        const updatedAtBefore = useRoundStore.getState().round!.updatedAt;
+        const pastBefore = useRoundStore.getState().past.length;
+
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().spawnSibling(); // target row 1 is occupied → shift
+
+        const after = useRoundStore.getState();
+        // arg2 was pushed down to make room; arg1 stayed.
+        expect(after.round!.nodes.find((n) => n.id === arg2)!.row).toBe(2);
+        expect(after.round!.nodes.find((n) => n.id === arg1)!.row).toBe(0);
+        expect(after.pendingSpawn).toMatchObject({ row: 1, rippled: true });
+        // The shift is transient: it neither bumps updatedAt (no autosave) nor
+        // grows the undo stack.
+        expect(after.round!.updatedAt).toBe(updatedAtBefore);
+        expect(after.past.length).toBe(pastBefore);
+    });
+
+    it("commits the node and a single undo restores the pre-spawn flow", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        const arg1 = s.placeBareNode({ sheetId, speechId, row: 0 });
+        const arg2 = s.placeBareNode({ sheetId, speechId, row: 1 });
+
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        const newId = useRoundStore.getState().commitPendingSpawn("between")!;
+
+        let nodes = useRoundStore.getState().round!.nodes;
+        expect(nodes.find((n) => n.id === newId)!.row).toBe(1);
+        expect(nodes.find((n) => n.id === arg2)!.row).toBe(2);
+
+        // One undo erases both the new node and the shift.
+        useRoundStore.getState().undo();
+        nodes = useRoundStore.getState().round!.nodes;
+        expect(nodes.find((n) => n.id === newId)).toBeUndefined();
+        expect(nodes.find((n) => n.id === arg1)!.row).toBe(0);
+        expect(nodes.find((n) => n.id === arg2)!.row).toBe(1);
+    });
+
+    it("abandons a pending spawn, reversing its shift without touching history", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        s.placeBareNode({ sheetId, speechId, row: 0 });
+        const arg2 = s.placeBareNode({ sheetId, speechId, row: 1 });
+
+        const pastBefore = useRoundStore.getState().past.length;
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === arg2)!.row).toBe(2);
+
+        useRoundStore.getState().abandonPendingSpawn();
+        const after = useRoundStore.getState();
+        expect(after.pendingSpawn).toBeNull();
+        expect(after.round!.nodes.find((n) => n.id === arg2)!.row).toBe(1); // shift reversed
+        expect(after.past.length).toBe(pastBefore);
+    });
+
+    it("moving the cursor away abandons a pending spawn and reverses the shift", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        s.placeBareNode({ sheetId, speechId, row: 0 });
+        const arg2 = s.placeBareNode({ sheetId, speechId, row: 1 });
+
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        // Navigate elsewhere (e.g. arrow key) → abandon.
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 5 });
+
+        const after = useRoundStore.getState();
+        expect(after.pendingSpawn).toBeNull();
+        expect(after.round!.nodes.find((n) => n.id === arg2)!.row).toBe(1);
     });
 });
 

@@ -7,7 +7,13 @@
  */
 
 import { columnsForSheet } from "@/lib/grid/columns";
-import { isReservedCell, jumpTarget, cornerTarget, type JumpDir } from "@/lib/grid/coords";
+import {
+    isReservedCell,
+    jumpTarget,
+    cornerTarget,
+    occupantAt,
+    type JumpDir,
+} from "@/lib/grid/coords";
 import type { Sheet, Round } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
@@ -186,9 +192,19 @@ export function executeCommand(id: CommandId): void {
 
         // ── Node creation ─────────────────────────────────────────────────────
         case "node.sibling": {
-            const id = state.spawnSibling();
-            if (id) {
-                // Selection already moved by spawnSibling; editor takes over.
+            // Enter unifies "add the next argument" with the Excel habit of "move
+            // down a cell". On a filled cell it arms a deferred sibling spawn (the
+            // node is created only when the user types). On an empty cell it just
+            // moves the cursor down a row, so mashing Enter walks the column without
+            // creating anything.
+            if (!round) return;
+            const sel = state.selection;
+            if (!sel) return;
+            const onFilledCell = occupantAt(round.nodes, sel.sheetId, sel.speechId, sel.row) !== null;
+            if (onFilledCell) {
+                state.spawnSibling();
+            } else {
+                columnStep(state, "down");
             }
             return;
         }

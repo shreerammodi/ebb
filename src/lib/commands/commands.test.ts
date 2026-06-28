@@ -27,6 +27,17 @@ function freshRound() {
     return id;
 }
 
+// Spawns are deferred (they only arm an intent); these mimic "press Enter /
+// Shift+Enter and type" for fixtures, returning the new node's id.
+function spawnSiblingAndType(text = "x"): string {
+    useRoundStore.getState().spawnSibling();
+    return useRoundStore.getState().commitPendingSpawn(text)!;
+}
+function spawnResponseAndType(text = "x"): string {
+    useRoundStore.getState().spawnResponse();
+    return useRoundStore.getState().commitPendingSpawn(text)!;
+}
+
 describe("executeCommand — no-op safety", () => {
     beforeEach(resetStore);
 
@@ -118,8 +129,8 @@ describe("move.down / move.up (coordinate stepping)", () => {
         // so the parent's band spans rows 0..1 → column 0 row 1 is reserved.
         useRoundStore.getState().placeBareNode({ sheetId, speechId: speeches[0].id, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
-        useRoundStore.getState().spawnResponse(); // child at (col1, row0)
-        useRoundStore.getState().spawnSibling(); // child at (col1, row1)
+        spawnResponseAndType(); // child at (col1, row0)
+        spawnSiblingAndType(); // child at (col1, row1)
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
 
         executeCommand("move.down");
@@ -186,8 +197,8 @@ describe("move.left / move.right (column stepping)", () => {
         // is reserved (inside arg1's band).
         useRoundStore.getState().placeBareNode({ sheetId, speechId: speeches[0].id, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
-        useRoundStore.getState().spawnResponse(); // child at (col1, row0)
-        useRoundStore.getState().spawnSibling(); // child at (col1, row1)
+        spawnResponseAndType(); // child at (col1, row0)
+        spawnSiblingAndType(); // child at (col1, row1)
         // Cursor on the second response; nothing occupied left of it on row 1.
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[1].id, row: 1 });
 
@@ -214,7 +225,7 @@ describe("move.left / move.right (column stepping)", () => {
 describe("node.sibling", () => {
     beforeEach(resetStore);
 
-    it("spawns a sibling below with inherited parentId", () => {
+    it("on a filled cell arms a deferred sibling and moves the cursor (no node yet)", () => {
         const sheetId = freshRound();
         const speechId = useRoundStore.getState().round!.format.speeches[0].id;
         useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
@@ -224,13 +235,26 @@ describe("node.sibling", () => {
         const sel = useRoundStore.getState().selection;
         expect(sel?.row).toBe(1);
         expect(sel?.speechId).toBe(speechId);
-        const node = useRoundStore
-            .getState()
-            .round!.nodes.find(
-                (n) => n.sheetId === sheetId && n.row === 1 && n.speechId === speechId,
-            );
-        expect(node).toBeDefined();
-        expect(node!.parentId).toBeNull(); // inherited from root
+        // No node created — only the intent is armed.
+        expect(useRoundStore.getState().round!.nodes).toHaveLength(1);
+        expect(useRoundStore.getState().pendingSpawn).toMatchObject({
+            row: 1,
+            kind: "sibling",
+            parentId: null,
+        });
+    });
+
+    it("on an empty cell just moves the cursor down (Excel habit), creating nothing", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+
+        executeCommand("node.sibling");
+        executeCommand("node.sibling");
+        // Mashing Enter on empty cells walks down without spawning anything.
+        expect(useRoundStore.getState().selection?.row).toBe(2);
+        expect(useRoundStore.getState().round!.nodes).toHaveLength(0);
+        expect(useRoundStore.getState().pendingSpawn).toBeNull();
     });
 
     it("no-ops when selection is null", () => {
@@ -244,7 +268,7 @@ describe("node.sibling", () => {
 describe("node.response", () => {
     beforeEach(resetStore);
 
-    it("spawns a response in the next column, same row", () => {
+    it("arms a deferred response in the next column, same row, parent = current", () => {
         const sheetId = freshRound();
         const speeches = useRoundStore.getState().round!.format.speeches;
         const nodeId = useRoundStore
@@ -256,13 +280,14 @@ describe("node.response", () => {
         const sel = useRoundStore.getState().selection;
         expect(sel?.speechId).toBe(speeches[1].id);
         expect(sel?.row).toBe(0);
-        const response = useRoundStore
-            .getState()
-            .round!.nodes.find(
-                (n) => n.speechId === speeches[1].id && n.row === 0 && n.sheetId === sheetId,
-            );
-        expect(response).toBeDefined();
-        expect(response!.parentId).toBe(nodeId);
+        // No node yet; the first keystroke will create it with parent = current.
+        expect(useRoundStore.getState().round!.nodes).toHaveLength(1);
+        expect(useRoundStore.getState().pendingSpawn).toMatchObject({
+            speechId: speeches[1].id,
+            row: 0,
+            kind: "response",
+            parentId: nodeId,
+        });
     });
 });
 
@@ -309,7 +334,7 @@ describe("cell.clear", () => {
             .getState()
             .placeBareNode({ sheetId, speechId: speeches[0].id, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
-        const child = useRoundStore.getState().spawnResponse()!;
+        const child = spawnResponseAndType();
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
         executeCommand("cell.clear");
 
@@ -329,7 +354,7 @@ describe("node.deleteSubtree", () => {
             .getState()
             .placeBareNode({ sheetId, speechId: speeches[0].id, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
-        useRoundStore.getState().spawnResponse(); // child
+        spawnResponseAndType(); // child
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
         executeCommand("node.deleteSubtree");
 
@@ -492,7 +517,7 @@ describe("keyboard grab & move", () => {
             .placeBareNode({ sheetId, speechId: speeches[0].id, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
         // Create child at speeches[1]:0
-        useRoundStore.getState().spawnResponse();
+        spawnResponseAndType();
         // Grab root
         useRoundStore.getState().setSelection({ sheetId, speechId: speeches[0].id, row: 0 });
         executeCommand("move.grab");

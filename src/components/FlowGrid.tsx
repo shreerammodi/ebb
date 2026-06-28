@@ -48,6 +48,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
     const selection = useRoundStore((s) => s.selection);
     const setSelection = useRoundStore((s) => s.setSelection);
     const moveSource = useRoundStore((s) => s.moveSource);
+    const pendingSpawn = useRoundStore((s) => s.pendingSpawn);
     const flashNodeId = useRoundStore((s) => s.flashNodeId);
     const setFlashNode = useRoundStore((s) => s.setFlashNode);
     const sheets = useRoundStore((s) => s.round?.sheets ?? EMPTY_SHEETS);
@@ -318,6 +319,14 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                 // responses). Not selectable, not a drop target.
                                 const reserved = reservedKeys.has(cellKey);
                                 const isSelected = isSel && !reserved;
+                                // A deferred spawn targeting this cell always shows
+                                // the editor, even if the cell is reserved (a response
+                                // slot can land inside another argument's band).
+                                const isPendingHere =
+                                    pendingSpawn !== null &&
+                                    pendingSpawn.sheetId === sheetId &&
+                                    pendingSpawn.speechId === speech.id &&
+                                    pendingSpawn.row === row;
                                 const showHint =
                                     sheetIsEmpty && row === 0 && speech.id === speeches[0].id;
                                 const isMoveCursor = moveSource !== null && isSelected;
@@ -373,7 +382,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                                   }
                                         }
                                     >
-                                        {isSelected && moveSource === null ? (
+                                        {(isSelected || isPendingHere) && moveSource === null ? (
                                             <EmptyCellEditor
                                                 sheetId={sheetId}
                                                 speechId={speech.id}

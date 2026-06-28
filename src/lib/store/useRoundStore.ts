@@ -5,7 +5,7 @@
  * Zustand's shallow equality can detect changes reliably.
  */
 
-import { create } from "zustand";
+import { create, type StoreApi } from "zustand";
 
 import type { CommandId } from "@/lib/commands/registry";
 import { type FontId, DEFAULT_FONT_ID, resolveFontId } from "@/lib/fonts/registry";
@@ -78,6 +78,29 @@ export interface RoundState {
     moveSource: string | null;
     /** A node id to briefly flash (drop/move confirm), or null. Transient UI. */
     flashNodeId: string | null;
+    /**
+     * A deferred spawn that has not been typed into yet. Pressing Enter /
+     * Shift+Enter moves the cursor to where the sibling/response WOULD go and arms
+     * this intent instead of creating a node — the node is created only once the
+     * user types the first character (see `commitPendingSpawn`). This keeps mashing
+     * Enter (a habit from Excel) from littering the flow with empty nodes that then
+     * get mislabeled as dropped.
+     *
+     * When the target cell was occupied, the surrounding cells are shifted down
+     * immediately so the target reads as empty; `rippled` records that so the shift
+     * can be reversed if the spawn is abandoned without typing. The shift is applied
+     * without bumping `round.updatedAt`, so it stays out of autosave and undo
+     * history until commit.
+     */
+    pendingSpawn: {
+        sheetId: string;
+        speechId: string;
+        row: number;
+        /** sibling → the current node's parent; response → the current node. */
+        parentId: string | null;
+        kind: "sibling" | "response";
+        rippled: boolean;
+    } | null;
     sidebarCollapsed: boolean;
 }
 
@@ -122,8 +145,19 @@ export interface RoundActions {
     setNodeParent(nodeId: string, parentId: string | null): void;
 
     placeBareNode(cell: { sheetId: string; speechId: string; row: number }, text?: string): string;
+    /**
+     * Arms a deferred sibling spawn: moves the cursor to the sibling slot and sets
+     * `pendingSpawn`. Does NOT create a node — `commitPendingSpawn` does, on the
+     * first keystroke. No-ops (returns null) when there is no occupant at the
+     * cursor or a spawn is already pending. Always returns null (no node yet).
+     */
     spawnSibling(): string | null;
+    /** Like {@link spawnSibling} but for a response in the next column. */
     spawnResponse(): string | null;
+    /** Creates the pending-spawn node with `text`; returns its id, or null. */
+    commitPendingSpawn(text: string): string | null;
+    /** Discards a pending spawn, reversing any shift it applied. */
+    abandonPendingSpawn(): void;
     insertRowAbove(): void;
     insertRowBelow(): void;
     deleteRow(): void;
@@ -259,6 +293,50 @@ const UNDO_DEPTH = 50;
 
 const initialKeymapSettings = loadKeymapSettings();
 
+/**
+ * Shared core of `spawnSibling` / `spawnResponse`. Resolves the target slot, opens
+ * it by shifting cells down when occupied — transiently, without bumping
+ * `updatedAt`, so the shift is neither autosaved nor pushed to undo history — moves
+ * the cursor there, and arms `pendingSpawn`. Creates no node; that waits for the
+ * first keystroke via `commitPendingSpawn`. Returns null (no node yet).
+ */
+function armSpawn(
+    get: StoreApi<RoundStore>["getState"],
+    set: StoreApi<RoundStore>["setState"],
+    kind: "sibling" | "response",
+): null {
+    const { round, selection, pendingSpawn } = get();
+    // One pending spawn at a time; spawn only from a real node (so a second Enter
+    // on the now-empty target naturally no-ops and mashing Enter doesn't cascade).
+    if (!round || !selection || pendingSpawn) return null;
+    const cur = occupantAt(round.nodes, selection.sheetId, selection.speechId, selection.row);
+    if (!cur) return null;
+    const sheet = round.sheets.find((s) => s.id === selection.sheetId);
+    if (!sheet) return null;
+    const speeches = columnsForSheet(round.format, sheet);
+    const placed = placeForSpawn(round.nodes, selection.sheetId, speeches, cur, kind);
+    if (!placed) return null;
+    // placeForSpawn returns the same array reference when no shift was needed.
+    const rippled = placed.nodes !== round.nodes;
+    set({
+        round: rippled ? { ...round, nodes: placed.nodes } : round,
+        selection: {
+            sheetId: selection.sheetId,
+            speechId: placed.speechId,
+            row: placed.row,
+        },
+        pendingSpawn: {
+            sheetId: selection.sheetId,
+            speechId: placed.speechId,
+            row: placed.row,
+            parentId: kind === "sibling" ? cur.parentId : cur.id,
+            kind,
+            rippled,
+        },
+    });
+    return null;
+}
+
 export const useRoundStore = create<RoundStore>((set, get) => ({
     // ── Initial state ──────────────────────────────────────────────────────────
     round: null,
@@ -280,6 +358,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     infoOpen: false,
     moveSource: null,
     flashNodeId: null,
+    pendingSpawn: null,
 
     // ── createRound ────────────────────────────────────────────────────────────
     createRound({ role, format }) {
@@ -310,6 +389,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             infoOpen: false,
             moveSource: null,
             flashNodeId: null,
+            pendingSpawn: null,
         });
     },
 
@@ -476,57 +556,56 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     },
 
     spawnSibling() {
-        const { round, selection } = get();
-        if (!round || !selection) return null;
-        const cur = occupantAt(round.nodes, selection.sheetId, selection.speechId, selection.row);
-        if (!cur) return null;
-        const sheet = round.sheets.find((s) => s.id === selection.sheetId);
-        if (!sheet) return null;
-        const speeches = columnsForSheet(round.format, sheet);
-        const placed = placeForSpawn(round.nodes, selection.sheetId, speeches, cur, "sibling");
-        if (!placed) return null;
-        const { nodes, node } = placeNodeAt(placed.nodes, {
-            sheetId: selection.sheetId,
-            speechId: placed.speechId,
-            parentId: cur.parentId,
-            row: placed.row,
+        return armSpawn(get, set, "sibling");
+    },
+
+    spawnResponse() {
+        return armSpawn(get, set, "response");
+    },
+
+    commitPendingSpawn(text) {
+        const { round, pendingSpawn, past } = get();
+        if (!round || !pendingSpawn) return null;
+        const { sheetId, speechId, row, parentId, rippled } = pendingSpawn;
+        const { nodes, node } = placeNodeAt(round.nodes, {
+            sheetId,
+            speechId,
+            parentId,
+            row,
+            text,
         });
-        get()._commit(null, (r) => ({ ...r, nodes }));
+        // One undo step back to the pre-spawn flow. The transient shift was applied
+        // outside history, so the undo target is the round BEFORE that shift —
+        // reconstruct it by reversing the ripple.
+        const preSpawn = rippled
+            ? { ...round, nodes: rippleUp(round.nodes, sheetId, row, 1) }
+            : round;
         set({
-            selection: {
-                sheetId: selection.sheetId,
-                speechId: placed.speechId,
-                row: placed.row,
-            },
+            round: { ...round, nodes, updatedAt: Date.now() },
+            past: [...past, preSpawn].slice(-UNDO_DEPTH),
+            future: [],
+            lastCommitKey: null,
+            pendingSpawn: null,
         });
         return node.id;
     },
 
-    spawnResponse() {
-        const { round, selection } = get();
-        if (!round || !selection) return null;
-        const cur = occupantAt(round.nodes, selection.sheetId, selection.speechId, selection.row);
-        if (!cur) return null;
-        const sheet = round.sheets.find((s) => s.id === selection.sheetId);
-        if (!sheet) return null;
-        const speeches = columnsForSheet(round.format, sheet);
-        const placed = placeForSpawn(round.nodes, selection.sheetId, speeches, cur, "response");
-        if (!placed) return null;
-        const { nodes, node } = placeNodeAt(placed.nodes, {
-            sheetId: selection.sheetId,
-            speechId: placed.speechId,
-            parentId: cur.id,
-            row: placed.row,
-        });
-        get()._commit(null, (r) => ({ ...r, nodes }));
-        set({
-            selection: {
-                sheetId: selection.sheetId,
-                speechId: placed.speechId,
-                row: placed.row,
-            },
-        });
-        return node.id;
+    abandonPendingSpawn() {
+        const { round, pendingSpawn } = get();
+        if (!pendingSpawn) return;
+        // Reverse the transient shift (if any) without bumping updatedAt, then drop
+        // the intent. The flow returns to exactly its pre-spawn state.
+        if (round && pendingSpawn.rippled) {
+            set({
+                round: {
+                    ...round,
+                    nodes: rippleUp(round.nodes, pendingSpawn.sheetId, pendingSpawn.row, 1),
+                },
+                pendingSpawn: null,
+            });
+        } else {
+            set({ pendingSpawn: null });
+        }
     },
 
     insertRowAbove() {
@@ -640,6 +719,18 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
 
     // ── setSelection ───────────────────────────────────────────────────────────
     setSelection(selection) {
+        // Moving the cursor off an armed-but-untyped spawn abandons it (reversing
+        // any shift). Staying on the same cell keeps it armed so the editor there
+        // can still receive the first keystroke.
+        const { pendingSpawn } = get();
+        if (pendingSpawn) {
+            const sameCell =
+                selection !== null &&
+                selection.sheetId === pendingSpawn.sheetId &&
+                selection.speechId === pendingSpawn.speechId &&
+                selection.row === pendingSpawn.row;
+            if (!sameCell) get().abandonPendingSpawn();
+        }
         set({ selection, lastCommitKey: null });
     },
 
@@ -699,6 +790,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         set({
             activeSheetId: nextActive,
             selection: selValid ? selection : null,
+            // undo/redo swaps the whole round, discarding any transient shift, so a
+            // stale pending spawn must be dropped outright.
+            pendingSpawn: null,
         });
     },
 

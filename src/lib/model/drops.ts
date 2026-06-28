@@ -30,8 +30,11 @@ function oppositeSide(side: Side): Side {
  * We use the FIRST (earliest) such S2 with content as the answer obligation.
  */
 export function detectDrops(nodes: ArgumentNode[], format: Format, sheetId: string): string[] {
-    // Work only with nodes on this sheet.
-    const sheetNodes = nodes.filter((n) => n.sheetId === sheetId);
+    // Work only with nodes on this sheet. Empty-text nodes are ignored entirely:
+    // a blank cell is not a real argument, so it neither incurs an answer
+    // obligation nor counts as a drop. This also retroactively clears bogus drop
+    // labels on rounds that already persisted blank nodes from older behavior.
+    const sheetNodes = nodes.filter((n) => n.sheetId === sheetId && n.text.trim() !== "");
 
     // Build a set of speechIds that have at least one node on this sheet.
     const speechesWithContent = new Set(sheetNodes.map((n) => n.speechId));

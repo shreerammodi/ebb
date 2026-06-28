@@ -82,11 +82,15 @@ function setupScenario() {
         }),
     }));
 
-    // Set text on the nodes.
+    // Set text on the nodes. The Block answers need real text too: empty cells
+    // are not real arguments, so a blank Block would count as "never happened"
+    // and ac3 would not register as dropped.
     useRoundStore.getState().updateNodeText(ncId, "Topicality");
     useRoundStore.getState().updateNodeText(ac1Id, "We meet");
     useRoundStore.getState().updateNodeText(ac2Id, "Counter-interp");
     useRoundStore.getState().updateNodeText(ac3Id, "Standards");
+    useRoundStore.getState().updateNodeText(blk1, "No, you don't");
+    useRoundStore.getState().updateNodeText(blk2, "Bad counter-interp");
 
     return { sheetId, ncId, ac1Id, ac2Id, ac3Id };
 }
@@ -401,12 +405,16 @@ describe("FlowGrid — reserved cells beside a response band", () => {
         useRoundStore.getState().setActiveSheet(sheetId);
         const c0 = fmt.speeches[0].id; // 1AC
 
-        // arg1 in 1AC with three responses stacked in 1NC (rows 0..2).
+        // arg1 in 1AC with three responses stacked in 1NC (rows 0..2). Spawns are
+        // deferred, so type into each to actually create the node.
         useRoundStore.getState().placeBareNode({ sheetId, speechId: c0, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
         useRoundStore.getState().spawnResponse();
+        useRoundStore.getState().commitPendingSpawn("r1");
         useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().commitPendingSpawn("r2");
         useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().commitPendingSpawn("r3");
 
         render(<FlowGrid sheetId={sheetId} />);
         const rows = document.querySelectorAll("tbody tr");

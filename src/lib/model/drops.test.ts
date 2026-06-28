@@ -19,7 +19,7 @@ function makeNode(
     return {
         parentId: null,
         row: 0,
-        text: "",
+        text: "arg",
         statuses: [],
         bold: false,
         ...overrides,
@@ -215,6 +215,61 @@ describe("detectDrops", () => {
         expect(dropped).not.toContain("ac1");
         // blk1 (neg, Block): first aff speech after Block = 1AR. 1AR has content (ar_unrelated). No 1AR node answers blk1 → DROPPED.
         expect(dropped).toContain("blk1");
+    });
+
+    // -------------------------------------------------------------------------
+    // Empty-text nodes (blank cells left behind by mashing Enter, etc.) are never
+    // flagged as dropped — they aren't real arguments.
+    // -------------------------------------------------------------------------
+    it("never flags an empty-text node as dropped", () => {
+        // A blank 2AC cell with a Block that has real content.
+        const blank = makeNode({
+            id: "blank",
+            sheetId: SHEET_A,
+            speechId: "sp-2ac",
+            text: "",
+        });
+        const realArg = makeNode({
+            id: "realArg",
+            sheetId: SHEET_A,
+            speechId: "sp-2ac",
+            row: 1,
+        });
+        const blk1 = makeNode({
+            id: "blk1",
+            sheetId: SHEET_A,
+            speechId: "sp-block",
+            parentId: "realArg",
+        });
+
+        const nodes = [blank, realArg, blk1];
+        const dropped = detectDrops(nodes, POLICY_FORMAT, SHEET_A);
+
+        expect(dropped).not.toContain("blank");
+        // The real, answered argument is also not dropped.
+        expect(dropped).not.toContain("realArg");
+    });
+
+    // A blank cell does not, by itself, make a speech "happen" — so it creates no
+    // answer obligation for earlier arguments.
+    it("treats a speech holding only blank cells as having no content", () => {
+        const arg1 = makeNode({
+            id: "arg1",
+            sheetId: SHEET_A,
+            speechId: "sp-2ac",
+        });
+        // Block "happened" only as a blank cell — should not obligate an answer.
+        const blkBlank = makeNode({
+            id: "blkBlank",
+            sheetId: SHEET_A,
+            speechId: "sp-block",
+            text: "",
+        });
+
+        const nodes = [arg1, blkBlank];
+        const dropped = detectDrops(nodes, POLICY_FORMAT, SHEET_A);
+
+        expect(dropped).toHaveLength(0);
     });
 
     // -------------------------------------------------------------------------
