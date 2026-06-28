@@ -6,6 +6,7 @@ import { useKeymap } from "@/lib/keymap/useKeymap";
 import { CX_COLUMNS } from "@/lib/model/cxColumns";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
+import CommandPalette from "./CommandPalette";
 import FlowGrid from "./FlowGrid";
 import GuideDialog from "./guide/GuideDialog";
 import InfoPanel from "./InfoPanel";
@@ -64,6 +65,7 @@ export default function Workspace() {
                 </main>
             </div>
             <SearchPalette />
+            <CommandPalette />
             <SettingsPanel />
             <InfoPanel />
             <KeybindingsCheatsheet />
