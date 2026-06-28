@@ -8,6 +8,7 @@ import "fake-indexeddb/auto";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { emptyScouting } from "@/lib/model/normalize";
 import type { Round, Format } from "@/lib/model/types";
 import { persistRound } from "@/lib/persistence/autosave";
@@ -75,7 +76,11 @@ beforeEach(async () => {
 describe("AppRoot", () => {
     it("redirects to / when no ?id= param", async () => {
         mockSearch = "";
-        render(<AppRoot />);
+        render(
+            <TooltipProvider>
+                <AppRoot />
+            </TooltipProvider>,
+        );
         await waitFor(() => {
             expect(replace).toHaveBeenCalledWith("/");
         });
@@ -83,7 +88,11 @@ describe("AppRoot", () => {
 
     it("redirects to / when ?id= does not match any round", async () => {
         mockSearch = "id=nonexistent_id";
-        render(<AppRoot />);
+        render(
+            <TooltipProvider>
+                <AppRoot />
+            </TooltipProvider>,
+        );
         await waitFor(() => {
             expect(replace).toHaveBeenCalledWith("/");
         });
@@ -94,7 +103,11 @@ describe("AppRoot", () => {
         await persistRound(round);
         mockSearch = `id=${round.id}`;
 
-        render(<AppRoot />);
+        render(
+            <TooltipProvider>
+                <AppRoot />
+            </TooltipProvider>,
+        );
 
         await waitFor(() => {
             expect(screen.getByTestId("workspace")).toBeInTheDocument();
@@ -106,7 +119,11 @@ describe("AppRoot", () => {
         await persistRound(round);
         mockSearch = `id=${round.id}`;
 
-        render(<AppRoot />);
+        render(
+            <TooltipProvider>
+                <AppRoot />
+            </TooltipProvider>,
+        );
 
         await waitFor(() => {
             expect(replace).toHaveBeenCalledWith("/");
