@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { Gear } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -123,7 +123,7 @@ export default function Dashboard() {
                     data-testid="dashboard-settings"
                     onClick={() => useRoundStore.getState().setSettingsOpen(true)}
                 >
-                    <Settings className="size-4" />
+                    <Gear weight="bold" className="size-4" />
                 </Button>
                 <Button
                     variant="ghost"

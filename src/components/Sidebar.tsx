@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -70,7 +70,7 @@ export default function Sidebar() {
                     onClick={() => setSidebarCollapsed(false)}
                     className="text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-colors"
                 >
-                    <ChevronRight size={16} />
+                    <CaretRight weight="bold" size={16} />
                 </button>
             </nav>
         );
@@ -109,7 +109,7 @@ export default function Sidebar() {
                     onClick={() => setSidebarCollapsed(true)}
                     className="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded p-1 transition-colors"
                 >
-                    <ChevronLeft size={16} />
+                    <CaretLeft weight="bold" size={16} />
                 </button>
             </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { XIcon } from "lucide-react";
+import { X } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -125,7 +125,7 @@ export default function SettingsPanel() {
                         aria-label="Close settings"
                         className="text-muted-foreground hover:text-foreground rounded transition-colors focus-visible:outline-2"
                     >
-                        <XIcon className="size-4" />
+                        <X weight="bold" className="size-4" />
                     </DialogClose>
                 </div>
 

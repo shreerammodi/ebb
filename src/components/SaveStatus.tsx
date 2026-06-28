@@ -1,5 +1,6 @@
 "use client";
 
+import { Warning } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 
 import { saveRoundNow } from "@/lib/persistence/autosave";
@@ -47,21 +48,7 @@ export default function SaveStatus() {
                 data-state="error"
                 className="text-warn flex items-center gap-1.5 text-xs font-medium"
             >
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <path
-                        d="M8 1.5 15 14H1L8 1.5Z"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                        strokeLinejoin="round"
-                    />
-                    <path
-                        d="M8 6.5v3.2"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                    />
-                    <circle cx="8" cy="11.6" r="0.85" fill="currentColor" />
-                </svg>
+                <Warning weight="bold" size={13} aria-hidden="true" />
                 Not saved
                 <button
                     type="button"

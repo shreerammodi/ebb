@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { Gear } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRef } from "react";
 import { toast } from "sonner";
@@ -102,7 +102,7 @@ export default function RoundHeader() {
                     aria-label="Settings"
                     data-testid="settings-btn"
                 >
-                    <Settings className="size-4" />
+                    <Gear weight="bold" className="size-4" />
                 </Button>
                 <ExportMenu />
                 <Button

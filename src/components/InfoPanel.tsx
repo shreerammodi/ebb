@@ -1,6 +1,6 @@
 "use client";
 
-import { XIcon } from "lucide-react";
+import { X } from "@phosphor-icons/react";
 
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,7 @@ function InfoPanelInner() {
                         data-testid="info-close"
                         className="text-muted-foreground hover:text-foreground rounded transition-colors focus-visible:outline-2"
                     >
-                        <XIcon className="size-4" />
+                        <X weight="bold" className="size-4" />
                     </DialogClose>
                 </div>
 

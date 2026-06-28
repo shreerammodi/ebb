@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { CaretDown } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ export default function ExportMenu() {
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" data-testid="export-btn">
                     Export
-                    <ChevronDown className="size-4 opacity-60" />
+                    <CaretDown weight="bold" className="size-4 opacity-60" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
