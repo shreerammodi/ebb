@@ -313,6 +313,9 @@ export function executeCommand(id: CommandId): void {
         case "sheet.quickSwitch":
             state.setQuickSwitcherOpen(true);
             return;
+        case "palette.open":
+            state.setCommandPaletteOpen(true);
+            return;
         case "sheet.jump1":
         case "sheet.jump2":
         case "sheet.jump3":

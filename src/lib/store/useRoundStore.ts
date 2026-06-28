@@ -65,6 +65,7 @@ export interface RoundState {
     labelDrops: boolean;
     flowFont: FontId;
     quickSwitcherOpen: boolean;
+    commandPaletteOpen: boolean;
     settingsOpen: boolean;
     cheatsheetOpen: boolean;
     guideOpen: boolean;
@@ -199,6 +200,7 @@ export interface RoundActions {
     setLabelDrops(v: boolean): void;
     setFlowFont: (id: FontId) => void;
     setQuickSwitcherOpen(open: boolean): void;
+    setCommandPaletteOpen(open: boolean): void;
     setSettingsOpen(open: boolean): void;
     setCheatsheetOpen(open: boolean): void;
     setGuideOpen(open: boolean): void;
@@ -358,6 +360,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     flowFont: initialDisplaySettings.flowFont,
     sidebarCollapsed: initialDisplaySettings.sidebarCollapsed,
     quickSwitcherOpen: false,
+    commandPaletteOpen: false,
     settingsOpen: false,
     cheatsheetOpen: false,
     guideOpen: false,
@@ -389,6 +392,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             activeSheetId: null,
             selection: null,
             quickSwitcherOpen: false,
+            commandPaletteOpen: false,
             settingsOpen: false,
             cheatsheetOpen: false,
             guideOpen: false,
@@ -872,6 +876,11 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     // ── setQuickSwitcherOpen ───────────────────────────────────────────────────
     setQuickSwitcherOpen(open) {
         set({ quickSwitcherOpen: open });
+    },
+
+    // ── setCommandPaletteOpen ──────────────────────────────────────────────────
+    setCommandPaletteOpen(open) {
+        set({ commandPaletteOpen: open });
     },
 
     // ── setSettingsOpen ────────────────────────────────────────────────────────

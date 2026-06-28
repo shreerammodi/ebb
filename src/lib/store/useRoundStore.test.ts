@@ -497,3 +497,9 @@ describe("guide open state", () => {
         expect(useRoundStore.getState().guideOpen).toBe(false);
     });
 });
+
+it("createRound resets commandPaletteOpen to false", () => {
+    useRoundStore.setState({ commandPaletteOpen: true });
+    useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
+    expect(useRoundStore.getState().commandPaletteOpen).toBe(false);
+});

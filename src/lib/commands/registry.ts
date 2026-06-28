@@ -53,7 +53,8 @@ export type CommandId =
     | "help.open"
     | "sidebar.toggle"
     | "nav.nextSpeech"
-    | "nav.prevSpeech";
+    | "nav.prevSpeech"
+    | "palette.open";
 
 export interface CommandDef {
     id: CommandId;
@@ -119,4 +120,5 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "sidebar.toggle": { id: "sidebar.toggle", label: "Toggle sidebar" },
     "nav.nextSpeech": { id: "nav.nextSpeech", label: "Next speech (column)" },
     "nav.prevSpeech": { id: "nav.prevSpeech", label: "Previous speech (column)" },
+    "palette.open": { id: "palette.open", label: "Command palette" },
 };

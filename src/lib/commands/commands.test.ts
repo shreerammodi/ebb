@@ -632,3 +632,14 @@ describe("jump navigation (Excel data-edge)", () => {
         useRoundStore.setState({ moveSource: null });
     });
 });
+
+describe("palette.open", () => {
+    beforeEach(() => resetStore());
+
+    it("opens the command palette", () => {
+        freshRound();
+        expect(useRoundStore.getState().commandPaletteOpen).toBe(false);
+        executeCommand("palette.open");
+        expect(useRoundStore.getState().commandPaletteOpen).toBe(true);
+    });
+});
