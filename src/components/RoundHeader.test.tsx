@@ -8,6 +8,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { makeFormatByKey } from "@/lib/format/presets";
 import type { Role } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
@@ -43,6 +44,14 @@ function setupRound(role: Role) {
     });
 }
 
+function renderRoundHeader() {
+    return render(
+        <TooltipProvider>
+            <RoundHeader />
+        </TooltipProvider>,
+    );
+}
+
 describe("RoundHeader", () => {
     beforeEach(() => {
         useRoundStore.setState({
@@ -56,13 +65,13 @@ describe("RoundHeader", () => {
 
     it('renders "Aff vs Neg" fallback for role=aff with empty scouting', () => {
         setupRound("aff");
-        render(<RoundHeader />);
+        renderRoundHeader();
         expect(screen.getByText("Aff vs Neg")).toBeInTheDocument();
     });
 
     it('renders "Neg vs Aff" fallback for role=neg with empty scouting', () => {
         setupRound("neg");
-        render(<RoundHeader />);
+        renderRoundHeader();
         expect(screen.getByText("Neg vs Aff")).toBeInTheDocument();
     });
 
@@ -80,13 +89,13 @@ describe("RoundHeader", () => {
                 second: { first: "", last: "" },
             },
         });
-        render(<RoundHeader />);
+        renderRoundHeader();
         expect(screen.getByText("Alpha TA (Aff) vs Beta TB (Neg)")).toBeInTheDocument();
     });
 
     it("renders the back link, export menu, and Import button", () => {
         setupRound("aff");
-        render(<RoundHeader />);
+        renderRoundHeader();
         expect(screen.getByTestId("back-to-flows")).toBeInTheDocument();
         expect(screen.getByTestId("export-btn")).toBeInTheDocument();
         expect(screen.getByTestId("import-btn")).toBeInTheDocument();
@@ -96,7 +105,7 @@ describe("RoundHeader", () => {
 
     it("opens settings when the settings button is clicked", async () => {
         setupRound("aff");
-        render(<RoundHeader />);
+        renderRoundHeader();
         const btn = screen.getByTestId("settings-btn");
         await userEvent.click(btn);
         expect(useRoundStore.getState().settingsOpen).toBe(true);
@@ -111,13 +120,13 @@ describe("RoundHeader", () => {
                 second: { first: "Bo", last: "Jones" },
             },
         });
-        render(<RoundHeader />);
+        renderRoundHeader();
         expect(screen.getByTestId("round-header").textContent).toContain("Westwood JS");
     });
 
     it("opens the guide from the Guide button", async () => {
         setupRound("aff");
-        render(<RoundHeader />);
+        renderRoundHeader();
         expect(useRoundStore.getState().guideOpen).toBe(false);
         await userEvent.click(screen.getByTestId("guide-btn"));
         expect(useRoundStore.getState().guideOpen).toBe(true);
@@ -150,7 +159,7 @@ describe("RoundHeader", () => {
 
         vi.mocked(readRoundFile).mockResolvedValueOnce(importedRound);
 
-        render(<RoundHeader />);
+        renderRoundHeader();
 
         const fileInput = screen.getByTestId("import-file-input");
         const fakeFile = new File(["{}"], "round.json", {

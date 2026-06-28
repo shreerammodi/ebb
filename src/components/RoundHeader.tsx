@@ -6,6 +6,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tooltip";
 import { teamCode } from "@/lib/model/teamCode";
 import { readRoundFile } from "@/lib/persistence/io";
 import { useRoundStore } from "@/lib/store/useRoundStore";
@@ -77,42 +78,50 @@ export default function RoundHeader() {
                     onChange={handleImportChange}
                     data-testid="import-file-input"
                 />
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => useRoundStore.getState().setGuideOpen(true)}
-                    aria-label="Guide"
-                    data-testid="guide-btn"
-                >
-                    Guide
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => useRoundStore.getState().setInfoOpen(true)}
-                    aria-label="Round info"
-                    data-testid="info-btn"
-                >
-                    Info
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => useRoundStore.getState().setSettingsOpen(true)}
-                    aria-label="Settings"
-                    data-testid="settings-btn"
-                >
-                    <Settings className="size-4" />
-                </Button>
+                <Tip label="Guide" command="help.open">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => useRoundStore.getState().setGuideOpen(true)}
+                        aria-label="Guide"
+                        data-testid="guide-btn"
+                    >
+                        Guide
+                    </Button>
+                </Tip>
+                <Tip label="Round info" command="info.open">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => useRoundStore.getState().setInfoOpen(true)}
+                        aria-label="Round info"
+                        data-testid="info-btn"
+                    >
+                        Info
+                    </Button>
+                </Tip>
+                <Tip label="Settings" command="settings.open">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => useRoundStore.getState().setSettingsOpen(true)}
+                        aria-label="Settings"
+                        data-testid="settings-btn"
+                    >
+                        <Settings className="size-4" />
+                    </Button>
+                </Tip>
                 <ExportMenu />
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleImportClick}
-                    data-testid="import-btn"
-                >
-                    Import
-                </Button>
+                <Tip label="Import round">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleImportClick}
+                        data-testid="import-btn"
+                    >
+                        Import
+                    </Button>
+                </Tip>
             </div>
         </header>
     );
