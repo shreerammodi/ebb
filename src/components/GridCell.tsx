@@ -125,11 +125,7 @@ export default function GridCell({
         );
     }
 
-    const classes = [
-        "",
-        node.bold ? "arg-bold" : "",
-        hasChildren ? "arg-parent" : "",
-    ]
+    const classes = ["", node.bold ? "arg-bold" : "", hasChildren ? "arg-parent" : ""]
         .filter(Boolean)
         .join(" ");
 
