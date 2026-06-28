@@ -12,7 +12,7 @@
 import { useState, useMemo } from "react";
 
 import { columnsForSheet } from "@/lib/grid/columns";
-import { occupantAt, maxRow, subtreeMaxRow } from "@/lib/grid/coords";
+import { occupantAt, maxRow, subtreeMaxRow, descendantIds } from "@/lib/grid/coords";
 import { detectDrops } from "@/lib/model/drops";
 import type { Sheet } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
@@ -183,6 +183,10 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         }
     }
 
+    // All nodes (root + descendants) that will move together in move mode
+    const movingSubtree =
+        moveSource !== null ? descendantIds(sheetNodes, moveSource) : new Set<string>();
+
     return (
         <>
             {moveSource !== null && (
@@ -250,6 +254,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                     const isDropped = droppedIds.has(node.id);
                                     const isFlash = flashNodeId === node.id;
                                     const isSource = moveSource === node.id;
+                                    const isMoving = movingSubtree.has(node.id);
                                     const isMoveCursor = moveSource !== null && isSel && !isSource;
                                     const relClass = selNode
                                         ? node.id === selNode.parentId
@@ -274,7 +279,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                         sideClass,
                                         bandClass,
                                         isDropped ? "cell-drop" : "",
-                                        isSource ? "cell-moving" : "",
+                                        isMoving ? "cell-moving" : "",
                                         isSel && moveSource === null ? "cell-sel" : "",
                                         isMoveCursor ? "drag-over" : "",
                                         isFlash ? "cell-flash" : "",
