@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const commitMono = localFont({
@@ -184,7 +185,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             className={`${commitMono.variable} ${dmSans.variable} ${ibmPlexMono.variable} ${inter.variable}`}
         >
             <body className="font-sans antialiased">
-                {children}
+                <TooltipProvider>{children}</TooltipProvider>
                 <Toaster position="bottom-center" />
             </body>
         </html>
