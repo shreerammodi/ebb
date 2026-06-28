@@ -308,7 +308,72 @@ describe("FlowGrid — coordinate-based rendering", () => {
         expect(headers.some((h) => h.textContent?.includes("Block"))).toBe(true);
     });
 
-    it("dropping a node onto another reparent it", () => {
+    it("dropping a node onto an empty cell moves the subtree there", () => {
+        const fmt = makeFormatByKey("policy");
+        useRoundStore.getState().createRound({ role: "aff", format: fmt });
+        const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+        const s1AC = fmt.speeches[0].id; // 1AC
+        const s1NC = fmt.speeches[1].id; // 1NC
+
+        // Place a parent in 1AC r0 and a child in 1NC r0.
+        const idA = useRoundStore.getState().placeBareNode({
+            sheetId,
+            speechId: s1AC,
+            row: 0,
+        });
+        const idB = useRoundStore.getState().placeBareNode({
+            sheetId,
+            speechId: s1NC,
+            row: 0,
+        });
+        const r = useRoundStore.getState().round!;
+        useRoundStore.getState()._commit(null, (rr) => ({
+            ...rr,
+            nodes: r.nodes.map((n) => (n.id === idB ? { ...n, parentId: idA } : n)),
+        }));
+        useRoundStore.getState().updateNodeText(idA, "A-text");
+        useRoundStore.getState().updateNodeText(idB, "B-text");
+
+        render(<FlowGrid sheetId={sheetId} />);
+
+        // Drop A onto the empty 1AC row 1 cell.
+        const dropTarget = screen.getByText("A-text").closest("[draggable]")!;
+        // Find the empty cell at 1AC row 1.
+        const rows = document.querySelectorAll("tbody tr");
+        const row1cells = rows[1].querySelectorAll("td");
+        // 1AC is column 0
+        const emptyCell = row1cells[0];
+
+        const store: Record<string, string> = {};
+        const dataTransfer = {
+            effectAllowed: "move",
+            setData: (type: string, value: string) => {
+                store[type] = value;
+            },
+            getData: (type: string) => store[type] ?? "",
+        };
+        // Drag from A-text span (draggable ancestor is the GridCell span)
+        const dragEl = screen.getByText("A-text").closest("[draggable]")!;
+        const store2: Record<string, string> = {};
+        const dt2 = {
+            effectAllowed: "move",
+            setData: (type: string, value: string) => {
+                store2[type] = value;
+            },
+            getData: (type: string) => store2[type] ?? "",
+        };
+        fireEvent.dragStart(dragEl, { dataTransfer: dt2 });
+        fireEvent.dragOver(emptyCell, { dataTransfer: dt2 });
+        fireEvent.drop(emptyCell, { dataTransfer: dt2 });
+
+        // A moved from row 0 to row 1; B (child) moves along with it.
+        const aAfter = useRoundStore.getState().round!.nodes.find((n) => n.id === idA)!;
+        const bAfter = useRoundStore.getState().round!.nodes.find((n) => n.id === idB)!;
+        expect(aAfter.row).toBe(1);
+        expect(bAfter.row).toBe(1);
+    });
+
+    it("dropping a node onto an occupied cell is rejected (collision)", () => {
         const fmt = makeFormatByKey("policy");
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
@@ -344,7 +409,13 @@ describe("FlowGrid — coordinate-based rendering", () => {
         fireEvent.dragOver(dropEl, { dataTransfer });
         fireEvent.drop(dropEl, { dataTransfer });
 
-        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === idA)!.parentId).toBe(idB);
+        // A stays in place (no re-parenting, no move).
+        const aAfter = useRoundStore.getState().round!.nodes.find((n) => n.id === idA)!;
+        const bAfter = useRoundStore.getState().round!.nodes.find((n) => n.id === idB)!;
+        expect(aAfter.speechId).toBe(s1AC);
+        expect(aAfter.row).toBe(0);
+        expect(bAfter.speechId).toBe(s1NC);
+        expect(bAfter.row).toBe(0);
     });
 });
 

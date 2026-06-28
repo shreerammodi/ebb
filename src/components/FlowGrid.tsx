@@ -372,11 +372,33 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                                       const dragged =
                                                           e.dataTransfer.getData("text/df-node");
                                                       if (dragged) {
-                                                          // Single-cell drag: move the node here.
-                                                          useRoundStore
+                                                          const draggedNode = useRoundStore
                                                               .getState()
-                                                              .moveCellTo(dragged, speech.id, row);
-                                                          setFlashNode(dragged);
+                                                              .round?.nodes.find(
+                                                                  (n) => n.id === dragged,
+                                                              );
+                                                          if (draggedNode) {
+                                                              const srcCol = speeches.findIndex(
+                                                                  (s) =>
+                                                                      s.id ===
+                                                                      draggedNode.speechId,
+                                                              );
+                                                              const dCol =
+                                                                  colIdx -
+                                                                  (srcCol >= 0 ? srcCol : 0);
+                                                              const dRow =
+                                                                  row - draggedNode.row;
+                                                              const moved = useRoundStore
+                                                                  .getState()
+                                                                  .commitSubtreeMove(
+                                                                      dCol,
+                                                                      dRow,
+                                                                      dragged,
+                                                                  );
+                                                              if (moved) {
+                                                                  setFlashNode(dragged);
+                                                              }
+                                                          }
                                                       }
                                                       setDragOverKey(null);
                                                   }

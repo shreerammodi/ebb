@@ -10,6 +10,7 @@
 
 import { useRef, useEffect, useState } from "react";
 
+import { columnsForSheet } from "@/lib/grid/columns";
 import { executeCommand } from "@/lib/commands/commands";
 import { numberFor } from "@/lib/model/numbering";
 import type { ArgumentNode } from "@/lib/model/types";
@@ -148,8 +149,33 @@ export default function GridCell({
                 setIsDragging(false);
                 const dragged = e.dataTransfer.getData("text/df-node");
                 if (dragged && dragged !== node.id) {
-                    useRoundStore.getState().setNodeParent(dragged, node.id);
-                    useRoundStore.getState().setFlashNode(dragged);
+                    const draggedNode = useRoundStore
+                        .getState()
+                        .round?.nodes.find((n) => n.id === dragged);
+                    if (draggedNode) {
+                        const format = useRoundStore.getState().round?.format;
+                        const sheetId = draggedNode.sheetId;
+                        const sheet = useRoundStore
+                            .getState()
+                            .round?.sheets.find((s) => s.id === sheetId);
+                        if (format && sheet) {
+                            const speeches = columnsForSheet(format, sheet);
+                            const srcCol = speeches.findIndex(
+                                (s) => s.id === draggedNode.speechId,
+                            );
+                            const tgtCol = speeches.findIndex(
+                                (s) => s.id === node.speechId,
+                            );
+                            const dCol = tgtCol - (srcCol >= 0 ? srcCol : 0);
+                            const dRow = node.row - draggedNode.row;
+                            const moved = useRoundStore
+                                .getState()
+                                .commitSubtreeMove(dCol, dRow, dragged);
+                            if (moved) {
+                                useRoundStore.getState().setFlashNode(dragged);
+                            }
+                        }
+                    }
                 }
             }}
             onClick={handleClick}

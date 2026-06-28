@@ -163,7 +163,11 @@ export interface RoundActions {
     deleteRow(): void;
     clearCell(): void;
     deleteSubtreeAt(): void;
-    commitSubtreeMove(dCol: number, dRow: number): void;
+    /**
+     * Translate the subtree rooted at `nodeId` by (dCol, dRow). Returns true
+     * on success, false if the move was rejected (collision / out of bounds).
+     */
+    commitSubtreeMove(dCol: number, dRow: number, nodeId?: string): boolean;
     /** Move a single node to a new cell (no subtree translation). */
     moveCellTo(nodeId: string, speechId: string, row: number): void;
 
@@ -663,15 +667,21 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         }));
     },
 
-    commitSubtreeMove(dCol, dRow) {
-        const { round, selection, moveSource } = get();
-        if (!round || !selection || !moveSource) return;
-        const sheet = round.sheets.find((s) => s.id === selection.sheetId);
-        if (!sheet) return;
+    commitSubtreeMove(dCol, dRow, nodeId) {
+        const { round, moveSource } = get();
+        if (!round) return false;
+        const id = nodeId ?? moveSource;
+        if (!id) return false;
+        // Determine speeches from the node's own sheet.
+        const refNode = round.nodes.find((n) => n.id === id);
+        if (!refNode) return false;
+        const sheet = round.sheets.find((s) => s.id === refNode.sheetId);
+        if (!sheet) return false;
         const speeches = columnsForSheet(round.format, sheet);
-        const { nodes, ok } = translateSubtree(round.nodes, speeches, moveSource, dCol, dRow);
-        if (!ok) return;
+        const { nodes, ok } = translateSubtree(round.nodes, speeches, id, dCol, dRow);
+        if (!ok) return false;
         get()._commit(null, (r) => ({ ...r, nodes }));
+        return true;
     },
 
     /** Move a single node to a new cell (no subtree translation). */
