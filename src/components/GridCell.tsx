@@ -126,7 +126,7 @@ export default function GridCell({
     }
 
     const classes = [
-        node.statuses.includes("conceded") ? "arg-crossed" : "",
+        "",
         node.bold ? "arg-bold" : "",
         hasChildren ? "arg-parent" : "",
     ]

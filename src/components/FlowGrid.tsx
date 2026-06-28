@@ -297,6 +297,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                         isSel && moveSource === null ? "cell-sel" : "",
                                         isMoveCursor ? "drag-over" : "",
                                         isFlash ? "cell-flash" : "",
+                                        node.statuses.includes("conceded") ? "cell-conceded" : "",
                                         relClass,
                                     ]
                                         .filter(Boolean)

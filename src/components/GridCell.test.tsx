@@ -62,12 +62,12 @@ function renderCell(
 describe("GridCell decorations", () => {
     beforeEach(resetStore);
 
-    it("renders conceded text with line-through", () => {
+    it("renders conceded text without strikethrough", () => {
         renderCell(makeNode({ id: "n1", text: "no link", statuses: ["conceded"] }), {
             selected: false,
         });
         const text = screen.getByText("no link");
-        expect(text).toHaveClass("arg-crossed");
+        expect(text).not.toHaveClass("arg-crossed");
         expect(screen.queryByText(/conceded/i)).toBeNull();
     });
 

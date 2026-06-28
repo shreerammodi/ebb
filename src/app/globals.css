@@ -408,10 +408,8 @@ body {
     font-weight: 700;
 }
 
-.arg-crossed {
-    text-decoration: line-through;
-    text-decoration-thickness: 1px;
-    opacity: 0.6;
+.cell-conceded {
+    background-color: color-mix(in srgb, var(--neg) 12%, transparent);
 }
 
 .arg-bold {
