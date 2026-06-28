@@ -251,31 +251,42 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                         ? "cell-band-start"
                                         : "";
 
+                                // A deferred spawn whose parent is this node should
+                                // also trigger the parent highlight, even though the
+                                // selection is on the (still-empty) target cell — without
+                                // this, the purple parent box flashes off during the
+                                // armed-and-typing interval.
+                                const isPendingParent =
+                                    pendingSpawn !== null &&
+                                    pendingSpawn.sheetId === sheetId &&
+                                    pendingSpawn.parentId === node.id;
                                 if (node) {
                                     const isDropped = droppedIds.has(node.id);
                                     const isFlash = flashNodeId === node.id;
                                     const isSource = moveSource === node.id;
                                     const isMoving = movingSubtree.has(node.id);
                                     const isMoveCursor = moveSource !== null && isSel && !isSource;
-                                    const relClass = selNode
-                                        ? node.id === selNode.parentId
-                                            ? "cell-rel-parent"
-                                            : selChildren.has(node.id)
-                                              ? (() => {
-                                                    const aboveKey = `${node.speechId}:${node.row - 1}`;
-                                                    const belowKey = `${node.speechId}:${node.row + 1}`;
-                                                    const hasAbove =
-                                                        selChildPositions.has(aboveKey);
-                                                    const hasBelow =
-                                                        selChildPositions.has(belowKey);
-                                                    if (!hasAbove && !hasBelow)
-                                                        return "cell-rel-child-only";
-                                                    if (!hasAbove) return "cell-rel-child-top";
-                                                    if (!hasBelow) return "cell-rel-child-bot";
-                                                    return "cell-rel-child-mid";
-                                                })()
-                                              : ""
-                                        : "";
+                                    const relClass = isPendingParent
+                                        ? "cell-rel-parent"
+                                        : selNode
+                                          ? node.id === selNode.parentId
+                                              ? "cell-rel-parent"
+                                              : selChildren.has(node.id)
+                                                    ? (() => {
+                                                            const aboveKey = `${node.speechId}:${node.row - 1}`;
+                                                            const belowKey = `${node.speechId}:${node.row + 1}`;
+                                                            const hasAbove =
+                                                                selChildPositions.has(aboveKey);
+                                                            const hasBelow =
+                                                                selChildPositions.has(belowKey);
+                                                            if (!hasAbove && !hasBelow)
+                                                                return "cell-rel-child-only";
+                                                            if (!hasAbove) return "cell-rel-child-top";
+                                                            if (!hasBelow) return "cell-rel-child-bot";
+                                                            return "cell-rel-child-mid";
+                                                        })()
+                                                    : ""
+                                          : "";
                                     const classes = [
                                         sideClass,
                                         bandClass,
