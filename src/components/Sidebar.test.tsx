@@ -8,10 +8,19 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { makeFormatByKey } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import Sidebar from "./Sidebar";
+
+function renderSidebar() {
+    return render(
+        <TooltipProvider>
+            <Sidebar />
+        </TooltipProvider>,
+    );
+}
 
 vi.mock("sonner", () => ({
     toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }),
@@ -57,7 +66,7 @@ describe("Sidebar", () => {
 
     it("lists sheets grouped as Aff / Neg", () => {
         setupRound();
-        render(<Sidebar />);
+        renderSidebar();
 
         // Group headers
         expect(screen.getByText("Aff")).toBeInTheDocument();
@@ -91,7 +100,7 @@ describe("Sidebar", () => {
             text: "Off-topic",
         });
 
-        render(<Sidebar />);
+        renderSidebar();
 
         expect(screen.getByTestId(`drop-badge-${caseId}`)).toBeInTheDocument();
     });
@@ -100,7 +109,7 @@ describe("Sidebar", () => {
         const user = userEvent.setup();
         const { caseId, daId } = setupRound();
 
-        render(<Sidebar />);
+        renderSidebar();
 
         await user.click(screen.getByTestId(`sheet-${daId}`));
         expect(useRoundStore.getState().activeSheetId).toBe(daId);
@@ -111,7 +120,7 @@ describe("Sidebar", () => {
 
     it('shows "+ Aff" and "+ Neg" buttons, not "+ Add sheet"', () => {
         setupRound();
-        render(<Sidebar />);
+        renderSidebar();
         expect(screen.queryByTestId("add-sheet")).toBeNull();
         expect(screen.getByTestId("add-aff")).toBeInTheDocument();
         expect(screen.getByTestId("add-neg")).toBeInTheDocument();
@@ -122,7 +131,7 @@ describe("Sidebar", () => {
         setupRound();
         const beforeCount = useRoundStore.getState().round!.sheets.length;
 
-        render(<Sidebar />);
+        renderSidebar();
         await user.click(screen.getByTestId("add-aff"));
 
         const state = useRoundStore.getState();
@@ -138,7 +147,7 @@ describe("Sidebar", () => {
         setupRound();
         const beforeCount = useRoundStore.getState().round!.sheets.length;
 
-        render(<Sidebar />);
+        renderSidebar();
         await user.click(screen.getByTestId("add-neg"));
 
         const state = useRoundStore.getState();
@@ -153,7 +162,7 @@ describe("Sidebar", () => {
         const user = userEvent.setup();
         const { caseId } = setupRound();
 
-        render(<Sidebar />);
+        renderSidebar();
         const sheetBtn = screen.getByTestId(`sheet-${caseId}`);
         await user.dblClick(sheetBtn);
 
@@ -164,7 +173,7 @@ describe("Sidebar", () => {
         const user = userEvent.setup();
         const { caseId } = setupRound();
 
-        render(<Sidebar />);
+        renderSidebar();
         await user.dblClick(screen.getByTestId(`sheet-${caseId}`));
 
         const input = screen.getByTestId(`rename-input-${caseId}`);
@@ -184,7 +193,7 @@ describe("Sidebar", () => {
             .getState()
             .round!.sheets.find((s) => s.id === caseId)!.title;
 
-        render(<Sidebar />);
+        renderSidebar();
         await user.dblClick(screen.getByTestId(`sheet-${caseId}`));
 
         const input = screen.getByTestId(`rename-input-${caseId}`);
@@ -200,7 +209,7 @@ describe("Sidebar", () => {
 
     it("renders a CX section labeled above the Aff section", () => {
         setupRound();
-        render(<Sidebar />);
+        renderSidebar();
         // The CX section label is a standalone div (not inside the cx-sheet-row button)
         const cxSheetRow = screen.getByTestId("cx-sheet-row");
         const cxLabel = screen.getByTestId("cx-section-label");
@@ -218,7 +227,7 @@ describe("Sidebar", () => {
     it("activates the CX sheet when its row is clicked", async () => {
         const user = userEvent.setup();
         setupRound();
-        render(<Sidebar />);
+        renderSidebar();
         const cxId = useRoundStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
         await user.click(screen.getByTestId("cx-sheet-row"));
         expect(useRoundStore.getState().activeSheetId).toBe(cxId);
@@ -226,7 +235,7 @@ describe("Sidebar", () => {
 
     it("CX sheet row has no delete affordance", () => {
         setupRound();
-        render(<Sidebar />);
+        renderSidebar();
         const cxId = useRoundStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
         expect(screen.queryByTestId(`delete-sheet-${cxId}`)).toBeNull();
     });
@@ -236,7 +245,7 @@ describe("Sidebar", () => {
         setupRound();
         const id = useRoundStore.getState().addSheet({ title: "Case2", group: "aff" });
 
-        render(<Sidebar />);
+        renderSidebar();
 
         await user.click(screen.getByTestId(`delete-sheet-${id}`));
         expect(useRoundStore.getState().round!.sheets.some((s) => s.id === id)).toBe(false);
@@ -250,7 +259,7 @@ describe("Sidebar", () => {
         setupRound();
         const id = useRoundStore.getState().addSheet({ title: "Case2", group: "aff" });
 
-        render(<Sidebar />);
+        renderSidebar();
 
         await user.click(screen.getByTestId(`delete-sheet-${id}`));
         expect(useRoundStore.getState().round!.sheets.some((s) => s.id === id)).toBe(false);

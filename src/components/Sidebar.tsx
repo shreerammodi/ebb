@@ -5,6 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tooltip";
 import { executeCommand } from "@/lib/commands/commands";
 import type { Sheet } from "@/lib/model/types";
 import {
@@ -64,14 +65,16 @@ export default function Sidebar() {
                 aria-label="Sheets"
                 data-testid="sidebar"
             >
-                <button
-                    type="button"
-                    aria-label="Expand sidebar"
-                    onClick={() => setSidebarCollapsed(false)}
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-colors"
-                >
-                    <ChevronRight size={16} />
-                </button>
+                <Tip label="Expand sidebar" command="sidebar.toggle" side="right">
+                    <button
+                        type="button"
+                        aria-label="Expand sidebar"
+                        onClick={() => setSidebarCollapsed(false)}
+                        className="text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-colors"
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                </Tip>
             </nav>
         );
     }
@@ -103,14 +106,16 @@ export default function Sidebar() {
                 >
                     + Neg
                 </Button>
-                <button
-                    type="button"
-                    aria-label="Collapse sidebar"
-                    onClick={() => setSidebarCollapsed(true)}
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded p-1 transition-colors"
-                >
-                    <ChevronLeft size={16} />
-                </button>
+                <Tip label="Collapse sidebar" command="sidebar.toggle">
+                    <button
+                        type="button"
+                        aria-label="Collapse sidebar"
+                        onClick={() => setSidebarCollapsed(true)}
+                        className="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded p-1 transition-colors"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+                </Tip>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2">
@@ -194,6 +199,15 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setValue] = useState(sheet.title);
 
+    const titleRef = useRef<HTMLSpanElement>(null);
+    const [titleTruncated, setTitleTruncated] = useState(false);
+
+    useEffect(() => {
+        const el = titleRef.current;
+        if (!el) return;
+        setTitleTruncated(el.scrollWidth > el.clientWidth);
+    }, [sheet.title]);
+
     useEffect(() => {
         if (isRenaming) {
             setValue(sheet.title);
@@ -265,27 +279,37 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
                         : "border-transparent hover:bg-accent/50",
                 )}
             >
-                <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-                    {sheet.title}
-                </span>
+                {titleTruncated ? (
+                    <Tip label={sheet.title}>
+                        <span ref={titleRef} className="overflow-hidden text-ellipsis whitespace-nowrap">
+                            {sheet.title}
+                        </span>
+                    </Tip>
+                ) : (
+                    <span ref={titleRef} className="overflow-hidden text-ellipsis whitespace-nowrap">
+                        {sheet.title}
+                    </span>
+                )}
                 {dropCount > 0 && (
                     <span className="badge-drop" data-testid={`drop-badge-${sheet.id}`}>
                         {dropCount}
                     </span>
                 )}
             </div>
-            <button
-                type="button"
-                aria-label="Delete sheet"
-                data-testid={`delete-sheet-${sheet.id}`}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                }}
-                className="text-muted-foreground hover:text-destructive cursor-pointer rounded px-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
-            >
-                ×
-            </button>
+            <Tip label="Delete sheet">
+                <button
+                    type="button"
+                    aria-label="Delete sheet"
+                    data-testid={`delete-sheet-${sheet.id}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete();
+                    }}
+                    className="text-muted-foreground hover:text-destructive cursor-pointer rounded px-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
+                >
+                    ×
+                </button>
+            </Tip>
         </div>
     );
 }
