@@ -131,13 +131,13 @@ describe("FlowGrid — coordinate-based rendering", () => {
         expect(numTexts).toContain("3.");
     });
 
-    it("marks dropped nodes with .cell-drop and renders .badge-drop", () => {
+    it("marks dropped nodes with .cell-drop and renders .mark-drop", () => {
         const { sheetId } = setupScenario();
         render(<FlowGrid sheetId={sheetId} />);
         // ac3 ("Standards") has no Block answer → dropped
         const cell = screen.getByText("Standards").closest("td");
         expect(cell!.classList.contains("cell-drop")).toBe(true);
-        expect(document.querySelector(".badge-drop")).not.toBeNull();
+        expect(document.querySelector(".mark-drop")).not.toBeNull();
     });
 
     // A parent (1NC) answered by a run of 2AC responses where one of them is a

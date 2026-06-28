@@ -148,10 +148,13 @@ export default function GridCell({
             {showExtended && <span className="arg-ext">↳</span>}
             <span className={classes || undefined}>{node.text}</span>
             {labelDrops && isDropped && (
-                <>
-                    {" "}
-                    <span className="badge-drop">⚠ dropped</span>
-                </>
+                <span
+                    className="mark-drop"
+                    title="dropped"
+                    aria-label="dropped"
+                >
+                    ⚠
+                </span>
             )}
         </span>
     );

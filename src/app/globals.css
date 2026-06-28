@@ -383,21 +383,18 @@ body {
     font-weight: 600;
 }
 
-/* Drop badge — small inline indicator. A dropped argument is often the
-   round-winning fact, so it must stay legible: 10px (not a sub-readable 8px),
-   with the amber border + fill carrying the compactness. Contrast of --warn on
-   the amber fill is ~4.7:1 (WCAG AA for normal text). */
-.badge-drop {
-    font-size: 10px;
-    line-height: 1.4;
-    font-weight: 700;
+/* Drop marker — a bare caution glyph, floated to the cell's top-right so the
+   argument text wraps around it and is never pushed onto a new line or
+   obscured. The amber --warn color carries the meaning; a title/aria-label
+   provides the full "dropped" affordance on hover and to assistive tech. */
+.mark-drop {
+    float: right;
+    margin-left: 4px;
     color: var(--warn);
-    border: 1px solid var(--warn);
-    border-radius: 4px;
-    padding: 0 4px;
-    background: #fff7ed;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-weight: 700;
+    line-height: inherit;
+    cursor: help;
+    user-select: none;
 }
 
 /* Conceded / extended status */
