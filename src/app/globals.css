@@ -129,7 +129,6 @@ body {
 .flow {
     border-collapse: collapse;
     font-size: 12.5px;
-    width: 100%;
     font-family: var(--font-flow, var(--font-commit-mono));
     table-layout: fixed;
 }
@@ -161,6 +160,7 @@ body {
     border-bottom-width: 2px;
     white-space: nowrap;
     font-family: var(--font-sans);
+    width: 200px;
 }
 
 .flow td {
