@@ -7,7 +7,7 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import { effectiveKeymap as computeEffectiveKeymap } from "./effective";
 import { GRAB_BINDINGS } from "./presets";
-import { reservedChords } from "./reserved";
+import { shouldIntercept, isTextEntryFocus, isNativeEditingChord } from "./intercept";
 import { resolveCommand, eventToChord } from "./resolve";
 
 /** Returns the keymap currently in effect: flat preset merged with user overrides. */
@@ -16,33 +16,20 @@ export function effectiveKeymap() {
     return computeEffectiveKeymap(keymapOverrides);
 }
 
-function isEditableTarget(target: EventTarget | null): boolean {
-    if (!(target instanceof HTMLElement)) return false;
-    const tag = target.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA") return true;
-    if (target.isContentEditable) return true;
-    return false;
-}
-
 // Module-level accumulator — safe because useKeymap is a singleton hook.
 let pendingPrefix: string | null = null;
 
 export function useKeymap(): void {
     useEffect(() => {
         /**
-         * Capture-phase interceptor for reserved chords. Runs before the
-         * browser's shortcut handler and before any bubble-phase listeners,
-         * calling preventDefault() so the browser never sees the event.
+         * Capture-phase interceptor. Runs before the browser's shortcut handler
+         * and before any bubble-phase listeners, calling preventDefault() so the
+         * browser never sees the event.
+         *
+         * Uses the unified shouldIntercept predicate so both phases agree.
          */
         function onKeyDownCapture(e: KeyboardEvent) {
-            const chord = eventToChord({
-                key: e.key,
-                metaKey: e.metaKey,
-                ctrlKey: e.ctrlKey,
-                altKey: e.altKey,
-                shiftKey: e.shiftKey,
-            });
-            if (reservedChords().has(chord)) {
+            if (shouldIntercept(e)) {
                 // preventDefault stops the browser's shortcut handler.
                 // We do NOT stopPropagation — the event must continue to the
                 // bubble phase so useKeymap's resolver can fire the command.
@@ -54,11 +41,14 @@ export function useKeymap(): void {
             const { moveSource } = useRoundStore.getState();
             const moveActive = moveSource !== null;
 
-            // In an editable cell, only intercept navigation keys and modifier chords;
-            // everything else is regular typing.
-            const editable = !moveActive && isEditableTarget(e.target);
-            if (editable) {
+            // In a text-entry field, only intercept navigation keys and
+            // modifier chords; everything else is regular typing.
+            const inTextField = !moveActive && isTextEntryFocus(e.target);
+            if (inTextField) {
                 pendingPrefix = null;
+                // Native editing chords (Cmd+A/C/V/X/Z, copy, paste, undo, etc.)
+                // must pass through to the browser — do not intercept them.
+                if (isNativeEditingChord(e)) return;
                 const isNavKey = [
                     "ArrowLeft",
                     "ArrowRight",
