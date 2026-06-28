@@ -3,7 +3,7 @@ import { it, expect } from "vitest";
 import { FLAT_KEYMAP, GRAB_BINDINGS } from "@/lib/keymap/presets";
 
 it("flat keymap binds conceded and extended", () => {
-    expect(FLAT_KEYMAP.bindings["Ctrl+Shift+x"]).toBe("status.toggleConceded");
+    expect(FLAT_KEYMAP.bindings["Ctrl+X"]).toBe("status.toggleConceded");
     expect(FLAT_KEYMAP.bindings["Ctrl+e"]).toBe("status.toggleExtended");
 });
 

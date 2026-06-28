@@ -34,14 +34,14 @@ describe("effectiveKeymap", () => {
 });
 
 describe("COMMON_NORMAL bindings", () => {
-    it("Ctrl+Shift+a → sheet.newAff", () => {
+    it("Ctrl+A → sheet.newAff", () => {
         const km = effectiveKeymap({});
-        expect(km.bindings["Ctrl+Shift+a"]).toBe("sheet.newAff");
+        expect(km.bindings["Ctrl+A"]).toBe("sheet.newAff");
     });
 
-    it("Ctrl+Shift+n → sheet.newNeg", () => {
+    it("Ctrl+N → sheet.newNeg", () => {
         const km = effectiveKeymap({});
-        expect(km.bindings["Ctrl+Shift+n"]).toBe("sheet.newNeg");
+        expect(km.bindings["Ctrl+N"]).toBe("sheet.newNeg");
     });
 
     it("Ctrl+r → sheet.rename", () => {

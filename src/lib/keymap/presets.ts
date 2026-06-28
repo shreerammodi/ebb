@@ -83,19 +83,19 @@ export const FLAT_KEYMAP: Keymap = {
 
         // ── Edit ──────────────────────────────────────────────────────────────
         "Ctrl+z": "edit.undo",
-        "Ctrl+Shift+z": "edit.redo",
+        "Ctrl+Z": "edit.redo",
 
         // ── Status / format ───────────────────────────────────────────────────
         "Ctrl+b": "format.toggleBold",
-        "Ctrl+Shift+x": "status.toggleConceded",
+        "Ctrl+X": "status.toggleConceded",
         "Ctrl+e": "status.toggleExtended",
 
         // ── Sheets ────────────────────────────────────────────────────────────
         "]": "sheet.next",
         "[": "sheet.prev",
         "Ctrl+k": "sheet.quickSwitch",
-        "Ctrl+Shift+a": "sheet.newAff",
-        "Ctrl+Shift+n": "sheet.newNeg",
+        "Ctrl+A": "sheet.newAff",
+        "Ctrl+N": "sheet.newNeg",
         "Ctrl+r": "sheet.rename",
         "Ctrl+,": "settings.open",
         "Ctrl+\\": "sidebar.toggle",
