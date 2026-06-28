@@ -257,6 +257,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                 // this, the purple parent box flashes off during the
                                 // armed-and-typing interval.
                                 const isPendingParent =
+                                    node !== null &&
                                     pendingSpawn !== null &&
                                     pendingSpawn.sheetId === sheetId &&
                                     pendingSpawn.parentId === node.id;
