@@ -6,7 +6,7 @@ import { isMacPlatform } from "@/lib/platform";
 const mod = isMacPlatform() ? "Meta" : "Ctrl";
 
 it("flat keymap binds conceded and extended", () => {
-    expect(FLAT_KEYMAP.bindings[`${mod}+X`]).toBe("status.toggleConceded");
+    expect(FLAT_KEYMAP.bindings[`${mod}+x`]).toBe("status.toggleConceded");
     expect(FLAT_KEYMAP.bindings[`${mod}+e`]).toBe("status.toggleExtended");
 });
 

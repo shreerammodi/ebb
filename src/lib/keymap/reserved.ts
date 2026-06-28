@@ -63,9 +63,10 @@ export function reservedChords(): Set<string> {
         chords.add(`${mod}+${key}`);
     }
 
-    // Secondary-modifier chords (Shift doubles the platform modifier chord).
+    // Secondary-modifier chords. Backspace is a named key so Shift+ is explicit;
+    // Z is a single printable so uppercase encodes the shift (eventToChord rule).
     chords.add(`${mod}+Shift+Backspace`);
-    chords.add(`${mod}+Shift+Z`);
+    chords.add(`${mod}+Z`);
 
     return chords;
 }

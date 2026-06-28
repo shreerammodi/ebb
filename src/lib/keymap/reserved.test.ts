@@ -24,7 +24,7 @@ describe("reservedChords", () => {
         expect(chords.has("Meta+n")).toBe(true);
         expect(chords.has("Meta+a")).toBe(true);
         expect(chords.has("Meta+z")).toBe(true);
-        expect(chords.has("Meta+Shift+Z")).toBe(true);
+        expect(chords.has("Meta+Z")).toBe(true);
         expect(chords.has("Meta+1")).toBe(true);
         expect(chords.has("Meta+Backspace")).toBe(true);
         expect(chords.has("Meta+Shift+Backspace")).toBe(true);
@@ -38,7 +38,7 @@ describe("reservedChords", () => {
         expect(chords.has("Ctrl+n")).toBe(true);
         expect(chords.has("Ctrl+a")).toBe(true);
         expect(chords.has("Ctrl+z")).toBe(true);
-        expect(chords.has("Ctrl+Shift+Z")).toBe(true);
+        expect(chords.has("Ctrl+Z")).toBe(true);
         expect(chords.has("Ctrl+1")).toBe(true);
         expect(chords.has("Ctrl+Backspace")).toBe(true);
         expect(chords.has("Ctrl+Shift+Backspace")).toBe(true);
