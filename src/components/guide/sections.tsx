@@ -200,9 +200,9 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                 </p>
                 <p>
                     Settings is where you change display options and remap keys. Every shortcut
-                    shown in this guide reflects your current keymap. You can also pick a flow font
-                    — choose between mono fonts (Commit Mono, IBM Plex Mono) and sans-serif fonts
-                    (DM Sans, Inter) to match your preference.
+                    shown in this guide reflects your current keymap. You can also pick a flow font;
+                    choose between mono fonts (Commit Mono, IBM Plex Mono) and sans-serif fonts (DM
+                    Sans, Inter) to match your preference.
                 </p>
             </>
         ),
@@ -231,9 +231,9 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         body: (
             <>
                 <p>
-                    Ebb is built to run from the keyboard. Keybindings use the platform modifier —
-                    <Kbd k="⌘" /> on macOS, <Kbd k="Ctrl" /> on Windows and Linux — so every
-                    shortcut adapts automatically.
+                    Ebb is built to run from the keyboard. Keybindings use the platform modifier —{" "}
+                    <Kbd k="⌘" /> on macOS, <Kbd k="Ctrl" /> on Windows and Linux, so every shortcut
+                    adapts automatically.
                 </p>
                 <p>
                     Some actions are modal: grab an argument with <Kbd cmd="move.grab" />, move it
