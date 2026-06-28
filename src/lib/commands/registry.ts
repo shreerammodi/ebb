@@ -51,6 +51,7 @@ export type CommandId =
     | "settings.open"
     | "info.open"
     | "help.open"
+    | "sidebar.toggle"
     | "nav.nextSpeech"
     | "nav.prevSpeech";
 
@@ -115,6 +116,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "settings.open": { id: "settings.open", label: "Open settings" },
     "info.open": { id: "info.open", label: "Open round info" },
     "help.open": { id: "help.open", label: "Show keybindings" },
+    "sidebar.toggle": { id: "sidebar.toggle", label: "Toggle sidebar" },
     "nav.nextSpeech": { id: "nav.nextSpeech", label: "Next speech (column)" },
     "nav.prevSpeech": { id: "nav.prevSpeech", label: "Previous speech (column)" },
 };

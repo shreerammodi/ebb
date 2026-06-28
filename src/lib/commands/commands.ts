@@ -320,6 +320,9 @@ export function executeCommand(id: CommandId): void {
         case "help.open":
             state.setCheatsheetOpen(!state.cheatsheetOpen);
             return;
+        case "sidebar.toggle":
+            state.setSidebarCollapsed(!state.sidebarCollapsed);
+            return;
 
         // ── Keyboard grab & move ──────────────────────────────────────────────
         case "move.grab": {

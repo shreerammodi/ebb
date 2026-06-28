@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { executeCommand } from "@/lib/commands/commands";
@@ -35,6 +36,8 @@ export default function Sidebar() {
     const labelDrops = useRoundStore((s) => s.labelDrops);
     const removeSheet = useRoundStore((s) => s.removeSheet);
     const restoreSheet = useRoundStore((s) => s.restoreSheet);
+    const sidebarCollapsed = useRoundStore((s) => s.sidebarCollapsed);
+    const setSidebarCollapsed = useRoundStore((s) => s.setSidebarCollapsed);
 
     if (sheets.length === 0) return null;
 
@@ -54,13 +57,32 @@ export default function Sidebar() {
 
     const cxSheet = sheets.find((s) => s.kind === "cx") ?? null;
 
+    if (sidebarCollapsed) {
+        return (
+            <nav
+                className="no-print border-border bg-card flex h-full w-9 shrink-0 flex-col items-center border-r pt-2"
+                aria-label="Sheets"
+                data-testid="sidebar"
+            >
+                <button
+                    type="button"
+                    aria-label="Expand sidebar"
+                    onClick={() => setSidebarCollapsed(false)}
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-colors"
+                >
+                    <ChevronRight size={16} />
+                </button>
+            </nav>
+        );
+    }
+
     return (
         <nav
             className="no-print border-border bg-card flex h-full w-[220px] shrink-0 flex-col border-r"
             aria-label="Sheets"
             data-testid="sidebar"
         >
-            <div className="flex shrink-0 gap-1 p-2">
+            <div className="flex shrink-0 items-center gap-1 p-2">
                 <Button
                     type="button"
                     variant="outline"
@@ -81,6 +103,14 @@ export default function Sidebar() {
                 >
                     + Neg
                 </Button>
+                <button
+                    type="button"
+                    aria-label="Collapse sidebar"
+                    onClick={() => setSidebarCollapsed(true)}
+                    className="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded p-1 transition-colors"
+                >
+                    <ChevronLeft size={16} />
+                </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2">

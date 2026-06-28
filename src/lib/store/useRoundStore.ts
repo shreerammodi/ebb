@@ -78,6 +78,7 @@ export interface RoundState {
     moveSource: string | null;
     /** A node id to briefly flash (drop/move confirm), or null. Transient UI. */
     flashNodeId: string | null;
+    sidebarCollapsed: boolean;
 }
 
 /**
@@ -162,6 +163,7 @@ export interface RoundActions {
     setGuideOpen(open: boolean): void;
     setRenamingSheet(id: string | null): void;
     setInfoOpen(open: boolean): void;
+    setSidebarCollapsed(collapsed: boolean): void;
     setMoveSource(id: string | null): void;
     setFlashNode(id: string | null): void;
 
@@ -214,6 +216,7 @@ interface DisplaySettings {
     autoNumber: boolean;
     labelDrops: boolean;
     flowFont: FontId;
+    sidebarCollapsed: boolean;
 }
 
 function loadDisplaySettings(): DisplaySettings {
@@ -221,6 +224,7 @@ function loadDisplaySettings(): DisplaySettings {
         autoNumber: true,
         labelDrops: true,
         flowFont: DEFAULT_FONT_ID,
+        sidebarCollapsed: false,
     };
     if (typeof window === "undefined") return fallback;
     try {
@@ -231,6 +235,7 @@ function loadDisplaySettings(): DisplaySettings {
             autoNumber: typeof p.autoNumber === "boolean" ? p.autoNumber : true,
             labelDrops: typeof p.labelDrops === "boolean" ? p.labelDrops : true,
             flowFont: resolveFontId(p.flowFont),
+            sidebarCollapsed: typeof p.sidebarCollapsed === "boolean" ? p.sidebarCollapsed : false,
         };
     } catch {
         return fallback;
@@ -266,6 +271,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     autoNumber: initialDisplaySettings.autoNumber,
     labelDrops: initialDisplaySettings.labelDrops,
     flowFont: initialDisplaySettings.flowFont,
+    sidebarCollapsed: initialDisplaySettings.sidebarCollapsed,
     quickSwitcherOpen: false,
     settingsOpen: false,
     cheatsheetOpen: false,
@@ -722,6 +728,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             autoNumber: v,
             labelDrops: get().labelDrops,
             flowFont: get().flowFont,
+            sidebarCollapsed: get().sidebarCollapsed,
         });
     },
 
@@ -732,6 +739,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             autoNumber: get().autoNumber,
             labelDrops: v,
             flowFont: get().flowFont,
+            sidebarCollapsed: get().sidebarCollapsed,
         });
     },
 
@@ -742,6 +750,18 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             autoNumber: get().autoNumber,
             labelDrops: get().labelDrops,
             flowFont: id,
+            sidebarCollapsed: get().sidebarCollapsed,
+        });
+    },
+
+    // ── setSidebarCollapsed ────────────────────────────────────────────────────
+    setSidebarCollapsed(collapsed) {
+        set({ sidebarCollapsed: collapsed });
+        saveDisplaySettings({
+            autoNumber: get().autoNumber,
+            labelDrops: get().labelDrops,
+            flowFont: get().flowFont,
+            sidebarCollapsed: collapsed,
         });
     },
 

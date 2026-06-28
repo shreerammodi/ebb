@@ -98,6 +98,7 @@ export const FLAT_KEYMAP: Keymap = {
         "Ctrl+n": "sheet.newNeg",
         "Ctrl+r": "sheet.rename",
         "Ctrl+,": "settings.open",
+        "Ctrl+\\": "sidebar.toggle",
         "?": "help.open",
         ...SHEET_JUMPS,
     },
