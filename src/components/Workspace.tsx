@@ -7,6 +7,7 @@ import { CX_COLUMNS } from "@/lib/model/cxColumns";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import CommandPalette from "./CommandPalette";
+import CriticalUpdateModal from "./CriticalUpdateModal";
 import FlowGrid from "./FlowGrid";
 import GuideDialog from "./guide/GuideDialog";
 import InfoPanel from "./InfoPanel";
@@ -16,6 +17,8 @@ import RoundHeader from "./RoundHeader";
 import SearchPalette from "./SearchPalette";
 import SettingsPanel from "./SettingsPanel";
 import Sidebar from "./Sidebar";
+import UpdateChip from "./UpdateChip";
+import { UpdateProvider } from "./UpdateProvider";
 
 export default function Workspace() {
     useKeymap();
@@ -48,29 +51,36 @@ export default function Workspace() {
     }, [activeSheetId]);
 
     return (
-        <div className="flex h-screen flex-col bg-zinc-50" data-testid="workspace">
-            <RoundHeader />
-            <div className="flex min-h-0 flex-1">
-                <Sidebar />
-                <main className="min-w-0 flex-1 overflow-auto p-4" data-testid="workspace-content">
-                    {activeSheetId ? (
-                        <FlowGrid sheetId={activeSheetId} />
-                    ) : (
-                        <div className="text-muted-foreground p-6 text-[13px]">
-                            No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
-                            <span className="text-foreground font-medium">+ Aff</span> /{" "}
-                            <span className="text-foreground font-medium">+ Neg</span>.
-                        </div>
-                    )}
-                </main>
+        <UpdateProvider>
+            <div className="flex h-screen flex-col bg-zinc-50" data-testid="workspace">
+                <RoundHeader />
+                <div className="flex min-h-0 flex-1">
+                    <Sidebar />
+                    <main
+                        className="min-w-0 flex-1 overflow-auto p-4"
+                        data-testid="workspace-content"
+                    >
+                        {activeSheetId ? (
+                            <FlowGrid sheetId={activeSheetId} />
+                        ) : (
+                            <div className="text-muted-foreground p-6 text-[13px]">
+                                No sheet selected. Choose one from the sidebar, or add a sheet
+                                with <span className="text-foreground font-medium">+ Aff</span>{" "}
+                                / <span className="text-foreground font-medium">+ Neg</span>.
+                            </div>
+                        )}
+                    </main>
+                </div>
+                <SearchPalette />
+                <CommandPalette />
+                <SettingsPanel />
+                <InfoPanel />
+                <KeybindingsCheatsheet />
+                <GuideDialog />
+                <PrintView />
+                <UpdateChip />
+                <CriticalUpdateModal />
             </div>
-            <SearchPalette />
-            <CommandPalette />
-            <SettingsPanel />
-            <InfoPanel />
-            <KeybindingsCheatsheet />
-            <GuideDialog />
-            <PrintView />
-        </div>
+        </UpdateProvider>
     );
 }

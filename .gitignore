@@ -9,3 +9,7 @@ build/
 .env*.local
 coverage/
 tsconfig.tsbuildinfo
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/schemas/

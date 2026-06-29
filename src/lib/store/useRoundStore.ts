@@ -40,6 +40,8 @@ import type {
     NodeStatus,
     Scouting,
 } from "@/lib/model/types";
+import { loadUpdateConfig, saveUpdateConfig } from "@/lib/update/settings";
+import type { UpdateConfig } from "@/lib/update/types";
 
 // ─── State shape ──────────────────────────────────────────────────────────────
 
@@ -64,6 +66,8 @@ export interface RoundState {
     autoNumber: boolean;
     labelDrops: boolean;
     flowFont: FontId;
+    /** Desktop auto-update behavior (opt-in, blackout, Tournament Mode). */
+    updateConfig: UpdateConfig;
     quickSwitcherOpen: boolean;
     commandPaletteOpen: boolean;
     settingsOpen: boolean;
@@ -199,6 +203,8 @@ export interface RoundActions {
     setAutoNumber(v: boolean): void;
     setLabelDrops(v: boolean): void;
     setFlowFont: (id: FontId) => void;
+    /** Merges a partial update config, persisting the result. */
+    setUpdateConfig(patch: Partial<UpdateConfig>): void;
     setQuickSwitcherOpen(open: boolean): void;
     setCommandPaletteOpen(open: boolean): void;
     setSettingsOpen(open: boolean): void;
@@ -295,6 +301,7 @@ function saveDisplaySettings(s: DisplaySettings): void {
 }
 
 const initialDisplaySettings = loadDisplaySettings();
+const initialUpdateConfig = loadUpdateConfig();
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
@@ -358,6 +365,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     autoNumber: initialDisplaySettings.autoNumber,
     labelDrops: initialDisplaySettings.labelDrops,
     flowFont: initialDisplaySettings.flowFont,
+    updateConfig: initialUpdateConfig,
     sidebarCollapsed: initialDisplaySettings.sidebarCollapsed,
     quickSwitcherOpen: false,
     commandPaletteOpen: false,
@@ -860,6 +868,13 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             flowFont: id,
             sidebarCollapsed: get().sidebarCollapsed,
         });
+    },
+
+    // ── setUpdateConfig ────────────────────────────────────────────────────────
+    setUpdateConfig(patch) {
+        const next = { ...get().updateConfig, ...patch };
+        set({ updateConfig: next });
+        saveUpdateConfig(next);
     },
 
     // ── setSidebarCollapsed ────────────────────────────────────────────────────

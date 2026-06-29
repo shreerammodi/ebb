@@ -9,12 +9,18 @@
         "test:watch": "vitest",
         "lint": "next lint",
         "format": "oxfmt .",
-        "format:check": "oxfmt --check ."
+        "format:check": "oxfmt --check .",
+        "tauri": "tauri",
+        "desktop:dev": "tauri dev",
+        "desktop:build": "tauri build"
     },
     "dependencies": {
         "@leeoniya/ufuzzy": "^1.0.19",
         "@phosphor-icons/react": "^2.1.10",
         "@tailwindcss/postcss": "^4.3.0",
+        "@tauri-apps/api": "^2.11.1",
+        "@tauri-apps/plugin-process": "^2.3.1",
+        "@tauri-apps/plugin-updater": "^2.10.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "dexie": "^4.0.10",
@@ -33,6 +39,7 @@
         "@fontsource/dm-sans": "^5.2.8",
         "@fontsource/ibm-plex-mono": "^5.2.7",
         "@fontsource/inter": "^5.2.8",
+        "@tauri-apps/cli": "^2.11.4",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.3.0",
         "@testing-library/user-event": "^14.5.2",

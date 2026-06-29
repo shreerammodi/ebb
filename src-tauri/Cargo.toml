@@ -1,0 +1,34 @@
+[package]
+name = "ebb"
+version = "0.1.0"
+description = "Ebb — keyboard-first debate flow"
+authors = ["Shreeram Modi <smodi@smodi.net>"]
+edition = "2021"
+rust-version = "1.77.2"
+
+# The library is what Tauri runs; main.rs is a thin entrypoint that calls into
+# it. This split keeps a single `run()` shared between desktop and (future)
+# mobile entrypoints.
+[lib]
+name = "ebb_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Signed auto-updates. The updater verifies the Ed25519 signature internally and
+# discards anything it can't verify; `process` provides the relaunch used to
+# apply a staged update. Both are desktop-only.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+
+[features]
+# This feature is used for production builds where the developer tools are
+# disabled and Cmd+R reload is neutralized. `tauri dev` runs without it.
+custom-protocol = ["tauri/custom-protocol"]

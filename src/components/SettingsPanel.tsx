@@ -13,16 +13,24 @@ import { FONTS, DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { eventToChord } from "@/lib/keymap/resolve";
 import { useRoundStore } from "@/lib/store/useRoundStore";
+import { isDesktop } from "@/lib/update/adapter";
 import { cn } from "@/lib/utils";
+
+import UpdateSettings from "./settings/UpdateSettings";
 
 const COMMAND_LIST = Object.values(COMMANDS);
 
-type Category = "display" | "keyboard";
+type Category = "display" | "keyboard" | "updates";
 
-const CATEGORIES: { id: Category; label: string }[] = [
+const BASE_CATEGORIES: { id: Category; label: string }[] = [
     { id: "display", label: "Display" },
     { id: "keyboard", label: "Keyboard" },
 ];
+
+// The Updates category is desktop-only; the web build never has an updater.
+const CATEGORIES: { id: Category; label: string }[] = isDesktop()
+    ? [...BASE_CATEGORIES, { id: "updates", label: "Updates" }]
+    : BASE_CATEGORIES;
 
 function chordForCommand(bindings: Record<string, CommandId>): Record<string, string> {
     const out: Record<string, string> = {};
@@ -163,7 +171,8 @@ export default function SettingsPanel() {
 
                     {/* Right content */}
                     <div className="flex-1 overflow-y-auto p-4">
-                        {category === "display" ? (
+                        {category === "updates" && <UpdateSettings />}
+                        {category === "display" && (
                             <div className="flex flex-col gap-4">
                                 <div
                                     role="radiogroup"
@@ -256,7 +265,8 @@ export default function SettingsPanel() {
                                     </label>
                                 </div>
                             </div>
-                        ) : (
+                        )}
+                        {category === "keyboard" && (
                             <div className="flex flex-col gap-3">
                                 {/* Filter */}
                                 <Input
