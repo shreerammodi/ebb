@@ -50,6 +50,7 @@ function makeRound(): Round {
                 text: "Plan not topical",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
             {
                 id: "n2",
@@ -60,6 +61,7 @@ function makeRound(): Round {
                 text: "Line one\nline two",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
             {
                 id: "n3",
@@ -70,6 +72,7 @@ function makeRound(): Round {
                 text: "   ",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         ],
         groups: [],

@@ -30,6 +30,7 @@ const RESERVED_KEYS = [
     "z", // undo (Ctrl+z / Meta+z)
     // ── Format / status ────────────────────────────────────────────────────
     "b", // toggle bold
+    "H", // toggle highlight (Shift encoded in uppercase key)
     // NB: toggle conceded is Cmd/Ctrl+Shift+X — reserved separately below as the
     // uppercase "X" chord. The bare "x" is intentionally NOT reserved so Cmd+X
     // stays a native cut inside the cell editor.

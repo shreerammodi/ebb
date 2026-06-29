@@ -39,6 +39,7 @@ function round(): Round {
                 text: "Uniqueness",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         ],
         groups: [],
@@ -69,6 +70,7 @@ describe("buildXlsx", () => {
                 text: "Why plan?",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
             {
                 id: "r1",
@@ -79,6 +81,7 @@ describe("buildXlsx", () => {
                 text: "Because.",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         );
         const bytes = buildXlsx(r, template, DEFAULT_EXPORT_OPTIONS);
@@ -170,6 +173,7 @@ describe("buildXlsx", () => {
                 text: "x",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         ];
         const wb = strFromU8(
@@ -236,6 +240,7 @@ describe("buildXlsx", () => {
                 text: "Uniqueness",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
             {
                 id: "child1",
@@ -246,6 +251,7 @@ describe("buildXlsx", () => {
                 text: "NonUnique",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
             {
                 id: "child2",
@@ -256,6 +262,7 @@ describe("buildXlsx", () => {
                 text: "TurnCase",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         ];
         const bytes = buildXlsx(r, template, { autoNumber: true });
@@ -282,6 +289,7 @@ describe("buildXlsx", () => {
                 text: "Uniqueness",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
             {
                 id: "child1",
@@ -292,6 +300,7 @@ describe("buildXlsx", () => {
                 text: "NonUnique",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
             {
                 id: "child2",
@@ -302,6 +311,7 @@ describe("buildXlsx", () => {
                 text: "TurnCase",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         ];
         const bytes = buildXlsx(r, template, { autoNumber: false });

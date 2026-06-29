@@ -41,6 +41,8 @@ export interface ArgumentNode {
     statuses: NodeStatus[];
     /** Emphasis decoration (renders bold). */
     bold: boolean;
+    /** Highlight decoration (renders a yellow background behind the text). */
+    highlight: boolean;
     /** Override the auto-generated display number for this node. */
     numberOverride?: number | null;
 }

@@ -85,6 +85,19 @@ export class DebateFlowDB extends Dexie {
                     assignRowsFromLegacyTree(r);
                 }),
         );
+        this.version(7).upgrade((tx) =>
+            tx
+                .table("rounds")
+                .toCollection()
+                .modify((r: { nodes?: Array<{ highlight?: boolean }> }) => {
+                    if (Array.isArray(r.nodes)) {
+                        r.nodes = r.nodes.map((n) => ({
+                            ...n,
+                            highlight: n.highlight ?? false,
+                        }));
+                    }
+                }),
+        );
     }
 }
 

@@ -29,6 +29,7 @@ function round(): Round {
                 text: "Q1",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
             {
                 id: "a",
@@ -39,6 +40,7 @@ function round(): Round {
                 text: "A1",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         ],
         groups: [],

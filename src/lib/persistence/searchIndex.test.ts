@@ -35,6 +35,7 @@ function round(overrides: Partial<Round> = {}): Round {
                 text: "perm do both",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         ],
         groups: [],

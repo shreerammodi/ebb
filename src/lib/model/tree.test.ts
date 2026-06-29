@@ -12,6 +12,7 @@ import {
     updateText,
     toggleStatus,
     toggleBold,
+    toggleHighlight,
 } from "./tree";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -25,6 +26,7 @@ function makeNode(overrides: Partial<ArgumentNode> & { id: string }): ArgumentNo
         text: "",
         statuses: [],
         bold: false,
+        highlight: false,
         numberOverride: null,
         ...overrides,
     };
@@ -55,6 +57,34 @@ describe("bold", () => {
         expect(nodes.find((n) => n.id === node.id)!.bold).toBe(false);
         const off = toggleBold(on, node.id);
         expect(off.find((n) => n.id === node.id)!.bold).toBe(false);
+    });
+});
+
+// ─── highlight ──────────────────────────────────────────────────────────────
+
+describe("highlight", () => {
+    it("placeNodeAt defaults highlight to false", () => {
+        const { node } = placeNodeAt([], {
+            sheetId: "s1",
+            speechId: "1ac",
+            parentId: null,
+            row: 0,
+        });
+        expect(node.highlight).toBe(false);
+    });
+
+    it("toggleHighlight flips highlight and is pure", () => {
+        const { nodes, node } = placeNodeAt([], {
+            sheetId: "s1",
+            speechId: "1ac",
+            parentId: null,
+            row: 0,
+        });
+        const on = toggleHighlight(nodes, node.id);
+        expect(on.find((n) => n.id === node.id)!.highlight).toBe(true);
+        expect(nodes.find((n) => n.id === node.id)!.highlight).toBe(false);
+        const off = toggleHighlight(on, node.id);
+        expect(off.find((n) => n.id === node.id)!.highlight).toBe(false);
     });
 });
 
@@ -320,6 +350,7 @@ describe("updateText single-line", () => {
                 text: "",
                 statuses: [],
                 bold: false,
+                highlight: false,
                 numberOverride: null,
             },
         ] as any;
@@ -341,6 +372,7 @@ describe("orphanNode", () => {
             text: "p",
             statuses: [],
             bold: false,
+            highlight: false,
             numberOverride: null,
         };
         const child = { ...parent, id: "c", speechId: "b", parentId: "p", row: 0 };
@@ -379,6 +411,7 @@ describe("deleteSubtree", () => {
             text: "",
             statuses: [],
             bold: false,
+            highlight: false,
             numberOverride: null,
         };
         const nodes: ArgumentNode[] = [

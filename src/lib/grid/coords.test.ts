@@ -25,6 +25,7 @@ const n = (id: string, speechId: string, row: number): ArgumentNode => ({
     text: id,
     statuses: [],
     bold: false,
+    highlight: false,
     numberOverride: null,
 });
 

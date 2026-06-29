@@ -22,6 +22,7 @@ function makeNode(
         text: "arg",
         statuses: [],
         bold: false,
+        highlight: false,
         ...overrides,
     };
 }

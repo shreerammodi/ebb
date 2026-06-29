@@ -13,6 +13,11 @@ it("flat keymap binds conceded and extended", () => {
     expect(FLAT_KEYMAP.bindings[`${mod}+e`]).toBe("status.toggleExtended");
 });
 
+it("flat keymap binds the platform modifier+Shift+H to format.toggleHighlight", () => {
+    // Shift is encoded in the uppercase printable key, like redo's `${mod}+Z`.
+    expect(FLAT_KEYMAP.bindings[`${mod}+H`]).toBe("format.toggleHighlight");
+});
+
 it("grab bindings map Enter to move.commit and Escape to move.cancel", () => {
     expect(GRAB_BINDINGS["Enter"]).toBe("move.commit");
     expect(GRAB_BINDINGS["Escape"]).toBe("move.cancel");

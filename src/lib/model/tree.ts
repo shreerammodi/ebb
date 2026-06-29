@@ -60,6 +60,7 @@ export function placeNodeAt(
         text: input.text ?? "",
         statuses: [],
         bold: false,
+        highlight: false,
         numberOverride: null,
     };
     return { nodes: [...nodes, node], node };
@@ -140,4 +141,11 @@ export function toggleStatus(
  */
 export function toggleBold(nodes: ArgumentNode[], nodeId: string): ArgumentNode[] {
     return nodes.map((n) => (n.id === nodeId ? { ...n, bold: !n.bold } : n));
+}
+
+/**
+ * Toggles the highlight decoration on the target node.
+ */
+export function toggleHighlight(nodes: ArgumentNode[], nodeId: string): ArgumentNode[] {
+    return nodes.map((n) => (n.id === nodeId ? { ...n, highlight: !n.highlight } : n));
 }

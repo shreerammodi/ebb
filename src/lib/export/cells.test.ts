@@ -33,6 +33,7 @@ function round(): Round {
                 text: "Root",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
             {
                 id: "c",
@@ -43,6 +44,7 @@ function round(): Round {
                 text: "Resp",
                 statuses: ["conceded"],
                 bold: false,
+                highlight: false,
             },
         ],
         groups: [],

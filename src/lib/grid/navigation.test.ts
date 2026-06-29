@@ -24,6 +24,7 @@ function makeNode(overrides: Partial<ArgumentNode> & { id: string }): ArgumentNo
         text: "",
         statuses: [],
         bold: false,
+        highlight: false,
         numberOverride: null,
         ...overrides,
     };

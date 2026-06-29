@@ -23,6 +23,7 @@ function makeNode(over: Partial<ArgumentNode> & Pick<ArgumentNode, "id" | "text"
         row: 0,
         statuses: [],
         bold: false,
+        highlight: false,
         ...over,
     };
 }
@@ -83,6 +84,20 @@ describe("GridCell decorations", () => {
             selected: false,
         });
         expect(screen.getByText("↳")).toBeInTheDocument();
+    });
+
+    it("renders highlighted text in a .arg-highlight span", () => {
+        renderCell(makeNode({ id: "n1", text: "key voter", highlight: true }), {
+            selected: false,
+        });
+        expect(screen.getByText("key voter")).toHaveClass("arg-highlight");
+    });
+
+    it("does not apply .arg-highlight when highlight is false", () => {
+        renderCell(makeNode({ id: "n1", text: "plain", highlight: false }), {
+            selected: false,
+        });
+        expect(screen.getByText("plain")).not.toHaveClass("arg-highlight");
     });
 });
 

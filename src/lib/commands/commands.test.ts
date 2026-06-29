@@ -413,6 +413,21 @@ describe("status toggles", () => {
         expect(useRoundStore.getState().round!.nodes.find((n) => n.id === a)?.bold).toBe(true);
     });
 
+    it("format.toggleHighlight toggles highlight on the selected node", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        const a = useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+
+        executeCommand("format.toggleHighlight");
+        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === a)?.highlight).toBe(true);
+
+        executeCommand("format.toggleHighlight");
+        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === a)?.highlight).toBe(
+            false,
+        );
+    });
+
     it("no-ops on an empty cell", () => {
         const sheetId = freshRound();
         const speechId = useRoundStore.getState().round!.format.speeches[0].id;

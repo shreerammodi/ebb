@@ -28,6 +28,7 @@ import {
     updateText,
     toggleStatus,
     toggleBold,
+    toggleHighlight,
     setParent,
 } from "@/lib/model/tree";
 import type {
@@ -146,6 +147,7 @@ export interface RoundActions {
     updateNodeText(nodeId: string, text: string): void;
     toggleNodeStatus(nodeId: string, status: NodeStatus): void;
     toggleNodeBold(nodeId: string): void;
+    toggleNodeHighlight(nodeId: string): void;
     setNodeParent(nodeId: string, parentId: string | null): void;
 
     placeBareNode(cell: { sheetId: string; speechId: string; row: number }, text?: string): string;
@@ -540,6 +542,15 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         get()._commit(null, (r) => ({
             ...r,
             nodes: toggleBold(r.nodes, nodeId),
+        }));
+    },
+
+    // ── toggleNodeHighlight ──────────────────────────────────────────────────────
+    toggleNodeHighlight(nodeId) {
+        if (!get().round) return;
+        get()._commit(null, (r) => ({
+            ...r,
+            nodes: toggleHighlight(r.nodes, nodeId),
         }));
     },
 

@@ -244,7 +244,8 @@ export function executeCommand(id: CommandId): void {
         // ── Status / format ───────────────────────────────────────────────────
         case "status.toggleConceded":
         case "status.toggleExtended":
-        case "format.toggleBold": {
+        case "format.toggleBold":
+        case "format.toggleHighlight": {
             if (!round) return;
             const sel = state.selection;
             if (!sel) return;
@@ -256,6 +257,8 @@ export function executeCommand(id: CommandId): void {
             if (!node) return;
             if (id === "format.toggleBold") {
                 state.toggleNodeBold(node.id);
+            } else if (id === "format.toggleHighlight") {
+                state.toggleNodeHighlight(node.id);
             } else {
                 state.toggleNodeStatus(
                     node.id,

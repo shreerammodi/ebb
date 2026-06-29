@@ -151,8 +151,9 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                     </li>
                     <li>
                         Mark an argument <Kbd cmd="status.toggleConceded" /> conceded or{" "}
-                        <Kbd cmd="status.toggleExtended" /> extended, and{" "}
-                        <Kbd cmd="format.toggleBold" /> for emphasis.
+                        <Kbd cmd="status.toggleExtended" /> extended,{" "}
+                        <Kbd cmd="format.toggleBold" /> for emphasis, and{" "}
+                        <Kbd cmd="format.toggleHighlight" /> to highlight it.
                     </li>
                 </ul>
             </>

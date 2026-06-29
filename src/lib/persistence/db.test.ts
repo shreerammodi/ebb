@@ -71,6 +71,7 @@ describe("IndexedDB v4 migration", () => {
                     text: "tag\ncite",
                     statuses: [],
                     bold: false,
+                    highlight: false,
                     numberOverride: null,
                 },
             ],

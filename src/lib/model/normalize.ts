@@ -53,7 +53,11 @@ export function normalizeRound(raw: Round): Round {
     delete r.meta;
     r.sheets = r.sheets.map((s) => ({ ...s, kind: s.kind ?? "flow" }));
     if (Array.isArray(r.nodes)) {
-        r.nodes = r.nodes.map((n) => ({ ...n, bold: n.bold ?? false }));
+        r.nodes = r.nodes.map((n) => ({
+            ...n,
+            bold: n.bold ?? false,
+            highlight: n.highlight ?? false,
+        }));
     }
     if (!Array.isArray(r.groups)) r.groups = [];
     if (!r.sheets.some((s) => s.kind === "cx")) {

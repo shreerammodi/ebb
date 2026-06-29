@@ -342,6 +342,7 @@ function mkRound(id: string, over: Partial<Round> = {}): Round {
                 text: "kritik",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         ],
         groups: [],

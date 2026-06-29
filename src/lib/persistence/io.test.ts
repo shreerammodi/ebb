@@ -44,6 +44,7 @@ function makeRound(overrides: Partial<Round> = {}): Round {
                 text: "Solvency",
                 statuses: [],
                 bold: false,
+                highlight: false,
             },
         ],
         ...overrides,
@@ -104,6 +105,7 @@ describe("importRoundJSON", () => {
                     text: "Bold arg",
                     statuses: [],
                     bold: true,
+                    highlight: true,
                 },
             ],
         });
@@ -235,6 +237,7 @@ describe("importRoundJSON", () => {
                         text: "Solvency",
                         statuses: ["extended"],
                         bold: true,
+                        highlight: true,
                         numberOverride: 4,
                     },
                 ],

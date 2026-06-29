@@ -80,4 +80,11 @@ describe("reservedChords", () => {
         setPlatform("Win32");
         expect(reservedChords().has("Ctrl+p")).toBe(true);
     });
+
+    it("reserves the platform modifier+Shift+H (toggle highlight)", () => {
+        setPlatform("MacIntel");
+        expect(reservedChords().has("Meta+H")).toBe(true);
+        setPlatform("Win32");
+        expect(reservedChords().has("Ctrl+H")).toBe(true);
+    });
 });

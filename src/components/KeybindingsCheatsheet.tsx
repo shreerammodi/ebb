@@ -53,6 +53,13 @@ const GROUPS = [
         ],
     },
     {
+        label: "Format",
+        rows: [
+            { commandId: "format.toggleBold" as CommandId },
+            { commandId: "format.toggleHighlight" as CommandId },
+        ],
+    },
+    {
         label: "Sheets",
         rows: [
             { commandId: "sheet.prev" as CommandId },

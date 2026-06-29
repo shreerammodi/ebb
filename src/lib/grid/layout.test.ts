@@ -18,6 +18,7 @@ function node(p: Partial<LegacyNode> & { id: string; speechId: string }): Legacy
         text: "",
         statuses: [],
         bold: false,
+        highlight: false,
         ...p,
     };
 }

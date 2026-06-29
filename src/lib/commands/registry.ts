@@ -33,6 +33,7 @@ export type CommandId =
     | "status.toggleConceded"
     | "status.toggleExtended"
     | "format.toggleBold"
+    | "format.toggleHighlight"
     | "sheet.next"
     | "sheet.prev"
     | "sheet.newAff"
@@ -96,6 +97,10 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
         label: "Toggle extended",
     },
     "format.toggleBold": { id: "format.toggleBold", label: "Toggle bold" },
+    "format.toggleHighlight": {
+        id: "format.toggleHighlight",
+        label: "Toggle highlight",
+    },
     "sheet.next": { id: "sheet.next", label: "Next sheet" },
     "sheet.prev": { id: "sheet.prev", label: "Previous sheet" },
     "sheet.newAff": { id: "sheet.newAff", label: "New aff sheet" },

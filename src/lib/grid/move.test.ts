@@ -18,6 +18,7 @@ function node(p: Partial<ArgumentNode> & { id: string; speechId: string }): Argu
         text: "",
         statuses: [],
         bold: false,
+        highlight: false,
         ...p,
     };
 }
