@@ -408,8 +408,10 @@ body {
     font-weight: 700;
 }
 
-.cell-conceded {
-    background-color: color-mix(in srgb, var(--neg) 12%, transparent);
+/* Scoped to `.flow td` so it outranks the base `.flow td { background: transparent }`
+   rule (equal specificity, declared later) instead of losing the cascade. */
+.flow td.cell-conceded {
+    background-color: color-mix(in srgb, var(--neg) 22%, transparent);
 }
 
 .arg-bold {

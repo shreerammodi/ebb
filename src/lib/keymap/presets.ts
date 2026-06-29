@@ -36,7 +36,10 @@ const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
         [`${mod}+z`]: "edit.undo",
         [`${mod}+Z`]: "edit.redo",
         [`${mod}+b`]: "format.toggleBold",
-        [`${mod}+x`]: "status.toggleConceded",
+        // Cmd/Ctrl+Shift+X (the uppercase "X" chord encodes Shift). Kept off the
+        // bare Cmd/Ctrl+X so it doesn't collide with the native cut chord, which
+        // passes through inside the always-focused cell editor.
+        [`${mod}+X`]: "status.toggleConceded",
         [`${mod}+e`]: "status.toggleExtended",
         [`${mod}+k`]: "sheet.quickSwitch",
         [`${mod}+p`]: "palette.open",

@@ -30,7 +30,9 @@ const RESERVED_KEYS = [
     "z", // undo (Ctrl+z / Meta+z)
     // ── Format / status ────────────────────────────────────────────────────
     "b", // toggle bold
-    "x", // toggle conceded
+    // NB: toggle conceded is Cmd/Ctrl+Shift+X — reserved separately below as the
+    // uppercase "X" chord. The bare "x" is intentionally NOT reserved so Cmd+X
+    // stays a native cut inside the cell editor.
     "e", // toggle extended
     // ── UI ─────────────────────────────────────────────────────────────────
     "\\", // sidebar toggle
@@ -65,9 +67,11 @@ export function reservedChords(): Set<string> {
     }
 
     // Secondary-modifier chords. Backspace is a named key so Shift+ is explicit;
-    // Z is a single printable so uppercase encodes the shift (eventToChord rule).
+    // Z and X are single printables so uppercase encodes the shift (eventToChord
+    // rule): Cmd+Shift+Z (redo) and Cmd+Shift+X (toggle conceded).
     chords.add(`${mod}+Shift+Backspace`);
     chords.add(`${mod}+Z`);
+    chords.add(`${mod}+X`);
 
     return chords;
 }

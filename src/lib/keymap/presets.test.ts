@@ -6,7 +6,10 @@ import { isMacPlatform } from "@/lib/platform";
 const mod = isMacPlatform() ? "Meta" : "Ctrl";
 
 it("flat keymap binds conceded and extended", () => {
-    expect(FLAT_KEYMAP.bindings[`${mod}+x`]).toBe("status.toggleConceded");
+    // Conceded is on the platform modifier + Shift + X (encoded as the uppercase
+    // "X" chord) so it doesn't collide with the native cut chord (Cmd/Ctrl+X).
+    expect(FLAT_KEYMAP.bindings[`${mod}+X`]).toBe("status.toggleConceded");
+    expect(FLAT_KEYMAP.bindings[`${mod}+x`]).toBeUndefined();
     expect(FLAT_KEYMAP.bindings[`${mod}+e`]).toBe("status.toggleExtended");
 });
 
