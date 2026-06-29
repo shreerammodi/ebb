@@ -28,6 +28,10 @@ describe("reservedChords", () => {
         expect(chords.has("Meta+1")).toBe(true);
         expect(chords.has("Meta+Backspace")).toBe(true);
         expect(chords.has("Meta+Shift+Backspace")).toBe(true);
+        // Toggle conceded moved to Cmd+Shift+X (uppercase "X" chord); the bare
+        // Cmd+X is left unreserved so it stays a native cut.
+        expect(chords.has("Meta+X")).toBe(true);
+        expect(chords.has("Meta+x")).toBe(false);
         // Ctrl variants should NOT be present on Mac.
         expect(chords.has("Ctrl+n")).toBe(false);
     });
