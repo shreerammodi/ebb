@@ -15,7 +15,7 @@ Dexie); there is no backend. The app is built as a static export.
 - **Tailwind CSS v4** (config-less; theme lives in `src/app/globals.css`)
 - **Zustand** for state (`src/lib/store`)
 - **Dexie** (IndexedDB) for persistence
-- **Radix UI** + **lucide-react** for UI primitives and icons
+- **Radix UI** + **@phosphor-icons/react** for UI primitives and icons
 - **Vitest** + **Testing Library** (jsdom, `fake-indexeddb`) for tests
 
 ## Commands
@@ -71,5 +71,3 @@ src/
 - There is no server; `npm run build` produces a static site in `./out`.
 - When adding a UI primitive, follow the existing `components/ui` (shadcn-style)
   patterns; `components.json` configures the generator.
-- Do not commit unless asked. Never add Claude/Anthropic attribution trailers to
-  commits.
