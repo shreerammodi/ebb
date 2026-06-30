@@ -1,6 +1,7 @@
 "use client";
 
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
+import type React from "react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -8,22 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import { executeCommand } from "@/lib/commands/commands";
 import type { Sheet } from "@/lib/model/types";
-import {
-    useRoundStore,
-    selectSheetsByGroup,
-    selectSheetDropCount,
-} from "@/lib/store/useRoundStore";
+import { useRoundStore, selectSheetDropCount } from "@/lib/store/useRoundStore";
 import { cn } from "@/lib/utils";
-
-interface GroupConfig {
-    group: "aff" | "neg";
-    label: string;
-}
-
-const GROUPS: GroupConfig[] = [
-    { group: "aff", label: "Aff" },
-    { group: "neg", label: "Neg" },
-];
 
 const EMPTY_SHEETS: Sheet[] = [];
 
@@ -39,6 +26,9 @@ export default function Sidebar() {
     const restoreSheet = useRoundStore((s) => s.restoreSheet);
     const sidebarCollapsed = useRoundStore((s) => s.sidebarCollapsed);
     const setSidebarCollapsed = useRoundStore((s) => s.setSidebarCollapsed);
+    const reorderSheets = useRoundStore((s) => s.reorderSheets);
+    const [dragId, setDragId] = useState<string | null>(null);
+    const [dropIndex, setDropIndex] = useState<number | null>(null);
 
     if (sheets.length === 0) return null;
 
@@ -77,6 +67,27 @@ export default function Sidebar() {
                 </Tip>
             </nav>
         );
+    }
+
+    const flowSheets = sheets.filter((s) => s.kind !== "cx").sort((a, b) => a.order - b.order);
+
+    function commitDrop() {
+        if (dragId == null || dropIndex == null) {
+            setDragId(null);
+            setDropIndex(null);
+            return;
+        }
+        const ids = flowSheets.map((s) => s.id);
+        const from = ids.indexOf(dragId);
+        if (from !== -1) {
+            ids.splice(from, 1);
+            // Adjust the target index when removing an earlier element shifts it left.
+            const to = from < dropIndex ? dropIndex - 1 : dropIndex;
+            ids.splice(to, 0, dragId);
+            reorderSheets(ids);
+        }
+        setDragId(null);
+        setDropIndex(null);
     }
 
     return (
@@ -145,38 +156,56 @@ export default function Sidebar() {
                         </button>
                     </div>
                 )}
-                {GROUPS.map(({ group, label }) => {
-                    const groupSheets = sheets
-                        .filter((s) => s.group === group)
-                        .sort((a, b) => a.order - b.order)
-                        .filter((s) => s.kind !== "cx");
-                    return (
-                        <div key={group} className="mb-3">
-                            <div className="text-muted-foreground px-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
-                                {label}
+                <div>
+                    <div
+                        data-testid="sheets-section-label"
+                        className="text-muted-foreground px-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase"
+                    >
+                        Sheets
+                    </div>
+                    {flowSheets.length === 0 ? (
+                        <div className="text-muted-foreground px-2 py-1 text-xs">No sheets</div>
+                    ) : (
+                        flowSheets.map((sheet, i) => (
+                            <div key={sheet.id}>
+                                {dropIndex === i && <DropLine />}
+                                <SheetRow
+                                    sheet={sheet}
+                                    active={sheet.id === activeSheetId}
+                                    onSelect={() => setActiveSheet(sheet.id)}
+                                    isRenaming={sheet.id === renamingSheetId}
+                                    onStartRename={() => setRenamingSheet(sheet.id)}
+                                    onDelete={() => deleteSheet(sheet.id)}
+                                    dragging={dragId === sheet.id}
+                                    onDragStartRow={() => setDragId(sheet.id)}
+                                    onDragOverRow={(e) => {
+                                        e.preventDefault();
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        const after = e.clientY - rect.top > rect.height / 2;
+                                        setDropIndex(after ? i + 1 : i);
+                                    }}
+                                    onDropRow={(e) => {
+                                        e.preventDefault();
+                                        commitDrop();
+                                    }}
+                                    onDragEndRow={() => {
+                                        setDragId(null);
+                                        setDropIndex(null);
+                                    }}
+                                />
+                                {i === flowSheets.length - 1 && dropIndex === i + 1 && <DropLine />}
                             </div>
-                            {groupSheets.length === 0 ? (
-                                <div className="text-muted-foreground px-2 py-1 text-xs">
-                                    No sheets
-                                </div>
-                            ) : (
-                                groupSheets.map((sheet) => (
-                                    <SheetRow
-                                        key={sheet.id}
-                                        sheet={sheet}
-                                        active={sheet.id === activeSheetId}
-                                        onSelect={() => setActiveSheet(sheet.id)}
-                                        isRenaming={sheet.id === renamingSheetId}
-                                        onStartRename={() => setRenamingSheet(sheet.id)}
-                                        onDelete={() => deleteSheet(sheet.id)}
-                                    />
-                                ))
-                            )}
-                        </div>
-                    );
-                })}
+                        ))
+                    )}
+                </div>
             </div>
         </nav>
+    );
+}
+
+function DropLine() {
+    return (
+        <div className="bg-foreground/50 mx-2 my-0.5 h-0.5 rounded-full" data-testid="drop-line" />
     );
 }
 
@@ -187,9 +216,14 @@ interface SheetRowProps {
     isRenaming: boolean;
     onStartRename: () => void;
     onDelete: () => void;
+    dragging: boolean;
+    onDragStartRow: () => void;
+    onDragOverRow: (e: React.DragEvent<HTMLDivElement>) => void;
+    onDropRow: (e: React.DragEvent<HTMLDivElement>) => void;
+    onDragEndRow: () => void;
 }
 
-function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete }: SheetRowProps) {
+function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete, dragging, onDragStartRow, onDragOverRow, onDropRow, onDragEndRow }: SheetRowProps) {
     const renameSheet = useRoundStore((s) => s.renameSheet);
     const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
     const labelDrops = useRoundStore((s) => s.labelDrops);
@@ -258,7 +292,14 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
     }
 
     return (
-        <div className="group flex items-center">
+        <div
+            className={cn("group flex items-center", dragging && "opacity-50")}
+            draggable={!isRenaming}
+            onDragStart={onDragStartRow}
+            onDragOver={onDragOverRow}
+            onDrop={onDropRow}
+            onDragEnd={onDragEndRow}
+        >
             <div
                 role="button"
                 tabIndex={0}
@@ -279,11 +320,17 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
                         : "border-transparent hover:bg-accent/50",
                 )}
             >
+                <span
+                    aria-hidden
+                    data-testid={`sheet-marker-${sheet.id}`}
+                    className={cn("h-4 w-0.5 shrink-0 rounded-full", sheet.group === "aff" ? "bg-aff" : "bg-neg")}
+                />
+                <span className="sr-only">{sheet.group === "aff" ? "Aff" : "Neg"}</span>
                 {titleTruncated ? (
                     <Tip label={sheet.title}>
                         <span
                             ref={titleRef}
-                            className="overflow-hidden text-ellipsis whitespace-nowrap"
+                            className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
                         >
                             {sheet.title}
                         </span>
@@ -291,7 +338,7 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
                 ) : (
                     <span
                         ref={titleRef}
-                        className="overflow-hidden text-ellipsis whitespace-nowrap"
+                        className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
                     >
                         {sheet.title}
                     </span>

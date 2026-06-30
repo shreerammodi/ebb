@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import type { ArgGroup, ArgumentNode, Format, Sheet } from "@/lib/model/types";
 
-import { createSheet, renameSheet, reorderSheet, removeSheet, restoreSheet } from "./sheets";
+import { createSheet, renameSheet, reorderSheets, removeSheet, restoreSheet } from "./sheets";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -89,13 +89,25 @@ describe("renameSheet", () => {
     });
 });
 
-// ─── reorderSheet ─────────────────────────────────────────────────────────────
+// ─── reorderSheets ────────────────────────────────────────────────────────────
 
-describe("reorderSheet", () => {
-    it("assigns the given order to the target sheet", () => {
-        const sheets = [makeSheet({ id: "a", order: 0 }), makeSheet({ id: "b", order: 1 })];
-        const result = reorderSheet(sheets, "b", 0.5);
-        expect(result.find((s) => s.id === "b")!.order).toBe(0.5);
+describe("reorderSheets", () => {
+    it("renumbers listed sheets to contiguous order by position", () => {
+        const sheets = [
+            makeSheet({ id: "a", order: 0 }),
+            makeSheet({ id: "b", order: 1 }),
+            makeSheet({ id: "c", order: 2 }),
+        ];
+        const result = reorderSheets(sheets, ["c", "a", "b"]);
+        expect(result.find((s) => s.id === "c")!.order).toBe(0);
+        expect(result.find((s) => s.id === "a")!.order).toBe(1);
+        expect(result.find((s) => s.id === "b")!.order).toBe(2);
+    });
+
+    it("leaves sheets not in the list untouched", () => {
+        const sheets = [makeSheet({ id: "cx", order: -1 }), makeSheet({ id: "a", order: 5 })];
+        const result = reorderSheets(sheets, ["a"]);
+        expect(result.find((s) => s.id === "cx")!.order).toBe(-1);
         expect(result.find((s) => s.id === "a")!.order).toBe(0);
     });
 });

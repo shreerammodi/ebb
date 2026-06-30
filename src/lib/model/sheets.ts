@@ -45,11 +45,13 @@ export function renameSheet(sheets: Sheet[], sheetId: string, title: string): Sh
 }
 
 /**
- * Returns a new array with the target sheet's `order` set. Callers avoid
- * collisions (e.g. pass fractional values).
+ * Renumbers the listed flow sheets to contiguous `order` (0, 1, 2, …) by their
+ * position in `orderedFlowSheetIds`. Sheets not in the list (e.g. the pinned CX
+ * sheet) and every sheet's `group` are left untouched.
  */
-export function reorderSheet(sheets: Sheet[], sheetId: string, order: number): Sheet[] {
-    return sheets.map((s) => (s.id === sheetId ? { ...s, order } : s));
+export function reorderSheets(sheets: Sheet[], orderedFlowSheetIds: string[]): Sheet[] {
+    const orderById = new Map(orderedFlowSheetIds.map((id, i) => [id, i] as const));
+    return sheets.map((s) => (orderById.has(s.id) ? { ...s, order: orderById.get(s.id)! } : s));
 }
 
 /** Drops a sheet along with the nodes and groups scoped to it. */

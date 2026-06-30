@@ -4,7 +4,7 @@
  * Uses the real Zustand store. Resets state between tests for isolation.
  */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
@@ -64,17 +64,17 @@ describe("Sidebar", () => {
         resetStore();
     });
 
-    it("lists sheets grouped as Aff / Neg", () => {
-        setupRound();
+    it("lists all flow sheets in one order-sorted list with side markers", () => {
+        const { caseId, daId } = setupRound();
         renderSidebar();
 
-        // Group headers
-        expect(screen.getByText("Aff")).toBeInTheDocument();
-        expect(screen.getByText("Neg")).toBeInTheDocument();
-        // Aff sheet title
+        // Both titles present in the unified list
         expect(screen.getByText("Case")).toBeInTheDocument();
-        // Neg sheet title
         expect(screen.getByText("Disad")).toBeInTheDocument();
+
+        // Side markers reflect each sheet's group, not its position
+        expect(screen.getByTestId(`sheet-marker-${caseId}`)).toHaveClass("bg-aff");
+        expect(screen.getByTestId(`sheet-marker-${daId}`)).toHaveClass("bg-neg");
     });
 
     it("shows a drop badge when a sheet has drops", () => {
@@ -213,10 +213,10 @@ describe("Sidebar", () => {
         // The CX section label is a standalone div (not inside the cx-sheet-row button)
         const cxSheetRow = screen.getByTestId("cx-sheet-row");
         const cxLabel = screen.getByTestId("cx-section-label");
-        const affLabel = screen.getByText("Aff");
-        // CX label appears before Aff label in document order
+        const listLabel = screen.getByTestId("sheets-section-label");
+        // CX label appears before the unified sheets list label in document order
         expect(
-            cxLabel.compareDocumentPosition(affLabel) & Node.DOCUMENT_POSITION_FOLLOWING,
+            cxLabel.compareDocumentPosition(listLabel) & Node.DOCUMENT_POSITION_FOLLOWING,
         ).toBeTruthy();
         // CX section label is NOT inside the cx-sheet-row button
         expect(cxSheetRow.contains(cxLabel)).toBe(false);
@@ -269,5 +269,44 @@ describe("Sidebar", () => {
         expect(action.label).toBe("Undo");
         action.onClick();
         expect(useRoundStore.getState().round!.sheets.some((s) => s.id === id)).toBe(true);
+    });
+
+    it("exposes accessible side label for aff sheets", () => {
+        const { caseId } = setupRound();
+        renderSidebar();
+        const row = screen.getByTestId(`sheet-${caseId}`);
+        // The sr-only span inside the row must carry the text "Aff"
+        expect(row).toHaveAccessibleDescription;
+        const srLabel = row.querySelector(".sr-only");
+        expect(srLabel).toBeInTheDocument();
+        expect(srLabel!.textContent).toBe("Aff");
+    });
+
+    it("exposes accessible side label for neg sheets", () => {
+        const { daId } = setupRound();
+        renderSidebar();
+        const row = screen.getByTestId(`sheet-${daId}`);
+        const srLabel = row.querySelector(".sr-only");
+        expect(srLabel).toBeInTheDocument();
+        expect(srLabel!.textContent).toBe("Neg");
+    });
+
+    it("reorders sheets via drag and drop", () => {
+        const { caseId, daId } = setupRound(); // Case(aff) then Disad(neg), order 0,1
+        renderSidebar();
+
+        // Drag the second sheet (Disad) and drop it onto the first (Case).
+        // jsdom getBoundingClientRect is zero, so dragover resolves to "insert
+        // before the hovered row" → Disad lands at index 0.
+        const source = screen.getByTestId(`sheet-${daId}`);
+        const target = screen.getByTestId(`sheet-${caseId}`);
+        fireEvent.dragStart(source);
+        fireEvent.dragOver(target);
+        fireEvent.drop(target);
+
+        const sheets = useRoundStore.getState().round!.sheets;
+        const order = (id: string) => sheets.find((s) => s.id === id)!.order;
+        expect(order(daId)).toBe(0);
+        expect(order(caseId)).toBe(1);
     });
 });
