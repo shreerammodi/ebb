@@ -962,9 +962,3 @@ export function selectDrops(round: Round | null, sheetId: string): string[] {
 export function selectSheetDropCount(round: Round | null, sheetId: string): number {
     return selectDrops(round, sheetId).length;
 }
-
-/** Returns sheets belonging to a group, sorted ascending by order. */
-export function selectSheetsByGroup(round: Round | null, group: "aff" | "neg"): Sheet[] {
-    if (!round) return [];
-    return round.sheets.filter((s) => s.group === group).sort((a, b) => a.order - b.order);
-}

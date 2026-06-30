@@ -325,11 +325,12 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
                     data-testid={`sheet-marker-${sheet.id}`}
                     className={cn("h-4 w-0.5 shrink-0 rounded-full", sheet.group === "aff" ? "bg-aff" : "bg-neg")}
                 />
+                <span className="sr-only">{sheet.group === "aff" ? "Aff" : "Neg"}</span>
                 {titleTruncated ? (
                     <Tip label={sheet.title}>
                         <span
                             ref={titleRef}
-                            className="overflow-hidden text-ellipsis whitespace-nowrap"
+                            className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
                         >
                             {sheet.title}
                         </span>
@@ -337,7 +338,7 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
                 ) : (
                     <span
                         ref={titleRef}
-                        className="overflow-hidden text-ellipsis whitespace-nowrap"
+                        className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
                     >
                         {sheet.title}
                     </span>

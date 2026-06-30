@@ -271,6 +271,26 @@ describe("Sidebar", () => {
         expect(useRoundStore.getState().round!.sheets.some((s) => s.id === id)).toBe(true);
     });
 
+    it("exposes accessible side label for aff sheets", () => {
+        const { caseId } = setupRound();
+        renderSidebar();
+        const row = screen.getByTestId(`sheet-${caseId}`);
+        // The sr-only span inside the row must carry the text "Aff"
+        expect(row).toHaveAccessibleDescription;
+        const srLabel = row.querySelector(".sr-only");
+        expect(srLabel).toBeInTheDocument();
+        expect(srLabel!.textContent).toBe("Aff");
+    });
+
+    it("exposes accessible side label for neg sheets", () => {
+        const { daId } = setupRound();
+        renderSidebar();
+        const row = screen.getByTestId(`sheet-${daId}`);
+        const srLabel = row.querySelector(".sr-only");
+        expect(srLabel).toBeInTheDocument();
+        expect(srLabel!.textContent).toBe("Neg");
+    });
+
     it("reorders sheets via drag and drop", () => {
         const { caseId, daId } = setupRound(); // Case(aff) then Disad(neg), order 0,1
         renderSidebar();
