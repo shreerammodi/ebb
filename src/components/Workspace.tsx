@@ -64,9 +64,9 @@ export default function Workspace() {
                             <FlowGrid sheetId={activeSheetId} />
                         ) : (
                             <div className="text-muted-foreground p-6 text-[13px]">
-                                No sheet selected. Choose one from the sidebar, or add a sheet
-                                with <span className="text-foreground font-medium">+ Aff</span>{" "}
-                                / <span className="text-foreground font-medium">+ Neg</span>.
+                                No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
+                                <span className="text-foreground font-medium">+ Aff</span> /{" "}
+                                <span className="text-foreground font-medium">+ Neg</span>.
                             </div>
                         )}
                     </main>

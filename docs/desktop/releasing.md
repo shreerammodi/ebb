@@ -28,8 +28,8 @@ This prints two things:
    `src-tauri/tauri.conf.json` under `plugins.updater.pubkey`. Safe to commit.
 2. **Private key →** add as repo secrets (Settings → Secrets and variables →
    Actions):
-   - `TAURI_SIGNING_PRIVATE_KEY` = the full contents of `~/.ebb/updater.key`
-   - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` = the password you chose
+    - `TAURI_SIGNING_PRIVATE_KEY` = the full contents of `~/.ebb/updater.key`
+    - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` = the password you chose
 
 Never commit the private key.
 
@@ -39,10 +39,10 @@ Never commit the private key.
    keep them in lockstep).
 2. Tag and push:
 
-   ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
-   ```
+    ```bash
+    git tag v0.2.0
+    git push origin v0.2.0
+    ```
 
 3. CI builds the macOS (arm64 + x64), Windows (x64), and Linux (x64) installers,
    signs the updater artifacts, generates `latest.json`, and uploads everything

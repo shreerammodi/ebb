@@ -8,11 +8,7 @@ import {
     parseManifest,
     shouldPromptCritical,
 } from "./policy";
-import {
-    DEFAULT_UPDATE_CONFIG,
-    type UpdateConfig,
-    type UpdateManifest,
-} from "./types";
+import { DEFAULT_UPDATE_CONFIG, type UpdateConfig, type UpdateManifest } from "./types";
 
 // June 2026 is a convenient reference week. Using the local Date constructor
 // (year, monthIndex, day) yields a stable local weekday regardless of the test
@@ -75,15 +71,11 @@ describe("isInBlackout", () => {
 
 describe("isUpdateEligible", () => {
     it("is eligible outside the blackout with tournament mode off", () => {
-        expect(
-            isUpdateEligible({ now: TUE, config: DEFAULT_UPDATE_CONFIG }),
-        ).toBe(true);
+        expect(isUpdateEligible({ now: TUE, config: DEFAULT_UPDATE_CONFIG })).toBe(true);
     });
 
     it("is not eligible inside the blackout", () => {
-        expect(
-            isUpdateEligible({ now: FRI, config: DEFAULT_UPDATE_CONFIG }),
-        ).toBe(false);
+        expect(isUpdateEligible({ now: FRI, config: DEFAULT_UPDATE_CONFIG })).toBe(false);
     });
 
     it("is not eligible when tournament mode is on, even midweek", () => {
@@ -156,9 +148,7 @@ describe("shouldPromptCritical", () => {
             ...DEFAULT_UPDATE_CONFIG,
             tournamentMode: true,
         };
-        expect(
-            shouldPromptCritical(criticalManifest, { now: TUE, config }),
-        ).toBe(true);
+        expect(shouldPromptCritical(criticalManifest, { now: TUE, config })).toBe(true);
     });
 
     it("does not prompt when the update is already eligible (normal flow applies)", () => {

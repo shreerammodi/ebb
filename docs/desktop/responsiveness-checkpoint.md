@@ -18,12 +18,12 @@ npm run desktop:build   # produces a .app/.dmg under src-tauri/target/release/bu
 
 ## What to measure
 
-| Metric              | How                                                              | Bar                                              |
-| ------------------- | --------------------------------------------------------------- | ------------------------------------------------ |
-| Cold start          | Time from launch to interactive grid                            | Feels instant (sub-second to first paint)        |
-| Typing latency      | Type rapidly in a grid cell; watch for lag between key and glyph | No perceptible lag                               |
-| Scroll smoothness   | Scroll a long flow with many columns                            | No jank / dropped frames                         |
-| Large flow handling | Open the biggest realistic round                                | Stays responsive                                 |
+| Metric              | How                                                              | Bar                                       |
+| ------------------- | ---------------------------------------------------------------- | ----------------------------------------- |
+| Cold start          | Time from launch to interactive grid                             | Feels instant (sub-second to first paint) |
+| Typing latency      | Type rapidly in a grid cell; watch for lag between key and glyph | No perceptible lag                        |
+| Scroll smoothness   | Scroll a long flow with many columns                             | No jank / dropped frames                  |
+| Large flow handling | Open the biggest realistic round                                 | Stays responsive                          |
 
 ## Decision
 

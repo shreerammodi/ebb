@@ -100,8 +100,7 @@ export default function UpdateSettings() {
                 <span>
                     Tournament Mode
                     <span className="text-muted-foreground mt-0.5 block text-[12px]">
-                        Pins the current version regardless of the day, for off-cadence
-                        events.
+                        Pins the current version regardless of the day, for off-cadence events.
                     </span>
                 </span>
                 <Switch
@@ -114,9 +113,7 @@ export default function UpdateSettings() {
 
             {/* Blackout window */}
             <div className="flex flex-col gap-2">
-                <span className="text-foreground text-[13px] font-medium">
-                    Blackout window
-                </span>
+                <span className="text-foreground text-[13px] font-medium">Blackout window</span>
                 <p className="text-muted-foreground -mt-1 text-[12px]">
                     Updates never apply on these days (local time).
                 </p>

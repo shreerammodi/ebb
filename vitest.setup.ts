@@ -46,3 +46,18 @@ if (typeof window !== "undefined" && !window.ResizeObserver) {
         disconnect() {}
     } as unknown as typeof window.ResizeObserver;
 }
+
+// matchMedia polyfill for responsive hook tests
+if (typeof window !== "undefined" && !window.matchMedia) {
+    window.matchMedia = () =>
+        ({
+            matches: false,
+            media: "",
+            onchange: null,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            addListener: () => {},
+            removeListener: () => {},
+            dispatchEvent: () => false,
+        }) as unknown as typeof window.matchMedia;
+}

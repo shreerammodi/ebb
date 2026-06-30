@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Wordmark } from "@/components/brand/Logo";
+import { Logo } from "@/components/brand/Logo";
 import GuideDialog from "@/components/guide/GuideDialog";
 import SettingsPanel from "@/components/SettingsPanel";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,7 @@ export default function Dashboard() {
         return (
             <div className="min-h-screen bg-zinc-50">
                 <div className="border-border bg-card flex items-center gap-3 border-b px-5 py-4">
-                    <Wordmark className="text-foreground h-5 w-auto" />
+                    <Logo className="text-foreground h-5 w-auto" />
                     <Skeleton className="h-9 w-[360px]" />
                 </div>
                 <div className="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,7 +99,7 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-zinc-50">
             <div className="border-border bg-card flex items-center gap-3 border-b px-5 py-4">
-                <Wordmark className="text-foreground h-5 w-auto" />
+                <Logo className="text-foreground h-5 w-auto" />
                 <Input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
