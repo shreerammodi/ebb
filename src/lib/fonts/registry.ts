@@ -6,7 +6,7 @@
  * font is applied by writing one of these `cssVar` strings to `--font-flow`.
  */
 
-export type FontId = "commit-mono" | "plex-mono" | "dm-sans" | "inter";
+export type FontId = "commit-mono" | "plex-mono" | "dm-sans" | "plex-sans";
 export type FontCategory = "mono" | "sans";
 
 export interface FontOption {
@@ -36,14 +36,14 @@ export const FONTS: FontOption[] = [
         category: "sans",
     },
     {
-        id: "inter",
-        label: "Inter",
-        cssVar: "var(--font-inter)",
+        id: "plex-sans",
+        label: "IBM Plex Sans",
+        cssVar: "var(--font-ibm-plex-sans)",
         category: "sans",
     },
 ];
 
-export const DEFAULT_FONT_ID: FontId = "commit-mono";
+export const DEFAULT_FONT_ID: FontId = "plex-sans";
 
 const BY_ID: Record<FontId, FontOption> = Object.fromEntries(FONTS.map((f) => [f.id, f])) as Record<
     FontId,

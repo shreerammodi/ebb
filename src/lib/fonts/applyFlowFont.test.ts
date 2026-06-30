@@ -8,14 +8,14 @@ describe("applyFlowFont", () => {
     });
 
     it("writes the font's css variable to --font-flow on <html>", () => {
-        applyFlowFont("inter");
+        applyFlowFont("plex-sans");
         expect(document.documentElement.style.getPropertyValue("--font-flow")).toBe(
-            "var(--font-inter)",
+            "var(--font-ibm-plex-sans)",
         );
     });
 
     it("switches the variable when called again", () => {
-        applyFlowFont("inter");
+        applyFlowFont("plex-sans");
         applyFlowFont("commit-mono");
         expect(document.documentElement.style.getPropertyValue("--font-flow")).toBe(
             "var(--font-commit-mono)",

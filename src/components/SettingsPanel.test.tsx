@@ -203,15 +203,15 @@ describe("SettingsPanel", () => {
         it("calls setFlowFont when a different font is chosen", async () => {
             useRoundStore.getState().setFlowFont("commit-mono");
             renderSettingsPanel();
-            await userEvent.click(screen.getByTestId("flow-font-inter"));
-            expect(useRoundStore.getState().flowFont).toBe("inter");
+            await userEvent.click(screen.getByTestId("flow-font-plex-sans"));
+            expect(useRoundStore.getState().flowFont).toBe("plex-sans");
         });
 
         it("resets to the default font", async () => {
-            useRoundStore.getState().setFlowFont("inter");
+            useRoundStore.getState().setFlowFont("plex-sans");
             renderSettingsPanel();
             await userEvent.click(screen.getByTestId("flow-font-reset"));
-            expect(useRoundStore.getState().flowFont).toBe("commit-mono");
+            expect(useRoundStore.getState().flowFont).toBe("plex-sans");
         });
     });
 

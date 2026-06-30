@@ -467,16 +467,16 @@ describe("flow font preference", () => {
         window.localStorage.clear();
     });
 
-    it("defaults to commit-mono", () => {
+    it("defaults to plex-sans", () => {
         expect(useRoundStore.getState().flowFont).toBe(DEFAULT_FONT_ID);
     });
 
     it("setFlowFont updates state and persists to df-display-settings", () => {
-        useRoundStore.getState().setFlowFont("inter");
-        expect(useRoundStore.getState().flowFont).toBe("inter");
+        useRoundStore.getState().setFlowFont("plex-sans");
+        expect(useRoundStore.getState().flowFont).toBe("plex-sans");
         const raw = window.localStorage.getItem("df-display-settings");
         expect(raw).toBeTruthy();
-        expect(JSON.parse(raw as string).flowFont).toBe("inter");
+        expect(JSON.parse(raw as string).flowFont).toBe("plex-sans");
     });
 
     it("setFlowFont preserves the other display settings", () => {

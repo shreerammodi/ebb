@@ -105,6 +105,38 @@ const dmSans = localFont({
     display: "swap",
 });
 
+const ibmPlexSans = localFont({
+    src: [
+        {
+            path: "./fonts/ibm-plex-sans/ibm-plex-sans-400-normal.woff2",
+            weight: "400",
+            style: "normal",
+        },
+        {
+            path: "./fonts/ibm-plex-sans/ibm-plex-sans-400-italic.woff2",
+            weight: "400",
+            style: "italic",
+        },
+        {
+            path: "./fonts/ibm-plex-sans/ibm-plex-sans-500-normal.woff2",
+            weight: "500",
+            style: "normal",
+        },
+        {
+            path: "./fonts/ibm-plex-sans/ibm-plex-sans-600-normal.woff2",
+            weight: "600",
+            style: "normal",
+        },
+        {
+            path: "./fonts/ibm-plex-sans/ibm-plex-sans-700-normal.woff2",
+            weight: "700",
+            style: "normal",
+        },
+    ],
+    variable: "--font-ibm-plex-sans",
+    display: "swap",
+});
+
 const ibmPlexMono = localFont({
     src: [
         {
@@ -137,38 +169,6 @@ const ibmPlexMono = localFont({
     display: "swap",
 });
 
-const inter = localFont({
-    src: [
-        {
-            path: "./fonts/inter/inter-latin-400-normal.woff2",
-            weight: "400",
-            style: "normal",
-        },
-        {
-            path: "./fonts/inter/inter-latin-400-italic.woff2",
-            weight: "400",
-            style: "italic",
-        },
-        {
-            path: "./fonts/inter/inter-latin-500-normal.woff2",
-            weight: "500",
-            style: "normal",
-        },
-        {
-            path: "./fonts/inter/inter-latin-600-normal.woff2",
-            weight: "600",
-            style: "normal",
-        },
-        {
-            path: "./fonts/inter/inter-latin-700-normal.woff2",
-            weight: "700",
-            style: "normal",
-        },
-    ],
-    variable: "--font-inter",
-    display: "swap",
-});
-
 export const metadata: Metadata = {
     title: {
         default: "ebb",
@@ -183,7 +183,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html
             lang="en"
-            className={`${commitMono.variable} ${dmSans.variable} ${ibmPlexMono.variable} ${inter.variable}`}
+            className={`${commitMono.variable} ${dmSans.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
         >
             <body className="font-sans antialiased">
                 <TooltipProvider>{children}</TooltipProvider>
