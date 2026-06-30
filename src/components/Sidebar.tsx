@@ -8,22 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import { executeCommand } from "@/lib/commands/commands";
 import type { Sheet } from "@/lib/model/types";
-import {
-    useRoundStore,
-    selectSheetsByGroup,
-    selectSheetDropCount,
-} from "@/lib/store/useRoundStore";
+import { useRoundStore, selectSheetDropCount } from "@/lib/store/useRoundStore";
 import { cn } from "@/lib/utils";
-
-interface GroupConfig {
-    group: "aff" | "neg";
-    label: string;
-}
-
-const GROUPS: GroupConfig[] = [
-    { group: "aff", label: "Aff" },
-    { group: "neg", label: "Neg" },
-];
 
 const EMPTY_SHEETS: Sheet[] = [];
 
@@ -145,36 +131,36 @@ export default function Sidebar() {
                         </button>
                     </div>
                 )}
-                {GROUPS.map(({ group, label }) => {
-                    const groupSheets = sheets
-                        .filter((s) => s.group === group)
-                        .sort((a, b) => a.order - b.order)
-                        .filter((s) => s.kind !== "cx");
-                    return (
-                        <div key={group} className="mb-3">
-                            <div className="text-muted-foreground px-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
-                                {label}
-                            </div>
-                            {groupSheets.length === 0 ? (
-                                <div className="text-muted-foreground px-2 py-1 text-xs">
-                                    No sheets
+                {
+                    (() => {
+                        const flowSheets = sheets.filter((s) => s.kind !== "cx").sort((a, b) => a.order - b.order);
+                        return (
+                            <div>
+                                <div
+                                    data-testid="sheets-section-label"
+                                    className="text-muted-foreground px-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase"
+                                >
+                                    Sheets
                                 </div>
-                            ) : (
-                                groupSheets.map((sheet) => (
-                                    <SheetRow
-                                        key={sheet.id}
-                                        sheet={sheet}
-                                        active={sheet.id === activeSheetId}
-                                        onSelect={() => setActiveSheet(sheet.id)}
-                                        isRenaming={sheet.id === renamingSheetId}
-                                        onStartRename={() => setRenamingSheet(sheet.id)}
-                                        onDelete={() => deleteSheet(sheet.id)}
-                                    />
-                                ))
-                            )}
-                        </div>
-                    );
-                })}
+                                {flowSheets.length === 0 ? (
+                                    <div className="text-muted-foreground px-2 py-1 text-xs">No sheets</div>
+                                ) : (
+                                    flowSheets.map((sheet) => (
+                                        <SheetRow
+                                            key={sheet.id}
+                                            sheet={sheet}
+                                            active={sheet.id === activeSheetId}
+                                            onSelect={() => setActiveSheet(sheet.id)}
+                                            isRenaming={sheet.id === renamingSheetId}
+                                            onStartRename={() => setRenamingSheet(sheet.id)}
+                                            onDelete={() => deleteSheet(sheet.id)}
+                                        />
+                                    ))
+                                )}
+                            </div>
+                        );
+                    })()
+                }
             </div>
         </nav>
     );
@@ -279,6 +265,11 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
                         : "border-transparent hover:bg-accent/50",
                 )}
             >
+                <span
+                    aria-hidden
+                    data-testid={`sheet-marker-${sheet.id}`}
+                    className={cn("h-4 w-0.5 shrink-0 rounded-full", sheet.group === "aff" ? "bg-aff" : "bg-neg")}
+                />
                 {titleTruncated ? (
                     <Tip label={sheet.title}>
                         <span

@@ -64,17 +64,17 @@ describe("Sidebar", () => {
         resetStore();
     });
 
-    it("lists sheets grouped as Aff / Neg", () => {
-        setupRound();
+    it("lists all flow sheets in one order-sorted list with side markers", () => {
+        const { caseId, daId } = setupRound();
         renderSidebar();
 
-        // Group headers
-        expect(screen.getByText("Aff")).toBeInTheDocument();
-        expect(screen.getByText("Neg")).toBeInTheDocument();
-        // Aff sheet title
+        // Both titles present in the unified list
         expect(screen.getByText("Case")).toBeInTheDocument();
-        // Neg sheet title
         expect(screen.getByText("Disad")).toBeInTheDocument();
+
+        // Side markers reflect each sheet's group, not its position
+        expect(screen.getByTestId(`sheet-marker-${caseId}`)).toHaveClass("bg-aff");
+        expect(screen.getByTestId(`sheet-marker-${daId}`)).toHaveClass("bg-neg");
     });
 
     it("shows a drop badge when a sheet has drops", () => {
@@ -213,10 +213,10 @@ describe("Sidebar", () => {
         // The CX section label is a standalone div (not inside the cx-sheet-row button)
         const cxSheetRow = screen.getByTestId("cx-sheet-row");
         const cxLabel = screen.getByTestId("cx-section-label");
-        const affLabel = screen.getByText("Aff");
-        // CX label appears before Aff label in document order
+        const listLabel = screen.getByTestId("sheets-section-label");
+        // CX label appears before the unified sheets list label in document order
         expect(
-            cxLabel.compareDocumentPosition(affLabel) & Node.DOCUMENT_POSITION_FOLLOWING,
+            cxLabel.compareDocumentPosition(listLabel) & Node.DOCUMENT_POSITION_FOLLOWING,
         ).toBeTruthy();
         // CX section label is NOT inside the cx-sheet-row button
         expect(cxSheetRow.contains(cxLabel)).toBe(false);
