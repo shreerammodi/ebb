@@ -4,7 +4,7 @@
  * Uses the real Zustand store. Resets state between tests for isolation.
  */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
@@ -269,5 +269,24 @@ describe("Sidebar", () => {
         expect(action.label).toBe("Undo");
         action.onClick();
         expect(useRoundStore.getState().round!.sheets.some((s) => s.id === id)).toBe(true);
+    });
+
+    it("reorders sheets via drag and drop", () => {
+        const { caseId, daId } = setupRound(); // Case(aff) then Disad(neg), order 0,1
+        renderSidebar();
+
+        // Drag the second sheet (Disad) and drop it onto the first (Case).
+        // jsdom getBoundingClientRect is zero, so dragover resolves to "insert
+        // before the hovered row" → Disad lands at index 0.
+        const source = screen.getByTestId(`sheet-${daId}`);
+        const target = screen.getByTestId(`sheet-${caseId}`);
+        fireEvent.dragStart(source);
+        fireEvent.dragOver(target);
+        fireEvent.drop(target);
+
+        const sheets = useRoundStore.getState().round!.sheets;
+        const order = (id: string) => sheets.find((s) => s.id === id)!.order;
+        expect(order(daId)).toBe(0);
+        expect(order(caseId)).toBe(1);
     });
 });
