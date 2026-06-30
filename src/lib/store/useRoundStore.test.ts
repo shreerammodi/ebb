@@ -503,3 +503,44 @@ it("createRound resets commandPaletteOpen to false", () => {
     useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
     expect(useRoundStore.getState().commandPaletteOpen).toBe(false);
 });
+
+describe("reorderSheets", () => {
+    beforeEach(resetStore);
+
+    it("renumbers listed flow sheets by position, preserves group, ignores CX", () => {
+        const store = useRoundStore.getState();
+        store.createRound({ role: "aff", format: makeFormatByKey("policy") });
+        const aId = store.addSheet({ title: "A", group: "aff" });
+        const bId = store.addSheet({ title: "B", group: "neg" });
+        const cId = store.addSheet({ title: "C", group: "aff" });
+
+        // New order: C, A, B
+        store.reorderSheets([cId, aId, bId]);
+
+        const sheets = useRoundStore.getState().round!.sheets;
+        const byId = (id: string) => sheets.find((s) => s.id === id)!;
+        expect(byId(cId).order).toBe(0);
+        expect(byId(aId).order).toBe(1);
+        expect(byId(bId).order).toBe(2);
+        // group is untouched
+        expect(byId(aId).group).toBe("aff");
+        expect(byId(bId).group).toBe("neg");
+        // CX sheet (created by createRound) keeps order -1, not in the list
+        const cx = sheets.find((s) => s.kind === "cx")!;
+        expect(cx.order).toBe(-1);
+    });
+
+    it("is undoable", () => {
+        const store = useRoundStore.getState();
+        store.createRound({ role: "aff", format: makeFormatByKey("policy") });
+        const aId = store.addSheet({ title: "A", group: "aff" });
+        const bId = store.addSheet({ title: "B", group: "neg" });
+        const before = useRoundStore.getState().round!.sheets.find((s) => s.id === aId)!.order;
+
+        store.reorderSheets([bId, aId]);
+        store.undo();
+
+        const after = useRoundStore.getState().round!.sheets.find((s) => s.id === aId)!.order;
+        expect(after).toBe(before);
+    });
+});

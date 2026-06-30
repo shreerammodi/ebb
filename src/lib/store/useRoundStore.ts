@@ -134,7 +134,8 @@ export interface RoundActions {
     removeSheet(sheetId: string): RemovedSheet | null;
     /** Re-inserts a previously removed sheet at its original position. */
     restoreSheet(removed: RemovedSheet): void;
-    reorderSheet(sheetId: string, newOrder: number): void;
+    /** Renumbers the given flow sheets to contiguous `order` by array position. */
+    reorderSheets(orderedFlowSheetIds: string[]): void;
     setActiveSheet(sheetId: string): void;
 
     addNode(input: {
@@ -484,16 +485,20 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         if (removed.wasActive) set({ activeSheetId: removed.sheet.id });
     },
 
-    // ── reorderSheet ───────────────────────────────────────────────────────────
+    // ── reorderSheets ──────────────────────────────────────────────────────────
     /**
-     * Assigns a raw `order` value to the sheet. Callers are responsible for
-     * avoiding collisions — e.g. pass fractional or pre-spaced order values.
+     * Renumbers the listed flow sheets to contiguous `order` (0, 1, 2, …) by
+     * their position in the array. Sheets not in the list (e.g. the pinned CX
+     * sheet) and every sheet's `group` are left untouched.
      */
-    reorderSheet(sheetId, newOrder) {
+    reorderSheets(orderedFlowSheetIds) {
         if (!get().round) return;
+        const orderById = new Map(orderedFlowSheetIds.map((id, i) => [id, i] as const));
         get()._commit(null, (r) => ({
             ...r,
-            sheets: r.sheets.map((s) => (s.id === sheetId ? { ...s, order: newOrder } : s)),
+            sheets: r.sheets.map((s) =>
+                orderById.has(s.id) ? { ...s, order: orderById.get(s.id)! } : s,
+            ),
         }));
     },
 
