@@ -41,11 +41,7 @@ export default function RoundHeader() {
         if (!file) return;
         try {
             const imported = await readRoundFile(file);
-            useRoundStore.setState({
-                round: imported,
-                activeSheetId: null,
-                selection: null,
-            });
+            useRoundStore.getState().loadRound(imported);
         } catch {
             toast.error("Failed to import: file may be invalid or from an incompatible version.");
         }

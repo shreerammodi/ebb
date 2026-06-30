@@ -13,6 +13,7 @@ import {
     toggleStatus,
     toggleBold,
     toggleHighlight,
+    moveNode,
 } from "./tree";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -520,5 +521,59 @@ describe("toggleStatus", () => {
         const nodes: ArgumentNode[] = [makeNode({ id: "a", statuses: [] })];
         const result = toggleStatus(nodes, "a", "extended");
         expect(result.find((n) => n.id === "a")!.statuses).toContain("extended");
+    });
+});
+
+// ─── moveNode ───────────────────────────────────────────────────────────────
+
+describe("moveNode", () => {
+    it("relocates the target node to the new speech and row", () => {
+        const nodes: ArgumentNode[] = [makeNode({ id: "a", speechId: "1ac", row: 2 })];
+        const result = moveNode(nodes, "a", "1nc", 5);
+        const moved = result.find((n) => n.id === "a")!;
+        expect(moved.speechId).toBe("1nc");
+        expect(moved.row).toBe(5);
+    });
+
+    it("leaves other nodes untouched", () => {
+        const nodes: ArgumentNode[] = [
+            makeNode({ id: "a", speechId: "1ac", row: 0 }),
+            makeNode({ id: "b", speechId: "1ac", row: 1 }),
+        ];
+        const result = moveNode(nodes, "a", "1nc", 3);
+        const other = result.find((n) => n.id === "b")!;
+        expect(other.speechId).toBe("1ac");
+        expect(other.row).toBe(1);
+    });
+
+    it("preserves the node's other fields (parentId, statuses, decorations)", () => {
+        const nodes: ArgumentNode[] = [
+            makeNode({
+                id: "a",
+                parentId: "p",
+                statuses: ["conceded"],
+                bold: true,
+                highlight: true,
+            }),
+        ];
+        const moved = moveNode(nodes, "a", "1nc", 4).find((n) => n.id === "a")!;
+        expect(moved.parentId).toBe("p");
+        expect(moved.statuses).toEqual(["conceded"]);
+        expect(moved.bold).toBe(true);
+        expect(moved.highlight).toBe(true);
+    });
+
+    it("is pure — does not mutate the input array or node", () => {
+        const nodes: ArgumentNode[] = [makeNode({ id: "a", speechId: "1ac", row: 2 })];
+        moveNode(nodes, "a", "1nc", 5);
+        expect(nodes[0].speechId).toBe("1ac");
+        expect(nodes[0].row).toBe(2);
+    });
+
+    it("no-ops for an unknown id", () => {
+        const nodes: ArgumentNode[] = [makeNode({ id: "a", speechId: "1ac", row: 2 })];
+        const result = moveNode(nodes, "missing", "1nc", 5);
+        expect(result.find((n) => n.id === "a")!.speechId).toBe("1ac");
+        expect(result.find((n) => n.id === "a")!.row).toBe(2);
     });
 });

@@ -119,6 +119,20 @@ export function updateText(nodes: ArgumentNode[], nodeId: string, text: string):
 }
 
 /**
+ * Returns a new array with the target node relocated to (speechId, row). Other
+ * fields (parentId, statuses, decorations) are preserved. Pure; no-ops for an
+ * unknown id. Collision checking is the caller's responsibility.
+ */
+export function moveNode(
+    nodes: ArgumentNode[],
+    nodeId: string,
+    speechId: string,
+    row: number,
+): ArgumentNode[] {
+    return nodes.map((n) => (n.id === nodeId ? { ...n, speechId, row } : n));
+}
+
+/**
  * Toggles a status on the target node: adds if absent, removes if present.
  */
 export function toggleStatus(

@@ -503,3 +503,60 @@ it("createRound resets commandPaletteOpen to false", () => {
     useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
     expect(useRoundStore.getState().commandPaletteOpen).toBe(false);
 });
+
+describe("loadRound", () => {
+    beforeEach(resetStore);
+
+    it("replaces the round and defaults activeSheetId/selection to null", () => {
+        freshRound();
+        const round = useRoundStore.getState().round!;
+        useRoundStore.setState({
+            activeSheetId: "stale",
+            selection: { sheetId: "stale", speechId: "s", row: 0 },
+        });
+
+        useRoundStore.getState().loadRound(round);
+
+        const state = useRoundStore.getState();
+        expect(state.round).toBe(round);
+        expect(state.activeSheetId).toBeNull();
+        expect(state.selection).toBeNull();
+    });
+
+    it("applies a provided activeSheetId", () => {
+        const sheetId = freshRound();
+        const round = useRoundStore.getState().round!;
+        useRoundStore.getState().loadRound(round, { activeSheetId: sheetId });
+        expect(useRoundStore.getState().activeSheetId).toBe(sheetId);
+    });
+
+    it("resets undo history and transient state", () => {
+        freshRound();
+        const round = useRoundStore.getState().round!;
+        useRoundStore.setState({
+            past: [round],
+            future: [round],
+            lastCommitKey: "x",
+            pendingSpawn: {
+                sheetId: "s",
+                speechId: "1ac",
+                row: 0,
+                parentId: null,
+                kind: "sibling",
+                preSpawnNodes: undefined,
+            },
+            moveSource: "n",
+            flashNodeId: "n",
+        });
+
+        useRoundStore.getState().loadRound(round);
+
+        const state = useRoundStore.getState();
+        expect(state.past).toEqual([]);
+        expect(state.future).toEqual([]);
+        expect(state.lastCommitKey).toBeNull();
+        expect(state.pendingSpawn).toBeNull();
+        expect(state.moveSource).toBeNull();
+        expect(state.flashNodeId).toBeNull();
+    });
+});

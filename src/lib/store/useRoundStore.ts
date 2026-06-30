@@ -22,6 +22,13 @@ import { createGroup, removeMemberOrDelete } from "@/lib/model/groups";
 import { uid } from "@/lib/model/ids";
 import { emptyScouting, makeCxSheet } from "@/lib/model/normalize";
 import {
+    createSheet,
+    renameSheet as renameSheetData,
+    reorderSheet as reorderSheetData,
+    removeSheet as removeSheetData,
+    restoreSheet as restoreSheetData,
+} from "@/lib/model/sheets";
+import {
     placeNodeAt,
     orphanNode,
     deleteSubtree as treeDeleteSubtree,
@@ -30,6 +37,7 @@ import {
     toggleBold,
     toggleHighlight,
     setParent,
+    moveNode,
 } from "@/lib/model/tree";
 import type {
     Round,
@@ -131,6 +139,19 @@ export interface RemovedSheet {
 
 export interface RoundActions {
     createRound(input: { role: Role; format: Format }): void;
+    /**
+     * Replaces the active round wholesale (load from DB, import from file). Resets
+     * undo history and all transient state; `activeSheetId`/`selection` default to
+     * null unless provided. This is the single entry point for swapping the whole
+     * document, as opposed to `_commit` for incremental edits.
+     */
+    loadRound(
+        round: Round,
+        opts?: {
+            activeSheetId?: string | null;
+            selection?: RoundState["selection"];
+        },
+    ): void;
 
     addSheet(input: { title: string; group: "aff" | "neg" }): string;
     renameSheet(sheetId: string, title: string): void;
@@ -414,23 +435,27 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         });
     },
 
+    // ── loadRound ──────────────────────────────────────────────────────────────
+    loadRound(round, opts) {
+        set({
+            round,
+            past: [],
+            future: [],
+            lastCommitKey: null,
+            activeSheetId: opts?.activeSheetId ?? null,
+            selection: opts?.selection ?? null,
+            pendingSpawn: null,
+            moveSource: null,
+            flashNodeId: null,
+        });
+    },
+
     // ── addSheet ───────────────────────────────────────────────────────────────
     addSheet({ title, group }) {
-        const { round, activeSheetId } = get();
+        const { round } = get();
         if (!round) throw new Error("No active round");
 
-        const maxOrder =
-            round.sheets.length > 0 ? Math.max(...round.sheets.map((s) => s.order)) : -1;
-
-        const firstNeg = round.format.speeches.find((s) => s.side === "neg")?.id;
-        const sheet: Sheet = {
-            id: uid("sheet"),
-            title,
-            group,
-            order: maxOrder + 1,
-            kind: "flow",
-            startSpeechId: group === "neg" ? firstNeg : round.format.speeches[0]?.id,
-        };
+        const sheet = createSheet(round.sheets, round.format, { title, group });
 
         const isFirstFlow = round.sheets.filter((s) => s.kind !== "cx").length === 0;
         get()._commit(null, (r) => ({ ...r, sheets: [...r.sheets, sheet] }));
@@ -444,7 +469,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         if (!get().round) return;
         get()._commit(null, (r) => ({
             ...r,
-            sheets: r.sheets.map((s) => (s.id === sheetId ? { ...s, title } : s)),
+            sheets: renameSheetData(r.sheets, sheetId, title),
         }));
     },
 
@@ -461,14 +486,12 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         const removedGroups = round.groups.filter((g) => g.sheetId === sheetId);
         const wasActive = activeSheetId === sheetId;
 
-        const remaining = round.sheets.filter((s) => s.id !== sheetId);
         get()._commit(null, (r) => ({
             ...r,
-            sheets: remaining,
-            nodes: r.nodes.filter((n) => n.sheetId !== sheetId),
-            groups: r.groups.filter((g) => g.sheetId !== sheetId),
+            ...removeSheetData(r.sheets, r.nodes, r.groups, sheetId),
         }));
         if (wasActive) {
+            const remaining = round.sheets.filter((s) => s.id !== sheetId);
             const nextActive = remaining.find((s) => s.kind !== "cx") ?? remaining[0] ?? null;
             set({ activeSheetId: nextActive?.id ?? null });
         }
@@ -485,9 +508,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         if (round.sheets.some((s) => s.id === removed.sheet.id)) return;
         get()._commit(null, (r) => ({
             ...r,
-            sheets: [...r.sheets, removed.sheet],
-            nodes: [...r.nodes, ...removed.nodes],
-            groups: [...r.groups, ...removed.groups],
+            ...restoreSheetData(
+                r.sheets,
+                r.nodes,
+                r.groups,
+                removed.sheet,
+                removed.nodes,
+                removed.groups,
+            ),
         }));
         if (removed.wasActive) set({ activeSheetId: removed.sheet.id });
     },
@@ -501,7 +529,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         if (!get().round) return;
         get()._commit(null, (r) => ({
             ...r,
-            sheets: r.sheets.map((s) => (s.id === sheetId ? { ...s, order: newOrder } : s)),
+            sheets: reorderSheetData(r.sheets, sheetId, newOrder),
         }));
     },
 
@@ -724,7 +752,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         if (collide) return;
         get()._commit(null, (r) => ({
             ...r,
-            nodes: r.nodes.map((n) => (n.id === nodeId ? { ...n, speechId, row } : n)),
+            nodes: moveNode(r.nodes, nodeId, speechId, row),
         }));
     },
 

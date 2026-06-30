@@ -53,8 +53,7 @@ export default function AppRoot() {
                     .sort((a, b) => a.order - b.order);
                 const firstSheet =
                     flowSheets[0] ?? [...r.sheets].sort((a, b) => a.order - b.order)[0];
-                useRoundStore.setState({
-                    round: r,
+                useRoundStore.getState().loadRound(r, {
                     activeSheetId: firstSheet?.id ?? null,
                 });
             })
