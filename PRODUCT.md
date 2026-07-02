@@ -14,13 +14,13 @@ context: prepping and organizing past flows from the dashboard between rounds.
 
 ## Product Purpose
 
-Debate Flow is a local-first, privacy-centric, keyboard-first tool for flowing
-debate rounds. All data lives in the browser (IndexedDB via Dexie); there is no
-backend and no network. It exists to be a purpose-built instrument for flowing,
-faster and more precise than a spreadsheet or paper, with debate-native
-structure (sides, columns per speech, response numbering, drops, extensions).
-Success is a debater reaching for it instead of Excel because it is quicker,
-never loses data, and stays out of the way during a speech.
+Ebb is a local-first, privacy-centric, keyboard-first tool for flowing debate
+rounds. There is no backend and no network. It exists to be a purpose-built
+instrument for flowing, faster and more precise than a spreadsheet or paper,
+with debate-native structure (sides, columns per speech, response numbering,
+drops, extensions). Success is a debater reaching for it instead of Excel
+because it is quicker, never loses data, provides novel and useful features
+that enhance their debate experience.
 
 ## Brand Personality
 
