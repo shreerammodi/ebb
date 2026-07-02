@@ -1,8 +1,9 @@
 # Ebb — Auto-Update, Deployment & CI
 
 How Ebb is built, deployed, and updated. The desktop release pipeline and the
-in-app updater described here are implemented; the **web deployment** section
-(§4) is a proposal — CI currently builds `out/` but nothing publishes it.
+in-app updater described here are implemented. The **web build** deploys to
+Vercel via Vercel's native Git integration (§4); no deploy workflow lives in
+this repo.
 
 ## 1. Shipping model: two artifacts, one codebase
 
@@ -10,7 +11,7 @@ Ebb ships the same `src/` (Next.js 15, `output: "export"`) as two products:
 
 | Artifact        | What it is                              | Distribution                     | Updates                                               |
 | --------------- | --------------------------------------- | -------------------------------- | ----------------------------------------------------- |
-| **Web build**   | Static export in `out/`                 | Static host (CDN), no backend    | User reloads; whatever the CDN serves is current      |
+| **Web build**   | Static export in `out/`                 | Vercel (CDN), no backend         | User reloads; whatever the CDN serves is current      |
 | **Desktop app** | Tauri 2 shell wrapping the same `out/`  | Signed installers, GitHub Release | In-app signed auto-updater, tournament-gated          |
 
 Local-first invariant holds for both: no backend, no telemetry. The only network
@@ -47,20 +48,24 @@ must run first because `generate_context!` reads `frontendDist: ../out`, which
 must exist for `cargo check` to compile.
 
 CI does not build full desktop installers (release-only) and does not deploy the
-web build.
+web build — web deploys are handled by Vercel's Git integration (§4), outside
+GitHub Actions.
 
-## 4. Web deployment (proposed — not yet wired)
+## 4. Web deployment — Vercel
 
 The web build is a pure static export (`output: "export"`,
-`images.unoptimized`), so any static host works.
+`images.unoptimized`) and deploys to **Vercel**, wired through Vercel's native
+Git integration — not a GitHub Actions workflow. Vercel watches the repo
+directly:
 
-**Option A — GitHub Pages** (recommended for v1): keeps the release story inside
-GitHub, no third party, consistent with local-first. See
-`.github/workflows/deploy-web.yml`.
+- **Push to `main`** → production deploy.
+- **Pull request** → an isolated preview URL, which pairs well with "web is the
+  trial on-ramp."
 
-**Option B — Vercel/Netlify**: gives per-PR preview deployments, which pairs
-well with "web is the trial on-ramp." Build `npm run build`, output dir `out`.
-Revisit if previews become valuable.
+No deploy workflow, tokens, or secrets live in this repo; the connection is
+configured once in the Vercel dashboard (framework preset **Next.js**, build
+`npm run build`, output dir `out`). Vercel serves the static export from its
+CDN; there is no backend, consistent with the local-first invariant.
 
 The web build carries no update concept — deploying it *is* the update. No
 blackout gating on web: a reload is non-destructive (continuous autosave) and
@@ -224,7 +229,7 @@ Failures swallowed (best-effort, local-first).
 ## 11. Open items / hardening
 
 1. Replace the placeholder updater pubkey before first real release (blocking).
-2. Wire web deployment (§4); CI builds `out/` but nothing publishes it.
+2. Connect the repo in the Vercel dashboard so §4's Git integration goes live.
 3. Automate version bump across `package.json` / `tauri.conf.json` / `Cargo.toml` + tag.
 4. Enable OS code signing (secrets already slotted) to drop manual-trust.
 5. Consider a `pub_date`-based minimum age (don't auto-apply a release < N hours

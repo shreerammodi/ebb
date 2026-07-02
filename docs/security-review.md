@@ -69,14 +69,15 @@ warrant action, all with straightforward fixes.
 
 ### 4. GitHub Actions pinned by tag, not commit SHA
 
-* Location: `.github/workflows/deploy-web.yml` (and other workflows)
+* Location: `.github/workflows/ci.yml`, `.github/workflows/release.yml`
 * Severity: Low (supply-chain hardening)
 * Category: ci_hardening
-* Description: `actions/checkout@v4`, `actions/setup-node@v4`,
-  `actions/upload-pages-artifact@v3`, and `actions/deploy-pages@v4` are pinned
-  to mutable major tags. A compromised tag would run attacker code with the
-  workflow's `pages: write` and `id-token: write` permissions. The workflow's
-  permissions block is otherwise least-privilege, which is good.
+* Description: GitHub Actions can be pinned to mutable major tags (e.g.
+  `actions/checkout@v4`). A compromised tag would run attacker code with the
+  workflow's permissions. Keep every `uses:` reference pinned to a full commit
+  SHA. (The `deploy-web.yml` Pages workflow this finding originally flagged has
+  been removed — the web build now deploys via Vercel's Git integration, which
+  runs no action in this repo.)
 * Fix: pin each action to a full commit SHA (for example
   `actions/checkout@<sha> # v4`) and let Dependabot keep the pins current.
 
