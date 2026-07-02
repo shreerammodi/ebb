@@ -303,7 +303,7 @@ describe("deferred spawn", () => {
         const arg2 = s.placeBareNode({ sheetId, speechId, row: 1 });
 
         const updatedAtBefore = useRoundStore.getState().round!.updatedAt;
-        const pastBefore = useRoundStore.getState().past.length;
+        const historyBefore = useRoundStore.getState().history!.currentId;
 
         useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
         useRoundStore.getState().spawnSibling(); // target row 1 is occupied → shift
@@ -316,7 +316,7 @@ describe("deferred spawn", () => {
         // The shift is transient: it neither bumps updatedAt (no autosave) nor
         // grows the undo stack.
         expect(after.round!.updatedAt).toBe(updatedAtBefore);
-        expect(after.past.length).toBe(pastBefore);
+        expect(after.history!.currentId).toBe(historyBefore);
     });
 
     it("commits the node and a single undo restores the pre-spawn flow", () => {
@@ -351,7 +351,7 @@ describe("deferred spawn", () => {
         s.placeBareNode({ sheetId, speechId, row: 0 });
         const arg2 = s.placeBareNode({ sheetId, speechId, row: 1 });
 
-        const pastBefore = useRoundStore.getState().past.length;
+        const historyBefore = useRoundStore.getState().history!.currentId;
         useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
         useRoundStore.getState().spawnSibling();
         expect(useRoundStore.getState().round!.nodes.find((n) => n.id === arg2)!.row).toBe(2);
@@ -360,7 +360,7 @@ describe("deferred spawn", () => {
         const after = useRoundStore.getState();
         expect(after.pendingSpawn).toBeNull();
         expect(after.round!.nodes.find((n) => n.id === arg2)!.row).toBe(1); // shift reversed
-        expect(after.past.length).toBe(pastBefore);
+        expect(after.history!.currentId).toBe(historyBefore);
     });
 
     it("moving the cursor away abandons a pending spawn and reverses the shift", () => {
@@ -534,9 +534,6 @@ describe("loadRound", () => {
         freshRound();
         const round = useRoundStore.getState().round!;
         useRoundStore.setState({
-            past: [round],
-            future: [round],
-            lastCommitKey: "x",
             pendingSpawn: {
                 sheetId: "s",
                 speechId: "1ac",
@@ -552,9 +549,10 @@ describe("loadRound", () => {
         useRoundStore.getState().loadRound(round);
 
         const state = useRoundStore.getState();
-        expect(state.past).toEqual([]);
-        expect(state.future).toEqual([]);
-        expect(state.lastCommitKey).toBeNull();
+        // A fresh single-node tree whose current snapshot is the loaded round.
+        expect(state.history).not.toBeNull();
+        expect(state.history!.currentId).toBe(state.history!.rootId);
+        expect(state.history!.nodes[state.history!.currentId].snapshot).toBe(round);
         expect(state.pendingSpawn).toBeNull();
         expect(state.moveSource).toBeNull();
         expect(state.flashNodeId).toBeNull();
@@ -599,5 +597,57 @@ describe("reorderSheets", () => {
 
         const after = useRoundStore.getState().round!.sheets.find((s) => s.id === aId)!.order;
         expect(after).toBe(before);
+    });
+});
+
+describe("undo tree", () => {
+    function fresh() {
+        const fmt = makeFormatByKey("policy");
+        useRoundStore.getState().createRound({ role: "aff", format: fmt });
+        const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
+        useRoundStore.getState().setActiveSheet(sheetId);
+        const sp = fmt.speeches[1].id;
+        return { sheetId, sp };
+    }
+
+    it("diverging after undo preserves the old branch", () => {
+        const { sheetId, sp } = fresh();
+        const a = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp, row: 0 });
+        useRoundStore.getState().updateNodeText(a, "first");
+        useRoundStore.getState().undo(); // back before the text edit
+
+        // Divergent edit creates a second branch; the "first" branch is retained.
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp, row: 0 });
+        useRoundStore.getState().updateNodeText(a, "second");
+
+        const tree = useRoundStore.getState().history!;
+        const labels = Object.values(tree.nodes).map((n) => n.snapshot.nodes[0]?.text);
+        expect(labels).toContain("first");
+        expect(labels).toContain("second");
+    });
+
+    it("jumpToHistory restores any node's snapshot", () => {
+        const { sheetId, sp } = fresh();
+        const a = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp, row: 0 });
+        const root = useRoundStore.getState().history!.rootId;
+        useRoundStore.getState().updateNodeText(a, "hello");
+
+        useRoundStore.getState().jumpToHistory(root);
+        expect(useRoundStore.getState().round!.nodes).toHaveLength(0);
+    });
+
+    it("commitPendingSpawn is a single undo step back to the pre-spawn flow", () => {
+        const { sheetId, sp } = fresh();
+        const arg1 = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp, row: 0 });
+        const arg2 = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp, row: 1 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        const newId = useRoundStore.getState().commitPendingSpawn("between")!;
+
+        useRoundStore.getState().undo();
+        const nodes = useRoundStore.getState().round!.nodes;
+        expect(nodes.find((n) => n.id === newId)).toBeUndefined();
+        expect(nodes.find((n) => n.id === arg1)!.row).toBe(0);
+        expect(nodes.find((n) => n.id === arg2)!.row).toBe(1);
     });
 });
