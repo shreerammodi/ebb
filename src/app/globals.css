@@ -377,10 +377,39 @@ body {
     background: var(--panel);
 }
 
+/* Flow Coach — first-run coaching panel. Enters with a short rise + fade so it
+   reads as "arriving" beside the grid without pulling focus. */
+@keyframes coach-in {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.flow-coach {
+    animation: coach-in 220ms var(--ease-out-quart);
+}
+/* Step markers ease as each move flips pending → active → done. */
+.flow-coach .coach-marker {
+    transition:
+        background-color 180ms var(--ease-out-quart),
+        border-color 180ms var(--ease-out-quart),
+        color 180ms var(--ease-out-quart);
+}
+
 @media (prefers-reduced-motion: reduce) {
     /* No pulse/dim choreography; the structural change still applies instantly. */
     .flow td.cell-flash {
         animation: none;
+    }
+    .flow-coach {
+        animation: none;
+    }
+    .flow-coach .coach-marker {
+        transition: none;
     }
     .flow td.drag-over,
     .arg-dragging {
