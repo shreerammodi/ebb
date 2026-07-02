@@ -73,3 +73,55 @@ export function commit(
         seq: tree.seq + 1,
     };
 }
+
+/** Move the current pointer to the parent. No-op at the root. */
+export function undo(tree: HistoryTree): HistoryTree {
+    const current = tree.nodes[tree.currentId];
+    if (current.parentId === null) return tree;
+    return { ...tree, currentId: current.parentId };
+}
+
+/** Move the current pointer to the most-recently-created child. No-op at a leaf. */
+export function redo(tree: HistoryTree): HistoryTree {
+    const current = tree.nodes[tree.currentId];
+    if (current.childIds.length === 0) return tree;
+    const newest = current.childIds
+        .map((id) => tree.nodes[id])
+        .reduce((a, b) => (b.createdSeq > a.createdSeq ? b : a));
+    return { ...tree, currentId: newest.id };
+}
+
+/** Point current at any existing node. Unknown ids are a no-op. */
+export function jumpTo(tree: HistoryTree, nodeId: string): HistoryTree {
+    if (!tree.nodes[nodeId]) return tree;
+    if (nodeId === tree.currentId) return tree;
+    return { ...tree, currentId: nodeId };
+}
+
+/**
+ * Clear the current node's coalesceKey so a subsequent same-key commit starts a
+ * new node instead of overwriting this one. Called when the cursor moves, so a
+ * fresh edit burst is a distinct undo step. No-op if already null.
+ */
+export function sealCurrent(tree: HistoryTree): HistoryTree {
+    const current = tree.nodes[tree.currentId];
+    if (current.coalesceKey === null) return tree;
+    return {
+        ...tree,
+        nodes: { ...tree.nodes, [current.id]: { ...current, coalesceKey: null } },
+    };
+}
+
+/** The given node plus every ancestor up to the root, as a Set of ids. */
+export function ancestorChain(
+    nodes: Record<string, HistoryNode>,
+    id: string,
+): Set<string> {
+    const chain = new Set<string>();
+    let cursor: string | null = id;
+    while (cursor !== null && nodes[cursor]) {
+        chain.add(cursor);
+        cursor = nodes[cursor].parentId;
+    }
+    return chain;
+}
