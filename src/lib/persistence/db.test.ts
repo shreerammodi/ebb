@@ -98,3 +98,33 @@ describe("IndexedDB v5 schema", () => {
         await db.close();
     });
 });
+
+describe("IndexedDB v8 histories table", () => {
+    it("exposes a histories table keyed by roundId", async () => {
+        const dbV8 = new DebateFlowDB("debateflow-v8-test");
+        await dbV8.histories.put({
+            roundId: "round_x",
+            tree: {
+                nodes: {
+                    h0: {
+                        id: "h0",
+                        parentId: null,
+                        childIds: [],
+                        snapshot: { id: "round_x" } as never,
+                        label: "New round",
+                        coalesceKey: null,
+                        createdAt: 1,
+                        createdSeq: 0,
+                    },
+                },
+                rootId: "h0",
+                currentId: "h0",
+                seq: 1,
+            },
+            updatedAt: 1,
+        });
+        const row = await dbV8.histories.get("round_x");
+        expect(row?.tree.currentId).toBe("h0");
+        dbV8.close();
+    });
+});

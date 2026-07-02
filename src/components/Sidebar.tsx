@@ -5,6 +5,7 @@ import type React from "react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
+import UndoTreePanel from "@/components/history/UndoTreePanel";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import { executeCommand } from "@/lib/commands/commands";
@@ -199,6 +200,17 @@ export default function Sidebar() {
                     )}
                 </div>
             </div>
+            <div
+                data-testid="utility-region"
+                className="border-border flex h-[38%] min-h-0 shrink-0 flex-col border-t"
+            >
+                <div className="text-muted-foreground px-3 pt-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
+                    History
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-2">
+                    <UndoTreePanel />
+                </div>
+            </div>
         </nav>
     );
 }
@@ -223,7 +235,19 @@ interface SheetRowProps {
     onDragEndRow: () => void;
 }
 
-function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete, dragging, onDragStartRow, onDragOverRow, onDropRow, onDragEndRow }: SheetRowProps) {
+function SheetRow({
+    sheet,
+    active,
+    onSelect,
+    isRenaming,
+    onStartRename,
+    onDelete,
+    dragging,
+    onDragStartRow,
+    onDragOverRow,
+    onDropRow,
+    onDragEndRow,
+}: SheetRowProps) {
     const renameSheet = useRoundStore((s) => s.renameSheet);
     const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
     const labelDrops = useRoundStore((s) => s.labelDrops);
@@ -323,7 +347,10 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
                 <span
                     aria-hidden
                     data-testid={`sheet-marker-${sheet.id}`}
-                    className={cn("h-4 w-0.5 shrink-0 rounded-full", sheet.group === "aff" ? "bg-aff" : "bg-neg")}
+                    className={cn(
+                        "h-4 w-0.5 shrink-0 rounded-full",
+                        sheet.group === "aff" ? "bg-aff" : "bg-neg",
+                    )}
                 />
                 <span className="sr-only">{sheet.group === "aff" ? "Aff" : "Neg"}</span>
                 {titleTruncated ? (

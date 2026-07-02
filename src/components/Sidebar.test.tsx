@@ -64,6 +64,14 @@ describe("Sidebar", () => {
         resetStore();
     });
 
+    it("renders the History utility region below the sheet list", () => {
+        setupRound();
+        renderSidebar();
+        expect(screen.getByTestId("utility-region")).toBeInTheDocument();
+        expect(screen.getByText("History")).toBeInTheDocument();
+        expect(screen.getByTestId("undo-tree")).toBeInTheDocument();
+    });
+
     it("lists all flow sheets in one order-sorted list with side markers", () => {
         const { caseId, daId } = setupRound();
         renderSidebar();

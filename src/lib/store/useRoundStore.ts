@@ -17,6 +17,16 @@ import {
     rippleUp,
     translateSubtree,
 } from "@/lib/grid/coords";
+import {
+    createTree,
+    commit as commitHistory,
+    undo as undoHistory,
+    redo as redoHistory,
+    jumpTo as jumpToHistoryTree,
+    sealCurrent,
+    currentRound,
+    type HistoryTree,
+} from "@/lib/history/tree";
 import { detectDrops } from "@/lib/model/drops";
 import { createGroup, removeMemberOrDelete } from "@/lib/model/groups";
 import { uid } from "@/lib/model/ids";
@@ -56,10 +66,8 @@ import type { UpdateConfig } from "@/lib/update/types";
 
 export interface RoundState {
     round: Round | null;
-    past: Round[];
-    future: Round[];
-    /** Internal: identifies the last commit so consecutive same-key commits coalesce. */
-    lastCommitKey: string | null;
+    /** Branching undo history for the active round (null when no round). */
+    history: HistoryTree | null;
     activeSheetId: string | null;
     /**
      * The focused cell as a grid coordinate. `nodeId` is no longer stored —
@@ -150,6 +158,8 @@ export interface RoundActions {
         opts?: {
             activeSheetId?: string | null;
             selection?: RoundState["selection"];
+            /** Seed history (e.g. restored from IndexedDB); fresh tree if absent. */
+            history?: HistoryTree;
         },
     ): void;
 
@@ -218,7 +228,9 @@ export interface RoundActions {
     redo(): void;
     /** @internal `_commit` and `_reconcileAfterHistory` are store-private plumbing — do not call them outside the store's own action implementations. */
     /** Internal: snapshot the current round, then replace it via `producer`. */
-    _commit(coalesceKey: string | null, producer: (round: Round) => Round): void;
+    _commit(coalesceKey: string | null, producer: (round: Round) => Round, label?: string): void;
+    /** Jump the undo tree directly to a node by id (panel click). */
+    jumpToHistory(nodeId: string): void;
     /** Internal: drop selection/activeSheet if they point at something now gone. */
     _reconcileAfterHistory(): void;
 
@@ -329,8 +341,6 @@ const initialUpdateConfig = loadUpdateConfig();
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
-const UNDO_DEPTH = 50;
-
 const initialKeymapSettings = loadKeymapSettings();
 
 /**
@@ -380,9 +390,7 @@ function armSpawn(
 export const useRoundStore = create<RoundStore>((set, get) => ({
     // ── Initial state ──────────────────────────────────────────────────────────
     round: null,
-    past: [],
-    future: [],
-    lastCommitKey: null,
+    history: null,
     activeSheetId: null,
     selection: null,
     keymapOverrides: initialKeymapSettings.keymapOverrides,
@@ -418,9 +426,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         };
         set({
             round,
-            past: [],
-            future: [],
-            lastCommitKey: null,
+            history: createTree(round, "New round"),
             activeSheetId: null,
             selection: null,
             quickSwitcherOpen: false,
@@ -440,9 +446,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     loadRound(round, opts) {
         set({
             round,
-            past: [],
-            future: [],
-            lastCommitKey: null,
+            history: opts?.history ?? createTree(round),
             activeSheetId: opts?.activeSheetId ?? null,
             selection: opts?.selection ?? null,
             pendingSpawn: null,
@@ -459,7 +463,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         const sheet = createSheet(round.sheets, round.format, { title, group });
 
         const isFirstFlow = round.sheets.filter((s) => s.kind !== "cx").length === 0;
-        get()._commit(null, (r) => ({ ...r, sheets: [...r.sheets, sheet] }));
+        get()._commit(null, (r) => ({ ...r, sheets: [...r.sheets, sheet] }), "Add sheet");
         if (isFirstFlow) set({ activeSheetId: sheet.id });
 
         return sheet.id;
@@ -468,10 +472,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     // ── renameSheet ────────────────────────────────────────────────────────────
     renameSheet(sheetId, title) {
         if (!get().round) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            sheets: renameSheetData(r.sheets, sheetId, title),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                sheets: renameSheetData(r.sheets, sheetId, title),
+            }),
+            "Rename sheet",
+        );
     },
 
     // ── removeSheet ────────────────────────────────────────────────────────────
@@ -487,10 +495,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         const removedGroups = round.groups.filter((g) => g.sheetId === sheetId);
         const wasActive = activeSheetId === sheetId;
 
-        get()._commit(null, (r) => ({
-            ...r,
-            ...removeSheetData(r.sheets, r.nodes, r.groups, sheetId),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                ...removeSheetData(r.sheets, r.nodes, r.groups, sheetId),
+            }),
+            "Delete sheet",
+        );
         if (wasActive) {
             const remaining = round.sheets.filter((s) => s.id !== sheetId);
             const nextActive = remaining.find((s) => s.kind !== "cx") ?? remaining[0] ?? null;
@@ -507,17 +519,21 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         if (!round) return;
         // Guard against a double restore (e.g. Undo clicked twice).
         if (round.sheets.some((s) => s.id === removed.sheet.id)) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            ...restoreSheetData(
-                r.sheets,
-                r.nodes,
-                r.groups,
-                removed.sheet,
-                removed.nodes,
-                removed.groups,
-            ),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                ...restoreSheetData(
+                    r.sheets,
+                    r.nodes,
+                    r.groups,
+                    removed.sheet,
+                    removed.nodes,
+                    removed.groups,
+                ),
+            }),
+            "Restore sheet",
+        );
         if (removed.wasActive) set({ activeSheetId: removed.sheet.id });
     },
 
@@ -529,10 +545,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
      */
     reorderSheets(orderedFlowSheetIds) {
         if (!get().round) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            sheets: reorderSheetsData(r.sheets, orderedFlowSheetIds),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                sheets: reorderSheetsData(r.sheets, orderedFlowSheetIds),
+            }),
+            "Reorder sheets",
+        );
     },
 
     // ── setActiveSheet ─────────────────────────────────────────────────────────
@@ -552,53 +572,73 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             row,
             text: input.text,
         });
-        get()._commit(null, (r) => ({ ...r, nodes }));
+        get()._commit(null, (r) => ({ ...r, nodes }), "Add");
         return node.id;
     },
 
     // ── updateNodeText ─────────────────────────────────────────────────────────
     updateNodeText(nodeId, text) {
         if (!get().round) return;
-        get()._commit(`text:${nodeId}`, (r) => ({
-            ...r,
-            nodes: updateText(r.nodes, nodeId, text),
-        }));
+        get()._commit(
+            `text:${nodeId}`,
+            (r) => ({
+                ...r,
+                nodes: updateText(r.nodes, nodeId, text),
+            }),
+            "Type",
+        );
     },
 
     // ── toggleNodeStatus ───────────────────────────────────────────────────────
     toggleNodeStatus(nodeId, status) {
         if (!get().round) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: toggleStatus(r.nodes, nodeId, status),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                nodes: toggleStatus(r.nodes, nodeId, status),
+            }),
+            "Status",
+        );
     },
 
     // ── toggleNodeBold ─────────────────────────────────────────────────────────
     toggleNodeBold(nodeId) {
         if (!get().round) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: toggleBold(r.nodes, nodeId),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                nodes: toggleBold(r.nodes, nodeId),
+            }),
+            "Bold",
+        );
     },
 
     // ── toggleNodeHighlight ──────────────────────────────────────────────────────
     toggleNodeHighlight(nodeId) {
         if (!get().round) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: toggleHighlight(r.nodes, nodeId),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                nodes: toggleHighlight(r.nodes, nodeId),
+            }),
+            "Highlight",
+        );
     },
 
     // ── setNodeParent ──────────────────────────────────────────────────────────
     setNodeParent(nodeId, parentId) {
         if (!get().round) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: setParent(r.nodes, nodeId, parentId),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                nodes: setParent(r.nodes, nodeId, parentId),
+            }),
+            "Re-parent",
+        );
     },
 
     // ── Coordinate-based actions ──────────────────────────────────────────────
@@ -611,7 +651,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             parentId: null,
             text,
         });
-        get()._commit(null, (r) => ({ ...r, nodes }));
+        get()._commit(null, (r) => ({ ...r, nodes }), "Add");
         return node.id;
     },
 
@@ -624,9 +664,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     },
 
     commitPendingSpawn(text) {
-        const { round, pendingSpawn, past } = get();
-        if (!round || !pendingSpawn) return null;
-        const { sheetId, speechId, row, parentId, preSpawnNodes } = pendingSpawn;
+        const { round, history, pendingSpawn } = get();
+        if (!round || !history || !pendingSpawn) return null;
+        const { sheetId, speechId, row, parentId } = pendingSpawn;
         const { nodes, node } = placeNodeAt(round.nodes, {
             sheetId,
             speechId,
@@ -634,16 +674,13 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             row,
             text,
         });
-        // One undo step back to the pre-spawn flow. The transient shift was applied
-        // outside history, so the undo target is the round BEFORE that shift —
-        // restore the exact pre-spawn nodes directly (reversing the ripple by
-        // replaying it would be fragile when the ripple excluded the parent chain).
-        const preSpawn = preSpawnNodes !== undefined ? { ...round, nodes: preSpawnNodes } : round;
+        // The transient shift was applied outside history, so the current history
+        // node still holds the pre-spawn flow. Committing the post-spawn round as a
+        // single child means one undo returns to the exact pre-spawn state.
+        const next = { ...round, nodes, updatedAt: Date.now() };
         set({
-            round: { ...round, nodes, updatedAt: Date.now() },
-            past: [...past, preSpawn].slice(-UNDO_DEPTH),
-            future: [],
-            lastCommitKey: null,
+            round: next,
+            history: commitHistory(history, next, null, "Add"),
             pendingSpawn: null,
         });
         return node.id;
@@ -668,33 +705,45 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     insertRowAbove() {
         const { round, selection } = get();
         if (!round || !selection) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: rippleDown(r.nodes, selection.sheetId, selection.row, 1),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                nodes: rippleDown(r.nodes, selection.sheetId, selection.row, 1),
+            }),
+            "Insert row",
+        );
     },
 
     insertRowBelow() {
         const { round, selection } = get();
         if (!round || !selection) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: rippleDown(r.nodes, selection.sheetId, selection.row + 1, 1),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                nodes: rippleDown(r.nodes, selection.sheetId, selection.row + 1, 1),
+            }),
+            "Insert row",
+        );
     },
 
     deleteRow() {
         const { round, selection } = get();
         if (!round || !selection) return;
-        get()._commit(null, (r) => {
-            const kept = r.nodes.filter(
-                (n) => !(n.sheetId === selection.sheetId && n.row === selection.row),
-            );
-            return {
-                ...r,
-                nodes: rippleUp(kept, selection.sheetId, selection.row + 1, 1),
-            };
-        });
+        get()._commit(
+            null,
+            (r) => {
+                const kept = r.nodes.filter(
+                    (n) => !(n.sheetId === selection.sheetId && n.row === selection.row),
+                );
+                return {
+                    ...r,
+                    nodes: rippleUp(kept, selection.sheetId, selection.row + 1, 1),
+                };
+            },
+            "Delete row",
+        );
     },
 
     clearCell() {
@@ -702,11 +751,15 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         if (!round || !selection) return;
         const cur = occupantAt(round.nodes, selection.sheetId, selection.speechId, selection.row);
         if (!cur) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: orphanNode(r.nodes, cur.id),
-            groups: removeMemberOrDelete(r.groups, cur.id),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                nodes: orphanNode(r.nodes, cur.id),
+                groups: removeMemberOrDelete(r.groups, cur.id),
+            }),
+            "Clear cell",
+        );
     },
 
     deleteSubtreeAt() {
@@ -714,10 +767,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         if (!round || !selection) return;
         const cur = occupantAt(round.nodes, selection.sheetId, selection.speechId, selection.row);
         if (!cur) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: treeDeleteSubtree(r.nodes, cur.id),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                nodes: treeDeleteSubtree(r.nodes, cur.id),
+            }),
+            "Delete subtree",
+        );
     },
 
     commitSubtreeMove(dCol, dRow, nodeId) {
@@ -733,7 +790,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         const speeches = columnsForSheet(round.format, sheet);
         const { nodes, ok } = translateSubtree(round.nodes, speeches, id, dCol, dRow);
         if (!ok) return false;
-        get()._commit(null, (r) => ({ ...r, nodes }));
+        get()._commit(null, (r) => ({ ...r, nodes }), "Move");
         return true;
     },
 
@@ -752,32 +809,44 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
                 n.row === row,
         );
         if (collide) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            nodes: moveNode(r.nodes, nodeId, speechId, row),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                nodes: moveNode(r.nodes, nodeId, speechId, row),
+            }),
+            "Move",
+        );
     },
 
     // ── groupNodes ─────────────────────────────────────────────────────────────
     groupNodes(sheetId, nodeIds, label) {
         if (!get().round) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            groups: createGroup(r.groups, {
-                sheetId,
-                memberIds: nodeIds,
-                label,
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                groups: createGroup(r.groups, {
+                    sheetId,
+                    memberIds: nodeIds,
+                    label,
+                }),
             }),
-        }));
+            "Group",
+        );
     },
 
     // ── ungroupNode ────────────────────────────────────────────────────────────
     ungroupNode(nodeId) {
         if (!get().round) return;
-        get()._commit(null, (r) => ({
-            ...r,
-            groups: removeMemberOrDelete(r.groups, nodeId),
-        }));
+        get()._commit(
+            null,
+            (r) => ({
+                ...r,
+                groups: removeMemberOrDelete(r.groups, nodeId),
+            }),
+            "Ungroup",
+        );
     },
 
     // ── setSelection ───────────────────────────────────────────────────────────
@@ -794,50 +863,48 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
                 selection.row === pendingSpawn.row;
             if (!sameCell) get().abandonPendingSpawn();
         }
-        set({ selection, lastCommitKey: null });
+        const { history } = get();
+        set({ selection, history: history ? sealCurrent(history) : history });
     },
 
     // ── undo/redo plumbing ───────────────────────────────────────────────────────
     // commit(coalesceKey, producer): snapshot current round, then replace it.
     // When coalesceKey matches the previous commit's key, the snapshot is reused
     // (the prior edits collapse into one undo step).
-    _commit(coalesceKey, producer) {
-        const { round, past, lastCommitKey } = get();
-        if (!round) return;
-        const next = producer(round);
-        const coalesce = coalesceKey !== null && coalesceKey === lastCommitKey;
-        const newPast = coalesce ? past : [...past, round].slice(-UNDO_DEPTH);
+    _commit(coalesceKey, producer, label = "Edit") {
+        const { round, history } = get();
+        if (!round || !history) return;
+        const next = { ...producer(round), updatedAt: Date.now() };
         set({
-            round: { ...next, updatedAt: Date.now() },
-            past: newPast,
-            future: [],
-            lastCommitKey: coalesceKey,
+            round: next,
+            history: commitHistory(history, next, coalesceKey, label),
         });
     },
 
     undo() {
-        const { past, future, round } = get();
-        if (past.length === 0 || !round) return;
-        const previous = past[past.length - 1];
-        set({
-            round: previous,
-            past: past.slice(0, -1),
-            future: [round, ...future].slice(0, UNDO_DEPTH),
-            lastCommitKey: null,
-        });
+        const { history } = get();
+        if (!history) return;
+        const moved = undoHistory(history);
+        if (moved === history) return;
+        set({ round: currentRound(moved), history: moved });
         get()._reconcileAfterHistory();
     },
 
     redo() {
-        const { past, future, round } = get();
-        if (future.length === 0 || !round) return;
-        const next = future[0];
-        set({
-            round: next,
-            past: [...past, round].slice(-UNDO_DEPTH),
-            future: future.slice(1),
-            lastCommitKey: null,
-        });
+        const { history } = get();
+        if (!history) return;
+        const moved = redoHistory(history);
+        if (moved === history) return;
+        set({ round: currentRound(moved), history: moved });
+        get()._reconcileAfterHistory();
+    },
+
+    jumpToHistory(nodeId) {
+        const { history } = get();
+        if (!history) return;
+        const moved = jumpToHistoryTree(history, nodeId);
+        if (moved === history) return;
+        set({ round: currentRound(moved), history: moved });
         get()._reconcileAfterHistory();
     },
 
@@ -977,10 +1044,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     // ── setScouting ────────────────────────────────────────────────────────────
     setScouting(patch) {
         if (!get().round) return;
-        get()._commit("scouting", (r) => ({
-            ...r,
-            scouting: { ...r.scouting, ...patch },
-        }));
+        get()._commit(
+            "scouting",
+            (r) => ({
+                ...r,
+                scouting: { ...r.scouting, ...patch },
+            }),
+            "Scouting",
+        );
     },
 }));
 
