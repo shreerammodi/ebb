@@ -22,6 +22,9 @@ import {
     listTrash,
     softDeleteRound,
     restoreRound,
+    persistHistory,
+    loadHistory,
+    deleteHistory,
 } from "./autosave";
 import { db } from "./db";
 
@@ -388,5 +391,33 @@ describe("autosave soft-delete + summaries", () => {
         await persistRound(mkRound("a", { updatedAt: 2 }));
         await persistRound(mkRound("b", { updatedAt: 9, deletedAt: 1 }));
         expect((await loadLastRound())?.id).toBe("a");
+    });
+});
+
+describe("history persistence", () => {
+    it("round-trips a tree through persistHistory / loadHistory and deletes it", async () => {
+        const tree = {
+            nodes: {
+                h0: {
+                    id: "h0",
+                    parentId: null,
+                    childIds: [],
+                    snapshot: { id: "round_h" } as never,
+                    label: "New round",
+                    coalesceKey: null,
+                    createdAt: 1,
+                    createdSeq: 0,
+                },
+            },
+            rootId: "h0",
+            currentId: "h0",
+            seq: 1,
+        };
+        await persistHistory("round_h", tree as never);
+        const loaded = await loadHistory("round_h");
+        expect(loaded?.currentId).toBe("h0");
+
+        await deleteHistory("round_h");
+        expect(await loadHistory("round_h")).toBeUndefined();
     });
 });

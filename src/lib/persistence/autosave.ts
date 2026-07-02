@@ -7,6 +7,7 @@
 import type { StoreApi } from "zustand";
 
 import { buildSummary, type RoundSummary } from "@/lib/dashboard/summary";
+import type { HistoryTree } from "@/lib/history/tree";
 import { normalizeRound } from "@/lib/model/normalize";
 import type { Round } from "@/lib/model/types";
 import type { RoundStore } from "@/lib/store/useRoundStore";
@@ -29,6 +30,22 @@ export async function persistRound(round: Round): Promise<void> {
 export async function loadRound(id: string): Promise<Round | undefined> {
     const r = await db.rounds.get(id);
     return r ? normalizeRound(r) : undefined;
+}
+
+/** Persist (insert or update) a round's undo tree. */
+export async function persistHistory(roundId: string, tree: HistoryTree): Promise<void> {
+    await db.histories.put({ roundId, tree, updatedAt: Date.now() });
+}
+
+/** Load a round's undo tree, or undefined if none stored. */
+export async function loadHistory(roundId: string): Promise<HistoryTree | undefined> {
+    const row = await db.histories.get(roundId);
+    return row?.tree;
+}
+
+/** Delete a round's stored undo tree. */
+export async function deleteHistory(roundId: string): Promise<void> {
+    await db.histories.delete(roundId);
 }
 
 /** Live (non-trashed) round summaries, most-recently-updated first. */
@@ -57,6 +74,7 @@ export async function restoreRound(id: string): Promise<void> {
 export async function deleteRoundForever(id: string): Promise<void> {
     await db.rounds.delete(id);
     await deleteSearchIndex(id);
+    await deleteHistory(id);
 }
 
 /** Most-recently-updated LIVE round, normalized; undefined if none. */
@@ -169,6 +187,56 @@ export function attachAutosave(
                 doSave(toSave);
             }
         }, DEBOUNCE_MS);
+    });
+
+    return () => {
+        unsubscribe();
+        flush();
+    };
+}
+
+// ─── attachHistoryPersistence ─────────────────────────────────────────────────
+
+/** Debounce for history writes — longer than the round's, since the tree is heavier. */
+const HISTORY_DEBOUNCE_MS = 1000;
+
+/**
+ * Subscribe to the store and persist `state.history` (keyed by the round id)
+ * whenever the tree reference changes, on its own debounce so the heavier write
+ * does not ride every keystroke. Returns an unsubscribe that flushes first.
+ */
+export function attachHistoryPersistence(store: StoreApi<RoundStore>): () => void {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let lastTree: HistoryTree | null = null;
+    let pending: { roundId: string; tree: HistoryTree } | null = null;
+
+    function flush() {
+        if (timer !== null) {
+            clearTimeout(timer);
+            timer = null;
+        }
+        if (pending !== null) {
+            const { roundId, tree } = pending;
+            pending = null;
+            void persistHistory(roundId, tree);
+        }
+    }
+
+    const unsubscribe = store.subscribe((state) => {
+        const { round, history } = state;
+        if (!round || !history) return;
+        if (history === lastTree) return;
+        lastTree = history;
+        pending = { roundId: round.id, tree: history };
+        if (timer !== null) clearTimeout(timer);
+        timer = setTimeout(() => {
+            timer = null;
+            if (pending !== null) {
+                const { roundId, tree } = pending;
+                pending = null;
+                void persistHistory(roundId, tree);
+            }
+        }, HISTORY_DEBOUNCE_MS);
     });
 
     return () => {

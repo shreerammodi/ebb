@@ -8,6 +8,7 @@
 import Dexie, { type EntityTable } from "dexie";
 
 import { assignRowsFromLegacyTree, type LegacyRound } from "@/lib/grid/migrateRows";
+import type { HistoryTree } from "@/lib/history/tree";
 import type { Round } from "@/lib/model/types";
 
 /** A precomputed fuzzy-search haystack for one round (scouting + all node text). */
@@ -16,9 +17,17 @@ export interface SearchIndexRow {
     searchText: string;
 }
 
+/** Persisted undo tree for one round. */
+export interface HistoryRow {
+    roundId: string;
+    tree: HistoryTree;
+    updatedAt: number;
+}
+
 export class DebateFlowDB extends Dexie {
     rounds!: EntityTable<Round, "id">;
     searchIndex!: EntityTable<SearchIndexRow, "id">;
+    histories!: EntityTable<HistoryRow, "roundId">;
 
     constructor(name = "debateflow") {
         super(name);
@@ -98,6 +107,10 @@ export class DebateFlowDB extends Dexie {
                     }
                 }),
         );
+        this.version(8).stores({
+            // Undo tree per round; keyed by roundId (no secondary indexes needed).
+            histories: "roundId",
+        });
     }
 }
 
