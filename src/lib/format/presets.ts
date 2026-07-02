@@ -32,23 +32,9 @@ export const POLICY_PRESET: FormatPresetDescriptor = {
     prepSeconds: { aff: 480, neg: 480 },
 };
 
-// ─── Lincoln–Douglas preset ──────────────────────────────────────────────────
-
-export const LD_PRESET: FormatPresetDescriptor = {
-    name: "Lincoln–Douglas",
-    speeches: [
-        { name: "AC", side: "aff", seconds: 360 },
-        { name: "NC", side: "neg", seconds: 420 },
-        { name: "1AR", side: "aff", seconds: 240 },
-        { name: "NR", side: "neg", seconds: 360 },
-        { name: "2AR", side: "aff", seconds: 180 },
-    ],
-    prepSeconds: { aff: 240, neg: 240 },
-};
-
 // ─── Enumerable list for setup UI ────────────────────────────────────────────
 
-export type PresetKey = "policy" | "ld";
+export type PresetKey = "policy";
 
 export interface PresetEntry {
     key: PresetKey;
@@ -58,7 +44,6 @@ export interface PresetEntry {
 
 export const FORMAT_PRESETS: PresetEntry[] = [
     { key: "policy", label: "Policy", preset: POLICY_PRESET },
-    { key: "ld", label: "Lincoln–Douglas", preset: LD_PRESET },
 ];
 
 // ─── Factory ─────────────────────────────────────────────────────────────────

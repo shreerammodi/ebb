@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 
 import {
     POLICY_PRESET,
-    LD_PRESET,
     FORMAT_PRESETS,
     makeFormat,
     makeFormatByKey,
@@ -54,44 +53,6 @@ describe("POLICY_PRESET", () => {
     });
 });
 
-// ─── LD_PRESET ──────────────────────────────────────────────────────────────
-
-describe("LD_PRESET", () => {
-    it("has 5 speeches", () => {
-        expect(LD_PRESET.speeches).toHaveLength(5);
-    });
-
-    it("lists speeches AC, NC, 1AR, NR, 2AR with correct sides", () => {
-        const expected = [
-            { name: "AC", side: "aff" },
-            { name: "NC", side: "neg" },
-            { name: "1AR", side: "aff" },
-            { name: "NR", side: "neg" },
-            { name: "2AR", side: "aff" },
-        ];
-        LD_PRESET.speeches.forEach((s, i) => {
-            expect(s.name).toBe(expected[i].name);
-            expect(s.side).toBe(expected[i].side);
-        });
-    });
-
-    it("has correct seconds: 360, 420, 240, 360, 180", () => {
-        const expectedSeconds = [360, 420, 240, 360, 180];
-        LD_PRESET.speeches.forEach((s, i) => {
-            expect(s.seconds).toBe(expectedSeconds[i]);
-        });
-    });
-
-    it("has prepSeconds of 240 for both sides", () => {
-        expect(LD_PRESET.prepSeconds.aff).toBe(240);
-        expect(LD_PRESET.prepSeconds.neg).toBe(240);
-    });
-
-    it('has the name "Lincoln–Douglas"', () => {
-        expect(LD_PRESET.name).toBe("Lincoln–Douglas");
-    });
-});
-
 // ─── FORMAT_PRESETS list ────────────────────────────────────────────────────
 
 describe("FORMAT_PRESETS", () => {
@@ -102,15 +63,8 @@ describe("FORMAT_PRESETS", () => {
         expect(entry?.preset).toBe(POLICY_PRESET);
     });
 
-    it('contains an LD entry with key "ld" and label "Lincoln–Douglas"', () => {
-        const entry = FORMAT_PRESETS.find((p) => p.key === "ld");
-        expect(entry).toBeDefined();
-        expect(entry?.label).toBe("Lincoln–Douglas");
-        expect(entry?.preset).toBe(LD_PRESET);
-    });
-
-    it("has exactly 2 entries", () => {
-        expect(FORMAT_PRESETS).toHaveLength(2);
+    it("has exactly 1 entry", () => {
+        expect(FORMAT_PRESETS).toHaveLength(1);
     });
 });
 
@@ -147,8 +101,8 @@ describe("makeFormat", () => {
     });
 
     it("calling makeFormat twice produces different speech ids", () => {
-        const fmt1 = makeFormat(LD_PRESET);
-        const fmt2 = makeFormat(LD_PRESET);
+        const fmt1 = makeFormat(POLICY_PRESET);
+        const fmt2 = makeFormat(POLICY_PRESET);
         const ids1 = fmt1.speeches.map((s) => s.id);
         const ids2 = fmt2.speeches.map((s) => s.id);
         // No id from fmt1 should appear in fmt2
@@ -165,9 +119,9 @@ describe("makeFormat", () => {
     });
 
     it("preserves prepSeconds from the preset", () => {
-        const fmt = makeFormat(LD_PRESET);
-        expect(fmt.prepSeconds.aff).toBe(240);
-        expect(fmt.prepSeconds.neg).toBe(240);
+        const fmt = makeFormat(POLICY_PRESET);
+        expect(fmt.prepSeconds.aff).toBe(480);
+        expect(fmt.prepSeconds.neg).toBe(480);
     });
 });
 
@@ -180,15 +134,9 @@ describe("makeFormatByKey", () => {
         expect(fmt.speeches).toHaveLength(7);
     });
 
-    it('returns an LD format for key "ld"', () => {
-        const fmt = makeFormatByKey("ld");
-        expect(fmt.name).toBe("Lincoln–Douglas");
-        expect(fmt.speeches).toHaveLength(5);
-    });
-
     it("produces fresh ids on each call", () => {
-        const fmt1 = makeFormatByKey("ld");
-        const fmt2 = makeFormatByKey("ld");
+        const fmt1 = makeFormatByKey("policy");
+        const fmt2 = makeFormatByKey("policy");
         expect(fmt1.id).not.toBe(fmt2.id);
     });
 });
