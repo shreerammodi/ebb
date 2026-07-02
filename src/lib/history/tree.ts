@@ -114,10 +114,7 @@ export function sealCurrent(tree: HistoryTree): HistoryTree {
 }
 
 /** The given node plus every ancestor up to the root, as a Set of ids. */
-export function ancestorChain(
-    nodes: Record<string, HistoryNode>,
-    id: string,
-): Set<string> {
+export function ancestorChain(nodes: Record<string, HistoryNode>, id: string): Set<string> {
     const chain = new Set<string>();
     let cursor: string | null = id;
     while (cursor !== null && nodes[cursor]) {

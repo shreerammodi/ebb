@@ -228,11 +228,7 @@ export interface RoundActions {
     redo(): void;
     /** @internal `_commit` and `_reconcileAfterHistory` are store-private plumbing — do not call them outside the store's own action implementations. */
     /** Internal: snapshot the current round, then replace it via `producer`. */
-    _commit(
-        coalesceKey: string | null,
-        producer: (round: Round) => Round,
-        label?: string,
-    ): void;
+    _commit(coalesceKey: string | null, producer: (round: Round) => Round, label?: string): void;
     /** Jump the undo tree directly to a node by id (panel click). */
     jumpToHistory(nodeId: string): void;
     /** Internal: drop selection/activeSheet if they point at something now gone. */
