@@ -8,6 +8,7 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import CommandPalette from "./CommandPalette";
 import CriticalUpdateModal from "./CriticalUpdateModal";
+import FlowCoach from "./FlowCoach";
 import FlowGrid from "./FlowGrid";
 import GuideDialog from "./guide/GuideDialog";
 import InfoPanel from "./InfoPanel";
@@ -80,6 +81,7 @@ export default function Workspace() {
                 <PrintView />
                 <UpdateChip />
                 <CriticalUpdateModal />
+                <FlowCoach />
             </div>
         </UpdateProvider>
     );

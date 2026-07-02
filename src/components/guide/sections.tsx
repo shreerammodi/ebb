@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { Kbd as KeyCap } from "@/components/ui/kbd";
 import type { CommandId } from "@/lib/commands/registry";
 import { keyHintFor } from "@/lib/keymap/displayChord";
 
@@ -14,11 +15,7 @@ export type GuideSection = {
 function Kbd({ cmd, k }: { cmd?: CommandId; k?: string }) {
     const hint = cmd ? keyHintFor(cmd) : (k ?? null);
     if (!hint) return null;
-    return (
-        <kbd className="text-foreground inline-flex min-w-[22px] items-center justify-center rounded border border-b-2 border-zinc-200 bg-zinc-50 px-1 py-px font-mono text-[11px] whitespace-nowrap">
-            {hint}
-        </kbd>
-    );
+    return <KeyCap>{hint}</KeyCap>;
 }
 
 /** Small markup sketch of the grid model used in the Anatomy section. */

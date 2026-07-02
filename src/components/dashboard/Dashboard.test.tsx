@@ -7,7 +7,6 @@ const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { loadGuideSeen, saveGuideSeen } from "@/lib/guide/guideSeen";
 import { emptyScouting } from "@/lib/model/normalize";
 import type { Round } from "@/lib/model/types";
 import { persistRound, softDeleteRound } from "@/lib/persistence/autosave";
@@ -99,30 +98,39 @@ describe("Dashboard", () => {
     });
 });
 
-describe("Dashboard first-run guide", () => {
+describe("Dashboard first-run", () => {
     beforeEach(() => {
         localStorage.clear();
         useRoundStore.getState().setGuideOpen(false);
     });
 
-    it("auto-opens the guide when there are no flows and it is unseen", async () => {
-        renderDashboard();
-        await waitFor(() => expect(useRoundStore.getState().guideOpen).toBe(true));
-        expect(loadGuideSeen()).toBe(true);
-    });
-
-    it("does not auto-open when flows exist", async () => {
-        await persistRound(mk("a"));
-        renderDashboard();
-        await waitFor(() => screen.getByTestId("flow-card-a"));
-        expect(useRoundStore.getState().guideOpen).toBe(false);
-    });
-
-    it("does not auto-open when already seen", async () => {
-        saveGuideSeen(true);
+    it("does not auto-open the guide; it shows the teaching empty state instead", async () => {
         renderDashboard();
         await waitFor(() => expect(screen.getByTestId("dashboard-empty")).toBeInTheDocument());
         expect(useRoundStore.getState().guideOpen).toBe(false);
+    });
+
+    it("creates an Aff flow and navigates from the empty state", async () => {
+        renderDashboard();
+        await waitFor(() => screen.getByTestId("empty-start-aff"));
+        await userEvent.click(screen.getByTestId("empty-start-aff"));
+        expect(push).toHaveBeenCalledWith(expect.stringMatching(/^\/flow\?id=/));
+        expect(useRoundStore.getState().round?.role).toBe("aff");
+    });
+
+    it("creates a Neg flow from the empty state", async () => {
+        renderDashboard();
+        await waitFor(() => screen.getByTestId("empty-start-neg"));
+        await userEvent.click(screen.getByTestId("empty-start-neg"));
+        expect(push).toHaveBeenCalledWith(expect.stringMatching(/^\/flow\?id=/));
+        expect(useRoundStore.getState().round?.role).toBe("neg");
+    });
+
+    it("opens the guide on demand from the empty-state link", async () => {
+        renderDashboard();
+        await waitFor(() => screen.getByTestId("empty-open-guide"));
+        await userEvent.click(screen.getByTestId("empty-open-guide"));
+        expect(useRoundStore.getState().guideOpen).toBe(true);
     });
 
     it("opens the guide from the Guide button", async () => {

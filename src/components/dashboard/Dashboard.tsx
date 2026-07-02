@@ -3,18 +3,19 @@
 import { Gear } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
 import GuideDialog from "@/components/guide/GuideDialog";
 import SettingsPanel from "@/components/SettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { filterFlows } from "@/lib/dashboard/filter";
 import { sortSummaries, groupByTournament, type SortKey } from "@/lib/dashboard/organize";
-import { loadGuideSeen, saveGuideSeen } from "@/lib/guide/guideSeen";
+import { keyHintFor } from "@/lib/keymap/displayChord";
 import { listRounds, type RoundSummary } from "@/lib/persistence/autosave";
 import { loadSearchIndex, backfillSearchIndex } from "@/lib/persistence/searchIndex";
 import { useRoundStore } from "@/lib/store/useRoundStore";
@@ -24,6 +25,7 @@ import FlowCardMenu from "./FlowCardMenu";
 import FlowDetailDrawer from "./FlowDetailDrawer";
 import ImportExportControls from "./ImportExportControls";
 import NewFlowButton from "./NewFlowButton";
+import { useCreateFlow } from "./useCreateFlow";
 
 export default function Dashboard() {
     const router = useRouter();
@@ -33,6 +35,8 @@ export default function Dashboard() {
     const [sort, setSort] = useState<SortKey>("updated");
     const [grouped, setGrouped] = useState(false);
     const [detailId, setDetailId] = useState<string | null>(null);
+
+    const createFlow = useCreateFlow();
 
     const refresh = useCallback(async () => {
         await backfillSearchIndex();
@@ -44,16 +48,6 @@ export default function Dashboard() {
     useEffect(() => {
         void refresh();
     }, [refresh]);
-
-    const firstRunChecked = useRef(false);
-    useEffect(() => {
-        if (summaries === null || firstRunChecked.current) return;
-        firstRunChecked.current = true;
-        if (summaries.length === 0 && !loadGuideSeen()) {
-            useRoundStore.getState().setGuideOpen(true);
-            saveGuideSeen(true);
-        }
-    }, [summaries]);
 
     const open = useCallback((id: string) => router.push(`/flow?id=${id}`), [router]);
 
@@ -141,13 +135,71 @@ export default function Dashboard() {
                 {empty ? (
                     <div
                         data-testid="dashboard-empty"
-                        className="mx-auto mt-20 flex max-w-sm flex-col items-center gap-4 text-center"
+                        className="mx-auto mt-24 flex max-w-md flex-col items-center gap-6 text-center"
                     >
-                        <p className="text-foreground text-[15px] font-medium">No flows yet</p>
-                        <p className="text-muted-foreground text-[13px]">
-                            Create your first flow to get started.
-                        </p>
-                        <NewFlowButton />
+                        <div className="space-y-1.5">
+                            <h1 className="text-foreground text-lg font-semibold tracking-tight text-balance">
+                                Flow your first round
+                            </h1>
+                            <p className="text-muted-foreground text-[13px] leading-relaxed text-pretty">
+                                Ebb is a keyboard-first flow sheet. Pick a side to start —
+                                everything stays on this device.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-2.5">
+                            <div className="flex items-center gap-2.5">
+                                <button
+                                    type="button"
+                                    data-testid="empty-start-aff"
+                                    onClick={() => createFlow("aff")}
+                                    className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
+                                >
+                                    <span className="bg-aff size-2 rounded-full" aria-hidden />
+                                    Aff
+                                </button>
+                                <button
+                                    type="button"
+                                    data-testid="empty-start-neg"
+                                    onClick={() => createFlow("neg")}
+                                    className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
+                                >
+                                    <span className="bg-neg size-2 rounded-full" aria-hidden />
+                                    Neg
+                                </button>
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="empty-start-judge"
+                                onClick={() => createFlow("judge")}
+                                className="text-muted-foreground hover:text-foreground text-[12.5px] outline-none focus-visible:underline"
+                            >
+                                or start as Judge
+                            </button>
+                        </div>
+
+                        <div className="border-border/70 text-muted-foreground flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t pt-5 text-[12px]">
+                            <span className="inline-flex items-center gap-1.5">
+                                <Kbd>↑ ↓ ← →</Kbd> move
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                                <Kbd>type</Kbd> to flow an argument
+                            </span>
+                            {keyHintFor("node.response") && (
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Kbd>{keyHintFor("node.response")}</Kbd> to answer
+                                </span>
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            data-testid="empty-open-guide"
+                            onClick={() => useRoundStore.getState().setGuideOpen(true)}
+                            className="text-muted-foreground hover:text-foreground text-[12.5px] underline-offset-2 outline-none hover:underline focus-visible:underline"
+                        >
+                            New to Ebb? Read the guide
+                        </button>
                     </div>
                 ) : (
                     <>
