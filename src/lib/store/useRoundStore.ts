@@ -572,7 +572,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             row,
             text: input.text,
         });
-        get()._commit(null, (r) => ({ ...r, nodes }), "Add");
+        // Coalesce key matches updateNodeText's so the new cell and the initial
+        // typing burst collapse into one "Add" undo step (see updateNodeText).
+        get()._commit(`text:${node.id}`, (r) => ({ ...r, nodes }), "Add");
         return node.id;
     },
 
@@ -651,7 +653,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             parentId: null,
             text,
         });
-        get()._commit(null, (r) => ({ ...r, nodes }), "Add");
+        // See addNode: the text coalesce key merges the follow-on typing burst
+        // into this single "Add" node instead of branching a "Type" node.
+        get()._commit(`text:${node.id}`, (r) => ({ ...r, nodes }), "Add");
         return node.id;
     },
 
@@ -680,7 +684,9 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         const next = { ...round, nodes, updatedAt: Date.now() };
         set({
             round: next,
-            history: commitHistory(history, next, null, "Add"),
+            // Text coalesce key so the spawned cell and its first keystrokes
+            // collapse into one "Add" undo step (see addNode / updateNodeText).
+            history: commitHistory(history, next, `text:${node.id}`, "Add"),
             pendingSpawn: null,
         });
         return node.id;

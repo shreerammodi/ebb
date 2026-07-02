@@ -610,9 +610,34 @@ describe("undo tree", () => {
         return { sheetId, sp };
     }
 
+    it("adds a cell and its first typing burst as a single 'Add' node", () => {
+        const { sheetId, sp } = fresh();
+        const before = Object.keys(useRoundStore.getState().history!.nodes).length;
+        const a = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp, row: 0 });
+        // The initial keystrokes coalesce into the "Add" node rather than
+        // branching a separate "Type" node.
+        useRoundStore.getState().updateNodeText(a, "h");
+        useRoundStore.getState().updateNodeText(a, "hi");
+
+        const tree = useRoundStore.getState().history!;
+        // The new cell plus its typing burst added exactly one history node.
+        expect(Object.keys(tree.nodes)).toHaveLength(before + 1);
+        expect(tree.nodes[tree.currentId].label).toBe("Add");
+        expect(tree.nodes[tree.currentId].snapshot.nodes.find((n) => n.id === a)!.text).toBe(
+            "hi",
+        );
+
+        // One undo removes the whole new cell, not just its text.
+        useRoundStore.getState().undo();
+        expect(useRoundStore.getState().round!.nodes).toHaveLength(0);
+    });
+
     it("diverging after undo preserves the old branch", () => {
         const { sheetId, sp } = fresh();
         const a = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp, row: 0 });
+        // Seal the "Add" burst (as moving the cursor away would) so the edit
+        // below branches rather than coalescing into the new cell.
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp, row: 0 });
         useRoundStore.getState().updateNodeText(a, "first");
         useRoundStore.getState().undo(); // back before the text edit
 

@@ -31,8 +31,11 @@ export function currentRound(tree: HistoryTree): Round {
  *
  * When `coalesceKey` is non-null and matches the current node's key, the
  * current node's snapshot is replaced in place (one undo step per edit burst,
- * e.g. typing). Otherwise a new child of the current node is appended and made
- * current — any existing children (a previously-undone branch) are retained.
+ * e.g. typing). The node keeps its original label, so a burst that began as
+ * "Add" (a new cell absorbing its first keystrokes) stays "Add" rather than
+ * being relabeled by the follow-on "Type" commits. Otherwise a new child of the
+ * current node is appended and made current — any existing children (a
+ * previously-undone branch) are retained.
  */
 export function commit(
     tree: HistoryTree,
@@ -47,7 +50,7 @@ export function commit(
             ...tree,
             nodes: {
                 ...tree.nodes,
-                [current.id]: { ...current, snapshot: nextRound, label },
+                [current.id]: { ...current, snapshot: nextRound },
             },
         };
     }

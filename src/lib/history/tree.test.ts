@@ -87,6 +87,21 @@ describe("commit", () => {
         expect(currentRound(tree)).toBe(r2);
     });
 
+    it("coalesce keeps the original node label so an 'Add' burst stays 'Add'", () => {
+        const r0 = makeRound("round_1");
+        const r1 = makeRound("round_1", { updatedAt: 2 });
+        const r2 = makeRound("round_1", { updatedAt: 3 });
+        let tree = createTree(r0);
+
+        // A new cell commits "Add" with a text coalesce key; the following
+        // keystrokes coalesce into it and must not relabel it "Type".
+        tree = commit(tree, r1, "text:n1", "Add");
+        tree = commit(tree, r2, "text:n1", "Type");
+
+        expect(Object.keys(tree.nodes)).toHaveLength(2); // root + one
+        expect(tree.nodes[tree.currentId].label).toBe("Add");
+    });
+
     it("does not coalesce across different keys", () => {
         const r0 = makeRound("round_1");
         let tree = createTree(r0);
