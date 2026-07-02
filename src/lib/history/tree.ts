@@ -1,5 +1,6 @@
 import type { Round } from "@/lib/model/types";
 
+import { pruneToCap } from "./prune";
 import type { HistoryNode, HistoryTree } from "./types";
 
 export type { HistoryNode, HistoryTree } from "./types";
@@ -62,7 +63,7 @@ export function commit(
         createdAt: Date.now(),
         createdSeq: tree.seq,
     };
-    return {
+    return pruneToCap({
         ...tree,
         nodes: {
             ...tree.nodes,
@@ -71,7 +72,7 @@ export function commit(
         },
         currentId: id,
         seq: tree.seq + 1,
-    };
+    });
 }
 
 /** Move the current pointer to the parent. No-op at the root. */
