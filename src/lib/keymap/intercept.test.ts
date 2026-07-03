@@ -2,7 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { isMacPlatform } from "@/lib/platform";
 
-import { isTextEntryFocus, isNativeEditingChord, shouldIntercept } from "./intercept";
+import {
+    isTextEntryFocus,
+    isNativeEditingChord,
+    isSelectAllChord,
+    selectAllInElement,
+    shouldIntercept,
+} from "./intercept";
 
 const mod = isMacPlatform() ? "Meta" : "Ctrl";
 
@@ -92,6 +98,88 @@ describe("isNativeEditingChord", () => {
     it("returns false for a plain typing key", () => {
         const e = makeKeyEvent({ key: "k" });
         expect(isNativeEditingChord(e)).toBe(false);
+    });
+});
+
+describe("isSelectAllChord", () => {
+    function makeKeyEvent(init: Partial<KeyboardEventInit>): KeyboardEvent {
+        return new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
+    }
+
+    const primary = mod === "Meta" ? "metaKey" : "ctrlKey";
+    const secondary = mod === "Meta" ? "ctrlKey" : "metaKey";
+
+    it("returns true for the bare select-all chord", () => {
+        expect(isSelectAllChord(makeKeyEvent({ key: "a", [primary]: true }))).toBe(true);
+    });
+
+    it("matches an uppercase key (caps lock) without shift held", () => {
+        expect(isSelectAllChord(makeKeyEvent({ key: "A", [primary]: true }))).toBe(true);
+    });
+
+    it("returns false when shift is also held (Shift+Meta+A)", () => {
+        expect(isSelectAllChord(makeKeyEvent({ key: "A", shiftKey: true, [primary]: true }))).toBe(
+            false,
+        );
+    });
+
+    it("returns false when alt is also held", () => {
+        expect(isSelectAllChord(makeKeyEvent({ key: "a", altKey: true, [primary]: true }))).toBe(
+            false,
+        );
+    });
+
+    it("returns false when the cross-platform modifier is held", () => {
+        expect(
+            isSelectAllChord(makeKeyEvent({ key: "a", [primary]: true, [secondary]: true })),
+        ).toBe(false);
+    });
+
+    it("returns false without the primary modifier", () => {
+        expect(isSelectAllChord(makeKeyEvent({ key: "a" }))).toBe(false);
+    });
+
+    it("returns false for other editing chords like copy", () => {
+        expect(isSelectAllChord(makeKeyEvent({ key: "c", [primary]: true }))).toBe(false);
+    });
+});
+
+describe("selectAllInElement", () => {
+    it("selects an input's contents and reports success", () => {
+        const input = document.createElement("input");
+        input.value = "hello";
+        let selected = false;
+        input.select = () => {
+            selected = true;
+        };
+        expect(selectAllInElement(input)).toBe(true);
+        expect(selected).toBe(true);
+    });
+
+    it("selects a textarea's contents", () => {
+        const textarea = document.createElement("textarea");
+        let selected = false;
+        textarea.select = () => {
+            selected = true;
+        };
+        expect(selectAllInElement(textarea)).toBe(true);
+        expect(selected).toBe(true);
+    });
+
+    it("selects a contentEditable's node contents", () => {
+        const div = document.createElement("div");
+        Object.defineProperty(div, "isContentEditable", { value: true, configurable: true });
+        document.body.appendChild(div);
+        expect(selectAllInElement(div)).toBe(true);
+        div.remove();
+    });
+
+    it("returns false for a non-editable element", () => {
+        expect(selectAllInElement(document.createElement("div"))).toBe(false);
+    });
+
+    it("returns false for null", () => {
+        expect(selectAllInElement(null)).toBe(false);
     });
 });
 

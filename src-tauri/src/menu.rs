@@ -1,34 +1,25 @@
-//! Ebb's native menu (v1: display-only).
+//! Ebb's native menu (v1).
 //!
-//! ## Why display-only
+//! ## Menu design
 //!
 //! Ebb is keyboard-first and the JS keymap in `src/lib/keymap` is the single
-//! source of truth for every app binding. App-command entries here (New Aff,
-//! Undo, Select All, …) are shown as DISABLED reference rows with their
-//! shortcut embedded in the label and NO native accelerator.
+//! source of truth for every app binding. Several app chords are focus-dependent:
+//! Meta+A means "new aff" in grid navigation focus but native select-all while
+//! typing in a text box (see `intercept.ts`).
 //!
-//! This is deliberate, not laziness. Several app chords are focus-dependent:
-//! `⌘A` means "new aff" in grid navigation focus but native select-all while
-//! typing in a text box (see Component 1 / `intercept.ts`). A static macOS menu
-//! accelerator cannot be focus-aware — and worse, the OS consumes an
-//! accelerator chord BEFORE the webview's keydown listener runs, which would
-//! break the JS keymap's focus logic entirely. So app-owned chords must never
-//! become menu accelerators. Wiring menu items to commands (via emitted events,
-//! never accelerators) is a later enhancement.
+//! macOS WKWebView routes an editing shortcut into the focused text field only
+//! when a menu item carries that accelerator; without one, the chord never
+//! reaches the field (Meta+C copies nothing, etc.). So Cut/Copy/Paste are real
+//! `PredefinedMenuItem`s: their chords (Meta+X / Meta+C / Meta+V) are not app
+//! bindings, so installing the accelerators costs nothing and fixes native
+//! clipboard editing.
 //!
-//! Only OS-reserved chords the app keymap does NOT use keep real accelerators:
-//! Quit (`⌘Q`). Minimize (`⌘M`) and Close (`⌘W`) are intentionally absent —
-//! `⌘M` is the app's `move.grab` binding, and `⌘W` stays neutralized so the
-//! primary window can't be closed (see the close guard in `lib.rs`).
-//!
-//! ## Known caveat (desktop native clipboard)
-//!
-//! Because no Edit-role accelerators are installed, native clipboard/editing in
-//! WKWebView text fields relies on the webview's own default handling rather
-//! than the macOS responder chain. Validate this at the Component 2
-//! responsiveness checkpoint; if it regresses, the fix is to add real
-//! Edit-role items for the non-conflicting chords only (`⌘C`/`⌘V`), keeping the
-//! focus-conflicting ones (`⌘A`/`⌘X`/`⌘Z`) JS-routed.
+//! The remaining editing chords collide with app bindings and therefore stay
+//! display-only (a menu accelerator is consumed by the OS *before* the webview's
+//! keydown fires, which would silently break the JS keymap's focus logic):
+//! Meta+A is `sheet.newAff`, Meta+Z is `edit.undo`, Shift+Meta+Z is `edit.redo`.
+//! Meta+A's text-field behavior (select-all) is instead restored in JS - see
+//! `selectAllInElement` / `useDesktopSelectAll` in `src/lib/keymap`.
 
 use tauri::menu::{AboutMetadata, Menu, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Runtime};
@@ -44,7 +35,7 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     };
 
     // Custom Quit so we own the only deliberate exit (handled in lib.rs via
-    // app.exit). `⌘Q` is not an app binding, so the accelerator is safe.
+    // app.exit). Meta+Q is not an app binding, so the accelerator is safe.
     let quit = MenuItemBuilder::new("Quit Ebb")
         .id(QUIT_ID)
         .accelerator("CmdOrCtrl+Q")
@@ -75,14 +66,16 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&hint("Settings                 ⌘,")?)
         .build()?;
 
-    // Edit: native editing chords (display-only — see module docs).
+    // Edit: Cut/Copy/Paste carry real accelerators so WKWebView routes them to
+    // the focused text field. Undo/Redo/Select All are display-only because
+    // their chords are app bindings the JS keymap owns (see module docs).
     let edit_menu = SubmenuBuilder::new(app, "Edit")
         .item(&hint("Undo                     ⌘Z")?)
         .item(&hint("Redo                   ⇧⌘Z")?)
         .separator()
-        .item(&hint("Cut                      ⌘X")?)
-        .item(&hint("Copy                     ⌘C")?)
-        .item(&hint("Paste                    ⌘V")?)
+        .item(&PredefinedMenuItem::cut(app, None)?)
+        .item(&PredefinedMenuItem::copy(app, None)?)
+        .item(&PredefinedMenuItem::paste(app, None)?)
         .item(&hint("Select All               ⌘A")?)
         .build()?;
 

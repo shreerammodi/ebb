@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
 
+import DesktopSelectAll from "@/components/DesktopSelectAll";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
@@ -186,6 +187,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             className={`${commitMono.variable} ${dmSans.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
         >
             <body className="font-sans antialiased">
+                <DesktopSelectAll />
                 <TooltipProvider>{children}</TooltipProvider>
                 <Toaster position="bottom-center" />
             </body>
