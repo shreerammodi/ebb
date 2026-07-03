@@ -4,7 +4,7 @@
  * No mutation, no store access.
  */
 import type { ArgumentNode, Speech } from "@/lib/model/types";
-import { unitBandBottom } from "@/lib/model/units";
+import { unitBandBottom, unitSubtreeIds } from "@/lib/model/units";
 
 /** Column index of a speech, or −1 if not in the column set. */
 export function colIndexOf(speeches: Speech[], speechId: string): number {
@@ -344,10 +344,26 @@ export function translateSubtree(
     dCol: number,
     dRow: number,
 ): { nodes: ArgumentNode[]; ok: boolean } {
-    const subtree = descendantIds(nodes, rootId);
-    const root = nodes.find((n) => n.id === rootId);
-    if (!root) return { nodes, ok: false };
-    const sheetId = root.sheetId;
+    return translateNodes(nodes, speeches, descendantIds(nodes, rootId), dCol, dRow);
+}
+
+/**
+ * Translate an arbitrary set of nodes by (dCol, dRow) as one rigid band.
+ * Same collision policy as subtree moves: occupied destination cells ripple
+ * the sheet down by the band's span, excluding the moving set - plus
+ * `rippleExclude`, for callers (link snap) whose anchor must not shift.
+ */
+export function translateNodes(
+    nodes: ArgumentNode[],
+    speeches: Speech[],
+    moving: Set<string>,
+    dCol: number,
+    dRow: number,
+    rippleExclude?: Set<string>,
+): { nodes: ArgumentNode[]; ok: boolean } {
+    const first = nodes.find((n) => moving.has(n.id));
+    if (!first) return { nodes, ok: false };
+    const sheetId = first.sheetId;
 
     // No-op: zero delta means nothing changes, succeed without mutation.
     if (dCol === 0 && dRow === 0) return { nodes, ok: true };
@@ -355,7 +371,7 @@ export function translateSubtree(
     // Compute proposed coords; bail on out-of-bounds columns / negative rows.
     const moved = new Map<string, { speechId: string; row: number }>();
     for (const n of nodes) {
-        if (!subtree.has(n.id)) continue;
+        if (!moving.has(n.id)) continue;
         const col = colIndexOf(speeches, n.speechId) + dCol;
         const row = n.row + dRow;
         if (col < 0 || col >= speeches.length || row < 0) return { nodes, ok: false };
@@ -374,31 +390,43 @@ export function translateSubtree(
         occupancy.set(`${n.speechId}:${n.row}`, n);
     }
 
-    // Check for collisions at the destination: non-subtree nodes occupying
-    // any of the cells the moving subtree wants.
+    // Check for collisions at the destination: nodes outside the moving set
+    // (and not explicitly excluded) occupying any of the cells it wants.
     let hasCollision = false;
     for (const [, dest] of moved) {
         const occ = occupancy.get(`${dest.speechId}:${dest.row}`);
-        if (occ && !subtree.has(occ.id)) {
+        if (occ && !moving.has(occ.id) && !(rippleExclude?.has(occ.id) ?? false)) {
             hasCollision = true;
             break;
         }
     }
 
-    // If there are collisions, ripple the entire sheet (outside the moving
-    // subtree) down from the minimum targeted row by the subtree's vertical
-    // span. This clears a gap the exact size of the moving band.
+    // If there are collisions, ripple the sheet (outside the moving set and any
+    // excluded anchors) down from the minimum targeted row by the moving band's
+    // vertical span. This clears a gap the exact size of the moving band.
     let resolved = nodes;
     if (hasCollision) {
         const targetRows = [...moved.values()].map((v) => v.row);
         const minTargetRow = Math.min(...targetRows);
         const maxTargetRow = Math.max(...targetRows);
         const span = maxTargetRow - minTargetRow + 1;
-        resolved = rippleDown(nodes, sheetId, minTargetRow, span, subtree);
+        const exclude = rippleExclude ? new Set([...moving, ...rippleExclude]) : moving;
+        resolved = rippleDown(nodes, sheetId, minTargetRow, span, exclude);
     }
 
     return {
         nodes: resolved.map((n) => (moved.has(n.id) ? { ...n, ...moved.get(n.id)! } : n)),
         ok: true,
     };
+}
+
+/** Vertical translation of a unit's whole band (members + responses). */
+export function translateUnit(
+    nodes: ArgumentNode[],
+    speeches: Speech[],
+    memberId: string,
+    dRow: number,
+    rippleExclude?: Set<string>,
+): { nodes: ArgumentNode[]; ok: boolean } {
+    return translateNodes(nodes, speeches, unitSubtreeIds(nodes, memberId), 0, dRow, rippleExclude);
 }

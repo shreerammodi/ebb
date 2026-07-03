@@ -11,6 +11,7 @@ import {
     ancestorIds,
     descendantIds,
     translateSubtree,
+    translateUnit,
 } from "./coords";
 
 const sp = (id: string): Speech => ({ id, name: id, side: "aff", seconds: 0 });
@@ -454,6 +455,17 @@ describe("isReservedCell with units", () => {
         // P's column row 1 sits beside R2 and is band interior.
         const nodes = [n("P", "a", 0), cn("R1", "b", 0, "P"), un("R2", "b", 1, "R1")];
         expect(isReservedCell(nodes, "s1", "a", 1)).toBe(true);
+    });
+});
+
+describe("translateUnit", () => {
+    it("moves members and their responses together, rippling collisions", () => {
+        const nodes = [n("H", "b", 5), un("H2", "b", 6, "H"), n("Z", "b", 0)];
+        const { nodes: moved, ok } = translateUnit(nodes, speeches, "H2", -5);
+        expect(ok).toBe(true);
+        expect(byId(moved, "H").row).toBe(0);
+        expect(byId(moved, "H2").row).toBe(1);
+        expect(byId(moved, "Z").row).toBe(2); // rippled out of the way
     });
 });
 
