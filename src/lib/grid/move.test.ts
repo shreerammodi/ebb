@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import type { ArgumentNode, Speech } from "@/lib/model/types";
 
-import { isValidLinkTarget, linkSnapRow, linkRippleExclusions } from "./move";
+import { isValidLinkTarget, linkSnapRow } from "./move";
 
 function node(p: Partial<ArgumentNode> & { id: string; speechId: string }): ArgumentNode {
     return {
@@ -66,15 +66,5 @@ describe("linkSnapRow", () => {
             node({ id: "H", speechId: "1ar", row: 5 }),
         ];
         expect(linkSnapRow(nodes, "H", "P")).toBe(2);
-    });
-});
-
-describe("linkRippleExclusions", () => {
-    it("keeps the parent band in place during a snap", () => {
-        const nodes = [
-            node({ id: "P", speechId: "2ac", row: 0 }),
-            node({ id: "P2", speechId: "2ac", row: 1, unitId: "P" }),
-        ];
-        expect(linkRippleExclusions(nodes, "P")).toEqual(new Set(["P", "P2"]));
     });
 });

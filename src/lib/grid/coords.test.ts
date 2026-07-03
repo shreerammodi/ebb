@@ -9,6 +9,7 @@ import {
     rippleDown,
     rippleUp,
     ancestorIds,
+    ancestorUnitMemberIds,
     descendantIds,
     translateSubtree,
     translateUnit,
@@ -160,6 +161,34 @@ describe("spawn placement", () => {
         // R1 pushed down to row 1.
         expect(res.nodes.find((m) => m.id === "R1")!.row).toBe(1);
     });
+
+    it("response ripple keeps the source unit's own cells together", () => {
+        // U spans (a,0)-(a,1); unrelated B occupies the response target (b,0).
+        // The ripple must not shift U's continuation cell away from its head.
+        const nodes = [n("U", "a", 0), { ...n("U2", "a", 1), unitId: "U" }, n("B", "b", 0)];
+        const res = placeForSpawn(nodes, "s1", speeches, nodes[0], "response")!;
+        expect({ speechId: res.speechId, row: res.row }).toEqual({ speechId: "b", row: 0 });
+        expect(res.nodes.find((m) => m.id === "U")!.row).toBe(0);
+        expect(res.nodes.find((m) => m.id === "U2")!.row).toBe(1);
+        expect(res.nodes.find((m) => m.id === "B")!.row).toBe(1);
+    });
+
+    it("response ripple keeps ancestor units' cells together", () => {
+        // P spans (a,0)-(a,1); its response R sits at (b,0); Z occupies the
+        // target for a response to R at (c,0). Rippling for the new response
+        // must not split P's cells apart.
+        const nodes = [
+            n("P", "a", 0),
+            { ...n("P2", "a", 1), unitId: "P" },
+            cnResp("R", "b", 0, "P"),
+            n("Z", "c", 0),
+        ];
+        const res = placeForSpawn(nodes, "s1", speeches, nodes[2], "response")!;
+        expect({ speechId: res.speechId, row: res.row }).toEqual({ speechId: "c", row: 0 });
+        expect(res.nodes.find((m) => m.id === "P")!.row).toBe(0);
+        expect(res.nodes.find((m) => m.id === "P2")!.row).toBe(1);
+        expect(res.nodes.find((m) => m.id === "Z")!.row).toBe(1);
+    });
 });
 
 /** Node with an explicit parent, local to the spawn-placement block. */
@@ -190,6 +219,33 @@ describe("ancestorIds", () => {
         const nodes = [a, b];
         // Should not infinite-loop; collects both.
         expect(ancestorIds(nodes, "A")).toEqual(new Set(["A", "B"]));
+    });
+});
+
+describe("ancestorUnitMemberIds", () => {
+    it("collects the node's unit cells and every ancestor unit's cells", () => {
+        const nodes = [
+            n("P", "a", 0),
+            { ...n("P2", "a", 1), unitId: "P" },
+            cnResp("R", "b", 0, "P"),
+            { ...n("R2", "b", 1), unitId: "R" },
+        ];
+        expect(ancestorUnitMemberIds(nodes, "R2")).toEqual(new Set(["R", "R2", "P", "P2"]));
+    });
+
+    it("excludes the parent's OTHER responses (they must ripple with the sheet)", () => {
+        const nodes = [n("P", "a", 0), cnResp("R1", "b", 0, "P"), cnResp("Rc", "c", 2, "P")];
+        expect(ancestorUnitMemberIds(nodes, "P")).toEqual(new Set(["P"]));
+    });
+
+    it("resolves a continuation cell to its unit head's ancestor chain", () => {
+        const nodes = [
+            n("P", "a", 0),
+            cnResp("R", "b", 0, "P"),
+            { ...n("R2", "b", 1), unitId: "R" },
+        ];
+        // R2 carries no parentId of its own; the chain hangs off head R.
+        expect(ancestorUnitMemberIds(nodes, "R2")).toEqual(new Set(["R", "R2", "P"]));
     });
 });
 

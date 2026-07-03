@@ -11,6 +11,7 @@ import type { CommandId } from "@/lib/commands/registry";
 import { type FontId, DEFAULT_FONT_ID, resolveFontId } from "@/lib/fonts/registry";
 import { columnsForSheet } from "@/lib/grid/columns";
 import {
+    ancestorUnitMemberIds,
     occupantAt,
     placeForSpawn,
     rippleDown,
@@ -18,7 +19,7 @@ import {
     translateSubtree,
     translateUnit,
 } from "@/lib/grid/coords";
-import { isValidLinkTarget, linkRippleExclusions, linkSnapRow } from "@/lib/grid/move";
+import { isValidLinkTarget, linkSnapRow } from "@/lib/grid/move";
 import {
     createTree,
     commit as commitHistory,
@@ -960,12 +961,14 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         if (targetRow === null) return false;
 
         const withParent = setParent(round.nodes, head.id, parentHead.id);
+        // Pin the new parent's unit chain so the snap ripple cannot push the
+        // parent below its freshly linked answer or split an ancestor unit.
         const { nodes, ok } = translateUnit(
             withParent,
             speeches,
             head.id,
             targetRow - head.row,
-            linkRippleExclusions(withParent, parentHead.id),
+            ancestorUnitMemberIds(withParent, parentHead.id),
         );
         if (!ok) return false;
         get()._commit(null, (r) => ({ ...r, nodes }), "Link");

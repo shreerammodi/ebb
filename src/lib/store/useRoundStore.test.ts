@@ -545,6 +545,34 @@ describe("commitLink", () => {
         expect(useRoundStore.getState().round!.nodes.find((n) => n.id === x)!.parentId).toBeNull();
     });
 
+    it("link ripple never stacks a neighbor onto the parent's later-column responses", () => {
+        // P at (sp0,0) already has a response R2 at (sp2,2). Unrelated Y at
+        // (sp1,0) forces the snap ripple; unrelated Z at (sp2,1) sits directly
+        // above R2. Linking X (sp1,5) under P must shift R2 with the sheet -
+        // pinning it would ripple Z onto R2's cell.
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const sp = s.round!.format.speeches;
+        const p = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+        const r2 = s.placeBareNode({ sheetId, speechId: sp[2].id, row: 2 });
+        useRoundStore.getState().setNodeParent(r2, p);
+        useRoundStore.getState().placeBareNode({ sheetId, speechId: sp[1].id, row: 0 });
+        useRoundStore.getState().placeBareNode({ sheetId, speechId: sp[2].id, row: 1 });
+        const x = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp[1].id, row: 5 });
+
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+        useRoundStore.getState().setLinkSource(x);
+        expect(useRoundStore.getState().commitLink()).toBe(true);
+
+        const nodes = useRoundStore.getState().round!.nodes;
+        expect(nodes.find((n) => n.id === x)!.parentId).toBe(p);
+        expect(nodes.find((n) => n.id === x)!.row).toBe(0);
+        // Invariant: at most one node per cell.
+        const cells = nodes.map((n) => `${n.speechId}:${n.row}`);
+        expect(new Set(cells).size).toBe(cells.length);
+    });
+
     it("one undo step reverses a link+snap", () => {
         const { sheetId, sp, h } = linkFixture();
         useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });

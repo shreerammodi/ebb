@@ -4,7 +4,7 @@
  * No mutation, no store access.
  */
 import type { ArgumentNode, Speech } from "@/lib/model/types";
-import { unitBandBottom, unitSubtreeIds } from "@/lib/model/units";
+import { unitBandBottom, unitHeadOf, unitOf, unitSubtreeIds } from "@/lib/model/units";
 
 /** Column index of a speech, or −1 if not in the column set. */
 export function colIndexOf(speeches: Speech[], speechId: string): number {
@@ -220,10 +220,11 @@ export function placeForSpawn(
     // parent's own parent in an earlier column) is the normal, desired state.
     //
     // When the destination cell IS occupied, ripple — but EXCLUDE the parent
-    // chain (the current node and its ancestors) from the shift. The parent
-    // stays on its row and the response lands beside it; only unrelated nodes
-    // (or the parent's own existing responses) get pushed down. Rippling the
-    // parent too would leave the new response one row ABOVE its parent.
+    // unit chain (the current node's unit and its ancestors' units) from the
+    // shift. The parent stays on its row and the response lands beside it;
+    // only unrelated nodes (or the parent's own existing responses) get pushed
+    // down. Rippling the parent too would leave the new response one row ABOVE
+    // its parent, and rippling only part of a unit would split its cells.
     //
     // A sibling lands on a fresh row below the current subtree's band, so it
     // needs that whole row free — ripple when any other node occupies it.
@@ -235,7 +236,7 @@ export function placeForSpawn(
               );
     const next =
         needsRipple && kind === "response"
-            ? rippleDown(nodes, sheetId, target.row, 1, ancestorIds(nodes, current.id))
+            ? rippleDown(nodes, sheetId, target.row, 1, ancestorUnitMemberIds(nodes, current.id))
             : needsRipple
               ? rippleDown(nodes, sheetId, target.row, 1)
               : nodes;
@@ -253,6 +254,26 @@ export function ancestorIds(nodes: ArgumentNode[], nodeId: string): Set<string> 
         out.add(current);
         const node = byId.get(current);
         current = node?.parentId ?? undefined;
+    }
+    return out;
+}
+
+/**
+ * Cells of the node's unit plus every ancestor unit's cells. These are the
+ * nodes a collision ripple must never move: they sit at or above the ripple
+ * row, and shifting any of them would strand a response above its parent or
+ * split a unit's cells apart. A parent's OTHER responses are deliberately not
+ * included - those below the ripple row must shift with the rest of the sheet,
+ * or the ripple would stack a shifted neighbor onto a pinned cell.
+ */
+export function ancestorUnitMemberIds(nodes: ArgumentNode[], nodeId: string): Set<string> {
+    const node = nodes.find((n) => n.id === nodeId);
+    const out = new Set<string>();
+    if (!node) return out;
+    for (const aid of ancestorIds(nodes, unitHeadOf(nodes, node).id)) {
+        const a = nodes.find((n) => n.id === aid);
+        if (!a) continue;
+        for (const m of unitOf(nodes, a)) out.add(m.id);
     }
     return out;
 }

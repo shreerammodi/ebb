@@ -10,9 +10,8 @@
  * make a cycle the layout merely tolerates).
  */
 
-import { ancestorIds } from "@/lib/grid/coords";
 import type { ArgumentNode, Speech } from "@/lib/model/types";
-import { unitBandBottom, unitHeadOf, unitOf, unitSubtreeIds } from "@/lib/model/units";
+import { unitBandBottom, unitHeadOf, unitSubtreeIds } from "@/lib/model/units";
 
 /** Column index of a speech, or -1. */
 function colOf(speeches: Speech[], speechId: string): number {
@@ -66,19 +65,4 @@ export function linkSnapRow(
         row = Math.max(row, unitBandBottom(rest, n) + 1);
     }
     return row;
-}
-
-/**
- * Nodes a link snap's collision ripple must never move: the new parent's
- * whole band plus every ancestor unit above it. Without this the ripple
- * would push the parent down and strand the freshly linked answer above it.
- */
-export function linkRippleExclusions(nodes: ArgumentNode[], parentHeadId: string): Set<string> {
-    const out = unitSubtreeIds(nodes, parentHeadId);
-    for (const aid of ancestorIds(nodes, parentHeadId)) {
-        const a = nodes.find((n) => n.id === aid);
-        if (!a) continue;
-        for (const m of unitOf(nodes, a)) out.add(m.id);
-    }
-    return out;
 }
