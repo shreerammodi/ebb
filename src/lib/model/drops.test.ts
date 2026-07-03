@@ -329,3 +329,15 @@ describe("detectDrops", () => {
         expect(dropped).not.toContain("nc1");
     });
 });
+
+describe("units and drops", () => {
+    it("continuation cells are not separate drop obligations", () => {
+        // head H (1NC) answered in 2AC; continuation C (unitId H) unanswered
+        const nodes = [
+            makeNode({ id: "H", sheetId: SHEET_A, speechId: "sp-1nc", row: 0 }),
+            makeNode({ id: "C", sheetId: SHEET_A, speechId: "sp-1nc", row: 1, unitId: "H" }),
+            makeNode({ id: "ans", sheetId: SHEET_A, speechId: "sp-2ac", row: 0, parentId: "H" }),
+        ];
+        expect(detectDrops(nodes, POLICY_FORMAT, SHEET_A)).toEqual([]);
+    });
+});

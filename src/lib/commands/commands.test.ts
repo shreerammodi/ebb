@@ -419,6 +419,21 @@ describe("status toggles", () => {
         ).not.toContain("conceded");
     });
 
+    it("toggling conceded from a continuation cell marks the unit head", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        const a = useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        // Continuation B under head A at row 1 (Enter, type).
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().commitPendingSpawn("b");
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
+
+        executeCommand("status.toggleConceded");
+        const head = useRoundStore.getState().round!.nodes.find((n) => n.id === a)!;
+        expect(head.statuses).toContain("conceded");
+    });
+
     it("format.toggleBold toggles bold on the selected node", () => {
         const sheetId = freshRound();
         const speechId = useRoundStore.getState().round!.format.speeches[0].id;

@@ -14,6 +14,7 @@
  */
 
 import type { ArgumentNode, Format, Side } from "@/lib/model/types";
+import { isUnitHead } from "@/lib/model/units";
 
 function oppositeSide(side: Side): Side {
     return side === "aff" ? "neg" : "aff";
@@ -45,6 +46,9 @@ export function detectDrops(nodes: ArgumentNode[], format: Format, sheetId: stri
     const dropped: string[] = [];
 
     for (const node of sheetNodes) {
+        // A continuation cell is part of its head's argument, not a separate
+        // obligation - only unit heads can be dropped.
+        if (!isUnitHead(sheetNodes, node)) continue;
         const nodeIdx = speechIndex.get(node.speechId);
         if (nodeIdx === undefined) continue; // speech not in format, skip
 

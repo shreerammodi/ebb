@@ -147,4 +147,14 @@ describe("numberFor", () => {
         ];
         expect(numberFor(nodes, "d")).toBe(1);
     });
+
+    it("continuation cells are unnumbered (parentId null)", () => {
+        const nodes: ArgumentNode[] = [
+            makeNode({ id: "P", speechId: "1nc", row: 0, parentId: null }),
+            makeNode({ id: "R", speechId: "2ac", row: 0, parentId: "P" }),
+            makeNode({ id: "R2", speechId: "2ac", row: 1, parentId: null, unitId: "R" }),
+        ];
+        expect(numberFor(nodes, "R")).toBe(1);
+        expect(numberFor(nodes, "R2")).toBeNull();
+    });
 });

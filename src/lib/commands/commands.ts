@@ -15,6 +15,7 @@ import {
     type JumpDir,
 } from "@/lib/grid/coords";
 import type { Sheet, Round } from "@/lib/model/types";
+import { unitHeadOf } from "@/lib/model/units";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import type { CommandId } from "./registry";
@@ -271,8 +272,10 @@ export function executeCommand(id: CommandId): void {
             } else if (id === "format.toggleHighlight") {
                 state.toggleNodeHighlight(node.id);
             } else {
+                // Conceded/extended are unit-level facts - they live on the head.
+                const head = unitHeadOf(round.nodes, node);
                 state.toggleNodeStatus(
-                    node.id,
+                    head.id,
                     id === "status.toggleConceded" ? "conceded" : "extended",
                 );
             }
