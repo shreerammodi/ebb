@@ -36,9 +36,6 @@
         "zustand": "^5.0.5"
     },
     "devDependencies": {
-        "@fontsource/dm-sans": "^5.2.8",
-        "@fontsource/ibm-plex-mono": "^5.2.7",
-        "@fontsource/ibm-plex-sans": "^5.2.8",
         "@tauri-apps/cli": "^2.11.4",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.3.0",
@@ -49,11 +46,8 @@
         "@vitejs/plugin-react": "^6.0.2",
         "eslint": "^9.25.0",
         "eslint-config-next": "^15.3.3",
-        "eslint-config-prettier": "^10.1.8",
         "fake-indexeddb": "^6.2.5",
         "jsdom": "^26.1.0",
-        "prettier": "3.8.3",
-        "prettier-plugin-tailwindcss": "^0.8.0",
         "typescript": "^5.8.3",
         "vitest": "^4.1.8"
     },

@@ -31,18 +31,6 @@ export function maxRow(nodes: ArgumentNode[], sheetId: string): number {
 }
 
 /**
- * The deepest grid row spanned by a node's entire subtree (the node plus all
- * transitive responses, across every column). This is the bottom of the node's
- * "band" — the vertical space the exchange rooted at this node occupies.
- */
-export function subtreeMaxRow(nodes: ArgumentNode[], nodeId: string): number {
-    const ids = descendantIds(nodes, nodeId);
-    let m = -1;
-    for (const n of nodes) if (ids.has(n.id) && n.row > m) m = n.row;
-    return m;
-}
-
-/**
  * True when (speechId, row) is an EMPTY cell that falls strictly inside the
  * band of an argument living above it in the same column. Such cells sit beside
  * another argument's responses; placing a new argument there would interleave

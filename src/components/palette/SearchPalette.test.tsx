@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
  */
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import SearchPalette from "./SearchPalette";
@@ -23,7 +23,7 @@ function resetStore() {
 /** Round with two sheets; one argument on the Disad sheet. */
 function setupRound() {
     const store = useRoundStore.getState();
-    store.createRound({ role: "aff", format: makeFormatByKey("policy") });
+    store.createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
     const caseId = store.addSheet({ title: "Case", group: "aff" });
     const daId = store.addSheet({ title: "Disad", group: "neg" });
     const speechId = useRoundStore.getState().round!.format.speeches[0].id;

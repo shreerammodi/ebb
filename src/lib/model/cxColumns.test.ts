@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 
-import { CX_COLUMNS, CX_COLUMN_IDS, responseColumnFor, columnsForSheet } from "./cxColumns";
+import { CX_COLUMNS, columnsForSheet } from "./cxColumns";
 import type { Round } from "./types";
 
 describe("CX_COLUMNS", () => {
@@ -16,21 +16,6 @@ describe("CX_COLUMNS", () => {
         expect(CX_COLUMNS[1].group).toBe("1AC CX");
         expect(CX_COLUMNS[6].group).toBe("2NC CX");
     });
-    it("CX_COLUMN_IDS contains every column id", () => {
-        expect(CX_COLUMN_IDS.has("cx-1ac-q")).toBe(true);
-        expect(CX_COLUMN_IDS.size).toBe(8);
-    });
-});
-
-describe("responseColumnFor", () => {
-    it("maps a Question column to its paired Response column", () => {
-        expect(responseColumnFor("cx-1ac-q")).toBe("cx-1ac-r");
-        expect(responseColumnFor("cx-2nc-q")).toBe("cx-2nc-r");
-    });
-    it("returns null for a Response column or unknown id", () => {
-        expect(responseColumnFor("cx-1ac-r")).toBeNull();
-        expect(responseColumnFor("nope")).toBeNull();
-    });
 });
 
 describe("columnsForSheet", () => {
@@ -40,7 +25,7 @@ describe("columnsForSheet", () => {
             createdAt: 0,
             updatedAt: 0,
             role: "aff",
-            format: makeFormatByKey("policy"),
+            format: makeFormat(POLICY_PRESET),
             scouting: {
                 aff: {
                     first: { first: "", last: "" },

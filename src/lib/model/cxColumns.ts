@@ -65,16 +65,6 @@ export const CX_COLUMNS: Speech[] = [
     },
 ];
 
-export const CX_COLUMN_IDS = new Set(CX_COLUMNS.map((c) => c.id));
-
-/** The Response column paired with a Question column id, or null. */
-export function responseColumnFor(questionColumnId: string): string | null {
-    if (!questionColumnId.endsWith("-q")) return null;
-    const i = CX_COLUMNS.findIndex((c) => c.id === questionColumnId);
-    if (i === -1) return null;
-    return CX_COLUMNS[i + 1]?.id ?? null;
-}
-
 /** Columns to render for a sheet: CX columns for a cx sheet, else format speeches. */
 export function columnsForSheet(round: Round, sheetId: string): Speech[] {
     const sheet = round.sheets.find((s) => s.id === sheetId);

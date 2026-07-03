@@ -1,13 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import UndoTreePanel from "./UndoTreePanel";
 
 function fresh() {
-    const fmt = makeFormatByKey("policy");
+    const fmt = makeFormat(POLICY_PRESET);
     useRoundStore.getState().createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
     useRoundStore.getState().setActiveSheet(sheetId);

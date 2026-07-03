@@ -80,10 +80,3 @@ export function detectDrops(nodes: ArgumentNode[], format: Format, sheetId: stri
 
     return dropped;
 }
-
-/**
- * Convenience wrapper — returns the count of dropped nodes for a sheet.
- */
-export function dropCountForSheet(nodes: ArgumentNode[], format: Format, sheetId: string): number {
-    return detectDrops(nodes, format, sheetId).length;
-}

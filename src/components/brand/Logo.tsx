@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-import { useWindowWidth } from "@/lib/hooks/useWindowWidth";
+import { cn } from "@/lib/utils";
 
 /**
  * The ebb brand marks, as inline SVG. Paths sourced verbatim from
@@ -58,26 +58,29 @@ export function Monogram({ "aria-label": ariaLabel = "ebb", ...props }: SVGProps
 
 /**
  * Responsive Logo component.
- * Shows Wordmark on larger screens, Monogram on narrow windows.
- * The Monogram uses h-6 with a subtle shadow to maintain visual presence
- * when the full wordmark would look cramped in a narrow window.
+ * Shows Wordmark on larger screens, Monogram on narrow windows. Both render;
+ * a CSS breakpoint hides one, so no JS resize tracking is needed. The
+ * Monogram uses h-6 to maintain visual weight when the full wordmark would
+ * look cramped in a narrow window.
  */
 export function Logo({
     "aria-label": ariaLabel = "ebb",
     className,
     ...props
 }: SVGProps<SVGSVGElement>) {
-    const width = useWindowWidth();
-    // Use monogram when window is narrow
-    const isNarrow = width > 0 && width < 900;
-
-    // When narrow, use larger height (h-6) for monogram to maintain visual weight
-    const narrowClassName = isNarrow ? `${className ?? ""} h-6` : className;
-
-    return isNarrow ? (
-        <Monogram aria-label={ariaLabel} className={narrowClassName} {...props} />
-    ) : (
-        <Wordmark aria-label={ariaLabel} className={className} {...props} />
+    return (
+        <>
+            <Monogram
+                aria-label={ariaLabel}
+                className={cn(className, "h-6 min-[900px]:hidden")}
+                {...props}
+            />
+            <Wordmark
+                aria-label={ariaLabel}
+                className={cn(className, "max-[899.98px]:hidden")}
+                {...props}
+            />
+        </>
     );
 }
 

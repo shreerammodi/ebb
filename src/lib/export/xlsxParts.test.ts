@@ -7,7 +7,6 @@ import {
     buildBodyRow,
     setCellInline,
     buildFlowSheetXml,
-    registerSheets,
     parseColStyles,
     removeCalcChainFromRels,
 } from "./xlsxParts";

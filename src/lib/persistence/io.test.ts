@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { emptyScouting, normalizeRound } from "@/lib/model/normalize";
 import type { Round } from "@/lib/model/types";
 
@@ -15,7 +15,7 @@ function makeRound(overrides: Partial<Round> = {}): Round {
         createdAt: now,
         updatedAt: now,
         role: "aff",
-        format: makeFormatByKey("policy"),
+        format: makeFormat(POLICY_PRESET),
         scouting: emptyScouting(),
         sheets: [
             {

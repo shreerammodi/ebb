@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
 import { DEFAULT_FONT_ID } from "@/lib/fonts/registry";
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { unitOf } from "@/lib/model/units";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
@@ -16,7 +16,7 @@ function resetStore() {
 }
 
 function setupRound() {
-    const fmt = makeFormatByKey("policy");
+    const fmt = makeFormat(POLICY_PRESET);
     useRoundStore.getState().createRound({ role: "aff", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
     const sp = fmt.speeches[1].id; // 1NC
@@ -65,8 +65,6 @@ describe("Group Actions", () => {
 });
 
 // ─── Coordinate-based store actions ──────────────────────────────────────
-
-import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 
 function freshRound() {
     useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
@@ -859,7 +857,7 @@ describe("reorderSheets", () => {
 
     it("renumbers listed flow sheets by position, preserves group, ignores CX", () => {
         const store = useRoundStore.getState();
-        store.createRound({ role: "aff", format: makeFormatByKey("policy") });
+        store.createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
         const aId = store.addSheet({ title: "A", group: "aff" });
         const bId = store.addSheet({ title: "B", group: "neg" });
         const cId = store.addSheet({ title: "C", group: "aff" });
@@ -882,7 +880,7 @@ describe("reorderSheets", () => {
 
     it("is undoable", () => {
         const store = useRoundStore.getState();
-        store.createRound({ role: "aff", format: makeFormatByKey("policy") });
+        store.createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
         const aId = store.addSheet({ title: "A", group: "aff" });
         const bId = store.addSheet({ title: "B", group: "neg" });
         const before = useRoundStore.getState().round!.sheets.find((s) => s.id === aId)!.order;
@@ -897,7 +895,7 @@ describe("reorderSheets", () => {
 
 describe("undo tree", () => {
     function fresh() {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "DA", group: "neg" });
         useRoundStore.getState().setActiveSheet(sheetId);

@@ -334,7 +334,7 @@ describe("subtree", () => {
 
 // ── Band-aware sibling placement + reserved cells ────────────────────────────
 
-import { subtreeMaxRow, isReservedCell } from "./coords";
+import { isReservedCell } from "./coords";
 
 /** Node with an explicit parent (the module `n` helper hard-codes parentId null). */
 const cn = (id: string, speechId: string, row: number, parentId: string | null): ArgumentNode => ({
@@ -354,16 +354,6 @@ function bandFixture(): ArgumentNode[] {
         cn("r6", "b", 5, "arg1"),
     ];
 }
-
-describe("subtreeMaxRow", () => {
-    it("returns the deepest row spanned by a node's whole subtree", () => {
-        expect(subtreeMaxRow(bandFixture(), "arg1")).toBe(5);
-    });
-
-    it("equals the node's own row when it has no children", () => {
-        expect(subtreeMaxRow(bandFixture(), "r3")).toBe(2);
-    });
-});
 
 describe("band-aware sibling placement", () => {
     it("places a sibling of a banded parent BELOW the whole band", () => {

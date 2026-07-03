@@ -8,7 +8,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import FlowGrid from "./FlowGrid";
@@ -22,7 +22,7 @@ function resetStore() {
 }
 
 function setupScenario() {
-    const fmt = makeFormatByKey("policy");
+    const fmt = makeFormat(POLICY_PRESET);
     useRoundStore.getState().createRound({ role: "neg", format: fmt });
     const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
 
@@ -147,7 +147,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
     // A parent (1NC) answered by a run of 2AC responses where one of them is a
     // tall, multi-row exchange (it carries Block answers) and the rest are leaves.
     function setupTallSibling() {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "neg", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
         const sp = fmt.speeches;
@@ -225,7 +225,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
     });
 
     it("renders at least one row even on an empty sheet", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Empty", group: "aff" });
         render(<FlowGrid sheetId={sheetId} />);
@@ -234,7 +234,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
     });
 
     it("renders every empty cell as clickable (no cell-void)", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
         render(<FlowGrid sheetId={sheetId} />);
@@ -247,7 +247,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
     });
 
     it("clicking an empty cell sets selection to that coordinate", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
         const fmt2 = useRoundStore.getState().round!.format;
@@ -271,7 +271,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
     });
 
     it("shows first-run hint in entry cell of an empty sheet", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
         const { container } = render(<FlowGrid sheetId={sheetId} />);
@@ -287,7 +287,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
     });
 
     it("renders a caption naming the sheet", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "neg", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Disad", group: "neg" });
         const { container } = render(<FlowGrid sheetId={sheetId} />);
@@ -298,7 +298,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
 
     it("applies side-aff class to a group header spanning aff speeches", () => {
         // Test: set up a sheet with speeches that have groups.
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "neg", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "AffGroup", group: "aff" });
         render(<FlowGrid sheetId={sheetId} />);
@@ -309,7 +309,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
     });
 
     it("dropping a node onto an empty cell moves the subtree there", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
         const s1AC = fmt.speeches[0].id; // 1AC
@@ -374,7 +374,7 @@ describe("FlowGrid — coordinate-based rendering", () => {
     });
 
     it("dropping a node onto an occupied cell ripples the occupant down", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
         const s1AC = fmt.speeches[0].id;
@@ -423,7 +423,7 @@ describe("FlowGrid — CX sheet folding", () => {
     beforeEach(resetStore);
 
     it("renders CX period group headers when the sheet is a CX sheet", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "neg", format: fmt });
         const cxId = useRoundStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
 
@@ -437,7 +437,7 @@ describe("FlowGrid — CX sheet folding", () => {
     });
 
     it("renders CX nodes with numbering (no special-case suppression)", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "neg", format: fmt });
         const cxId = useRoundStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
 
@@ -470,7 +470,7 @@ describe("FlowGrid — reserved cells beside a response band", () => {
     beforeEach(resetStore);
 
     it("greys band cells in the parent column and blocks editing there", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
         useRoundStore.getState().setActiveSheet(sheetId);
@@ -516,7 +516,7 @@ describe("FlowGrid — link mode banner", () => {
     beforeEach(resetStore);
 
     it("renders the Link banner when linkSource is set", () => {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
         useRoundStore.getState().setActiveSheet(sheetId);
@@ -534,7 +534,7 @@ describe("FlowGrid — unit dividers and highlight", () => {
     beforeEach(resetStore);
 
     function newSheet() {
-        const fmt = makeFormatByKey("policy");
+        const fmt = makeFormat(POLICY_PRESET);
         useRoundStore.getState().createRound({ role: "aff", format: fmt });
         const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
         useRoundStore.getState().setActiveSheet(sheetId);

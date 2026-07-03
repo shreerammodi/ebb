@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import type { Role } from "@/lib/model/types";
 import { persistRound } from "@/lib/persistence/autosave";
 import { useRoundStore } from "@/lib/store/useRoundStore";
@@ -21,7 +21,7 @@ export function useCreateFlow() {
     return useCallback(
         (role: Role) => {
             const store = useRoundStore.getState();
-            store.createRound({ role, format: makeFormatByKey("policy") });
+            store.createRound({ role, format: makeFormat(POLICY_PRESET) });
             store.addSheet({
                 title: role === "neg" ? "Neg" : "Aff",
                 group: role === "judge" ? "aff" : role,

@@ -9,7 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import Sidebar from "./Sidebar";
@@ -52,7 +52,7 @@ function setupRound() {
     const store = useRoundStore.getState();
     store.createRound({
         role: "aff",
-        format: makeFormatByKey("policy"),
+        format: makeFormat(POLICY_PRESET),
     });
     const caseId = store.addSheet({ title: "Case", group: "aff" });
     const daId = store.addSheet({ title: "Disad", group: "neg" });

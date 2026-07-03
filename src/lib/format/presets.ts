@@ -32,20 +32,6 @@ export const POLICY_PRESET: FormatPresetDescriptor = {
     prepSeconds: { aff: 480, neg: 480 },
 };
 
-// ─── Enumerable list for setup UI ────────────────────────────────────────────
-
-export type PresetKey = "policy";
-
-export interface PresetEntry {
-    key: PresetKey;
-    label: string;
-    preset: FormatPresetDescriptor;
-}
-
-export const FORMAT_PRESETS: PresetEntry[] = [
-    { key: "policy", label: "Policy", preset: POLICY_PRESET },
-];
-
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
 /**
@@ -65,15 +51,4 @@ export function makeFormat(preset: FormatPresetDescriptor): Format {
         })),
         prepSeconds: { ...preset.prepSeconds },
     };
-}
-
-/**
- * Convenience helper: create a fresh Format by preset key.
- */
-export function makeFormatByKey(key: PresetKey): Format {
-    const entry = FORMAT_PRESETS.find((p) => p.key === key);
-    if (!entry) {
-        throw new Error(`Unknown preset key: ${key}`);
-    }
-    return makeFormat(entry.preset);
 }

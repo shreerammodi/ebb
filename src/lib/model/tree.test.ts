@@ -3,10 +3,7 @@ import { describe, it, expect } from "vitest";
 import type { ArgumentNode, NodeStatus } from "@/lib/model/types";
 
 import {
-    childrenOf,
-    rootsOf,
     placeNodeAt,
-    orphanNode,
     deleteSubtree,
     setParent,
     updateText,
@@ -86,158 +83,6 @@ describe("highlight", () => {
         expect(nodes.find((n) => n.id === node.id)!.highlight).toBe(false);
         const off = toggleHighlight(on, node.id);
         expect(off.find((n) => n.id === node.id)!.highlight).toBe(false);
-    });
-});
-
-// ─── childrenOf ─────────────────────────────────────────────────────────────
-
-describe("childrenOf", () => {
-    it("returns children of a node sorted by row ascending", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "root", row: 2 }),
-            makeNode({ id: "b", parentId: "root", row: 0 }),
-            makeNode({ id: "c", parentId: "root", row: 1 }),
-        ];
-        const result = childrenOf(nodes, "root", "sheet1");
-        expect(result.map((n) => n.id)).toEqual(["b", "c", "a"]);
-    });
-
-    it("excludes nodes with different parentId", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "root", row: 0 }),
-            makeNode({ id: "b", parentId: "other", row: 0 }),
-        ];
-        const result = childrenOf(nodes, "root", "sheet1");
-        expect(result).toHaveLength(1);
-        expect(result[0].id).toBe("a");
-    });
-
-    it("filters by sheetId", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({
-                id: "a",
-                parentId: "root",
-                row: 0,
-                sheetId: "sheet1",
-            }),
-            makeNode({
-                id: "b",
-                parentId: "root",
-                row: 1,
-                sheetId: "sheet2",
-            }),
-        ];
-        const result = childrenOf(nodes, "root", "sheet1");
-        expect(result).toHaveLength(1);
-        expect(result[0].id).toBe("a");
-    });
-
-    it("returns empty array when no children exist", () => {
-        const nodes: ArgumentNode[] = [makeNode({ id: "a" })];
-        const result = childrenOf(nodes, "nonexistent", "sheet1");
-        expect(result).toEqual([]);
-    });
-
-    it("does not mutate the input array", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: "root", row: 2 }),
-            makeNode({ id: "b", parentId: "root", row: 0 }),
-        ];
-        const original = [...nodes];
-        childrenOf(nodes, "root", "sheet1");
-        expect(nodes).toEqual(original);
-    });
-});
-
-// ─── rootsOf ────────────────────────────────────────────────────────────────
-
-describe("rootsOf", () => {
-    it("returns nodes with null parentId for a given sheet and speech, sorted by row", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({
-                id: "a",
-                parentId: null,
-                row: 2,
-                sheetId: "sheet1",
-                speechId: "speech1",
-            }),
-            makeNode({
-                id: "b",
-                parentId: null,
-                row: 0,
-                sheetId: "sheet1",
-                speechId: "speech1",
-            }),
-            makeNode({
-                id: "c",
-                parentId: null,
-                row: 1,
-                sheetId: "sheet1",
-                speechId: "speech1",
-            }),
-        ];
-        const result = rootsOf(nodes, "sheet1", "speech1");
-        expect(result.map((n) => n.id)).toEqual(["b", "c", "a"]);
-    });
-
-    it("excludes nodes with non-null parentId", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "a", parentId: null, row: 0 }),
-            makeNode({ id: "b", parentId: "parent", row: 0 }),
-        ];
-        const result = rootsOf(nodes, "sheet1", "speech1");
-        expect(result).toHaveLength(1);
-        expect(result[0].id).toBe("a");
-    });
-
-    it("filters by sheetId", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({
-                id: "a",
-                parentId: null,
-                row: 0,
-                sheetId: "sheet1",
-                speechId: "speech1",
-            }),
-            makeNode({
-                id: "b",
-                parentId: null,
-                row: 0,
-                sheetId: "sheet2",
-                speechId: "speech1",
-            }),
-        ];
-        const result = rootsOf(nodes, "sheet1", "speech1");
-        expect(result).toHaveLength(1);
-        expect(result[0].id).toBe("a");
-    });
-
-    it("filters by speechId", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({
-                id: "a",
-                parentId: null,
-                row: 0,
-                sheetId: "sheet1",
-                speechId: "speech1",
-            }),
-            makeNode({
-                id: "b",
-                parentId: null,
-                row: 0,
-                sheetId: "sheet1",
-                speechId: "speech2",
-            }),
-        ];
-        const result = rootsOf(nodes, "sheet1", "speech1");
-        expect(result).toHaveLength(1);
-        expect(result[0].id).toBe("a");
-    });
-
-    it("returns empty array when no roots exist", () => {
-        const nodes: ArgumentNode[] = [makeNode({ id: "a", parentId: "p" })];
-        const result = rootsOf(nodes, "sheet1", "speech1");
-        expect(result).toEqual([]);
     });
 });
 
@@ -357,47 +202,6 @@ describe("updateText single-line", () => {
         ] as any;
         const out = updateText(nodes, "n1", "tag\ncite\r\nmore");
         expect(out[0].text).toBe("tag cite more");
-    });
-});
-
-// ─── orphanNode ──────────────────────────────────────────────────────────────
-
-describe("orphanNode", () => {
-    it("removes the node and nulls its children's parentId in place", () => {
-        const parent = {
-            id: "p",
-            sheetId: "s1",
-            speechId: "a",
-            parentId: null,
-            row: 0,
-            text: "p",
-            statuses: [],
-            bold: false,
-            highlight: false,
-            numberOverride: null,
-        };
-        const child = { ...parent, id: "c", speechId: "b", parentId: "p", row: 0 };
-        const out = orphanNode([parent, child], "p");
-        expect(out.find((n) => n.id === "p")).toBeUndefined();
-        const c = out.find((n) => n.id === "c")!;
-        expect(c.parentId).toBeNull();
-        expect(c.row).toBe(0); // coordinate preserved
-    });
-
-    it("re-parents direct children to null when removed node was a root", () => {
-        const nodes: ArgumentNode[] = [
-            makeNode({ id: "root", parentId: null }),
-            makeNode({ id: "child", parentId: "root" }),
-        ];
-        const result = orphanNode(nodes, "root");
-        expect(result.find((n) => n.id === "child")!.parentId).toBeNull();
-    });
-
-    it("handles removing a leaf node (no children)", () => {
-        const nodes: ArgumentNode[] = [makeNode({ id: "a" }), makeNode({ id: "b" })];
-        const result = orphanNode(nodes, "b");
-        expect(result).toHaveLength(1);
-        expect(result[0].id).toBe("a");
     });
 });
 

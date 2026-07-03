@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from "vitest";
 
-import { detectDrops, dropCountForSheet } from "@/lib/model/drops";
+import { detectDrops } from "@/lib/model/drops";
 import type { ArgumentNode, Format } from "@/lib/model/types";
 
 // ---------------------------------------------------------------------------
@@ -271,39 +271,6 @@ describe("detectDrops", () => {
         const dropped = detectDrops(nodes, POLICY_FORMAT, SHEET_A);
 
         expect(dropped).toHaveLength(0);
-    });
-
-    // -------------------------------------------------------------------------
-    // dropCountForSheet returns length of detectDrops result.
-    // -------------------------------------------------------------------------
-    it("dropCountForSheet returns correct count", () => {
-        const arg1 = makeNode({
-            id: "arg1",
-            sheetId: SHEET_A,
-            speechId: "sp-2ac",
-        });
-        const arg2 = makeNode({
-            id: "arg2",
-            sheetId: SHEET_A,
-            speechId: "sp-2ac",
-            row: 1,
-        });
-        const arg3 = makeNode({
-            id: "arg3",
-            sheetId: SHEET_A,
-            speechId: "sp-2ac",
-            row: 2,
-        });
-        const blk1 = makeNode({
-            id: "blk1",
-            sheetId: SHEET_A,
-            speechId: "sp-block",
-            parentId: "arg1",
-        });
-        // arg2 and arg3 are both unanswered; block has content so both are dropped
-
-        const nodes = [arg1, arg2, arg3, blk1];
-        expect(dropCountForSheet(nodes, POLICY_FORMAT, SHEET_A)).toBe(2);
     });
 
     // -------------------------------------------------------------------------

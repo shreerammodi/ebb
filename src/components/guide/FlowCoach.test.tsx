@@ -2,7 +2,7 @@ import { render, screen, cleanup, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { loadCoachSeen, saveCoachSeen } from "@/lib/guide/coachSeen";
 import type { ArgumentNode } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
@@ -13,7 +13,7 @@ let sheetId = "";
 let speechId = "";
 
 function newEmptyFlow() {
-    const fmt = makeFormatByKey("policy");
+    const fmt = makeFormat(POLICY_PRESET);
     useRoundStore.getState().createRound({ role: "aff", format: fmt });
     sheetId = useRoundStore.getState().addSheet({ title: "Aff", group: "aff" });
     speechId = fmt.speeches[0].id;

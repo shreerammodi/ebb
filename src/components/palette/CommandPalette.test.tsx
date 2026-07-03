@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
  */
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import CommandPalette from "./CommandPalette";
@@ -22,7 +22,7 @@ function resetStore() {
 
 function setup() {
     const store = useRoundStore.getState();
-    store.createRound({ role: "aff", format: makeFormatByKey("policy") });
+    store.createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
     useRoundStore.getState().setCommandPaletteOpen(true);
 }
 

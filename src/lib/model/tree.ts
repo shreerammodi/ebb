@@ -2,9 +2,8 @@
  * Pure clash-tree operations.
  *
  * The `parentId` tree is relationship metadata only — it does NOT drive layout.
- * Position lives on the grid via `(speechId, row)`. These helpers sort children
- * by `row`, create nodes at exact cells, and restructure the tree (orphan /
- * delete) without touching coordinates.
+ * Position lives on the grid via `(speechId, row)`. These helpers create nodes
+ * at exact cells and restructure the tree without touching coordinates.
  *
  * All functions are pure: they take an array of ArgumentNode and return new
  * arrays without mutating their input.
@@ -12,30 +11,6 @@
 
 import { uid } from "@/lib/model/ids";
 import type { ArgumentNode, NodeStatus } from "@/lib/model/types";
-
-/**
- * Returns children of a node (nodes whose parentId === parentId and
- * sheetId === sheetId), sorted ascending by row.
- */
-export function childrenOf(
-    nodes: ArgumentNode[],
-    parentId: string,
-    sheetId: string,
-): ArgumentNode[] {
-    return nodes
-        .filter((n) => n.parentId === parentId && n.sheetId === sheetId)
-        .sort((a, b) => a.row - b.row);
-}
-
-/**
- * Returns root-level nodes (parentId === null) for the given sheet and speech,
- * sorted ascending by row.
- */
-export function rootsOf(nodes: ArgumentNode[], sheetId: string, speechId: string): ArgumentNode[] {
-    return nodes
-        .filter((n) => n.parentId === null && n.sheetId === sheetId && n.speechId === speechId)
-        .sort((a, b) => a.row - b.row);
-}
 
 /**
  * Creates a new ArgumentNode at an exact cell and returns the updated nodes
@@ -66,17 +41,6 @@ export function placeNodeAt(
         ...(input.unitId !== undefined ? { unitId: input.unitId } : {}),
     };
     return { nodes: [...nodes, node], node };
-}
-
-/**
- * Removes a node; its direct children become bare roots (parentId = null) in
- * place — their coordinates are preserved. Deleting an argument never
- * vaporizes the answers written under it.
- */
-export function orphanNode(nodes: ArgumentNode[], nodeId: string): ArgumentNode[] {
-    return nodes
-        .filter((n) => n.id !== nodeId)
-        .map((n) => (n.parentId === nodeId ? { ...n, parentId: null } : n));
 }
 
 /** Removes a node and every transitive descendant. */

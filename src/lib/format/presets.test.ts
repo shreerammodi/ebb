@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { POLICY_PRESET, FORMAT_PRESETS, makeFormat, makeFormatByKey } from "@/lib/format/presets";
+import { POLICY_PRESET, makeFormat } from "@/lib/format/presets";
 
 // ─── POLICY_PRESET ─────────────────────────────────────────────────────────
 
@@ -45,21 +45,6 @@ describe("POLICY_PRESET", () => {
 
     it('has the name "Policy"', () => {
         expect(POLICY_PRESET.name).toBe("Policy");
-    });
-});
-
-// ─── FORMAT_PRESETS list ────────────────────────────────────────────────────
-
-describe("FORMAT_PRESETS", () => {
-    it('contains a policy entry with key "policy" and label "Policy"', () => {
-        const entry = FORMAT_PRESETS.find((p) => p.key === "policy");
-        expect(entry).toBeDefined();
-        expect(entry?.label).toBe("Policy");
-        expect(entry?.preset).toBe(POLICY_PRESET);
-    });
-
-    it("has exactly 1 entry", () => {
-        expect(FORMAT_PRESETS).toHaveLength(1);
     });
 });
 
@@ -117,21 +102,5 @@ describe("makeFormat", () => {
         const fmt = makeFormat(POLICY_PRESET);
         expect(fmt.prepSeconds.aff).toBe(480);
         expect(fmt.prepSeconds.neg).toBe(480);
-    });
-});
-
-// ─── makeFormatByKey ────────────────────────────────────────────────────────
-
-describe("makeFormatByKey", () => {
-    it('returns a Policy format for key "policy"', () => {
-        const fmt = makeFormatByKey("policy");
-        expect(fmt.name).toBe("Policy");
-        expect(fmt.speeches).toHaveLength(7);
-    });
-
-    it("produces fresh ids on each call", () => {
-        const fmt1 = makeFormatByKey("policy");
-        const fmt2 = makeFormatByKey("policy");
-        expect(fmt1.id).not.toBe(fmt2.id);
     });
 });

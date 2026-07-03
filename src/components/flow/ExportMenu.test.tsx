@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import ExportMenu from "./ExportMenu";
@@ -14,7 +14,7 @@ vi.mock("@/lib/export/xlsx", () => ({
 }));
 
 beforeEach(() => {
-    useRoundStore.getState().createRound({ role: "aff", format: makeFormatByKey("policy") });
+    useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
 });
 
 describe("ExportMenu", () => {

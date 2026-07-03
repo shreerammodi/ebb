@@ -7,7 +7,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import PrintView from "./PrintView";
@@ -24,7 +24,7 @@ function resetStore() {
 }
 
 function setupTwoSheets() {
-    const fmt = makeFormatByKey("policy");
+    const fmt = makeFormat(POLICY_PRESET);
     useRoundStore.getState().createRound({ role: "aff", format: fmt });
 
     const sheet1Id = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });

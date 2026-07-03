@@ -9,7 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import type { Role } from "@/lib/model/types";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
@@ -40,7 +40,7 @@ vi.mock("@/lib/export/xlsx", () => ({
 function setupRound(role: Role) {
     useRoundStore.getState().createRound({
         role,
-        format: makeFormatByKey("policy"),
+        format: makeFormat(POLICY_PRESET),
     });
 }
 
@@ -112,7 +112,7 @@ describe("RoundHeader", () => {
     });
 
     it("shows team codes from scouting", () => {
-        useRoundStore.getState().createRound({ role: "aff", format: makeFormatByKey("policy") });
+        useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
         useRoundStore.getState().setScouting({
             affSchool: "Westwood",
             aff: {
@@ -146,7 +146,7 @@ describe("RoundHeader", () => {
         // Build a different round to return from the mock
         useRoundStore.getState().createRound({
             role: "neg",
-            format: makeFormatByKey("policy"),
+            format: makeFormat(POLICY_PRESET),
         });
         const importedRound = useRoundStore.getState().round!;
 

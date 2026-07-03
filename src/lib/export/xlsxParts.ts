@@ -151,14 +151,6 @@ export interface NewSheet {
     partName: string;
 }
 
-/** Insert the new <sheet> entries into workbook.xml just before </sheets>. */
-export function registerSheetsInWorkbook(workbookXml: string, sheets: NewSheet[]): string {
-    const entries = sheets
-        .map((s) => `<sheet name="${escXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rid}"/>`)
-        .join("");
-    return workbookXml.replace("</sheets>", `${entries}</sheets>`);
-}
-
 /** Add worksheet relationships before </Relationships>. */
 export function registerSheetsInRels(relsXml: string, sheets: NewSheet[]): string {
     const entries = sheets
@@ -187,10 +179,3 @@ export function registerSheetsInContentTypes(ctXml: string, sheets: NewSheet[]):
     out = out.replace(/<Override PartName="\/xl\/calcChain\.xml"[^>]*\/>/, "");
     return out;
 }
-
-/** Convenience: combined helper used by the test re-export. */
-export const registerSheets = {
-    workbook: registerSheetsInWorkbook,
-    rels: registerSheetsInRels,
-    contentTypes: registerSheetsInContentTypes,
-};

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { makeFormatByKey } from "@/lib/format/presets";
+import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import InfoPanel from "./InfoPanel";
@@ -18,7 +18,7 @@ function renderInfoPanel() {
 
 describe("InfoPanel", () => {
     beforeEach(() => {
-        useRoundStore.getState().createRound({ role: "aff", format: makeFormatByKey("policy") });
+        useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
         useRoundStore.getState().setInfoOpen(true);
     });
 
