@@ -29,5 +29,3 @@ export function saveUpdateConfig(config: UpdateConfig): void {
         // best effort
     }
 }
-
-export { DEFAULT_UPDATE_CONFIG };

@@ -1063,12 +1063,6 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
 
 // ─── Pure selector helpers ────────────────────────────────────────────────────
 
-/** Returns all nodes belonging to the given sheet, or [] if round is null. */
-export function selectSheetNodes(round: Round | null, sheetId: string): ArgumentNode[] {
-    if (!round) return [];
-    return round.nodes.filter((n) => n.sheetId === sheetId);
-}
-
 /** Returns ids of dropped nodes on the given sheet, or [] if round is null. */
 export function selectDrops(round: Round | null, sheetId: string): string[] {
     if (!round) return [];
