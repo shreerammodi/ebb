@@ -178,7 +178,11 @@ export function removeNodeWithPromotion(nodes: ArgumentNode[], nodeId: string): 
         .filter((n) => n.id !== nodeId)
         .map((n) => {
             if (n.id === next.id)
-                return { ...n, parentId: target.parentId, numberOverride: target.numberOverride ?? null };
+                return {
+                    ...n,
+                    parentId: target.parentId,
+                    numberOverride: target.numberOverride ?? null,
+                };
             return n.parentId === nodeId ? { ...n, parentId: next.id } : n;
         });
 }

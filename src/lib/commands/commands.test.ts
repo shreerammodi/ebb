@@ -674,7 +674,9 @@ describe("unit join / split commands", () => {
         useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
 
         executeCommand("unit.split");
-        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === b)!.unitId).toBeUndefined();
+        expect(
+            useRoundStore.getState().round!.nodes.find((n) => n.id === b)!.unitId,
+        ).toBeUndefined();
     });
 });
 

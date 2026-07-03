@@ -31,15 +31,6 @@ import {
 } from "@/lib/history/tree";
 import { detectDrops } from "@/lib/model/drops";
 import { createGroup, removeMemberOrDelete } from "@/lib/model/groups";
-import {
-    deleteUnitSubtree,
-    detachFromUnit,
-    joinWithAbove,
-    removeNodeWithPromotion,
-    splitAt,
-    unitHeadOf,
-    unitKeyOf,
-} from "@/lib/model/units";
 import { uid } from "@/lib/model/ids";
 import { emptyScouting, makeCxSheet } from "@/lib/model/normalize";
 import {
@@ -68,6 +59,15 @@ import type {
     NodeStatus,
     Scouting,
 } from "@/lib/model/types";
+import {
+    deleteUnitSubtree,
+    detachFromUnit,
+    joinWithAbove,
+    removeNodeWithPromotion,
+    splitAt,
+    unitHeadOf,
+    unitKeyOf,
+} from "@/lib/model/units";
 import { loadUpdateConfig, saveUpdateConfig } from "@/lib/update/settings";
 import type { UpdateConfig } from "@/lib/update/types";
 

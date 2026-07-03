@@ -146,7 +146,10 @@ describe("removeNodeWithPromotion", () => {
     });
 
     it("falls back to orphan semantics for a single-cell unit", () => {
-        const nodes = [node({ id: "p", row: 0 }), node({ id: "k", speechId: "2ac", row: 0, parentId: "p" })];
+        const nodes = [
+            node({ id: "p", row: 0 }),
+            node({ id: "k", speechId: "2ac", row: 0, parentId: "p" }),
+        ];
         const removed = removeNodeWithPromotion(nodes, "p");
         expect(byId(removed, "k").parentId).toBeNull();
     });
