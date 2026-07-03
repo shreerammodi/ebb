@@ -45,6 +45,14 @@ export interface ArgumentNode {
     highlight: boolean;
     /** Override the auto-generated display number for this node. */
     numberOverride?: number | null;
+    /**
+     * Unit membership key. A unit is a vertical run of same-column cells that
+     * together form ONE argument; the lowest-row member (the head) carries the
+     * unit's parentId, statuses, and number. Absent = the node is a unit of
+     * itself. The key is opaque - it is usually the id of the cell that
+     * started the unit, and stays valid even if that node is later deleted.
+     */
+    unitId?: string;
 }
 
 /** A labeled bracket grouping argument nodes in the same column. */

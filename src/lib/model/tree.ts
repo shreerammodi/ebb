@@ -49,6 +49,7 @@ export function placeNodeAt(
         parentId: string | null;
         row: number;
         text?: string;
+        unitId?: string;
     },
 ): { nodes: ArgumentNode[]; node: ArgumentNode } {
     const node: ArgumentNode = {
@@ -62,6 +63,7 @@ export function placeNodeAt(
         bold: false,
         highlight: false,
         numberOverride: null,
+        ...(input.unitId !== undefined ? { unitId: input.unitId } : {}),
     };
     return { nodes: [...nodes, node], node };
 }
