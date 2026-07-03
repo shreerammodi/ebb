@@ -71,9 +71,7 @@ describe("flattenForPanel", () => {
         tree = commit(tree, makeRound(4), null, "C"); // A's younger child (branch)
         tree = commit(tree, makeRound(5), null, "D"); // C's oldest child
 
-        const byLabel = new Map(
-            flattenForPanel(tree).map((r) => [r.node.label, r.depth] as const),
-        );
+        const byLabel = new Map(flattenForPanel(tree).map((r) => [r.node.label, r.depth] as const));
 
         expect(byLabel.get("root")).toBe(0);
         expect(byLabel.get("A")).toBe(0);

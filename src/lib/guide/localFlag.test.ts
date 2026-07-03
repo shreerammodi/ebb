@@ -24,7 +24,7 @@ describe("localFlag", () => {
         expect(loadBooleanFlag(KEY)).toBe(false);
     });
 
-    it("treats any non-\"true\" stored value as false", () => {
+    it('treats any non-"true" stored value as false', () => {
         window.localStorage.setItem(KEY, "yes");
         expect(loadBooleanFlag(KEY)).toBe(false);
     });

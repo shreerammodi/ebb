@@ -623,9 +623,7 @@ describe("undo tree", () => {
         // The new cell plus its typing burst added exactly one history node.
         expect(Object.keys(tree.nodes)).toHaveLength(before + 1);
         expect(tree.nodes[tree.currentId].label).toBe("Add");
-        expect(tree.nodes[tree.currentId].snapshot.nodes.find((n) => n.id === a)!.text).toBe(
-            "hi",
-        );
+        expect(tree.nodes[tree.currentId].snapshot.nodes.find((n) => n.id === a)!.text).toBe("hi");
 
         // One undo removes the whole new cell, not just its text.
         useRoundStore.getState().undo();

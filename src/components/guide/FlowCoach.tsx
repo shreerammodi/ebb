@@ -75,7 +75,7 @@ export default function FlowCoach() {
             role="region"
             aria-label="First-run guide"
             data-testid="flow-coach"
-            className="flow-coach fixed right-4 bottom-4 z-40 w-[300px] max-w-[calc(100vw_-_2rem)] rounded-lg border border-border bg-card p-3.5 shadow-lg"
+            className="flow-coach border-border bg-card fixed right-4 bottom-4 z-40 w-[300px] max-w-[calc(100vw_-_2rem)] rounded-lg border p-3.5 shadow-lg"
         >
             {done ? (
                 <div>
@@ -99,7 +99,7 @@ export default function FlowCoach() {
                             type="button"
                             data-testid="flow-coach-done"
                             onClick={dismiss}
-                            className="focus-visible:ring-ring/50 rounded-md bg-primary px-2.5 py-1 text-[12px] font-medium text-primary-foreground outline-none hover:bg-primary/90 focus-visible:ring-[3px]"
+                            className="focus-visible:ring-ring/50 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-2.5 py-1 text-[12px] font-medium outline-none focus-visible:ring-[3px]"
                         >
                             Got it
                         </button>

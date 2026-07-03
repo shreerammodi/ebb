@@ -1,11 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import {
-    POLICY_PRESET,
-    FORMAT_PRESETS,
-    makeFormat,
-    makeFormatByKey,
-} from "@/lib/format/presets";
+import { POLICY_PRESET, FORMAT_PRESETS, makeFormat, makeFormatByKey } from "@/lib/format/presets";
 
 // ─── POLICY_PRESET ─────────────────────────────────────────────────────────
 
