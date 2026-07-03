@@ -11,8 +11,6 @@ export function loadUpdateConfig(): UpdateConfig {
         const parsed = JSON.parse(raw) as Partial<UpdateConfig>;
         return {
             autoCheckEnabled: parsed.autoCheckEnabled ?? DEFAULT_UPDATE_CONFIG.autoCheckEnabled,
-            blackoutStartDay: parsed.blackoutStartDay ?? DEFAULT_UPDATE_CONFIG.blackoutStartDay,
-            blackoutEndDay: parsed.blackoutEndDay ?? DEFAULT_UPDATE_CONFIG.blackoutEndDay,
             tournamentMode: parsed.tournamentMode ?? DEFAULT_UPDATE_CONFIG.tournamentMode,
         };
     } catch {

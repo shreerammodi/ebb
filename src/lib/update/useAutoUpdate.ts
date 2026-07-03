@@ -20,7 +20,7 @@ const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
 /**
  * The update lifecycle as the UI sees it.
  * - `ready`: a staged update is waiting — show the restart chip.
- * - `held`: a newer version exists but is gated (blackout / Tournament Mode).
+ * - `held`: a newer version exists but is gated (Tournament Mode).
  *   Only surfaced for a *manual* check; auto-checks hold silently (no chip).
  * - `critical`: a critical update is gated — the bypass modal should appear.
  */
@@ -38,7 +38,7 @@ export interface AutoUpdate {
     checkNow(): Promise<void>;
     /** Apply a staged ("ready") update by relaunching. */
     applyAndRestart(): Promise<void>;
-    /** Explicitly confirm + install a critical update during a blackout. */
+    /** Explicitly confirm + install a critical update during Tournament Mode. */
     installCritical(): Promise<void>;
     /** Dismiss the critical prompt without installing. */
     dismissCritical(): void;
@@ -69,10 +69,7 @@ export function useAutoUpdate(): AutoUpdate {
             const version = await getCurrentVersion();
             // Read the freshest config so a just-flipped toggle is respected.
             const config = useRoundStore.getState().updateConfig;
-            const action = decideUpdateAction(manifest, version, {
-                now: new Date(),
-                config,
-            });
+            const action = decideUpdateAction(manifest, version, config);
 
             switch (action.kind) {
                 case "download": {

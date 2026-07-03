@@ -1,33 +1,11 @@
-import type {
-    UpdateConfig,
-    UpdateEligibilityState,
-    UpdateManifest,
-    UpdatePlatformEntry,
-} from "./types";
+import type { UpdateConfig, UpdateManifest, UpdatePlatformEntry } from "./types";
 
 /**
- * Returns true if `date`'s local day-of-week falls inside the blackout window.
- *
- * The window is inclusive of both boundary days and may wrap across the week
- * boundary (the default Friday→Monday spans Fri, Sat, Sun, Mon).
+ * Returns true if a staged update may be applied right now: only when
+ * Tournament Mode is off.
  */
-export function isInBlackout(date: Date, config: UpdateConfig): boolean {
-    const day = date.getDay();
-    const { blackoutStartDay: start, blackoutEndDay: end } = config;
-    if (start <= end) {
-        return day >= start && day <= end;
-    }
-    // Wrapping window (e.g. Fri(5)→Mon(1)): inside if on or after the start, or
-    // on or before the end.
-    return day >= start || day <= end;
-}
-
-/**
- * Returns true if a staged update may be applied right now: only outside the
- * blackout and only when Tournament Mode is off.
- */
-export function isUpdateEligible(state: UpdateEligibilityState): boolean {
-    return !isInBlackout(state.now, state.config) && !state.config.tournamentMode;
+export function isUpdateEligible(config: UpdateConfig): boolean {
+    return !config.tournamentMode;
 }
 
 function isPlatformEntry(value: unknown): value is UpdatePlatformEntry {
@@ -74,15 +52,11 @@ export function parseManifest(json: unknown): UpdateManifest {
 /**
  * Returns true if a critical update should be surfaced via the explicit bypass
  * prompt. That is only the case when the update is critical AND would otherwise
- * be held (in a blackout or with Tournament Mode on). When the update is
- * already eligible, the normal "Update ready" flow applies and no modal is
- * needed.
+ * be held (Tournament Mode on). When the update is already eligible, the normal
+ * "Update ready" flow applies and no modal is needed.
  */
-export function shouldPromptCritical(
-    manifest: UpdateManifest,
-    state: UpdateEligibilityState,
-): boolean {
-    return manifest.critical === true && !isUpdateEligible(state);
+export function shouldPromptCritical(manifest: UpdateManifest, config: UpdateConfig): boolean {
+    return manifest.critical === true && !isUpdateEligible(config);
 }
 
 /** Parses a dotted version (tolerating a leading `v` and prerelease suffix). */
@@ -110,29 +84,29 @@ export type UpdateAction =
     | { kind: "none" }
     /** A newer, eligible version — download and stage it. */
     | { kind: "download" }
-    /** A newer version held by the blackout / Tournament Mode (no chip). */
+    /** A newer version held by Tournament Mode (no chip). */
     | { kind: "hold" }
     /** A newer critical version held by a guard — prompt for explicit consent. */
     | { kind: "critical"; manifest: UpdateManifest };
 
 /**
  * Pure decision for what to do given a fetched manifest, the running version,
- * and the current eligibility state. This is the brain the `useAutoUpdate` hook
+ * and the current update config. This is the brain the `useAutoUpdate` hook
  * wires to side effects; keeping it pure makes the whole policy unit-testable
  * without Tauri or timers.
  */
 export function decideUpdateAction(
     manifest: UpdateManifest,
     currentVersion: string,
-    state: UpdateEligibilityState,
+    config: UpdateConfig,
 ): UpdateAction {
     if (!isNewerVersion(manifest.version, currentVersion)) {
         return { kind: "none" };
     }
-    if (isUpdateEligible(state)) {
+    if (isUpdateEligible(config)) {
         return { kind: "download" };
     }
-    if (shouldPromptCritical(manifest, state)) {
+    if (shouldPromptCritical(manifest, config)) {
         return { kind: "critical", manifest };
     }
     return { kind: "hold" };

@@ -83,7 +83,7 @@ export interface RoundState {
     autoNumber: boolean;
     labelDrops: boolean;
     flowFont: FontId;
-    /** Desktop auto-update behavior (opt-in, blackout, Tournament Mode). */
+    /** Desktop auto-update behavior (opt-in, Tournament Mode). */
     updateConfig: UpdateConfig;
     quickSwitcherOpen: boolean;
     commandPaletteOpen: boolean;

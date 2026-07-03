@@ -15,8 +15,6 @@ describe("update settings persistence", () => {
     it("round-trips a saved config", () => {
         const config: UpdateConfig = {
             autoCheckEnabled: true,
-            blackoutStartDay: 4,
-            blackoutEndDay: 0,
             tournamentMode: true,
         };
         saveUpdateConfig(config);

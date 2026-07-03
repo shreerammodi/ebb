@@ -8,8 +8,8 @@ import { useUpdate } from "./UpdateProvider";
 
 /**
  * A subtle "Update ready · Restart" chip. Appears only when a verified update
- * has been staged and applying it is safe (outside the blackout, Tournament
- * Mode off). Clicking relaunches to apply. Renders nothing in every other
+ * has been staged and applying it is safe (Tournament Mode off). Clicking
+ * relaunches to apply. Renders nothing in every other
  * state, so it never nags mid-round.
  */
 export default function UpdateChip() {
