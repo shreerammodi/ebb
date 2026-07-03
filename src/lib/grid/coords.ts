@@ -4,6 +4,7 @@
  * No mutation, no store access.
  */
 import type { ArgumentNode, Speech } from "@/lib/model/types";
+import { unitBandBottom } from "@/lib/model/units";
 
 /** Column index of a speech, or −1 if not in the column set. */
 export function colIndexOf(speeches: Speech[], speechId: string): number {
@@ -56,7 +57,7 @@ export function isReservedCell(
     if (occupantAt(nodes, sheetId, speechId, row)) return false;
     for (const p of nodes) {
         if (p.sheetId !== sheetId || p.speechId !== speechId) continue;
-        if (p.row < row && row <= subtreeMaxRow(nodes, p.id)) return true;
+        if (p.row < row && row <= unitBandBottom(nodes, p)) return true;
     }
     return false;
 }
@@ -175,7 +176,7 @@ export function rippleUp(
     );
 }
 
-export type Spawn = "sibling" | "response";
+export type Spawn = "continue" | "sibling" | "response";
 
 /** Destination cell for a gesture, or null when impossible. */
 export function spawnTarget(
@@ -185,14 +186,17 @@ export function spawnTarget(
     current: ArgumentNode,
     kind: Spawn,
 ): { speechId: string; row: number } | null {
+    if (kind === "continue") {
+        // The next cell of the SAME argument: directly below the source cell.
+        return { speechId: current.speechId, row: current.row + 1 };
+    }
     if (kind === "sibling") {
-        // A sibling lands BELOW the current node's whole subtree band, not at
-        // current.row + 1 — otherwise it splits a multi-row response band
-        // (e.g. a sibling of an argument that has six responses would land
-        // beside response #2 instead of after the whole exchange).
+        // A new argument lands BELOW the current UNIT's whole band (its cells
+        // plus every response), not at current.row + 1 — otherwise it splits a
+        // multi-row exchange.
         return {
             speechId: current.speechId,
-            row: subtreeMaxRow(nodes, current.id) + 1,
+            row: unitBandBottom(nodes, current) + 1,
         };
     }
     const col = colIndexOf(speeches, current.speechId);

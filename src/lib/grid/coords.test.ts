@@ -411,6 +411,52 @@ describe("isReservedCell", () => {
     });
 });
 
+// ── Unit-aware spawn + reserved cells ────────────────────────────────────────
+
+/** Node carrying a unitId, keyed into an existing unit. */
+const un = (id: string, speechId: string, row: number, unitId: string): ArgumentNode => ({
+    ...n(id, speechId, row),
+    unitId,
+});
+const byId = (nodes: ArgumentNode[], id: string) => nodes.find((x) => x.id === id)!;
+
+describe("spawnTarget with units", () => {
+    // 2-cell unit (a row0, b row1 keyed "a") with a response answering a.
+    const nodes = [n("a", "a", 0), un("b", "a", 1, "a"), cn("r", "b", 0, "a")];
+
+    it("continue lands directly below the source cell", () => {
+        expect(spawnTarget(nodes, "s1", speeches, byId(nodes, "a"), "continue")).toEqual({
+            speechId: "a",
+            row: 1,
+        });
+    });
+
+    it("sibling lands below the whole unit band, from any member", () => {
+        expect(spawnTarget(nodes, "s1", speeches, byId(nodes, "b"), "sibling")).toEqual({
+            speechId: "a",
+            row: 2,
+        });
+    });
+});
+
+describe("placeForSpawn continue", () => {
+    it("ripples the full row when the target row is occupied", () => {
+        const nodes = [n("a", "a", 0), n("z", "b", 1)];
+        const placed = placeForSpawn(nodes, "s1", speeches, byId(nodes, "a"), "continue")!;
+        expect(placed.row).toBe(1);
+        expect(placed.nodes.find((m) => m.id === "z")!.row).toBe(2);
+    });
+});
+
+describe("isReservedCell with units", () => {
+    it("reserves the empty parent-column rows beside a multi-cell response unit", () => {
+        // P (col a, row0) answered by response unit R1(row0)+R2(row1) in col b:
+        // P's column row 1 sits beside R2 and is band interior.
+        const nodes = [n("P", "a", 0), cn("R1", "b", 0, "P"), un("R2", "b", 1, "R1")];
+        expect(isReservedCell(nodes, "s1", "a", 1)).toBe(true);
+    });
+});
+
 // ── Excel data-edge jump + corner navigation ─────────────────────────────────
 
 import { jumpTarget, cornerTarget } from "./coords";
