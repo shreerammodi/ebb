@@ -119,3 +119,5 @@ edge case; otherwise leave the code bare.
 - There is no server; `npm run build` produces a static site in `./out`.
 - When adding a UI primitive, follow the existing `components/ui` (shadcn-style)
   patterns; `components.json` configures the generator.
+- Prefer `git rebase` over `git merge` when integrating changes to maintain a
+  linear history.
