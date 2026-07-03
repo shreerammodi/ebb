@@ -68,9 +68,8 @@ export function placeNodeAt(
 
 /**
  * Removes a node; its direct children become bare roots (parentId = null) in
- * place — their coordinates are preserved. Replaces the old grandparent-
- * reparenting removeNode (per spec: deleting an argument never vaporizes the
- * answers written under it).
+ * place — their coordinates are preserved. Deleting an argument never
+ * vaporizes the answers written under it.
  */
 export function orphanNode(nodes: ArgumentNode[], nodeId: string): ArgumentNode[] {
     return nodes

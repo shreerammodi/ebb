@@ -38,7 +38,7 @@ describe("display settings", () => {
     });
 });
 
-describe("Group Actions (Task 2)", () => {
+describe("Group Actions", () => {
     beforeEach(resetStore);
 
     it("groupNodes bundles two nodes and is undoable", () => {
@@ -63,7 +63,7 @@ describe("Group Actions (Task 2)", () => {
     });
 });
 
-// ─── Coordinate-based store actions (Task 6) ─────────────────────────────
+// ─── Coordinate-based store actions ──────────────────────────────────────
 
 import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
 
@@ -75,9 +75,9 @@ function freshRound() {
 }
 
 /**
- * Spawn actions are now deferred: they only arm `pendingSpawn`. These helpers
- * mimic "press Enter (or Shift+Enter) and type", returning the new node's id, for
- * tests that just need a populated fixture.
+ * Spawn actions only arm `pendingSpawn`; they do not create a node. These
+ * helpers mimic "press Enter (or Shift+Enter) and type", returning the new
+ * node's id, for tests that just need a populated fixture.
  */
 function spawnSiblingAndType(text = "x"): string {
     useRoundStore.getState().spawnSibling();

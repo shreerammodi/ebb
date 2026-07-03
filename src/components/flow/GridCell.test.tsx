@@ -130,10 +130,8 @@ describe("GridCell modeless editing", () => {
         renderCell(node);
         const ta = screen.getByRole("textbox") as HTMLTextAreaElement;
         fireEvent.keyDown(ta, { key: "Backspace" });
-        // cell.clear orphans children, but for a leaf node it removes the node
-        // (because parentId is null, there's nothing to orphan — wait, cell.clear
-        // calls orphanNode which removes the node and nulls children, which for a
-        // leaf means the node is just removed).
+        // cell.clear calls orphanNode, which removes the node and detaches its
+        // children; for a leaf node that means the node is simply removed.
         expect(useRoundStore.getState().round!.nodes.find((n) => n.id === node.id)).toBeUndefined();
     });
 

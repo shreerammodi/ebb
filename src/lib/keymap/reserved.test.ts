@@ -19,7 +19,6 @@ describe("reservedChords", () => {
 
     it("returns Meta+ chords on macOS", () => {
         setPlatform("MacIntel");
-        // Re-import to pick up the new navigator.platform.
         const chords = reservedChords();
         expect(chords.has("Meta+n")).toBe(true);
         expect(chords.has("Meta+a")).toBe(true);

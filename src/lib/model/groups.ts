@@ -22,7 +22,6 @@ export function createGroup(
 
 /** Adds a node to an existing group identified by groupId. Returns the new array of groups. */
 export function addMember(groups: ArgGroup[], groupId: string, nodeId: string): ArgGroup[] {
-    // Note: This assumes the group exists and is found by its ID.
     return groups.map((g) =>
         g.id === groupId && !g.memberIds.includes(nodeId)
             ? { ...g, memberIds: [...g.memberIds, nodeId] }

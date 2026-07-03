@@ -16,7 +16,7 @@ export function parentOf(nodes: ArgumentNode[], nodeId: string): ArgumentNode | 
 }
 
 /**
- * Returns the child with minimum order among all nodes whose
+ * Returns the child with the smallest row among all nodes whose
  * parentId === nodeId and sheetId === sheetId. Children may span speeches,
  * so this does not filter by speechId.
  */
@@ -31,7 +31,7 @@ export function firstChildOf(
 }
 
 /**
- * Returns the node with the next-lower order in the same (sheetId, speechId)
+ * Returns the node with the next-lower row in the same (sheetId, speechId)
  * column as `node`, or null if `node` is at the top.
  */
 export function nodeAboveInColumn(nodes: ArgumentNode[], node: ArgumentNode): ArgumentNode | null {
@@ -43,7 +43,7 @@ export function nodeAboveInColumn(nodes: ArgumentNode[], node: ArgumentNode): Ar
 }
 
 /**
- * Returns the node with the next-higher order in the same (sheetId, speechId)
+ * Returns the node with the next-higher row in the same (sheetId, speechId)
  * column as `node`, or null if `node` is at the bottom.
  */
 export function nodeBelowInColumn(nodes: ArgumentNode[], node: ArgumentNode): ArgumentNode | null {

@@ -70,8 +70,8 @@ export interface RoundState {
     history: HistoryTree | null;
     activeSheetId: string | null;
     /**
-     * The focused cell as a grid coordinate. `nodeId` is no longer stored —
-     * derived via `occupantAt` when needed.
+     * The focused cell as a grid coordinate. `nodeId` is derived via
+     * `occupantAt` when needed, not stored directly.
      */
     selection: {
         sheetId: string;

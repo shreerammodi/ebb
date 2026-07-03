@@ -32,12 +32,12 @@ const NATIVE_EDITING_KEYS = [
     "z", // undo
 ] as const;
 
+let cachedNativeEditingChords: Set<string> | null = null;
+
 /**
  * Returns the set of native editing chords for the current platform.
  * Includes both Cmd+Z (undo) and Cmd+Shift+Z / Cmd+Z (redo, shift variant).
  */
-let cachedNativeEditingChords: Set<string> | null = null;
-
 function nativeEditingChords(): Set<string> {
     const mod = isMacPlatform() ? "Meta" : "Ctrl";
     const chords = new Set<string>();

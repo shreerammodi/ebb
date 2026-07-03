@@ -124,7 +124,7 @@ export function useKeymap(): void {
         return () => {
             window.removeEventListener("keydown", onKeyDownCapture, { capture: true });
             window.removeEventListener("keydown", onKeyDown);
-            pendingPrefix = null; // clear on unmount
+            pendingPrefix = null;
         };
     }, []);
 }

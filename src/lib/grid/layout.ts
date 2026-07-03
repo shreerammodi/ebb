@@ -35,7 +35,7 @@ export function buildLayout(
     // Map speechId → column index
     const colIndex = new Map<string, number>(speeches.map((s, i) => [s.id, i]));
 
-    // M3: filter out nodes whose speechId doesn't exist in the format
+    // Filter out nodes whose speechId doesn't exist in the format
     const validNodes = nodes.filter((n) => colIndex.has(n.speechId));
 
     // Build children map
