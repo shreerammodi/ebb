@@ -31,7 +31,15 @@ import {
 } from "@/lib/history/tree";
 import { detectDrops } from "@/lib/model/drops";
 import { createGroup, removeMemberOrDelete } from "@/lib/model/groups";
-import { joinWithAbove, splitAt, unitHeadOf, unitKeyOf } from "@/lib/model/units";
+import {
+    deleteUnitSubtree,
+    detachFromUnit,
+    joinWithAbove,
+    removeNodeWithPromotion,
+    splitAt,
+    unitHeadOf,
+    unitKeyOf,
+} from "@/lib/model/units";
 import { uid } from "@/lib/model/ids";
 import { emptyScouting, makeCxSheet } from "@/lib/model/normalize";
 import {
@@ -43,8 +51,6 @@ import {
 } from "@/lib/model/sheets";
 import {
     placeNodeAt,
-    orphanNode,
-    deleteSubtree as treeDeleteSubtree,
     updateText,
     toggleStatus,
     toggleBold,
@@ -838,13 +844,15 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         get()._commit(
             null,
             (r) => {
-                const kept = r.nodes.filter(
-                    (n) => !(n.sheetId === selection.sheetId && n.row === selection.row),
-                );
-                return {
-                    ...r,
-                    nodes: rippleUp(kept, selection.sheetId, selection.row + 1, 1),
-                };
+                // Promote each removed cell's unit before closing the row, so a
+                // deleted head leaves its argument (and its answers) intact.
+                let nodes = r.nodes;
+                for (const n of r.nodes.filter(
+                    (x) => x.sheetId === selection.sheetId && x.row === selection.row,
+                )) {
+                    nodes = removeNodeWithPromotion(nodes, n.id);
+                }
+                return { ...r, nodes: rippleUp(nodes, selection.sheetId, selection.row + 1, 1) };
             },
             "Delete row",
         );
@@ -859,7 +867,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             null,
             (r) => ({
                 ...r,
-                nodes: orphanNode(r.nodes, cur.id),
+                nodes: removeNodeWithPromotion(r.nodes, cur.id),
                 groups: removeMemberOrDelete(r.groups, cur.id),
             }),
             "Clear cell",
@@ -875,7 +883,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             null,
             (r) => ({
                 ...r,
-                nodes: treeDeleteSubtree(r.nodes, cur.id),
+                nodes: deleteUnitSubtree(r.nodes, cur.id),
             }),
             "Delete subtree",
         );
@@ -910,7 +918,10 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         const sheet = round.sheets.find((s) => s.id === refNode.sheetId);
         if (!sheet) return false;
         const speeches = columnsForSheet(round.format, sheet);
-        const { nodes, ok } = translateSubtree(round.nodes, speeches, id, dCol, dRow);
+        // A grabbed cell leaves its unit before moving; its own subtree still
+        // travels with it.
+        const detached = detachFromUnit(round.nodes, id);
+        const { nodes, ok } = translateSubtree(detached, speeches, id, dCol, dRow);
         if (!ok) return false;
         get()._commit(null, (r) => ({ ...r, nodes }), "Move");
         return true;
@@ -980,7 +991,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             null,
             (r) => ({
                 ...r,
-                nodes: moveNode(r.nodes, nodeId, speechId, row),
+                nodes: moveNode(detachFromUnit(r.nodes, nodeId), nodeId, speechId, row),
             }),
             "Move",
         );

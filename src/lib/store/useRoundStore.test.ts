@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 import { DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 import { makeFormatByKey } from "@/lib/format/presets";
+import { unitOf } from "@/lib/model/units";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 const BLANK_STATE = {
@@ -600,6 +601,77 @@ describe("joinUnitAbove / splitUnitAt", () => {
         const nodes = useRoundStore.getState().round!.nodes;
         expect(nodes.find((n) => n.id === b)!.unitId).toBeUndefined();
         expect(nodes.find((n) => n.id === c)!.unitId).toBe(b);
+    });
+});
+
+// ─── Unit-aware node operations ───────────────────────────────────────────
+
+describe("unit-aware node ops", () => {
+    beforeEach(resetStore);
+
+    it("clearCell on a head promotes the next member and keeps the link", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const sp = s.round!.format.speeches;
+        // Parent P; unit A(head)+B answering P; A also has a response R.
+        const p = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+        const a = spawnResponseAndType("a"); // A answers P, in sp[1]
+        const an = useRoundStore.getState().round!.nodes.find((n) => n.id === a)!;
+        // Continuation B under A.
+        useRoundStore.getState().setSelection({ sheetId, speechId: an.speechId, row: an.row });
+        useRoundStore.getState().spawnSibling();
+        const b = useRoundStore.getState().commitPendingSpawn("b")!;
+        // Response R answering A, in the next column.
+        useRoundStore.getState().setSelection({ sheetId, speechId: an.speechId, row: an.row });
+        const r = spawnResponseAndType("r");
+
+        // Clear the head A's cell.
+        useRoundStore.getState().setSelection({ sheetId, speechId: an.speechId, row: an.row });
+        useRoundStore.getState().clearCell();
+        const nodes = useRoundStore.getState().round!.nodes;
+        expect(nodes.find((n) => n.id === b)!.parentId).toBe(p); // B promoted, inherits A's parent
+        expect(nodes.find((n) => n.id === r)!.parentId).toBe(b); // A's response re-parents to B
+    });
+
+    it("deleteSubtreeAt from a continuation removes the whole band", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const sp = s.round!.format.speeches;
+        const a = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        const b = useRoundStore.getState().commitPendingSpawn("b")!;
+        // Response R answering head A.
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+        const r = spawnResponseAndType("r");
+
+        // Delete from the continuation cell B.
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 1 });
+        useRoundStore.getState().deleteSubtreeAt();
+        const ids = useRoundStore.getState().round!.nodes.map((n) => n.id);
+        expect(ids).not.toContain(a);
+        expect(ids).not.toContain(b);
+        expect(ids).not.toContain(r);
+    });
+
+    it("grab-move of a unit member detaches it from the unit", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const sp = s.round!.format.speeches;
+        const a = s.placeBareNode({ sheetId, speechId: sp[1].id, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[1].id, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        const b = useRoundStore.getState().commitPendingSpawn("b")!;
+
+        // Move B one column left; it must leave A's unit.
+        useRoundStore.getState().commitSubtreeMove(-1, 0, b);
+        const nodes = useRoundStore.getState().round!.nodes;
+        expect(unitOf(nodes, nodes.find((n) => n.id === a)!).map((n) => n.id)).toEqual([a]);
+        expect(nodes.find((n) => n.id === b)!.unitId).toBeUndefined();
     });
 });
 
