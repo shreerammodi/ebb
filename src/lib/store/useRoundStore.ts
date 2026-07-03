@@ -16,7 +16,9 @@ import {
     rippleDown,
     rippleUp,
     translateSubtree,
+    translateUnit,
 } from "@/lib/grid/coords";
+import { isValidLinkTarget, linkRippleExclusions, linkSnapRow } from "@/lib/grid/move";
 import {
     createTree,
     commit as commitHistory,
@@ -99,6 +101,13 @@ export interface RoundState {
      * selection acts as a target cursor, and the grabbed node shows dimmed.
      */
     moveSource: string | null;
+    /**
+     * Mirror of {@link moveSource} for grab-to-link: the HEAD id of the unit
+     * being linked, or null. While set, the grid is in link mode - cells are not
+     * editable, the selection steers to the argument this one answers, and the
+     * grabbed band shows dimmed.
+     */
+    linkSource: string | null;
     /** A node id to briefly flash (drop/move confirm), or null. Transient UI. */
     flashNodeId: string | null;
     /**
@@ -275,6 +284,16 @@ export interface RoundActions {
     setInfoOpen(open: boolean): void;
     setSidebarCollapsed(collapsed: boolean): void;
     setMoveSource(id: string | null): void;
+    /** Arms/disarms grab-to-link. Pass the grabbed unit's HEAD id. */
+    setLinkSource(id: string | null): void;
+    /**
+     * Links the grabbed unit to the unit under the selection and snaps its
+     * whole band beside the new parent (speechId never changes; vertical
+     * translation only). Dropping on the grabbed unit itself unlinks it in
+     * place. Returns false - leaving link mode armed - when the target is
+     * invalid (empty cell, same/later column, own band).
+     */
+    commitLink(): boolean;
     setFlashNode(id: string | null): void;
 
     setScouting(patch: Partial<Scouting>): void;
@@ -435,6 +454,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     renamingSheetId: null,
     infoOpen: false,
     moveSource: null,
+    linkSource: null,
     flashNodeId: null,
     pendingSpawn: null,
 
@@ -465,6 +485,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             renamingSheetId: null,
             infoOpen: false,
             moveSource: null,
+            linkSource: null,
             flashNodeId: null,
             pendingSpawn: null,
         });
@@ -479,6 +500,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             selection: opts?.selection ?? null,
             pendingSpawn: null,
             moveSource: null,
+            linkSource: null,
             flashNodeId: null,
         });
     },
@@ -866,6 +888,51 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
         return true;
     },
 
+    setLinkSource(id) {
+        set({ linkSource: id });
+    },
+
+    commitLink() {
+        const { round, linkSource, selection } = get();
+        if (!round || !linkSource || !selection) return false;
+        const head = round.nodes.find((n) => n.id === linkSource);
+        if (!head) return false;
+        const sheet = round.sheets.find((s) => s.id === head.sheetId);
+        if (!sheet) return false;
+        const speeches = columnsForSheet(round.format, sheet);
+        const occ = occupantAt(round.nodes, selection.sheetId, selection.speechId, selection.row);
+        if (!occ || occ.sheetId !== head.sheetId) return false;
+
+        // Dropping on the grabbed unit itself clears its link, in place.
+        if (unitKeyOf(occ) === unitKeyOf(head)) {
+            if (head.parentId !== null) {
+                get()._commit(
+                    null,
+                    (r) => ({ ...r, nodes: setParent(r.nodes, head.id, null) }),
+                    "Unlink",
+                );
+            }
+            return true;
+        }
+
+        if (!isValidLinkTarget(round.nodes, speeches, head.id, occ.id)) return false;
+        const parentHead = unitHeadOf(round.nodes, occ);
+        const targetRow = linkSnapRow(round.nodes, head.id, parentHead.id);
+        if (targetRow === null) return false;
+
+        const withParent = setParent(round.nodes, head.id, parentHead.id);
+        const { nodes, ok } = translateUnit(
+            withParent,
+            speeches,
+            head.id,
+            targetRow - head.row,
+            linkRippleExclusions(withParent, parentHead.id),
+        );
+        if (!ok) return false;
+        get()._commit(null, (r) => ({ ...r, nodes }), "Link");
+        return true;
+    },
+
     /** Move a single node to a new cell (no subtree translation). */
     moveCellTo(nodeId, speechId, row) {
         const { round } = get();
@@ -995,6 +1062,7 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             // undo/redo swaps the whole round, discarding any transient shift, so a
             // stale pending spawn must be dropped outright.
             pendingSpawn: null,
+            linkSource: null,
         });
     },
 

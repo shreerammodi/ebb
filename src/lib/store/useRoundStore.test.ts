@@ -473,6 +473,92 @@ describe("unit capture latch", () => {
     });
 });
 
+// ─── Grab-to-link (commitLink) ────────────────────────────────────────────
+
+describe("commitLink", () => {
+    beforeEach(resetStore);
+
+    /**
+     * P at (sp0, row0) with a continuation P2; H at (sp1, row5) with a
+     * continuation H2 at row6. Returns the ids and the sheet/speech context.
+     */
+    function linkFixture() {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const sp = s.round!.format.speeches;
+        const p = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+        // Continuation P2 under P.
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().commitPendingSpawn("p2");
+        // H at (sp1, row5) with continuation H2 at row6.
+        const h = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp[1].id, row: 5 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[1].id, row: 5 });
+        useRoundStore.getState().spawnSibling();
+        const h2 = useRoundStore.getState().commitPendingSpawn("h2")!;
+        return { sheetId, sp, p, h, h2 };
+    }
+
+    it("links and snaps the grabbed unit beside its new parent", () => {
+        const { sheetId, sp, p, h, h2 } = linkFixture();
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+        useRoundStore.getState().setLinkSource(h);
+
+        const ok = useRoundStore.getState().commitLink();
+        expect(ok).toBe(true);
+        const nodes = useRoundStore.getState().round!.nodes;
+        expect(nodes.find((n) => n.id === h)!.parentId).toBe(p);
+        expect(nodes.find((n) => n.id === h)!.row).toBe(0);
+        expect(nodes.find((n) => n.id === h2)!.row).toBe(1);
+    });
+
+    it("unlinks in place when dropped on the grabbed unit itself", () => {
+        const { sheetId, sp, h } = linkFixture();
+        // First link H under P so it has a parent to clear.
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+        useRoundStore.getState().setLinkSource(h);
+        expect(useRoundStore.getState().commitLink()).toBe(true);
+
+        const linked = useRoundStore.getState().round!.nodes.find((n) => n.id === h)!;
+        // Grab again, drop on H's own (new) cell.
+        useRoundStore.getState().setSelection({
+            sheetId,
+            speechId: linked.speechId,
+            row: linked.row,
+        });
+        useRoundStore.getState().setLinkSource(h);
+        const ok = useRoundStore.getState().commitLink();
+        expect(ok).toBe(true);
+        const after = useRoundStore.getState().round!.nodes.find((n) => n.id === h)!;
+        expect(after.parentId).toBeNull();
+        expect(after.row).toBe(linked.row); // no movement
+    });
+
+    it("returns false on a same-column target and changes nothing", () => {
+        const { sheetId, sp, h } = linkFixture();
+        // X in the same column as H (sp1).
+        const x = useRoundStore.getState().placeBareNode({ sheetId, speechId: sp[1].id, row: 8 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[1].id, row: 8 });
+        useRoundStore.getState().setLinkSource(h);
+        expect(useRoundStore.getState().commitLink()).toBe(false);
+        expect(useRoundStore.getState().linkSource).toBe(h);
+        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === x)!.parentId).toBeNull();
+    });
+
+    it("one undo step reverses a link+snap", () => {
+        const { sheetId, sp, h } = linkFixture();
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+        useRoundStore.getState().setLinkSource(h);
+        expect(useRoundStore.getState().commitLink()).toBe(true);
+
+        useRoundStore.getState().undo();
+        const hn = useRoundStore.getState().round!.nodes.find((n) => n.id === h)!;
+        expect(hn.parentId).toBeNull();
+        expect(hn.row).toBe(5);
+    });
+});
+
 // ─── removeSheet / restoreSheet (hardening: discoverable Undo) ────────────
 
 describe("removeSheet + restoreSheet", () => {
