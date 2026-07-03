@@ -98,6 +98,11 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                     order, and rows are arguments. You read an argument left to right across the
                     speeches as it gets answered.
                 </p>
+                <p>
+                    A single argument can run down several lines in a column. Ebb treats that run as
+                    one unit, so you can move, link, and mark it as a whole rather than line by
+                    line.
+                </p>
                 <GridDiagram />
                 <p>
                     A response sits in the next speech&rsquo;s column on the same row as the
@@ -119,19 +124,21 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         body: (
             <>
                 <p>
-                    Use the arrows to navigate to a cell and start typing to flow an argument. Cells
-                    appear empty until you type — the node is only created on the first keystroke,
-                    so you can cancel with <Kbd k="Esc" /> before committing.
+                    Flowing is transcription: navigate to a cell and type straight down the column
+                    to capture a speech. Cells appear empty until you type — the node is only
+                    created on the first keystroke, so you can cancel with <Kbd k="Esc" /> before
+                    committing.
                 </p>
                 <ul className="ml-4 list-disc space-y-1">
                     <li>
-                        <Kbd cmd="node.response" /> opens a response slot in the next speech,
-                        answering the current argument. The slot stays blank until you type; press{" "}
-                        <Kbd k="Esc" /> to abandon it.
+                        <Kbd cmd="node.sibling" /> continues the current argument onto the next
+                        line, keeping the run as one unit. Press <Kbd cmd="node.sibling" /> again on
+                        the blank line to break off a new argument instead.
                     </li>
                     <li>
-                        <Kbd cmd="node.sibling" /> adds a sibling argument in the same speech, e.g.
-                        a second response. Like response, the node is deferred until you type.
+                        <Kbd cmd="node.response" /> opens a response slot in the next speech,
+                        answering the argument under the cursor. The slot stays blank until you
+                        type; press <Kbd k="Esc" /> to abandon it.
                     </li>
                     <li>
                         <Kbd cmd="row.delete" /> removes a row and <Kbd cmd="cell.clear" /> empties
@@ -142,15 +149,43 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                         answering it.
                     </li>
                     <li>
+                        Mark an argument <Kbd cmd="status.toggleConceded" /> conceded or{" "}
+                        <Kbd cmd="status.toggleExtended" /> extended,{" "}
+                        <Kbd cmd="format.toggleBold" /> for emphasis, and{" "}
+                        <Kbd cmd="format.toggleHighlight" /> to highlight it.
+                    </li>
+                </ul>
+            </>
+        ),
+    },
+    {
+        id: "matching",
+        label: "Matching arguments",
+        title: "Matching arguments",
+        body: (
+            <>
+                <p>
+                    Capture and matching are separate jobs. You flow straight down while a speech
+                    happens, then match your responses to the arguments they answer when you build
+                    your own speech.
+                </p>
+                <ul className="ml-4 list-disc space-y-1">
+                    <li>
+                        <Kbd cmd="link.grab" /> grabs the argument under the cursor to link it.
+                        Arrow to the argument it answers in an earlier speech, then{" "}
+                        <Kbd cmd="link.commit" /> to link or <Kbd cmd="link.cancel" /> to cancel.
+                        The response snaps into the parent&rsquo;s band so the flow reads as clash.
+                        Committing on the grabbed argument itself unlinks it in place.
+                    </li>
+                    <li>
                         <Kbd cmd="move.grab" /> grabs an argument and its entire subtree (all
                         responses below it are highlighted). Move it with the arrow keys, then{" "}
                         <Kbd cmd="move.commit" /> to drop or <Kbd cmd="move.cancel" /> to cancel.
                     </li>
                     <li>
-                        Mark an argument <Kbd cmd="status.toggleConceded" /> conceded or{" "}
-                        <Kbd cmd="status.toggleExtended" /> extended,{" "}
-                        <Kbd cmd="format.toggleBold" /> for emphasis, and{" "}
-                        <Kbd cmd="format.toggleHighlight" /> to highlight it.
+                        <Kbd cmd="unit.join" /> joins the current line into the argument above it,
+                        and <Kbd cmd="unit.split" /> splits an argument into two at the current line
+                        — for fixing where one argument ends and the next begins.
                     </li>
                 </ul>
             </>
@@ -237,7 +272,9 @@ export const GUIDE_SECTIONS: GuideSection[] = [
                     Some actions are modal: grab an argument with <Kbd cmd="move.grab" />, move it
                     with the arrow keys, then <Kbd cmd="move.commit" /> to drop it or{" "}
                     <Kbd cmd="move.cancel" /> to abandon the move. While moving, the entire subtree
-                    (all descendants) is highlighted so you can see what will move together.
+                    (all descendants) is highlighted so you can see what will move together. Linking
+                    with <Kbd cmd="link.grab" /> works the same way: arrow to the parent, then{" "}
+                    <Kbd cmd="link.commit" /> to link or <Kbd cmd="link.cancel" /> to cancel.
                 </p>
                 <p>
                     You can collapse the sidebar with <Kbd cmd="sidebar.toggle" /> to give the grid

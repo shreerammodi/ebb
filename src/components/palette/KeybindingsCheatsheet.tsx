@@ -41,9 +41,21 @@ const GROUPS = [
         label: "Move",
         rows: [
             { commandId: "move.grab" as CommandId },
-            { commandId: "move.commit" as CommandId, moveMode: true },
-            { commandId: "move.cancel" as CommandId, moveMode: true },
+            { commandId: "move.commit" as CommandId, mode: "move" },
+            { commandId: "move.cancel" as CommandId, mode: "move" },
         ],
+    },
+    {
+        label: "Link",
+        rows: [
+            { commandId: "link.grab" as CommandId },
+            { commandId: "link.commit" as CommandId, mode: "link" },
+            { commandId: "link.cancel" as CommandId, mode: "link" },
+        ],
+    },
+    {
+        label: "Units",
+        rows: [{ commandId: "unit.join" as CommandId }, { commandId: "unit.split" as CommandId }],
     },
     {
         label: "Status",
@@ -126,7 +138,7 @@ export default function KeybindingsCheatsheet() {
                             <div className="flex flex-col gap-0.5">
                                 {group.rows.map((row) => {
                                     const { commandId } = row;
-                                    const moveMode = "moveMode" in row ? row.moveMode : undefined;
+                                    const mode = "mode" in row ? row.mode : undefined;
                                     const chord = chordFor[commandId];
                                     const isJumpAnchor = commandId === "sheet.jump1";
                                     if (!chord && !isJumpAnchor) return null;
@@ -144,9 +156,9 @@ export default function KeybindingsCheatsheet() {
                                             </kbd>
                                             <span className="text-foreground flex items-center gap-1 text-[12px]">
                                                 {label}
-                                                {moveMode && (
+                                                {mode && (
                                                     <span className="text-muted-foreground rounded border border-zinc-200 bg-zinc-50 px-1 text-[10px] leading-4">
-                                                        move
+                                                        {mode}
                                                     </span>
                                                 )}
                                             </span>

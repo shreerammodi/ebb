@@ -24,7 +24,7 @@ describe("GuideDialog", () => {
             /Ebb is a keyboard-first tool/i,
         );
         await userEvent.click(screen.getByTestId("guide-section-flowing"));
-        expect(screen.getByTestId("guide-content")).toHaveTextContent(/sibling/i);
+        expect(screen.getByTestId("guide-content")).toHaveTextContent(/type straight down/i);
     });
 
     it("renders shortcut chips from the live keymap", async () => {

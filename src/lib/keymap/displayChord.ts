@@ -7,7 +7,7 @@
 
 import type { CommandId } from "@/lib/commands/registry";
 
-import { GRAB_BINDINGS } from "./presets";
+import { GRAB_BINDINGS, LINK_BINDINGS } from "./presets";
 import { effectiveKeymap } from "./useKeymap";
 
 const KEY_LABELS: Record<string, string> = {
@@ -45,8 +45,8 @@ export function buildChordMap(): Partial<Record<CommandId, string>> {
     for (const [chord, cmd] of Object.entries(keymap.bindings)) {
         if (!map[cmd as CommandId]) map[cmd as CommandId] = chord;
     }
-    // Grab sub-state bindings (commit/cancel) live outside the flat map.
-    for (const [chord, cmd] of Object.entries(GRAB_BINDINGS)) {
+    // Grab and link sub-state bindings (commit/cancel) live outside the flat map.
+    for (const [chord, cmd] of Object.entries({ ...GRAB_BINDINGS, ...LINK_BINDINGS })) {
         if (!map[cmd as CommandId]) map[cmd as CommandId] = chord;
     }
     return map;
