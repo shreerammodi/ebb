@@ -31,7 +31,7 @@ import {
 } from "@/lib/history/tree";
 import { detectDrops } from "@/lib/model/drops";
 import { createGroup, removeMemberOrDelete } from "@/lib/model/groups";
-import { unitHeadOf, unitKeyOf } from "@/lib/model/units";
+import { joinWithAbove, splitAt, unitHeadOf, unitKeyOf } from "@/lib/model/units";
 import { uid } from "@/lib/model/ids";
 import { emptyScouting, makeCxSheet } from "@/lib/model/normalize";
 import {
@@ -239,6 +239,16 @@ export interface RoundActions {
     deleteRow(): void;
     clearCell(): void;
     deleteSubtreeAt(): void;
+    /**
+     * Merges the selected cell's unit into the unit directly above it (the
+     * mis-broken-argument correction). No-op when nothing sits above the head.
+     */
+    joinUnitAbove(): void;
+    /**
+     * Splits the selected cell's unit at that cell: the cell and everything
+     * below it become a new parentless unit. No-op on a head.
+     */
+    splitUnitAt(): void;
     /**
      * Translate the subtree rooted at `nodeId` by (dCol, dRow). Returns true
      * on success, false if the move was rejected (collision / out of bounds).
@@ -869,6 +879,24 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
             }),
             "Delete subtree",
         );
+    },
+
+    joinUnitAbove() {
+        const { round, selection } = get();
+        if (!round || !selection) return;
+        const cur = occupantAt(round.nodes, selection.sheetId, selection.speechId, selection.row);
+        if (!cur) return;
+        if (joinWithAbove(round.nodes, cur.id) === round.nodes) return;
+        get()._commit(null, (r) => ({ ...r, nodes: joinWithAbove(r.nodes, cur.id) }), "Join");
+    },
+
+    splitUnitAt() {
+        const { round, selection } = get();
+        if (!round || !selection) return;
+        const cur = occupantAt(round.nodes, selection.sheetId, selection.speechId, selection.row);
+        if (!cur) return;
+        if (splitAt(round.nodes, cur.id) === round.nodes) return;
+        get()._commit(null, (r) => ({ ...r, nodes: splitAt(r.nodes, cur.id) }), "Split");
     },
 
     commitSubtreeMove(dCol, dRow, nodeId) {

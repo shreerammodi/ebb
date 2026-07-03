@@ -559,6 +559,50 @@ describe("commitLink", () => {
     });
 });
 
+// ─── Unit join / split ────────────────────────────────────────────────────
+
+describe("joinUnitAbove / splitUnitAt", () => {
+    beforeEach(resetStore);
+
+    it("joinUnitAbove merges the selected unit into the one above", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        // Two separate arguments U (row0) and V (row1).
+        const u = s.placeBareNode({ sheetId, speechId, row: 0 });
+        const v = s.placeBareNode({ sheetId, speechId, row: 1 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
+
+        useRoundStore.getState().joinUnitAbove();
+        const nodes = useRoundStore.getState().round!.nodes;
+        expect(nodes.find((n) => n.id === v)!.unitId).toBe(u);
+    });
+
+    it("splitUnitAt severs the selected cell and below into a new unit", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        // One three-cell unit A(head) + B + C.
+        const a = s.placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        const b = useRoundStore.getState().commitPendingSpawn("b")!;
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
+        useRoundStore.getState().spawnSibling();
+        const c = useRoundStore.getState().commitPendingSpawn("c")!;
+        // Sanity: all one unit keyed by A.
+        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === c)!.unitId).toBe(a);
+
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
+        useRoundStore.getState().splitUnitAt();
+        const nodes = useRoundStore.getState().round!.nodes;
+        expect(nodes.find((n) => n.id === b)!.unitId).toBeUndefined();
+        expect(nodes.find((n) => n.id === c)!.unitId).toBe(b);
+    });
+});
+
 // ─── removeSheet / restoreSheet (hardening: discoverable Undo) ────────────
 
 describe("removeSheet + restoreSheet", () => {

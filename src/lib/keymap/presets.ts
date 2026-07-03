@@ -34,6 +34,8 @@ const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
     return {
         [`${mod}+m`]: "move.grab",
         [`${mod}+g`]: "link.grab",
+        [`${mod}+j`]: "unit.join",
+        [`${mod}+J`]: "unit.split",
         [`${mod}+z`]: "edit.undo",
         [`${mod}+Z`]: "edit.redo",
         [`${mod}+b`]: "format.toggleBold",

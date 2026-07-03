@@ -25,6 +25,8 @@ export type CommandId =
     | "link.grab"
     | "link.commit"
     | "link.cancel"
+    | "unit.join"
+    | "unit.split"
     | "nav.jumpUp"
     | "nav.jumpDown"
     | "nav.jumpLeft"
@@ -86,6 +88,8 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "link.grab": { id: "link.grab", label: "Grab to link (answers...)" },
     "link.commit": { id: "link.commit", label: "Link here" },
     "link.cancel": { id: "link.cancel", label: "Cancel link" },
+    "unit.join": { id: "unit.join", label: "Join with argument above" },
+    "unit.split": { id: "unit.split", label: "Split argument here" },
     "nav.jumpUp": { id: "nav.jumpUp", label: "Jump up to edge" },
     "nav.jumpDown": { id: "nav.jumpDown", label: "Jump down to edge" },
     "nav.jumpLeft": { id: "nav.jumpLeft", label: "Jump left to edge" },

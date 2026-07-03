@@ -650,6 +650,34 @@ describe("grab-to-link", () => {
     });
 });
 
+describe("unit join / split commands", () => {
+    beforeEach(resetStore);
+
+    it("unit.join merges the selected cell's unit into the one above", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        const u = useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
+        const v = useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 1 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
+
+        executeCommand("unit.join");
+        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === v)!.unitId).toBe(u);
+    });
+
+    it("unit.split severs the selected cell into a new unit", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        const b = useRoundStore.getState().commitPendingSpawn("b")!;
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
+
+        executeCommand("unit.split");
+        expect(useRoundStore.getState().round!.nodes.find((n) => n.id === b)!.unitId).toBeUndefined();
+    });
+});
+
 describe("jump navigation (Excel data-edge)", () => {
     beforeEach(resetStore);
 

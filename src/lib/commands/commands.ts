@@ -489,6 +489,14 @@ export function executeCommand(id: CommandId): void {
             return;
         }
 
+        // ── Unit join / split ─────────────────────────────────────────────────
+        case "unit.join":
+            state.joinUnitAbove();
+            return;
+        case "unit.split":
+            state.splitUnitAt();
+            return;
+
         // ── Column navigation ─────────────────────────────────────────────────
         case "nav.nextSpeech":
         case "nav.prevSpeech": {

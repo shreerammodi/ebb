@@ -36,6 +36,7 @@ const RESERVED_KEYS = [
     // stays a native cut inside the cell editor.
     "e", // toggle extended
     "g", // grab to link
+    "j", // join unit above (Cmd+J is the browser's downloads shortcut)
     // ── UI ─────────────────────────────────────────────────────────────────
     "\\", // sidebar toggle
     ",", // settings
@@ -74,6 +75,7 @@ export function reservedChords(): Set<string> {
     chords.add(`${mod}+Shift+Backspace`);
     chords.add(`${mod}+Z`);
     chords.add(`${mod}+X`);
+    chords.add(`${mod}+J`);
 
     return chords;
 }
