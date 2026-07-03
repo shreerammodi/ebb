@@ -90,7 +90,7 @@ describe("isNativeEditingChord", () => {
         expect(isNativeEditingChord(e)).toBe(true);
     });
 
-    it("returns false for Cmd+N / Ctrl+N (new aff — not a native editing chord)", () => {
+    it("returns false for Cmd+N / Ctrl+N (new aff, not a native editing chord)", () => {
         const e = makeKeyEvent({ key: "n", [mod === "Meta" ? "metaKey" : "ctrlKey"]: true });
         expect(isNativeEditingChord(e)).toBe(false);
     });
@@ -199,7 +199,7 @@ describe("shouldIntercept", () => {
         return new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
     }
 
-    // ── Cmd+A / Ctrl+A ─────────────────────────────────────────────────
+    // --- Cmd+A / Ctrl+A ---
 
     it("does NOT intercept Cmd+A inside a text input (native select-all)", () => {
         const input = document.createElement("input");
@@ -241,7 +241,7 @@ describe("shouldIntercept", () => {
         document.body.removeChild(div);
     });
 
-    it("DOES intercept Cmd+A when focus is NOT in a text box (navigation focus → new aff)", () => {
+    it("DOES intercept Cmd+A when focus is NOT in a text box (navigation focus, new aff)", () => {
         const e = makeKeyEvent({
             key: "a",
             [mod === "Meta" ? "metaKey" : "ctrlKey"]: true,
@@ -250,7 +250,7 @@ describe("shouldIntercept", () => {
         expect(shouldIntercept(e)).toBe(true);
     });
 
-    // ── Copy / Paste / Cut ─────────────────────────────────────────────
+    // --- Copy / Paste / Cut ---
 
     it("does NOT intercept Cmd+C inside a text input (native copy)", () => {
         const input = document.createElement("input");
@@ -282,7 +282,7 @@ describe("shouldIntercept", () => {
         expect(shouldIntercept(e)).toBe(false);
     });
 
-    // ── Undo / Redo ────────────────────────────────────────────────────
+    // --- Undo / Redo ---
 
     it("does NOT intercept Cmd+Z inside a text input (native undo)", () => {
         const input = document.createElement("input");
@@ -314,7 +314,7 @@ describe("shouldIntercept", () => {
         expect(shouldIntercept(e)).toBe(true);
     });
 
-    // ── Other reserved chords ──────────────────────────────────────────
+    // --- Other reserved chords ---
 
     it("intercepts Cmd+N / Ctrl+N regardless of focus (new neg)", () => {
         const e = makeKeyEvent({

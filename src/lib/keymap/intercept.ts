@@ -7,9 +7,9 @@
  *
  * Rule:
  *   - If the chord is a native editing chord (Cmd/Ctrl+A, C, V, X, Z, Shift+Z)
- *     AND focus is in a text box → do NOT intercept (let the browser handle it).
- *   - Otherwise, if the chord is in reservedChords → intercept.
- *   - Otherwise → do not intercept.
+ *     AND focus is in a text box, do NOT intercept (let the browser handle it).
+ *   - Otherwise, if the chord is in reservedChords, intercept.
+ *   - Otherwise, do not intercept.
  */
 
 import { isMacPlatform } from "@/lib/platform";
@@ -59,7 +59,7 @@ function nativeEditingChords(): Set<string> {
 /**
  * Returns true if the given key event is a native editing chord
  * (select-all, copy, paste, cut, undo, redo) on the current platform.
- * Does NOT consider focus — the caller must check isTextEntryFocus separately.
+ * Does NOT consider focus; the caller must check isTextEntryFocus separately.
  */
 export function isNativeEditingChord(e: KeyboardEvent): boolean {
     if (!cachedNativeEditingChords) {
