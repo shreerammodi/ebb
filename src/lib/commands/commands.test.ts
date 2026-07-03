@@ -29,8 +29,12 @@ function freshRound() {
 
 // Spawns are deferred (they only arm an intent); these mimic "press Enter /
 // Shift+Enter and type" for fixtures, returning the new node's id.
+//
+// A plain Enter now arms a continuation, so building a SEPARATE sibling
+// argument is "Enter, Enter (break), type" - mirror that with breakPendingSpawn.
 function spawnSiblingAndType(text = "x"): string {
     useRoundStore.getState().spawnSibling();
+    useRoundStore.getState().breakPendingSpawn();
     return useRoundStore.getState().commitPendingSpawn(text)!;
 }
 function spawnResponseAndType(text = "x"): string {
@@ -225,7 +229,7 @@ describe("move.left / move.right (column stepping)", () => {
 describe("node.sibling", () => {
     beforeEach(resetStore);
 
-    it("on a filled cell arms a deferred sibling and moves the cursor (no node yet)", () => {
+    it("on a filled cell arms a deferred continuation and moves the cursor (no node yet)", () => {
         const sheetId = freshRound();
         const speechId = useRoundStore.getState().round!.format.speeches[0].id;
         useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
@@ -239,9 +243,21 @@ describe("node.sibling", () => {
         expect(useRoundStore.getState().round!.nodes).toHaveLength(1);
         expect(useRoundStore.getState().pendingSpawn).toMatchObject({
             row: 1,
-            kind: "sibling",
+            kind: "continue",
             parentId: null,
         });
+    });
+
+    it("Enter on an armed continuation cell breaks the latch instead of moving down", () => {
+        const sheetId = freshRound();
+        const speechId = useRoundStore.getState().round!.format.speeches[0].id;
+        useRoundStore.getState().placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+
+        executeCommand("node.sibling"); // arms continue at row 1
+        executeCommand("node.sibling"); // breaks the latch
+        const pending = useRoundStore.getState().pendingSpawn!;
+        expect(pending.kind).toBe("break");
     });
 
     it("on an empty cell just moves the cursor down (Excel habit), creating nothing", () => {

@@ -78,9 +78,13 @@ function freshRound() {
  * Spawn actions only arm `pendingSpawn`; they do not create a node. These
  * helpers mimic "press Enter (or Shift+Enter) and type", returning the new
  * node's id, for tests that just need a populated fixture.
+ *
+ * A plain Enter now arms a continuation, so building a SEPARATE sibling
+ * argument is "Enter, Enter (break), type" - mirror that with breakPendingSpawn.
  */
 function spawnSiblingAndType(text = "x"): string {
     useRoundStore.getState().spawnSibling();
+    useRoundStore.getState().breakPendingSpawn();
     return useRoundStore.getState().commitPendingSpawn(text)!;
 }
 function spawnResponseAndType(text = "x"): string {
@@ -102,12 +106,12 @@ describe("coordinate store actions", () => {
         expect(node.parentId).toBeNull();
     });
 
-    it("spawnSibling arms a deferred sibling below with inherited parentId", () => {
+    it("spawnSibling arms a deferred continuation below, joining the source unit", () => {
         freshRound();
         const s = useRoundStore.getState();
         const sheetId = s.activeSheetId!;
         const speechId = s.round!.format.speeches[0].id;
-        s.placeBareNode({ sheetId, speechId, row: 0 });
+        const a = s.placeBareNode({ sheetId, speechId, row: 0 });
         const before = useRoundStore.getState().round!.nodes.length;
 
         useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
@@ -121,16 +125,18 @@ describe("coordinate store actions", () => {
             speechId,
             row: 1,
             parentId: null,
-            kind: "sibling",
+            unitKey: a,
+            kind: "continue",
         });
         expect(armed.selection).toEqual({ sheetId, speechId, row: 1 });
 
-        // The first keystroke creates the node with the inherited parent.
+        // The first keystroke creates the next cell of the SAME argument.
         const b = useRoundStore.getState().commitPendingSpawn("resp")!;
         const nb = useRoundStore.getState().round!.nodes.find((n) => n.id === b)!;
         expect(nb.row).toBe(1);
         expect(nb.speechId).toBe(speechId);
-        expect(nb.parentId).toBeNull(); // inherited from root a
+        expect(nb.parentId).toBeNull(); // continuations carry no parent
+        expect(nb.unitId).toBe(a); // joined to a's unit
         expect(nb.text).toBe("resp");
         expect(useRoundStore.getState().pendingSpawn).toBeNull();
     });
@@ -287,7 +293,7 @@ describe("deferred spawn", () => {
         useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
         useRoundStore.getState().spawnSibling();
         const armed = useRoundStore.getState().pendingSpawn;
-        expect(armed?.kind).toBe("sibling");
+        expect(armed?.kind).toBe("continue");
         // A second spawn while one is pending no-ops and leaves the first intact.
         const r = useRoundStore.getState().spawnResponse();
         expect(r).toBeNull();
@@ -379,6 +385,91 @@ describe("deferred spawn", () => {
         const after = useRoundStore.getState();
         expect(after.pendingSpawn).toBeNull();
         expect(after.round!.nodes.find((n) => n.id === arg2)!.row).toBe(1);
+    });
+});
+
+// ─── Unit capture latch (Enter continues, double-Enter breaks) ────────────
+
+describe("unit capture latch", () => {
+    beforeEach(resetStore);
+
+    it("Enter arms a continuation: commit joins the source unit with no parent", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        const a = s.placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+
+        useRoundStore.getState().spawnSibling();
+        const pending = useRoundStore.getState().pendingSpawn!;
+        expect(pending.kind).toBe("continue");
+        expect(pending.row).toBe(1);
+
+        const id = useRoundStore.getState().commitPendingSpawn("more of same arg")!;
+        const n = useRoundStore.getState().round!.nodes.find((x) => x.id === id)!;
+        expect(n.parentId).toBeNull();
+        expect(n.unitId).toBe(a);
+    });
+
+    it("breakPendingSpawn re-targets below the unit band and commits a new unit", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        s.placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        // Build continuation B under A (Enter, type).
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().commitPendingSpawn("b");
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
+
+        useRoundStore.getState().spawnSibling(); // armed continue at row 2
+        useRoundStore.getState().breakPendingSpawn();
+        const pending = useRoundStore.getState().pendingSpawn!;
+        expect(pending.kind).toBe("break");
+        expect(pending.row).toBe(2); // band bottom (row 1) + 1 - no responses here
+
+        const id = useRoundStore.getState().commitPendingSpawn("new argument")!;
+        const n = useRoundStore.getState().round!.nodes.find((x) => x.id === id)!;
+        expect(n.unitId).toBeUndefined();
+        expect(n.parentId).toBeNull(); // A is a root; broken unit inherits null
+    });
+
+    it("break inherits the source unit's parent inside a band", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const sp = s.round!.format.speeches;
+        const p = s.placeBareNode({ sheetId, speechId: sp[0].id, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId: sp[0].id, row: 0 });
+        const r = spawnResponseAndType(); // response R answering P, in sp[1]
+        const rn = useRoundStore.getState().round!.nodes.find((x) => x.id === r)!;
+        useRoundStore.getState().setSelection({ sheetId, speechId: rn.speechId, row: rn.row });
+
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().breakPendingSpawn();
+        const id = useRoundStore.getState().commitPendingSpawn("2nd answer")!;
+        const n = useRoundStore.getState().round!.nodes.find((x) => x.id === id)!;
+        expect(n.parentId).toBe(p);
+    });
+
+    it("Shift+Enter targets the unit head as parent, from a continuation cell", () => {
+        freshRound();
+        const s = useRoundStore.getState();
+        const sheetId = s.activeSheetId!;
+        const speechId = s.round!.format.speeches[0].id;
+        const a = s.placeBareNode({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().commitPendingSpawn("b"); // continuation B at row 1
+        useRoundStore.getState().setSelection({ sheetId, speechId, row: 1 });
+
+        useRoundStore.getState().spawnResponse();
+        const pending = useRoundStore.getState().pendingSpawn!;
+        expect(pending.kind).toBe("response");
+        expect(pending.parentId).toBe(a); // the unit head, not the continuation
+        expect(pending.unitKey).toBeNull();
     });
 });
 
@@ -539,7 +630,9 @@ describe("loadRound", () => {
                 speechId: "1ac",
                 row: 0,
                 parentId: null,
-                kind: "sibling",
+                unitKey: null,
+                kind: "continue",
+                sourceHeadId: null,
                 preSpawnNodes: undefined,
             },
             moveSource: "n",

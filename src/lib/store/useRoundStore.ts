@@ -29,6 +29,7 @@ import {
 } from "@/lib/history/tree";
 import { detectDrops } from "@/lib/model/drops";
 import { createGroup, removeMemberOrDelete } from "@/lib/model/groups";
+import { unitHeadOf, unitKeyOf } from "@/lib/model/units";
 import { uid } from "@/lib/model/ids";
 import { emptyScouting, makeCxSheet } from "@/lib/model/normalize";
 import {
@@ -102,11 +103,16 @@ export interface RoundState {
     flashNodeId: string | null;
     /**
      * A deferred spawn that has not been typed into yet. Pressing Enter /
-     * Shift+Enter moves the cursor to where the sibling/response WOULD go and arms
+     * Shift+Enter moves the cursor to where the next cell WOULD go and arms
      * this intent instead of creating a node — the node is created only once the
      * user types the first character (see `commitPendingSpawn`). This keeps mashing
      * Enter (a habit from Excel) from littering the flow with empty nodes that then
      * get mislabeled as dropped.
+     *
+     * Enter arms a `continue` (the next cell of the SAME argument); a second Enter
+     * on the untyped continuation cell flips it to a `break` (a NEW argument below
+     * the source unit's band) via `breakPendingSpawn`. `sourceHeadId` records the
+     * unit Enter was pressed on so the break can re-target against it.
      *
      * When the target cell was occupied, the surrounding cells are shifted down
      * immediately so the target reads as empty. `preSpawnNodes` captures the
@@ -120,9 +126,20 @@ export interface RoundState {
         sheetId: string;
         speechId: string;
         row: number;
-        /** sibling → the current node's parent; response → the current node. */
+        /** Parent link the committed node will carry. */
         parentId: string | null;
-        kind: "sibling" | "response";
+        /** Unit the committed node joins; null = it starts its own unit. */
+        unitKey: string | null;
+        /**
+         * continue - Enter: next cell of the same argument.
+         * break    - double-Enter: a NEW argument below the source unit's band,
+         *            inheriting the source unit's parent (new root during
+         *            transcription, new numbered sibling answer inside a band).
+         * response - Shift+Enter: answers the source UNIT's head.
+         */
+        kind: "continue" | "break" | "response";
+        /** Head id of the unit Enter was pressed on; lets the latch break. */
+        sourceHeadId: string | null;
         /** The node array immediately before the transient shift; undefined when no shift was needed. */
         preSpawnNodes: ArgumentNode[] | undefined;
     } | null;
@@ -188,14 +205,22 @@ export interface RoundActions {
 
     placeBareNode(cell: { sheetId: string; speechId: string; row: number }, text?: string): string;
     /**
-     * Arms a deferred sibling spawn: moves the cursor to the sibling slot and sets
-     * `pendingSpawn`. Does NOT create a node — `commitPendingSpawn` does, on the
-     * first keystroke. No-ops (returns null) when there is no occupant at the
-     * cursor or a spawn is already pending. Always returns null (no node yet).
+     * Arms a deferred continuation spawn: moves the cursor to the cell below the
+     * current one (the next cell of the SAME argument) and sets `pendingSpawn`.
+     * Does NOT create a node — `commitPendingSpawn` does, on the first keystroke.
+     * No-ops (returns null) when there is no occupant at the cursor or a spawn is
+     * already pending. Always returns null (no node yet).
      */
     spawnSibling(): string | null;
-    /** Like {@link spawnSibling} but for a response in the next column. */
+    /** Like {@link spawnSibling} but for a response answering the unit head. */
     spawnResponse(): string | null;
+    /**
+     * Flips an armed continuation into a NEW-argument spawn (the double-Enter
+     * latch): reverses the continuation's transient shift, re-targets the cell
+     * below the source unit's whole band, and re-arms. No-op unless a
+     * "continue" spawn is armed.
+     */
+    breakPendingSpawn(): void;
     /** Creates the pending-spawn node with `text`; returns its id, or null. */
     commitPendingSpawn(text: string): string | null;
     /** Discards a pending spawn, reversing any shift it applied. */
@@ -353,7 +378,7 @@ const initialKeymapSettings = loadKeymapSettings();
 function armSpawn(
     get: StoreApi<RoundStore>["getState"],
     set: StoreApi<RoundStore>["setState"],
-    kind: "sibling" | "response",
+    kind: "continue" | "response",
 ): null {
     const { round, selection, pendingSpawn } = get();
     // One pending spawn at a time; spawn only from a real node (so a second Enter
@@ -366,6 +391,7 @@ function armSpawn(
     const speeches = columnsForSheet(round.format, sheet);
     const placed = placeForSpawn(round.nodes, selection.sheetId, speeches, cur, kind);
     if (!placed) return null;
+    const head = unitHeadOf(round.nodes, cur);
     // placeForSpawn returns the same array reference when no shift was needed.
     const shifted = placed.nodes !== round.nodes;
     set({
@@ -379,8 +405,10 @@ function armSpawn(
             sheetId: selection.sheetId,
             speechId: placed.speechId,
             row: placed.row,
-            parentId: kind === "sibling" ? cur.parentId : cur.id,
+            parentId: kind === "response" ? head.id : null,
+            unitKey: kind === "continue" ? unitKeyOf(cur) : null,
             kind,
+            sourceHeadId: head.id,
             preSpawnNodes: shifted ? round.nodes : undefined,
         },
     });
@@ -660,23 +688,61 @@ export const useRoundStore = create<RoundStore>((set, get) => ({
     },
 
     spawnSibling() {
-        return armSpawn(get, set, "sibling");
+        return armSpawn(get, set, "continue");
     },
 
     spawnResponse() {
         return armSpawn(get, set, "response");
     },
 
+    breakPendingSpawn() {
+        const { round, pendingSpawn } = get();
+        if (!round || !pendingSpawn || pendingSpawn.kind !== "continue") return;
+        // Reverse the continuation's transient shift before re-targeting, so
+        // the break placement computes against the true pre-spawn flow.
+        const baseNodes = pendingSpawn.preSpawnNodes ?? round.nodes;
+        const head = baseNodes.find((n) => n.id === pendingSpawn.sourceHeadId);
+        if (!head) {
+            set({ round: { ...round, nodes: baseNodes }, pendingSpawn: null });
+            return;
+        }
+        const sheet = round.sheets.find((s) => s.id === pendingSpawn.sheetId);
+        if (!sheet) return;
+        const speeches = columnsForSheet(round.format, sheet);
+        const placed = placeForSpawn(baseNodes, pendingSpawn.sheetId, speeches, head, "sibling");
+        if (!placed) return;
+        const shifted = placed.nodes !== baseNodes;
+        set({
+            round: { ...round, nodes: placed.nodes },
+            selection: {
+                sheetId: pendingSpawn.sheetId,
+                speechId: placed.speechId,
+                row: placed.row,
+            },
+            pendingSpawn: {
+                sheetId: pendingSpawn.sheetId,
+                speechId: placed.speechId,
+                row: placed.row,
+                parentId: head.parentId,
+                unitKey: null,
+                kind: "break",
+                sourceHeadId: null,
+                preSpawnNodes: shifted ? baseNodes : undefined,
+            },
+        });
+    },
+
     commitPendingSpawn(text) {
         const { round, history, pendingSpawn } = get();
         if (!round || !history || !pendingSpawn) return null;
-        const { sheetId, speechId, row, parentId } = pendingSpawn;
+        const { sheetId, speechId, row, parentId, unitKey } = pendingSpawn;
         const { nodes, node } = placeNodeAt(round.nodes, {
             sheetId,
             speechId,
             parentId,
             row,
             text,
+            ...(unitKey !== null ? { unitId: unitKey } : {}),
         });
         // The transient shift was applied outside history, so the current history
         // node still holds the pre-spawn flow. Committing the post-spawn round as a

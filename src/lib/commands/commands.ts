@@ -192,14 +192,25 @@ export function executeCommand(id: CommandId): void {
 
         // ── Node creation ─────────────────────────────────────────────────────
         case "node.sibling": {
-            // Enter unifies "add the next argument" with the Excel habit of "move
-            // down a cell". On a filled cell it arms a deferred sibling spawn (the
-            // node is created only when the user types). On an empty cell it just
-            // moves the cursor down a row, so mashing Enter walks the column without
-            // creating anything.
+            // Enter unifies "add the next cell of this argument" with the Excel
+            // habit of "move down a cell". On a filled cell it arms a deferred
+            // continuation spawn. On the armed-but-untyped continuation cell a
+            // second Enter breaks the latch: the spawn becomes a NEW argument
+            // below the unit's band. On any other empty cell it just moves down.
             if (!round) return;
             const sel = state.selection;
             if (!sel) return;
+            const pending = state.pendingSpawn;
+            if (
+                pending &&
+                pending.kind === "continue" &&
+                pending.sheetId === sel.sheetId &&
+                pending.speechId === sel.speechId &&
+                pending.row === sel.row
+            ) {
+                state.breakPendingSpawn();
+                return;
+            }
             const onFilledCell =
                 occupantAt(round.nodes, sel.sheetId, sel.speechId, sel.row) !== null;
             if (onFilledCell) {

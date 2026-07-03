@@ -476,15 +476,18 @@ describe("FlowGrid — reserved cells beside a response band", () => {
         useRoundStore.getState().setActiveSheet(sheetId);
         const c0 = fmt.speeches[0].id; // 1AC
 
-        // arg1 in 1AC with three responses stacked in 1NC (rows 0..2). Spawns are
-        // deferred, so type into each to actually create the node.
+        // arg1 in 1AC with three separate responses stacked in 1NC (rows 0..2).
+        // Spawns are deferred; Enter continues an argument, so break each time to
+        // make a distinct sibling response, then type to create the node.
         useRoundStore.getState().placeBareNode({ sheetId, speechId: c0, row: 0 });
         useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
         useRoundStore.getState().spawnResponse();
         useRoundStore.getState().commitPendingSpawn("r1");
         useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().breakPendingSpawn();
         useRoundStore.getState().commitPendingSpawn("r2");
         useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().breakPendingSpawn();
         useRoundStore.getState().commitPendingSpawn("r3");
 
         render(<FlowGrid sheetId={sheetId} />);
