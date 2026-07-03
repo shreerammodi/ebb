@@ -529,3 +529,63 @@ describe("FlowGrid — link mode banner", () => {
         expect(screen.getByText("Link")).toBeTruthy();
     });
 });
+
+describe("FlowGrid — unit dividers and highlight", () => {
+    beforeEach(resetStore);
+
+    function newSheet() {
+        const fmt = makeFormatByKey("policy");
+        useRoundStore.getState().createRound({ role: "aff", format: fmt });
+        const sheetId = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
+        useRoundStore.getState().setActiveSheet(sheetId);
+        return { sheetId, speeches: fmt.speeches };
+    }
+
+    it("suppresses the rule between cells of one unit", () => {
+        const { sheetId, speeches } = newSheet();
+        const c0 = speeches[0].id;
+        useRoundStore.getState().placeBareNode({ sheetId, speechId: c0, row: 0 }, "a-text");
+        useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().commitPendingSpawn("b-text");
+
+        render(<FlowGrid sheetId={sheetId} />);
+        const bCell = screen.getByText("b-text").closest("td")!;
+        expect(bCell.className).toContain("cell-unit-cont");
+    });
+
+    it("does not draw a heavy rule between two plain single-cell arguments", () => {
+        const { sheetId, speeches } = newSheet();
+        const c0 = speeches[0].id;
+        useRoundStore.getState().placeBareNode({ sheetId, speechId: c0, row: 0 }, "first-arg");
+        useRoundStore.getState().placeBareNode({ sheetId, speechId: c0, row: 1 }, "second-arg");
+
+        render(<FlowGrid sheetId={sheetId} />);
+        const second = screen.getByText("second-arg").closest("td")!;
+        expect(second.className).not.toContain("cell-band-start");
+    });
+
+    it("draws the heavy rule at a tall band boundary", () => {
+        const { sheetId, speeches } = newSheet();
+        const c0 = speeches[0].id;
+        // Root P with three stacked responses (band rows 0-2), sibling root Q at row 3.
+        useRoundStore.getState().placeBareNode({ sheetId, speechId: c0, row: 0 }, "p-text");
+        useRoundStore.getState().setSelection({ sheetId, speechId: c0, row: 0 });
+        useRoundStore.getState().spawnResponse();
+        const r1 = useRoundStore.getState().commitPendingSpawn("r1")!;
+        const r1n = useRoundStore.getState().round!.nodes.find((n) => n.id === r1)!;
+        useRoundStore.getState().setSelection({ sheetId, speechId: r1n.speechId, row: 0 });
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().breakPendingSpawn();
+        useRoundStore.getState().commitPendingSpawn("r2");
+        useRoundStore.getState().setSelection({ sheetId, speechId: r1n.speechId, row: 1 });
+        useRoundStore.getState().spawnSibling();
+        useRoundStore.getState().breakPendingSpawn();
+        useRoundStore.getState().commitPendingSpawn("r3");
+        useRoundStore.getState().placeBareNode({ sheetId, speechId: c0, row: 3 }, "q-text");
+
+        render(<FlowGrid sheetId={sheetId} />);
+        const q = screen.getByText("q-text").closest("td")!;
+        expect(q.className).toContain("cell-band-start");
+    });
+});

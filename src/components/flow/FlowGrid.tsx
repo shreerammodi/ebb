@@ -12,10 +12,17 @@
 import { useState, useMemo } from "react";
 
 import { columnsForSheet } from "@/lib/grid/columns";
-import { occupantAt, maxRow, subtreeMaxRow, descendantIds } from "@/lib/grid/coords";
+import { occupantAt, maxRow, descendantIds } from "@/lib/grid/coords";
 import { detectDrops } from "@/lib/model/drops";
 import type { Sheet } from "@/lib/model/types";
-import { unitSubtreeIds } from "@/lib/model/units";
+import {
+    isUnitHead,
+    lastMemberRow,
+    unitBandBottom,
+    unitHeadOf,
+    unitKeyOf,
+    unitSubtreeIds,
+} from "@/lib/model/units";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
 import EmptyCellEditor from "./EmptyCellEditor";
@@ -34,7 +41,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         return filtered
             .map(
                 (n) =>
-                    `${n.id}:${n.speechId}:${n.row}:${n.parentId}:${n.bold}:${n.text}:${n.statuses.join(",")}`,
+                    `${n.id}:${n.speechId}:${n.row}:${n.parentId}:${n.bold}:${n.text}:${n.statuses.join(",")}:${n.unitId ?? ""}`,
             )
             .join("|");
     });
@@ -114,25 +121,21 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         else childrenByParent.set(node.parentId, [node.id]);
     }
 
-    // ── Sibling-group dividers ────────────────────────────────────────────────
-    // Where sibling argument bands stack in the same column, the boundary between
-    // one argument's responses and the next's is otherwise only legible from the
-    // numbering. Draw a heavier rule at each such boundary so the groups read
-    // apart — but only where it earns its keep: a boundary is ruled only when it
-    // touches a *tall* sibling (a subtree spanning more than its own row). A run
-    // of single-row leaf responses to one argument stays unbroken; the rule
-    // appears around the multi-row exchange that needs delineating. The rule
-    // starts at the sibling's column and runs to the table's right edge, spanning
-    // that argument's subtree while leaving the parent column(s) to the left
-    // continuous.
+    // ── Unit divider tiers ────────────────────────────────────────────────────
+    // Within a unit: no rule (cells read as one argument). Between units: the
+    // normal light gridline. Heavy rule: only where a boundary touches a unit
+    // whose response band extends past its own cells - untouched transcription
+    // reads as a clean list, and rules materialize exactly where clash exists.
     const colIndexOf = new Map(speeches.map((s, i) => [s.id, i]));
+    const heads = sheetNodes.filter((n) => isUnitHead(sheetNodes, n));
     const siblingsByParent = new Map<string | null, typeof sheetNodes>();
-    for (const node of sheetNodes) {
-        const arr = siblingsByParent.get(node.parentId);
-        if (arr) arr.push(node);
-        else siblingsByParent.set(node.parentId, [node]);
+    for (const h of heads) {
+        const arr = siblingsByParent.get(h.parentId);
+        if (arr) arr.push(h);
+        else siblingsByParent.set(h.parentId, [h]);
     }
-    const isTall = (n: (typeof sheetNodes)[number]) => subtreeMaxRow(sheetNodes, n.id) > n.row;
+    const isTall = (h: (typeof sheetNodes)[number]) =>
+        unitBandBottom(sheetNodes, h) > lastMemberRow(sheetNodes, h);
     // row → leftmost column index at which a band boundary begins
     const bandStartByRow = new Map<number, number>();
     for (const group of siblingsByParent.values()) {
@@ -140,10 +143,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         const sorted = [...group].sort((a, b) => a.row - b.row);
         for (let i = 1; i < sorted.length; i++) {
             const n = sorted[i];
-            // Rule the boundary only when this sibling or the one above it is a
-            // multi-row band — two adjacent leaves don't need a line between them.
-            // But always rule boundaries between different root arguments (parentId === null).
-            if (n.parentId !== null && !isTall(n) && !isTall(sorted[i - 1])) continue;
+            if (!isTall(n) && !isTall(sorted[i - 1])) continue;
             const col = colIndexOf.get(n.speechId);
             if (col === undefined) continue;
             const prev = bandStartByRow.get(n.row);
@@ -151,13 +151,25 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
         }
     }
 
-    // Selection's occupant for relationship highlight
+    // Cells whose upstairs neighbour is the same unit - their top rule vanishes.
+    const unitContKeys = new Set<string>();
+    for (const n of sheetNodes) {
+        const above = occupantAt(sheetNodes, sheetId, n.speechId, n.row - 1);
+        if (above && unitKeyOf(above) === unitKeyOf(n)) {
+            unitContKeys.add(`${n.speechId}:${n.row}`);
+        }
+    }
+
+    // Selection's occupant for relationship highlight. Relationships route through
+    // the unit HEAD so a continuation cell lights the parent box and co-members.
     const selNode = selection
         ? occupantAt(sheetNodes, selection.sheetId, selection.speechId, selection.row)
         : null;
-    const selChildren = selNode
-        ? new Set(childrenByParent.get(selNode.id) ?? [])
+    const selHead = selNode ? unitHeadOf(sheetNodes, selNode) : null;
+    const selChildren = selHead
+        ? new Set(childrenByParent.get(selHead.id) ?? [])
         : new Set<string>();
+    const selUnitKey = selNode ? unitKeyOf(selNode) : null;
 
     // Build a position lookup for child nodes so we can detect adjacency and
     // draw a continuous outline box instead of per-cell inset borders.
@@ -179,7 +191,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
     // interleaved into the middle of an exchange — siblings land below the band.
     const reservedKeys = new Set<string>();
     for (const p of sheetNodes) {
-        const end = subtreeMaxRow(sheetNodes, p.id);
+        const end = unitBandBottom(sheetNodes, p);
         for (let r = p.row + 1; r <= end; r++) {
             if (!occupantAt(sheetNodes, sheetId, p.speechId, r)) {
                 reservedKeys.add(`${r},${p.speechId}`);
@@ -290,7 +302,7 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                     const relClass = isPendingParent
                                         ? "cell-rel-parent"
                                         : selNode
-                                          ? node.id === selNode.parentId
+                                          ? node.id === selHead?.parentId
                                               ? "cell-rel-parent"
                                               : selChildren.has(node.id)
                                                 ? (() => {
@@ -314,6 +326,14 @@ export default function FlowGrid({ sheetId }: FlowGridProps) {
                                         isDropped ? "cell-drop" : "",
                                         isMoving ? "cell-moving" : "",
                                         isSel && !grabActive ? "cell-sel" : "",
+                                        selUnitKey !== null &&
+                                        unitKeyOf(node) === selUnitKey &&
+                                        !isSel
+                                            ? "cell-unit-sel"
+                                            : "",
+                                        unitContKeys.has(`${node.speechId}:${node.row}`)
+                                            ? "cell-unit-cont"
+                                            : "",
                                         isMoveCursor ? "drag-over" : "",
                                         isFlash
                                             ? `cell-flash${colIdx > 0 && colIdx <= 3 ? ` col-stagger-${colIdx}` : ""}`

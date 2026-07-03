@@ -239,6 +239,19 @@ body {
     transition: border-top-color 200ms var(--ease-out-quart);
 }
 
+/* Cells of one unit read as a single argument - the internal rule vanishes.
+   border-collapse: the transparent edge still wins over the neighbour's 1px
+   line because it is declared on the lower cell's top edge. */
+.flow td.cell-unit-cont {
+    border-top-color: transparent;
+}
+
+/* Co-members of the selected cell's unit - the whole argument reads selected
+   without competing with the focused cell itself. */
+.flow td.cell-unit-sel {
+    background: color-mix(in oklab, var(--ink) 5%, transparent);
+}
+
 /* Inaccessible empty cell — no argument can be placed here (no parent to its
    left, and not the first/originating column). For an Excel-tight continuous
    grid, keep the faint gridlines so unreachable cells read as empty grid space
