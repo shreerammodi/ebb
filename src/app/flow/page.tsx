@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import AppRoot from "@/components/AppRoot";
+import AppRoot from "@/components/flow/AppRoot";
 
 export default function FlowPage() {
     return (

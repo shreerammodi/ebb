@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
 import GuideDialog from "@/components/guide/GuideDialog";
-import SettingsPanel from "@/components/SettingsPanel";
+import SettingsPanel from "@/components/settings/SettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";

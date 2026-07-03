@@ -37,9 +37,19 @@ Run `npm test` and `npm run lint` before considering a change complete.
 ```
 src/
   app/           Next.js App Router (layout, page, globals.css)
-  components/    React components (PascalCase.tsx, colocated *.test.tsx)
+  components/    React components (PascalCase.tsx, colocated *.test.tsx),
+                 grouped by domain:
     ui/          Radix-based shadcn-style primitives
+    brand/       Logo and brand assets
     dashboard/   Flows dashboard components
+    flow/        Flow screen: AppRoot, Workspace, FlowGrid, cells, header,
+                 sidebar, info panel, print/export
+    guide/       Onboarding guide dialog and flow coach
+    history/     Undo tree panel
+    palette/     Command/search palettes, keybindings cheatsheet
+    settings/    Settings panel
+    trash/       Trash view
+    update/      Update provider, chip, critical-update modal
   lib/           Framework-agnostic logic, grouped by domain:
     model/       Round/flow data model, types, normalization, numbering
     store/       Zustand store (useRoundStore)

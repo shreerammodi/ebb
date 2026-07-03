@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import FlowCard from "@/components/dashboard/FlowCard";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
     listTrash,
     restoreRound,
@@ -11,10 +14,6 @@ import {
 } from "@/lib/persistence/autosave";
 import { db } from "@/lib/persistence/db";
 import { deleteSearchIndex } from "@/lib/persistence/searchIndex";
-
-import FlowCard from "./dashboard/FlowCard";
-import { Button } from "./ui/button";
-import { ConfirmDialog } from "./ui/confirm-dialog";
 
 type ConfirmTarget = { type: "one"; id: string } | { type: "all" };
 

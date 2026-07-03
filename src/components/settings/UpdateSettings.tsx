@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 import type { DayOfWeek } from "@/lib/update/types";
 
-import { useUpdate } from "../UpdateProvider";
+import { useUpdate } from "../update/UpdateProvider";
 
 const DAY_NAMES = [
     "Sunday",

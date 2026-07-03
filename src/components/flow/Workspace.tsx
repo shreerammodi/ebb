@@ -2,24 +2,24 @@
 
 import { useEffect } from "react";
 
+import FlowCoach from "@/components/guide/FlowCoach";
+import GuideDialog from "@/components/guide/GuideDialog";
+import CommandPalette from "@/components/palette/CommandPalette";
+import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
+import SearchPalette from "@/components/palette/SearchPalette";
+import SettingsPanel from "@/components/settings/SettingsPanel";
+import CriticalUpdateModal from "@/components/update/CriticalUpdateModal";
+import UpdateChip from "@/components/update/UpdateChip";
+import { UpdateProvider } from "@/components/update/UpdateProvider";
 import { useKeymap } from "@/lib/keymap/useKeymap";
 import { CX_COLUMNS } from "@/lib/model/cxColumns";
 import { useRoundStore } from "@/lib/store/useRoundStore";
 
-import CommandPalette from "./CommandPalette";
-import CriticalUpdateModal from "./CriticalUpdateModal";
-import FlowCoach from "./FlowCoach";
 import FlowGrid from "./FlowGrid";
-import GuideDialog from "./guide/GuideDialog";
 import InfoPanel from "./InfoPanel";
-import KeybindingsCheatsheet from "./KeybindingsCheatsheet";
 import PrintView from "./PrintView";
 import RoundHeader from "./RoundHeader";
-import SearchPalette from "./SearchPalette";
-import SettingsPanel from "./SettingsPanel";
 import Sidebar from "./Sidebar";
-import UpdateChip from "./UpdateChip";
-import { UpdateProvider } from "./UpdateProvider";
 
 export default function Workspace() {
     useKeymap();

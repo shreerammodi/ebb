@@ -1,4 +1,4 @@
-import TrashView from "@/components/TrashView";
+import TrashView from "@/components/trash/TrashView";
 
 export default function TrashPage() {
     return <TrashView />;

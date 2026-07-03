@@ -16,7 +16,7 @@ import { useRoundStore } from "@/lib/store/useRoundStore";
 import { isDesktop } from "@/lib/update/adapter";
 import { cn } from "@/lib/utils";
 
-import UpdateSettings from "./settings/UpdateSettings";
+import UpdateSettings from "./UpdateSettings";
 
 const COMMAND_LIST = Object.values(COMMANDS);
 
