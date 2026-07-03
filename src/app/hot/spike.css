@@ -1,0 +1,40 @@
+.spike-bold {
+    font-weight: 700;
+}
+.spike-highlight {
+    background: #fde047;
+}
+/* Outranks the theme's even/odd row striping (.handsontable tr.ht__row_even td). */
+.handsontable tbody tr td.spike-highlight {
+    background: #fde047;
+}
+
+.spike-print {
+    display: none;
+}
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .spike-print,
+    .spike-print * {
+        visibility: visible;
+    }
+    .spike-print {
+        display: block;
+        position: absolute;
+        inset: 0;
+    }
+    .spike-print table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .spike-print td,
+    .spike-print th {
+        border: 1px solid #999;
+        padding: 2px 4px;
+        font-size: 10px;
+        vertical-align: top;
+        white-space: pre-wrap;
+    }
+}
