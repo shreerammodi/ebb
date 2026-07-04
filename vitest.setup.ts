@@ -47,6 +47,23 @@ if (typeof window !== "undefined" && !window.ResizeObserver) {
     } as unknown as typeof window.ResizeObserver;
 }
 
+// Radix UI Select calls these during pointer interaction and keyboard
+// navigation; jsdom implements neither.
+if (typeof window !== "undefined") {
+    if (!Element.prototype.hasPointerCapture) {
+        Element.prototype.hasPointerCapture = () => false;
+    }
+    if (!Element.prototype.setPointerCapture) {
+        Element.prototype.setPointerCapture = () => {};
+    }
+    if (!Element.prototype.releasePointerCapture) {
+        Element.prototype.releasePointerCapture = () => {};
+    }
+    if (!Element.prototype.scrollIntoView) {
+        Element.prototype.scrollIntoView = () => {};
+    }
+}
+
 // matchMedia polyfill for responsive hook tests
 if (typeof window !== "undefined" && !window.matchMedia) {
     window.matchMedia = () =>

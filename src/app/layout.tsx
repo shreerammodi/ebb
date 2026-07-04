@@ -3,9 +3,27 @@ import localFont from "next/font/local";
 import { Toaster } from "sonner";
 
 import DesktopSelectAll from "@/components/DesktopSelectAll";
+import ThemeSync from "@/components/ThemeSync";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
+
+// Applies the persisted theme before first paint so there's no flash of the
+// wrong appearance. Kept in sync afterward by <ThemeSync>. This app is a
+// static export with no per-request server render, so a synchronous inline
+// script is the only way to beat first paint.
+const NO_FLASH_THEME_SCRIPT = `
+(function () {
+    try {
+        var raw = localStorage.getItem("ebb-display-settings");
+        var theme = raw ? JSON.parse(raw).theme : "system";
+        var dark =
+            theme === "dark" ||
+            (theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+    } catch (e) {}
+})();
+`;
 
 const commitMono = localFont({
     src: [
@@ -170,6 +188,92 @@ const ibmPlexMono = localFont({
     display: "swap",
 });
 
+const cabin = localFont({
+    src: [
+        {
+            path: "./fonts/cabin/cabin-latin-400-normal.woff2",
+            weight: "400",
+            style: "normal",
+        },
+        {
+            path: "./fonts/cabin/cabin-latin-400-italic.woff2",
+            weight: "400",
+            style: "italic",
+        },
+        {
+            path: "./fonts/cabin/cabin-latin-500-normal.woff2",
+            weight: "500",
+            style: "normal",
+        },
+        {
+            path: "./fonts/cabin/cabin-latin-600-normal.woff2",
+            weight: "600",
+            style: "normal",
+        },
+        {
+            path: "./fonts/cabin/cabin-latin-700-normal.woff2",
+            weight: "700",
+            style: "normal",
+        },
+    ],
+    variable: "--font-cabin",
+    display: "swap",
+});
+
+const lato = localFont({
+    src: [
+        {
+            path: "./fonts/lato/lato-latin-400-normal.woff2",
+            weight: "400",
+            style: "normal",
+        },
+        {
+            path: "./fonts/lato/lato-latin-400-italic.woff2",
+            weight: "400",
+            style: "italic",
+        },
+        {
+            path: "./fonts/lato/lato-latin-700-normal.woff2",
+            weight: "700",
+            style: "normal",
+        },
+    ],
+    variable: "--font-lato",
+    display: "swap",
+});
+
+const openSans = localFont({
+    src: [
+        {
+            path: "./fonts/open-sans/open-sans-latin-400-normal.woff2",
+            weight: "400",
+            style: "normal",
+        },
+        {
+            path: "./fonts/open-sans/open-sans-latin-400-italic.woff2",
+            weight: "400",
+            style: "italic",
+        },
+        {
+            path: "./fonts/open-sans/open-sans-latin-500-normal.woff2",
+            weight: "500",
+            style: "normal",
+        },
+        {
+            path: "./fonts/open-sans/open-sans-latin-600-normal.woff2",
+            weight: "600",
+            style: "normal",
+        },
+        {
+            path: "./fonts/open-sans/open-sans-latin-700-normal.woff2",
+            weight: "700",
+            style: "normal",
+        },
+    ],
+    variable: "--font-open-sans",
+    display: "swap",
+});
+
 export const metadata: Metadata = {
     title: {
         default: "ebb",
@@ -184,10 +288,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html
             lang="en"
-            className={`${commitMono.variable} ${dmSans.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
+            className={`${commitMono.variable} ${dmSans.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${cabin.variable} ${lato.variable} ${openSans.variable}`}
+            suppressHydrationWarning
         >
+            <head>
+                <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
+            </head>
             <body className="font-sans antialiased">
                 <DesktopSelectAll />
+                <ThemeSync />
                 <TooltipProvider>{children}</TooltipProvider>
                 <Toaster position="bottom-center" />
             </body>

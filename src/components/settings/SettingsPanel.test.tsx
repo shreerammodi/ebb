@@ -15,7 +15,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { COMMANDS } from "@/lib/commands/registry";
-import { FONTS } from "@/lib/fonts/registry";
+import { FONTS, DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -169,21 +169,43 @@ describe("SettingsPanel", () => {
         expect(useFlowStore.getState().settingsOpen).toBe(false);
     });
 
+    describe("theme picker", () => {
+        it("renders a radio for each mode with the current one checked", () => {
+            useFlowStore.getState().setTheme("dark");
+            renderSettingsPanel();
+
+            expect(screen.getByTestId("theme-light")).toBeInTheDocument();
+            expect(screen.getByTestId("theme-dark")).toBeInTheDocument();
+            expect(screen.getByTestId("theme-system")).toBeInTheDocument();
+            expect(screen.getByTestId("theme-dark")).toBeChecked();
+        });
+
+        it("calls setTheme when a different mode is chosen", async () => {
+            useFlowStore.getState().setTheme("system");
+            renderSettingsPanel();
+            await userEvent.click(screen.getByTestId("theme-light"));
+            expect(useFlowStore.getState().theme).toBe("light");
+        });
+    });
+
     describe("flow font picker", () => {
-        it("renders a radio for each curated font with the current one checked", async () => {
+        it("lists every curated font as an option, with the current one shown selected", async () => {
             useFlowStore.getState().setFlowFont("commit-mono");
             renderSettingsPanel();
             // Display is the default pane - no nav click needed.
 
+            expect(screen.getByTestId("flow-font-select")).toHaveTextContent("Commit Mono");
+
+            await userEvent.click(screen.getByTestId("flow-font-select"));
             for (const f of FONTS) {
                 expect(screen.getByTestId(`flow-font-${f.id}`)).toBeInTheDocument();
             }
-            expect(screen.getByTestId("flow-font-commit-mono")).toBeChecked();
         });
 
         it("calls setFlowFont when a different font is chosen", async () => {
             useFlowStore.getState().setFlowFont("commit-mono");
             renderSettingsPanel();
+            await userEvent.click(screen.getByTestId("flow-font-select"));
             await userEvent.click(screen.getByTestId("flow-font-plex-sans"));
             expect(useFlowStore.getState().flowFont).toBe("plex-sans");
         });
@@ -192,7 +214,13 @@ describe("SettingsPanel", () => {
             useFlowStore.getState().setFlowFont("plex-sans");
             renderSettingsPanel();
             await userEvent.click(screen.getByTestId("flow-font-reset"));
-            expect(useFlowStore.getState().flowFont).toBe("plex-sans");
+            expect(useFlowStore.getState().flowFont).toBe(DEFAULT_FONT_ID);
+        });
+
+        it("disables the reset button once the default font is active", async () => {
+            useFlowStore.getState().setFlowFont(DEFAULT_FONT_ID);
+            renderSettingsPanel();
+            expect(screen.getByTestId("flow-font-reset")).toBeDisabled();
         });
     });
 

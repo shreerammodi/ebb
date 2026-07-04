@@ -4,7 +4,7 @@
 @theme {
     --font-sans: var(--font-ibm-plex-sans);
     --font-mono: var(--font-commit-mono);
-    --font-flow: var(--font-ibm-plex-sans);
+    --font-flow: var(--font-dm-sans);
 
     --color-aff: #1d4ed8;
     --color-neg: #c0271f;

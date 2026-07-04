@@ -6,16 +6,30 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Tip } from "@/components/ui/tooltip";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
-import { FONTS, DEFAULT_FONT_ID } from "@/lib/fonts/registry";
+import { FONTS, DEFAULT_FONT_ID, type FontId } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { eventToChord } from "@/lib/keymap/resolve";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+import type { ThemeMode } from "@/lib/theme/mode";
 import { isDesktop } from "@/lib/update/adapter";
 import { cn } from "@/lib/utils";
 
 import UpdateSettings from "./UpdateSettings";
+
+const THEME_OPTIONS: { id: ThemeMode; label: string }[] = [
+    { id: "light", label: "Light" },
+    { id: "dark", label: "Dark" },
+    { id: "system", label: "System" },
+];
 
 const COMMAND_LIST = Object.values(COMMANDS);
 
@@ -47,6 +61,8 @@ export default function SettingsPanel() {
     const setSettingsOpen = useFlowStore((s) => s.setSettingsOpen);
     const flowFont = useFlowStore((s) => s.flowFont);
     const setFlowFont = useFlowStore((s) => s.setFlowFont);
+    const theme = useFlowStore((s) => s.theme);
+    const setTheme = useFlowStore((s) => s.setTheme);
 
     const [recording, setRecording] = useState<CommandId | null>(null);
     const [category, setCategory] = useState<Category>("display");
@@ -171,9 +187,42 @@ export default function SettingsPanel() {
                             <div className="flex flex-col gap-4">
                                 <div
                                     role="radiogroup"
-                                    aria-labelledby="flow-font-label"
+                                    aria-labelledby="theme-label"
                                     className="flex flex-col gap-1"
                                 >
+                                    <span
+                                        id="theme-label"
+                                        className="text-foreground text-[13px] font-medium"
+                                    >
+                                        Theme
+                                    </span>
+                                    {THEME_OPTIONS.map((t) => {
+                                        const checked = t.id === theme;
+                                        return (
+                                            <label
+                                                key={t.id}
+                                                className={cn(
+                                                    "flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors",
+                                                    checked ? "bg-accent" : "hover:bg-accent/50",
+                                                )}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="theme"
+                                                    value={t.id}
+                                                    checked={checked}
+                                                    onChange={() => setTheme(t.id)}
+                                                    data-testid={`theme-${t.id}`}
+                                                    className="accent-sel"
+                                                />
+                                                <span className="text-foreground text-[14px]">
+                                                    {t.label}
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                                <div className="flex flex-col gap-1">
                                     <div className="flex items-center justify-between">
                                         <span
                                             id="flow-font-label"
@@ -196,38 +245,32 @@ export default function SettingsPanel() {
                                     <p className="text-muted-foreground mb-1 text-[12px]">
                                         Font used for flowed argument text and the inline editor.
                                     </p>
-                                    {FONTS.map((f) => {
-                                        const checked = f.id === flowFont;
-                                        return (
-                                            <label
-                                                key={f.id}
-                                                className={cn(
-                                                    "flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors",
-                                                    checked ? "bg-accent" : "hover:bg-accent/50",
-                                                )}
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name="flow-font"
+                                    <Select
+                                        value={flowFont}
+                                        onValueChange={(value) => setFlowFont(value as FontId)}
+                                    >
+                                        <SelectTrigger
+                                            aria-labelledby="flow-font-label"
+                                            data-testid="flow-font-select"
+                                            className="w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {FONTS.map((f) => (
+                                                <SelectItem
+                                                    key={f.id}
                                                     value={f.id}
-                                                    checked={checked}
-                                                    onChange={() => setFlowFont(f.id)}
                                                     data-testid={`flow-font-${f.id}`}
-                                                    className="accent-sel"
-                                                />
-                                                <span
-                                                    className="text-foreground text-[14px]"
-                                                    style={{
-                                                        fontFamily: f.cssVar,
-                                                    }}
+                                                    style={{ fontFamily: f.cssVar }}
                                                 >
                                                     {f.label}
-                                                </span>
-                                            </label>
-                                        );
-                                    })}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                     <p
-                                        className="border-border text-foreground mt-1 rounded-md border bg-zinc-50 px-2.5 py-1.5 text-[13px]"
+                                        className="border-border text-foreground bg-muted mt-1 rounded-md border px-2.5 py-1.5 text-[13px]"
                                         style={{
                                             fontFamily:
                                                 FONTS.find((f) => f.id === flowFont)?.cssVar ??
@@ -272,10 +315,10 @@ export default function SettingsPanel() {
                                                 </span>
                                                 <span
                                                     className={cn(
-                                                        "min-w-[64px] rounded-md border bg-zinc-50 px-1.5 py-0.5 text-center font-mono text-[12px] whitespace-nowrap",
+                                                        "bg-muted min-w-[64px] rounded-md border px-1.5 py-0.5 text-center font-mono text-[12px] whitespace-nowrap",
                                                         overridden
                                                             ? "border-sel text-sel"
-                                                            : "border-zinc-200 text-muted-foreground",
+                                                            : "border-border text-muted-foreground",
                                                     )}
                                                     data-testid={`chord-${cmd.id}`}
                                                 >
