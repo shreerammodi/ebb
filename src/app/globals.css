@@ -148,14 +148,17 @@ html .ht-theme-main {
     --ht-header-foreground-color: var(--foreground);
     --ht-accent-color: var(--primary);
 }
-/* Header ink stays put on hover; the theme otherwise recolors hovered th. */
+/* Header ink stays put on hover and while its column is selected; the theme
+   otherwise recolors hovered and highlighted th. */
 .handsontable th.hd-aff,
-.handsontable th.hd-aff:hover {
+.handsontable th.hd-aff:hover,
+.handsontable th.hd-aff.ht__highlight {
     color: var(--aff);
     font-weight: 700;
 }
 .handsontable th.hd-neg,
-.handsontable th.hd-neg:hover {
+.handsontable th.hd-neg:hover,
+.handsontable th.hd-neg.ht__highlight {
     color: var(--neg);
     font-weight: 700;
 }
