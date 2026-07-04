@@ -21,6 +21,53 @@ registerAllModules();
 const MIN_ROWS = 40;
 const CONTEXT_MENU = ["row_above", "row_below", "remove_row"] as const;
 
+const ARROW_DELTAS: Record<string, { dr: number; dc: number }> = {
+    ArrowUp: { dr: -1, dc: 0 },
+    ArrowDown: { dr: 1, dc: 0 },
+    ArrowLeft: { dr: 0, dc: -1 },
+    ArrowRight: { dr: 0, dc: 1 },
+};
+
+/**
+ * Excel-style Cmd/Ctrl+Arrow: from a filled cell adjacent to a filled cell,
+ * stop at the end of that contiguous run; otherwise skip empties and land on
+ * the next filled cell, or the sheet edge if none remains.
+ */
+function smartJump(
+    hot: Handsontable,
+    row: number,
+    col: number,
+    { dr, dc }: { dr: number; dc: number },
+): { row: number; col: number } {
+    const maxR = hot.countRows() - 1;
+    const maxC = hot.countCols() - 1;
+    const inBounds = (r: number, c: number) => r >= 0 && r <= maxR && c >= 0 && c <= maxC;
+    const filled = (r: number, c: number) => {
+        const v = hot.getDataAtCell(r, c);
+        return v != null && String(v).trim() !== "";
+    };
+    if (!inBounds(row + dr, col + dc)) return { row, col };
+
+    let r = row;
+    let c = col;
+    if (filled(row, col) && filled(row + dr, col + dc)) {
+        // Ride the filled run to its last cell.
+        while (inBounds(r + dr, c + dc) && filled(r + dr, c + dc)) {
+            r += dr;
+            c += dc;
+        }
+    } else {
+        // Skip empties to the next filled cell, else stop at the edge.
+        r += dr;
+        c += dc;
+        while (inBounds(r + dr, c + dc) && !filled(r, c)) {
+            r += dr;
+            c += dc;
+        }
+    }
+    return { row: r, col: c };
+}
+
 function collectMeta(hot: Handsontable): Record<string, CellMeta> {
     const meta: Record<string, CellMeta> = {};
     for (let r = 0; r < hot.countRows(); r++) {
@@ -155,6 +202,17 @@ export default memo(function HotGrid() {
             executeCommand(
                 e.key === "[" ? "sheet.prev" : e.key === "]" ? "sheet.next" : "help.open",
             );
+            return;
+        }
+        const dir = ARROW_DELTAS[e.key];
+        if (hot && (e.metaKey || e.ctrlKey) && dir) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const cur = hot.getSelectedRangeLast();
+            if (!cur || cur.highlight.row == null || cur.highlight.col == null) return;
+            const { row, col } = smartJump(hot, cur.highlight.row, cur.highlight.col, dir);
+            if (e.shiftKey) hot.selection.setRangeEnd(hot._createCellCoords(row, col));
+            else hot.selectCell(row, col);
         }
     }, []);
 
