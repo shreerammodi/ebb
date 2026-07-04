@@ -9,8 +9,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { makeFlowRound } from "@/lib/model/flow";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import Sidebar from "./Sidebar";
 
@@ -38,22 +38,18 @@ function lastToastAction(): { label: string; onClick: () => void } {
 }
 
 function resetStore() {
-    useRoundStore.setState({
+    useFlowStore.setState({
         round: null,
         activeSheetId: null,
-        selection: null,
-        quickSwitcherOpen: false,
-        settingsOpen: false,
+        renamingSheetId: null,
+        sidebarCollapsed: false,
     });
 }
 
 /** Bootstraps a round with a Case sheet and one off-case sheet. */
 function setupRound() {
-    const store = useRoundStore.getState();
-    store.createRound({
-        role: "aff",
-        format: makeFormat(POLICY_PRESET),
-    });
+    const store = useFlowStore.getState();
+    store.loadRound(makeFlowRound("aff"));
     const caseId = store.addSheet({ title: "Case", group: "aff" });
     const daId = store.addSheet({ title: "Disad", group: "neg" });
     return { caseId, daId };
@@ -62,14 +58,6 @@ function setupRound() {
 describe("Sidebar", () => {
     beforeEach(() => {
         resetStore();
-    });
-
-    it("renders the History utility region below the sheet list", () => {
-        setupRound();
-        renderSidebar();
-        expect(screen.getByTestId("utility-region")).toBeInTheDocument();
-        expect(screen.getByText("History")).toBeInTheDocument();
-        expect(screen.getByTestId("undo-tree")).toBeInTheDocument();
     });
 
     it("lists all flow sheets in one order-sorted list with side markers", () => {
@@ -85,34 +73,6 @@ describe("Sidebar", () => {
         expect(screen.getByTestId(`sheet-marker-${daId}`)).toHaveClass("bg-neg");
     });
 
-    it("shows a drop badge when a sheet has drops", () => {
-        const { caseId } = setupRound();
-        const store = useRoundStore.getState();
-        const round = store.round!;
-        const speeches = round.format.speeches;
-        const affSpeech = speeches.find((s) => s.side === "aff")!; // 1AC
-        const negSpeech = speeches.find((s) => s.side === "neg")!; // 1NC
-
-        // An aff argument that the neg never answers, plus a neg node so that the
-        // opposing speech "happened" — this makes the aff node a drop.
-        store.addNode({
-            sheetId: caseId,
-            speechId: affSpeech.id,
-            parentId: null,
-            text: "Contention 1",
-        });
-        store.addNode({
-            sheetId: caseId,
-            speechId: negSpeech.id,
-            parentId: null,
-            text: "Off-topic",
-        });
-
-        renderSidebar();
-
-        expect(screen.getByTestId(`drop-badge-${caseId}`)).toBeInTheDocument();
-    });
-
     it("clicking a sheet calls setActiveSheet", async () => {
         const user = userEvent.setup();
         const { caseId, daId } = setupRound();
@@ -120,10 +80,10 @@ describe("Sidebar", () => {
         renderSidebar();
 
         await user.click(screen.getByTestId(`sheet-${daId}`));
-        expect(useRoundStore.getState().activeSheetId).toBe(daId);
+        expect(useFlowStore.getState().activeSheetId).toBe(daId);
 
         await user.click(screen.getByTestId(`sheet-${caseId}`));
-        expect(useRoundStore.getState().activeSheetId).toBe(caseId);
+        expect(useFlowStore.getState().activeSheetId).toBe(caseId);
     });
 
     it('shows "+ Aff" and "+ Neg" buttons, not "+ Add sheet"', () => {
@@ -137,12 +97,12 @@ describe("Sidebar", () => {
     it('"+ Aff" button adds an aff sheet and makes it active', async () => {
         const user = userEvent.setup();
         setupRound();
-        const beforeCount = useRoundStore.getState().round!.sheets.length;
+        const beforeCount = useFlowStore.getState().round!.sheets.length;
 
         renderSidebar();
         await user.click(screen.getByTestId("add-aff"));
 
-        const state = useRoundStore.getState();
+        const state = useFlowStore.getState();
         const sheets = state.round!.sheets;
         expect(sheets).toHaveLength(beforeCount + 1);
         const newest = sheets[sheets.length - 1];
@@ -153,12 +113,12 @@ describe("Sidebar", () => {
     it('"+ Neg" button adds a neg sheet and makes it active', async () => {
         const user = userEvent.setup();
         setupRound();
-        const beforeCount = useRoundStore.getState().round!.sheets.length;
+        const beforeCount = useFlowStore.getState().round!.sheets.length;
 
         renderSidebar();
         await user.click(screen.getByTestId("add-neg"));
 
-        const state = useRoundStore.getState();
+        const state = useFlowStore.getState();
         const sheets = state.round!.sheets;
         expect(sheets).toHaveLength(beforeCount + 1);
         const newest = sheets[sheets.length - 1];
@@ -188,7 +148,7 @@ describe("Sidebar", () => {
         await user.clear(input);
         await user.type(input, "New Name{Enter}");
 
-        expect(useRoundStore.getState().round!.sheets.find((s) => s.id === caseId)!.title).toBe(
+        expect(useFlowStore.getState().round!.sheets.find((s) => s.id === caseId)!.title).toBe(
             "New Name",
         );
         expect(screen.queryByTestId(`rename-input-${caseId}`)).toBeNull();
@@ -197,7 +157,7 @@ describe("Sidebar", () => {
     it("pressing Escape in rename input cancels without renaming", async () => {
         const user = userEvent.setup();
         const { caseId } = setupRound();
-        const originalTitle = useRoundStore
+        const originalTitle = useFlowStore
             .getState()
             .round!.sheets.find((s) => s.id === caseId)!.title;
 
@@ -209,7 +169,7 @@ describe("Sidebar", () => {
         await user.type(input, "Changed");
         await user.keyboard("{Escape}");
 
-        expect(useRoundStore.getState().round!.sheets.find((s) => s.id === caseId)!.title).toBe(
+        expect(useFlowStore.getState().round!.sheets.find((s) => s.id === caseId)!.title).toBe(
             originalTitle,
         );
         expect(screen.queryByTestId(`rename-input-${caseId}`)).toBeNull();
@@ -236,55 +196,39 @@ describe("Sidebar", () => {
         const user = userEvent.setup();
         setupRound();
         renderSidebar();
-        const cxId = useRoundStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
+        const cxId = useFlowStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
         await user.click(screen.getByTestId("cx-sheet-row"));
-        expect(useRoundStore.getState().activeSheetId).toBe(cxId);
+        expect(useFlowStore.getState().activeSheetId).toBe(cxId);
     });
 
     it("CX sheet row has no delete affordance", () => {
         setupRound();
         renderSidebar();
-        const cxId = useRoundStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
+        const cxId = useFlowStore.getState().round!.sheets.find((s) => s.kind === "cx")!.id;
         expect(screen.queryByTestId(`delete-sheet-${cxId}`)).toBeNull();
     });
 
-    it("deletes a flow sheet when its × is clicked, and it is undoable", async () => {
+    it("clicking a sheet's × deletes it and the Undo toast restores it", async () => {
         const user = userEvent.setup();
         setupRound();
-        const id = useRoundStore.getState().addSheet({ title: "Case2", group: "aff" });
+        const id = useFlowStore.getState().addSheet({ title: "Case2", group: "aff" });
 
         renderSidebar();
 
         await user.click(screen.getByTestId(`delete-sheet-${id}`));
-        expect(useRoundStore.getState().round!.sheets.some((s) => s.id === id)).toBe(false);
-
-        useRoundStore.getState().undo();
-        expect(useRoundStore.getState().round!.sheets.some((s) => s.id === id)).toBe(true);
-    });
-
-    it("clicking × raises an Undo toast that restores the sheet", async () => {
-        const user = userEvent.setup();
-        setupRound();
-        const id = useRoundStore.getState().addSheet({ title: "Case2", group: "aff" });
-
-        renderSidebar();
-
-        await user.click(screen.getByTestId(`delete-sheet-${id}`));
-        expect(useRoundStore.getState().round!.sheets.some((s) => s.id === id)).toBe(false);
+        expect(useFlowStore.getState().round!.sheets.some((s) => s.id === id)).toBe(false);
 
         // The toast carries an Undo action; invoking it brings the sheet back.
         const action = lastToastAction();
         expect(action.label).toBe("Undo");
         action.onClick();
-        expect(useRoundStore.getState().round!.sheets.some((s) => s.id === id)).toBe(true);
+        expect(useFlowStore.getState().round!.sheets.some((s) => s.id === id)).toBe(true);
     });
 
     it("exposes accessible side label for aff sheets", () => {
         const { caseId } = setupRound();
         renderSidebar();
         const row = screen.getByTestId(`sheet-${caseId}`);
-        // The sr-only span inside the row must carry the text "Aff"
-        expect(row).toHaveAccessibleDescription;
         const srLabel = row.querySelector(".sr-only");
         expect(srLabel).toBeInTheDocument();
         expect(srLabel!.textContent).toBe("Aff");
@@ -300,21 +244,20 @@ describe("Sidebar", () => {
     });
 
     it("reorders sheets via drag and drop", () => {
-        const { caseId, daId } = setupRound(); // Case(aff) then Disad(neg), order 0,1
+        const { caseId, daId } = setupRound(); // Case(aff) then Disad(neg), order 1,2
         renderSidebar();
 
         // Drag the second sheet (Disad) and drop it onto the first (Case).
         // jsdom getBoundingClientRect is zero, so dragover resolves to "insert
-        // before the hovered row" → Disad lands at index 0.
+        // before the hovered row" - Disad lands at index 0.
         const source = screen.getByTestId(`sheet-${daId}`);
         const target = screen.getByTestId(`sheet-${caseId}`);
         fireEvent.dragStart(source);
         fireEvent.dragOver(target);
         fireEvent.drop(target);
 
-        const sheets = useRoundStore.getState().round!.sheets;
+        const sheets = useFlowStore.getState().round!.sheets;
         const order = (id: string) => sheets.find((s) => s.id === id)!.order;
-        expect(order(daId)).toBe(0);
-        expect(order(caseId)).toBe(1);
+        expect(order(daId)).toBeLessThan(order(caseId));
     });
 });

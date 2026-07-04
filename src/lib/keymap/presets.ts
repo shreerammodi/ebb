@@ -1,9 +1,9 @@
 /**
  * Single flat modeless keymap preset.
  *
- * Chord strings are canonical (see resolve.ts / eventToChord).
- * There is no vim/move mode layer — one binding map for everything.
- * Grab-move is handled by a transient override in useKeymap.
+ * Chord strings are canonical (see resolve.ts / eventToChord). Grid-native
+ * gestures (Enter, Alt+Enter, Tab, Esc, arrows) are owned by Handsontable and
+ * never appear here; this map holds only app chords.
  */
 
 import type { CommandId } from "@/lib/commands/registry";
@@ -11,40 +11,14 @@ import { isMacPlatform } from "@/lib/platform";
 
 import type { Chord, Keymap } from "./types";
 
-/**
- * Excel-style data-edge jumps. Directional jumps use the platform modifier
- * (Cmd on Mac, Ctrl elsewhere); corner jumps use Ctrl+Home/End on all platforms
- * (Home/End aren't system-reserved, unlike Ctrl+Arrow on macOS).
- */
-const JUMP_BINDINGS: Record<Chord, CommandId> = (() => {
-    const mod = isMacPlatform() ? "Meta" : "Ctrl";
-    return {
-        [`${mod}+ArrowUp`]: "nav.jumpUp",
-        [`${mod}+ArrowDown`]: "nav.jumpDown",
-        [`${mod}+ArrowLeft`]: "nav.jumpLeft",
-        [`${mod}+ArrowRight`]: "nav.jumpRight",
-        "Ctrl+Home": "nav.jumpHome",
-        "Ctrl+End": "nav.jumpEnd",
-    };
-})();
-
 /** Platform modifier letter chords: Meta on Mac, Ctrl elsewhere. */
 const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
     const mod = isMacPlatform() ? "Meta" : "Ctrl";
     return {
-        [`${mod}+m`]: "move.grab",
-        [`${mod}+g`]: "link.grab",
-        [`${mod}+j`]: "unit.join",
-        [`${mod}+J`]: "unit.split",
         [`${mod}+z`]: "edit.undo",
         [`${mod}+Z`]: "edit.redo",
         [`${mod}+b`]: "format.toggleBold",
         [`${mod}+H`]: "format.toggleHighlight",
-        // Cmd/Ctrl+Shift+X (the uppercase "X" chord encodes Shift). Kept off the
-        // bare Cmd/Ctrl+X so it doesn't collide with the native cut chord, which
-        // passes through inside the always-focused cell editor.
-        [`${mod}+X`]: "status.toggleConceded",
-        [`${mod}+e`]: "status.toggleExtended",
         [`${mod}+k`]: "sheet.quickSwitch",
         [`${mod}+p`]: "palette.open",
         [`${mod}+a`]: "sheet.newAff",
@@ -53,7 +27,6 @@ const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
         [`${mod}+,`]: "settings.open",
         [`${mod}+\\`]: "sidebar.toggle",
         [`${mod}+Backspace`]: "row.delete",
-        [`${mod}+Shift+Backspace`]: "node.deleteSubtree",
     };
 })();
 
@@ -73,60 +46,19 @@ const SHEET_JUMPS: Record<Chord, CommandId> = (() => {
     };
 })();
 
-/**
- * The single flat keymap. All navigation, creation, and utility chords live
- * here. During a grab-move (moveSource !== null), Enter/Escape are temporarily
- * overridden to move.commit / move.cancel by the useKeymap hook.
- */
+/** The single flat keymap: sheet switching, formatting, and utility chords. */
 export const FLAT_KEYMAP: Keymap = {
     name: "default",
     bindings: {
-        // ── Navigation ────────────────────────────────────────────────────────
-        ArrowLeft: "move.left",
-        ArrowDown: "move.down",
-        ArrowUp: "move.up",
-        ArrowRight: "move.right",
-        Tab: "move.right",
-        "Shift+Tab": "move.left",
-        ...JUMP_BINDINGS,
-
-        // ── Node creation ─────────────────────────────────────────────────────
-        Enter: "node.sibling",
-        "Shift+Enter": "node.response",
-
-        // ── Cell operations ───────────────────────────────────────────────────
-        Delete: "cell.clear",
-
-        // ── Platform modifier chords (Meta on Mac, Ctrl elsewhere) ─────────
-        ...LETTER_BINDINGS,
-
-        // ── Sheets ────────────────────────────────────────────────────────────
         "]": "sheet.next",
         "[": "sheet.prev",
         "?": "help.open",
+        ...LETTER_BINDINGS,
         ...SHEET_JUMPS,
     },
 };
 
-/**
- * Grab-move override bindings. When moveSource is active, these chords take
- * priority over the flat keymap for the duration of the grab.
- */
-export const GRAB_BINDINGS: Record<Chord, CommandId> = {
-    Enter: "move.commit",
-    Escape: "move.cancel",
-};
-
-/**
- * Grab-to-link override bindings. When linkSource is active, these chords
- * take priority over the flat keymap for the duration of the grab.
- */
-export const LINK_BINDINGS: Record<Chord, CommandId> = {
-    Enter: "link.commit",
-    Escape: "link.cancel",
-};
-
-// ─── Registry ─────────────────────────────────────────────────────────────────
+// --- Registry ------------------------------------------------------------------
 
 /** Returns the flat preset keymap. */
 export function getPresetKeymap(): Keymap {

@@ -5,25 +5,23 @@ import userEvent from "@testing-library/user-event";
  */
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { makeFlowRound } from "@/lib/model/flow";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import CommandPalette from "./CommandPalette";
 
 function resetStore() {
-    useRoundStore.setState({
+    useFlowStore.setState({
         round: null,
         activeSheetId: null,
-        selection: null,
         commandPaletteOpen: false,
         settingsOpen: false,
     });
 }
 
 function setup() {
-    const store = useRoundStore.getState();
-    store.createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
-    useRoundStore.getState().setCommandPaletteOpen(true);
+    useFlowStore.getState().loadRound(makeFlowRound("aff"));
+    useFlowStore.getState().setCommandPaletteOpen(true);
 }
 
 describe("CommandPalette", () => {
@@ -31,7 +29,7 @@ describe("CommandPalette", () => {
 
     it("renders nothing when closed", () => {
         setup();
-        useRoundStore.getState().setCommandPaletteOpen(false);
+        useFlowStore.getState().setCommandPaletteOpen(false);
         render(<CommandPalette />);
         expect(screen.queryByTestId("command-palette")).not.toBeInTheDocument();
     });
@@ -58,7 +56,7 @@ describe("CommandPalette", () => {
         render(<CommandPalette />);
         await userEvent.type(screen.getByTestId("command-palette-input"), "settings");
         await userEvent.keyboard("{Enter}");
-        const s = useRoundStore.getState();
+        const s = useFlowStore.getState();
         expect(s.settingsOpen).toBe(true);
         expect(s.commandPaletteOpen).toBe(false);
     });
@@ -68,14 +66,14 @@ describe("CommandPalette", () => {
         render(<CommandPalette />);
         await userEvent.type(screen.getByTestId("command-palette-input"), "command palette");
         await userEvent.keyboard("{Enter}");
-        expect(useRoundStore.getState().commandPaletteOpen).toBe(false);
+        expect(useFlowStore.getState().commandPaletteOpen).toBe(false);
     });
 
     it("closes on Escape without running a command", async () => {
         setup();
         render(<CommandPalette />);
         await userEvent.keyboard("{Escape}");
-        const s = useRoundStore.getState();
+        const s = useFlowStore.getState();
         expect(s.commandPaletteOpen).toBe(false);
         expect(s.settingsOpen).toBe(false);
     });

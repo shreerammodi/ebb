@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import { prettyChord, buildChordMap, keyHintFor } from "./displayChord";
 
 describe("displayChord", () => {
     beforeEach(() => {
-        useRoundStore.setState({ keymapOverrides: {} });
+        useFlowStore.setState({ keymapOverrides: {} });
     });
 
     it("prettifies modifier chords", () => {
@@ -25,17 +25,17 @@ describe("displayChord", () => {
 
     it("maps a bound command to its chord", () => {
         const map = buildChordMap();
-        expect(map["node.sibling"]).toBeTruthy();
+        expect(map["sheet.next"]).toBe("]");
     });
 
     it("returns a pretty hint for a bound command", () => {
-        expect(keyHintFor("node.sibling")).toBe(prettyChord(buildChordMap()["node.sibling"]!));
+        expect(keyHintFor("sheet.next")).toBe(prettyChord(buildChordMap()["sheet.next"]!));
     });
 
     it("reflects a user override", () => {
-        useRoundStore.setState({
-            keymapOverrides: { "node.sibling": "Meta+J" },
+        useFlowStore.setState({
+            keymapOverrides: { "sheet.next": "Meta+J" },
         });
-        expect(keyHintFor("node.sibling")).toBe("Cmd-Shift-J");
+        expect(keyHintFor("sheet.next")).toBe("Cmd-Shift-J");
     });
 });

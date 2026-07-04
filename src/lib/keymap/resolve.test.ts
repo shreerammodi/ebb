@@ -59,16 +59,14 @@ describe("eventToChord", () => {
 });
 
 describe("resolveCommand (flat keymap)", () => {
-    it("ArrowDown resolves to move.down", () => {
-        expect(resolveCommand(FLAT_KEYMAP, ev("ArrowDown"))).toBe("move.down");
+    it("] resolves to sheet.next and [ to sheet.prev", () => {
+        expect(resolveCommand(FLAT_KEYMAP, ev("]"))).toBe("sheet.next");
+        expect(resolveCommand(FLAT_KEYMAP, ev("["))).toBe("sheet.prev");
     });
 
-    it("Enter resolves to node.sibling", () => {
-        expect(resolveCommand(FLAT_KEYMAP, ev("Enter"))).toBe("node.sibling");
-    });
-
-    it("Shift+Enter resolves to node.response", () => {
-        expect(resolveCommand(FLAT_KEYMAP, ev("Enter", { shiftKey: true }))).toBe("node.response");
+    it("Enter is unbound (the grid owns it)", () => {
+        expect(resolveCommand(FLAT_KEYMAP, ev("Enter"))).toBeNull();
+        expect(resolveCommand(FLAT_KEYMAP, ev("Enter", { shiftKey: true }))).toBeNull();
     });
 
     it("mod+k resolves to sheet.quickSwitch", () => {

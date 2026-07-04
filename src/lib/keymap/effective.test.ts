@@ -15,21 +15,21 @@ describe("effectiveKeymap", () => {
     });
 
     it("applies an override and removes the old preset chord for that command", () => {
-        const keymap = effectiveKeymap({ "move.down": "g" });
-        expect(keymap.bindings["g"]).toBe("move.down");
-        // Original ArrowDown → move.down is gone.
-        expect(keymap.bindings["ArrowDown"]).toBeUndefined();
+        const keymap = effectiveKeymap({ "sheet.next": "g" });
+        expect(keymap.bindings["g"]).toBe("sheet.next");
+        // Original "]" binding for sheet.next is gone.
+        expect(keymap.bindings["]"]).toBeUndefined();
     });
 
     it("leaves other bindings untouched", () => {
-        const keymap = effectiveKeymap({ "move.down": "g" });
-        expect(keymap.bindings["ArrowUp"]).toBe("move.up");
-        expect(keymap.bindings["ArrowLeft"]).toBe("move.left");
+        const keymap = effectiveKeymap({ "sheet.next": "g" });
+        expect(keymap.bindings["["]).toBe("sheet.prev");
+        expect(keymap.bindings["?"]).toBe("help.open");
     });
 
     it("ignores empty override chords", () => {
-        const keymap = effectiveKeymap({ "move.down": "" });
-        expect(keymap.bindings["ArrowDown"]).toBe("move.down");
+        const keymap = effectiveKeymap({ "sheet.next": "" });
+        expect(keymap.bindings["]"]).toBe("sheet.next");
     });
 
     it("names the keymap to indicate overrides are applied", () => {

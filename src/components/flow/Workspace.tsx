@@ -2,8 +2,6 @@
 
 import { useEffect } from "react";
 
-import FlowCoach from "@/components/guide/FlowCoach";
-import GuideDialog from "@/components/guide/GuideDialog";
 import CommandPalette from "@/components/palette/CommandPalette";
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
 import SearchPalette from "@/components/palette/SearchPalette";
@@ -77,11 +75,9 @@ export default function Workspace() {
                 <SettingsPanel />
                 <InfoPanel />
                 <KeybindingsCheatsheet />
-                <GuideDialog />
                 <PrintView />
                 <UpdateChip />
                 <CriticalUpdateModal />
-                <FlowCoach />
             </div>
         </UpdateProvider>
     );

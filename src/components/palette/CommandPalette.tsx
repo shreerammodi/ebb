@@ -7,7 +7,7 @@ import { executeCommand } from "@/lib/commands/commands";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { keyHintFor } from "@/lib/keymap/displayChord";
 import { fuzzySearch } from "@/lib/search/fuzzy";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import { Highlighted } from "./Highlighted";
 
@@ -26,13 +26,13 @@ const ALL_COMMANDS = Object.values(COMMANDS).map((c) => ({
 }));
 
 export default function CommandPalette() {
-    const open = useRoundStore((s) => s.commandPaletteOpen);
+    const open = useFlowStore((s) => s.commandPaletteOpen);
     if (!open) return null;
     return <CommandPaletteInner />;
 }
 
 function CommandPaletteInner() {
-    const setOpen = useRoundStore((s) => s.setCommandPaletteOpen);
+    const setOpen = useFlowStore((s) => s.setCommandPaletteOpen);
 
     const [query, setQuery] = useState("");
     const [selectedIndex, setSelectedIndex] = useState(0);

@@ -1,62 +1,39 @@
 import { it, expect } from "vitest";
 
-import { FLAT_KEYMAP, GRAB_BINDINGS } from "@/lib/keymap/presets";
+import { FLAT_KEYMAP } from "@/lib/keymap/presets";
 import { isMacPlatform } from "@/lib/platform";
 
 const mod = isMacPlatform() ? "Meta" : "Ctrl";
 
-it("flat keymap binds conceded and extended", () => {
-    // Conceded is on the platform modifier + Shift + X (encoded as the uppercase
-    // "X" chord) so it doesn't collide with the native cut chord (Cmd/Ctrl+X).
-    expect(FLAT_KEYMAP.bindings[`${mod}+X`]).toBe("status.toggleConceded");
-    expect(FLAT_KEYMAP.bindings[`${mod}+x`]).toBeUndefined();
-    expect(FLAT_KEYMAP.bindings[`${mod}+e`]).toBe("status.toggleExtended");
+it("binds sheet switching to brackets and help to question mark", () => {
+    expect(FLAT_KEYMAP.bindings["]"]).toBe("sheet.next");
+    expect(FLAT_KEYMAP.bindings["["]).toBe("sheet.prev");
+    expect(FLAT_KEYMAP.bindings["?"]).toBe("help.open");
 });
 
-it("flat keymap binds the platform modifier+Shift+H to format.toggleHighlight", () => {
+it("binds the platform modifier+Shift+H to format.toggleHighlight", () => {
     // Shift is encoded in the uppercase printable key, like redo's `${mod}+Z`.
     expect(FLAT_KEYMAP.bindings[`${mod}+H`]).toBe("format.toggleHighlight");
+    expect(FLAT_KEYMAP.bindings[`${mod}+b`]).toBe("format.toggleBold");
 });
 
-it("grab bindings map Enter to move.commit and Escape to move.cancel", () => {
-    expect(GRAB_BINDINGS["Enter"]).toBe("move.commit");
-    expect(GRAB_BINDINGS["Escape"]).toBe("move.cancel");
+it("binds undo and redo on the platform modifier", () => {
+    expect(FLAT_KEYMAP.bindings[`${mod}+z`]).toBe("edit.undo");
+    expect(FLAT_KEYMAP.bindings[`${mod}+Z`]).toBe("edit.redo");
 });
 
-it("flat keymap binds arrow keys to move.* navigation", () => {
-    expect(FLAT_KEYMAP.bindings["ArrowRight"]).toBe("move.right");
-    expect(FLAT_KEYMAP.bindings["ArrowLeft"]).toBe("move.left");
-    expect(FLAT_KEYMAP.bindings["ArrowUp"]).toBe("move.up");
-    expect(FLAT_KEYMAP.bindings["ArrowDown"]).toBe("move.down");
+it("leaves grid-native gestures unbound (Handsontable owns them)", () => {
+    for (const chord of ["Enter", "Shift+Enter", "Tab", "Shift+Tab", "Delete", "ArrowDown"]) {
+        expect(FLAT_KEYMAP.bindings[chord]).toBeUndefined();
+    }
 });
 
-it("flat keymap binds Enter to node.sibling and Shift+Enter to node.response", () => {
-    expect(FLAT_KEYMAP.bindings["Enter"]).toBe("node.sibling");
-    expect(FLAT_KEYMAP.bindings["Shift+Enter"]).toBe("node.response");
-});
-
-it("flat keymap binds Tab to move.right and Shift+Tab to move.left", () => {
-    expect(FLAT_KEYMAP.bindings["Tab"]).toBe("move.right");
-    expect(FLAT_KEYMAP.bindings["Shift+Tab"]).toBe("move.left");
-});
-
-it("flat keymap binds Delete to cell.clear and the platform modifier+Backspace to row.delete", () => {
-    expect(FLAT_KEYMAP.bindings["Delete"]).toBe("cell.clear");
+it("binds row delete to the platform modifier+Backspace", () => {
     expect(FLAT_KEYMAP.bindings[`${mod}+Backspace`]).toBe("row.delete");
 });
 
-it("binds Excel-style jump navigation (directional + corners)", () => {
-    const cmds = Object.values(FLAT_KEYMAP.bindings);
-    // Directional jumps bound to a modifier+Arrow chord.
-    expect(cmds).toContain("nav.jumpUp");
-    expect(cmds).toContain("nav.jumpDown");
-    expect(cmds).toContain("nav.jumpLeft");
-    expect(cmds).toContain("nav.jumpRight");
-    // Corner jumps on Ctrl+Home / Ctrl+End regardless of platform.
-    expect(FLAT_KEYMAP.bindings["Ctrl+Home"]).toBe("nav.jumpHome");
-    expect(FLAT_KEYMAP.bindings["Ctrl+End"]).toBe("nav.jumpEnd");
-});
-
-it("flat keymap binds the platform modifier+p to palette.open", () => {
+it("binds the platform modifier+p to palette.open and 1-9 to sheet jumps", () => {
     expect(FLAT_KEYMAP.bindings[`${mod}+p`]).toBe("palette.open");
+    expect(FLAT_KEYMAP.bindings[`${mod}+1`]).toBe("sheet.jump1");
+    expect(FLAT_KEYMAP.bindings[`${mod}+9`]).toBe("sheet.jump9");
 });

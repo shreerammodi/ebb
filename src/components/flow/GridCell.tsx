@@ -10,7 +10,6 @@
 
 import { useRef, useEffect, useState } from "react";
 
-import { executeCommand } from "@/lib/commands/commands";
 import { columnsForSheet } from "@/lib/grid/columns";
 import { numberFor } from "@/lib/model/numbering";
 import type { ArgumentNode } from "@/lib/model/types";
@@ -102,7 +101,7 @@ export default function GridCell({
                     }
                     if (e.key === "Backspace" && localText === "") {
                         e.preventDefault();
-                        executeCommand("cell.clear");
+                        useRoundStore.getState().clearCell();
                         return;
                     }
                     // The platform modifier+A selects all text in the cell;

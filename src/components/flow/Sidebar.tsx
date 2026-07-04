@@ -5,29 +5,27 @@ import type React from "react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
-import UndoTreePanel from "@/components/history/UndoTreePanel";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import { executeCommand } from "@/lib/commands/commands";
-import type { Sheet } from "@/lib/model/types";
-import { useRoundStore, selectSheetDropCount } from "@/lib/store/useRoundStore";
+import type { FlowSheet } from "@/lib/model/flow";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
 
-const EMPTY_SHEETS: Sheet[] = [];
+const EMPTY_SHEETS: FlowSheet[] = [];
 
 export default function Sidebar() {
-    const sheets = useRoundStore((s) => s.round?.sheets ?? EMPTY_SHEETS);
+    const sheets = useFlowStore((s) => s.round?.sheets ?? EMPTY_SHEETS);
 
-    const activeSheetId = useRoundStore((s) => s.activeSheetId);
-    const setActiveSheet = useRoundStore((s) => s.setActiveSheet);
-    const renamingSheetId = useRoundStore((s) => s.renamingSheetId);
-    const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
-    const labelDrops = useRoundStore((s) => s.labelDrops);
-    const removeSheet = useRoundStore((s) => s.removeSheet);
-    const restoreSheet = useRoundStore((s) => s.restoreSheet);
-    const sidebarCollapsed = useRoundStore((s) => s.sidebarCollapsed);
-    const setSidebarCollapsed = useRoundStore((s) => s.setSidebarCollapsed);
-    const reorderSheets = useRoundStore((s) => s.reorderSheets);
+    const activeSheetId = useFlowStore((s) => s.activeSheetId);
+    const setActiveSheet = useFlowStore((s) => s.setActiveSheet);
+    const renamingSheetId = useFlowStore((s) => s.renamingSheetId);
+    const setRenamingSheet = useFlowStore((s) => s.setRenamingSheet);
+    const removeSheet = useFlowStore((s) => s.removeSheet);
+    const restoreSheet = useFlowStore((s) => s.restoreSheet);
+    const sidebarCollapsed = useFlowStore((s) => s.sidebarCollapsed);
+    const setSidebarCollapsed = useFlowStore((s) => s.setSidebarCollapsed);
+    const reorderSheets = useFlowStore((s) => s.reorderSheets);
     const [dragId, setDragId] = useState<string | null>(null);
     const [dropIndex, setDropIndex] = useState<number | null>(null);
 
@@ -200,17 +198,6 @@ export default function Sidebar() {
                     )}
                 </div>
             </div>
-            <div
-                data-testid="utility-region"
-                className="border-border flex h-[38%] min-h-0 shrink-0 flex-col border-t"
-            >
-                <div className="text-muted-foreground px-3 pt-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
-                    History
-                </div>
-                <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-2">
-                    <UndoTreePanel />
-                </div>
-            </div>
         </nav>
     );
 }
@@ -222,7 +209,7 @@ function DropLine() {
 }
 
 interface SheetRowProps {
-    sheet: Sheet;
+    sheet: FlowSheet;
     active: boolean;
     onSelect: () => void;
     isRenaming: boolean;
@@ -248,12 +235,8 @@ function SheetRow({
     onDropRow,
     onDragEndRow,
 }: SheetRowProps) {
-    const renameSheet = useRoundStore((s) => s.renameSheet);
-    const setRenamingSheet = useRoundStore((s) => s.setRenamingSheet);
-    const labelDrops = useRoundStore((s) => s.labelDrops);
-    const dropCount = useRoundStore((s) =>
-        labelDrops ? selectSheetDropCount(s.round, sheet.id) : 0,
-    );
+    const renameSheet = useFlowStore((s) => s.renameSheet);
+    const setRenamingSheet = useFlowStore((s) => s.setRenamingSheet);
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setValue] = useState(sheet.title);
 
@@ -368,11 +351,6 @@ function SheetRow({
                         className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
                     >
                         {sheet.title}
-                    </span>
-                )}
-                {dropCount > 0 && (
-                    <span className="badge-drop" data-testid={`drop-badge-${sheet.id}`}>
-                        {dropCount}
                     </span>
                 )}
             </div>

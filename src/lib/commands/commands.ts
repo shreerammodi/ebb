@@ -1,295 +1,102 @@
 /**
- * Command handlers for the fully modeless grid editor.
+ * Command handlers for the Handsontable-based editor.
  *
- * `executeCommand` reads and writes `useRoundStore.getState()`. All handlers
- * silently no-op when the round or selection is missing so the keyboard layer
- * can fire commands unconditionally.
+ * `executeCommand` reads and writes `useFlowStore.getState()` and reaches the
+ * live grid through the hotInstance registry. All handlers silently no-op
+ * when the round, sheet, or grid is missing so the keyboard layer can fire
+ * commands unconditionally.
  */
 
-import { columnsForSheet } from "@/lib/grid/columns";
-import {
-    isReservedCell,
-    jumpTarget,
-    cornerTarget,
-    occupantAt,
-    type JumpDir,
-} from "@/lib/grid/coords";
-import type { Sheet, Round } from "@/lib/model/types";
-import { unitHeadOf } from "@/lib/model/units";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { BOLD_CLASS, HIGHLIGHT_CLASS, toggleClassToken } from "@/lib/grid/codec";
+import { getActiveHot, notifyGridMutated } from "@/lib/grid/hotInstance";
+import { sortedSheets } from "@/lib/model/flow";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import type { CommandId } from "./registry";
 
-/** Sheets sorted ascending by order. */
-function sortedSheets(sheets: Sheet[]): Sheet[] {
-    return sheets.slice().sort((a, b) => a.order - b.order);
-}
-
 /** Jumps to the Nth (1-indexed, order-sorted) flow sheet, no-op if out of range. */
 function jumpToSheet(n: number): void {
-    const { round, setActiveSheet } = useRoundStore.getState();
+    const { round, setActiveSheet } = useFlowStore.getState();
     if (!round) return;
-    const sheets = sortedSheets(round.sheets.filter((s) => s.kind !== "cx"));
+    const sheets = sortedSheets(round).filter((s) => s.kind !== "cx");
     const target = sheets[n - 1];
     if (target) setActiveSheet(target.id);
 }
 
 /**
- * Column stepping helper.
- *
- * In normal navigation (not in grab-move), arrows step one cell in the direction
- * of motion and land on the first NON-reserved cell — empty (white) cells are
- * valid landing spots, only reserved/greyed cells (the rows beside another
- * argument's responses) are skipped over. If the only cells in that direction
- * are reserved or the edge is reached, the selection stays put.
- *
- * In grab-move (moveSource !== null), the selection IS the drop target, and any
- * cell is a legal destination. Arrows therefore step one cell at a time with
- * edge clamping.
+ * Toggles a decoration class over every cell of the current selection. The
+ * target state comes from the FIRST cell (missing the class = add to all),
+ * so mixed ranges converge instead of flip-flopping per cell.
  */
-function columnStep(
-    state: {
-        selection: { sheetId: string; speechId: string; row: number } | null;
-        round: Round | null;
-        moveSource: string | null;
-        linkSource: string | null;
-        setSelection: (s: { sheetId: string; speechId: string; row: number } | null) => void;
-    },
-    dir: "up" | "down" | "left" | "right",
-): void {
-    const { round, selection, moveSource, linkSource } = state;
-    if (!round || !selection) return;
-    const sheet = round.sheets.find((s) => s.id === selection.sheetId);
-    if (!sheet) return;
-    const speeches = columnsForSheet(round.format, sheet);
-    const colIdx = speeches.findIndex((s) => s.id === selection.speechId);
-    if (colIdx === -1) return;
+function toggleDecoration(token: typeof BOLD_CLASS | typeof HIGHLIGHT_CLASS): void {
+    const hot = getActiveHot();
+    const ranges = hot?.getSelectedRange();
+    if (!hot || !ranges || ranges.length === 0) return;
 
-    // In grab-move or grab-to-link, the selection is a free target cursor —
-    // empty cells are legal, so step one cell at a time with edge clamping.
-    if (moveSource !== null || linkSource !== null) {
-        let nCol = colIdx;
-        let nRow = selection.row;
-        if (dir === "up") nRow = Math.max(0, selection.row - 1);
-        else if (dir === "down") nRow = selection.row + 1;
-        else if (dir === "left") nCol = Math.max(0, colIdx - 1);
-        else nCol = Math.min(speeches.length - 1, colIdx + 1);
-        state.setSelection({
-            sheetId: selection.sheetId,
-            speechId: speeches[nCol].id,
-            row: nRow,
-        });
-        return;
-    }
+    const first = ranges[0].highlight;
+    const firstCls = (hot.getCellMeta(first.row ?? 0, first.col ?? 0).className ?? "") as string;
+    const adding = !firstCls.split(/\s+/).includes(token);
 
-    // Normal navigation: step one cell in `dir`, skipping only reserved (greyed)
-    // cells. Land on the first non-reserved cell — empty cells included. Stay put
-    // if the edge is reached without finding one.
-    const sheetNodes = round.nodes.filter((n) => n.sheetId === sheet.id);
-    const dRow = dir === "up" ? -1 : dir === "down" ? 1 : 0;
-    const dCol = dir === "left" ? -1 : dir === "right" ? 1 : 0;
-
-    let c = colIdx;
-    let r = selection.row;
-    while (true) {
-        c += dCol;
-        r += dRow;
-        if (c < 0 || c >= speeches.length || r < 0) return; // edge — stay put
-        if (!isReservedCell(sheetNodes, sheet.id, speeches[c].id, r)) {
-            state.setSelection({
-                sheetId: selection.sheetId,
-                speechId: speeches[c].id,
-                row: r,
-            });
-            return;
+    for (const range of ranges) {
+        const tl = range.getTopLeftCorner();
+        const br = range.getBottomRightCorner();
+        for (let r = tl.row ?? 0; r <= (br.row ?? -1); r++) {
+            for (let c = tl.col ?? 0; c <= (br.col ?? -1); c++) {
+                const cls = (hot.getCellMeta(r, c).className ?? "") as string;
+                const has = cls.split(/\s+/).includes(token);
+                if (has === adding) continue;
+                hot.setCellMeta(r, c, "className", toggleClassToken(cls, token));
+            }
         }
-        // reserved cell — keep skipping in the same direction
     }
+    hot.render();
+    notifyGridMutated();
 }
 
-/** Excel data-edge jump (Ctrl/Cmd+Arrow). No-op during grab-move / link. */
-function jumpStep(
-    state: {
-        selection: { sheetId: string; speechId: string; row: number } | null;
-        round: Round | null;
-        moveSource: string | null;
-        linkSource: string | null;
-        setSelection: (s: { sheetId: string; speechId: string; row: number } | null) => void;
-    },
-    dir: JumpDir,
-): void {
-    const { round, selection, moveSource, linkSource } = state;
-    if (!round || !selection || moveSource !== null || linkSource !== null) return;
-    const sheet = round.sheets.find((s) => s.id === selection.sheetId);
-    if (!sheet) return;
-    const speeches = columnsForSheet(round.format, sheet);
-    const sheetNodes = round.nodes.filter((n) => n.sheetId === sheet.id);
-    const target = jumpTarget(
-        sheetNodes,
-        sheet.id,
-        speeches,
-        { speechId: selection.speechId, row: selection.row },
-        dir,
-    );
-    state.setSelection({ sheetId: selection.sheetId, ...target });
-}
-
-/** Corner jump (Ctrl+Home / Ctrl+End). No-op during grab-move / link. */
-function cornerJump(
-    state: {
-        selection: { sheetId: string; speechId: string; row: number } | null;
-        round: Round | null;
-        moveSource: string | null;
-        linkSource: string | null;
-        setSelection: (s: { sheetId: string; speechId: string; row: number } | null) => void;
-    },
-    which: "home" | "end",
-): void {
-    const { round, selection, moveSource, linkSource } = state;
-    if (!round || !selection || moveSource !== null || linkSource !== null) return;
-    const sheet = round.sheets.find((s) => s.id === selection.sheetId);
-    if (!sheet) return;
-    const speeches = columnsForSheet(round.format, sheet);
-    const sheetNodes = round.nodes.filter((n) => n.sheetId === sheet.id);
-    const target = cornerTarget(sheetNodes, sheet.id, speeches, which);
-    state.setSelection({ sheetId: selection.sheetId, ...target });
+/** Insert or remove a row at the current selection. */
+function alterRow(action: "insert_row_above" | "insert_row_below" | "remove_row"): void {
+    const hot = getActiveHot();
+    const sel = hot?.getSelectedLast();
+    if (!hot || !sel) return;
+    hot.alter(action, sel[0]);
+    notifyGridMutated();
 }
 
 export function executeCommand(id: CommandId): void {
-    const state = useRoundStore.getState();
+    const state = useFlowStore.getState();
     const { round } = state;
 
     switch (id) {
-        // ── Navigation (coordinate stepping) ──────────────────────────────────
-        case "move.up":
-            columnStep(state, "up");
-            return;
-        case "move.down":
-            columnStep(state, "down");
-            return;
-        case "move.left":
-            columnStep(state, "left");
-            return;
-        case "move.right":
-            columnStep(state, "right");
-            return;
-
-        // ── Jump navigation (Excel data-edge) ─────────────────────────────────
-        case "nav.jumpUp":
-            jumpStep(state, "up");
-            return;
-        case "nav.jumpDown":
-            jumpStep(state, "down");
-            return;
-        case "nav.jumpLeft":
-            jumpStep(state, "left");
-            return;
-        case "nav.jumpRight":
-            jumpStep(state, "right");
-            return;
-        case "nav.jumpHome":
-            cornerJump(state, "home");
-            return;
-        case "nav.jumpEnd":
-            cornerJump(state, "end");
-            return;
-
-        // ── Node creation ─────────────────────────────────────────────────────
-        case "node.sibling": {
-            // Enter unifies "add the next cell of this argument" with the Excel
-            // habit of "move down a cell". On a filled cell it arms a deferred
-            // continuation spawn. On the armed-but-untyped continuation cell a
-            // second Enter breaks the latch: the spawn becomes a NEW argument
-            // below the unit's band. On any other empty cell it just moves down.
-            if (!round) return;
-            const sel = state.selection;
-            if (!sel) return;
-            const pending = state.pendingSpawn;
-            if (
-                pending &&
-                pending.kind === "continue" &&
-                pending.sheetId === sel.sheetId &&
-                pending.speechId === sel.speechId &&
-                pending.row === sel.row
-            ) {
-                state.breakPendingSpawn();
-                return;
-            }
-            const onFilledCell =
-                occupantAt(round.nodes, sel.sheetId, sel.speechId, sel.row) !== null;
-            if (onFilledCell) {
-                state.spawnSibling();
-            } else {
-                columnStep(state, "down");
-            }
-            return;
-        }
-        case "node.response": {
-            state.spawnResponse();
-            return;
-        }
-
-        // ── Row operations ────────────────────────────────────────────────────
-        case "row.insertAbove":
-            state.insertRowAbove();
-            return;
-        case "row.insertBelow":
-            state.insertRowBelow();
-            return;
-        case "row.delete":
-            state.deleteRow();
-            return;
-
-        // ── Cell operations ───────────────────────────────────────────────────
-        case "cell.clear":
-            state.clearCell();
-            return;
-        case "node.deleteSubtree":
-            state.deleteSubtreeAt();
-            return;
-
-        // ── Edit ──────────────────────────────────────────────────────────────
+        // --- Grid ------------------------------------------------------------
         case "edit.undo":
-            useRoundStore.getState().undo();
+            getActiveHot()?.getPlugin("undoRedo")?.undo();
+            notifyGridMutated();
             return;
         case "edit.redo":
-            useRoundStore.getState().redo();
+            getActiveHot()?.getPlugin("undoRedo")?.redo();
+            notifyGridMutated();
             return;
-
-        // ── Status / format ───────────────────────────────────────────────────
-        case "status.toggleConceded":
-        case "status.toggleExtended":
         case "format.toggleBold":
-        case "format.toggleHighlight": {
-            if (!round) return;
-            const sel = state.selection;
-            if (!sel) return;
-            // Find the occupant node at the selected coordinate.
-            const node = round.nodes.find(
-                (n) =>
-                    n.sheetId === sel.sheetId && n.speechId === sel.speechId && n.row === sel.row,
-            );
-            if (!node) return;
-            if (id === "format.toggleBold") {
-                state.toggleNodeBold(node.id);
-            } else if (id === "format.toggleHighlight") {
-                state.toggleNodeHighlight(node.id);
-            } else {
-                // Conceded/extended are unit-level facts - they live on the head.
-                const head = unitHeadOf(round.nodes, node);
-                state.toggleNodeStatus(
-                    head.id,
-                    id === "status.toggleConceded" ? "conceded" : "extended",
-                );
-            }
+            toggleDecoration(BOLD_CLASS);
             return;
-        }
+        case "format.toggleHighlight":
+            toggleDecoration(HIGHLIGHT_CLASS);
+            return;
+        case "row.insertAbove":
+            alterRow("insert_row_above");
+            return;
+        case "row.insertBelow":
+            alterRow("insert_row_below");
+            return;
+        case "row.delete":
+            alterRow("remove_row");
+            return;
 
-        // ── Sheets ────────────────────────────────────────────────────────────
+        // --- Sheets ----------------------------------------------------------
         case "sheet.next":
         case "sheet.prev": {
             if (!round) return;
-            const sheets = sortedSheets(round.sheets.filter((s) => s.kind !== "cx"));
+            const sheets = sortedSheets(round).filter((s) => s.kind !== "cx");
             if (sheets.length === 0) return;
             const idx = sheets.findIndex((s) => s.id === state.activeSheetId);
             const base = idx === -1 ? 0 : idx;
@@ -300,28 +107,12 @@ export function executeCommand(id: CommandId): void {
         }
         case "sheet.newAff": {
             if (!round) return;
-            const newSheetId = state.addSheet({
-                title: "Untitled",
-                group: "aff",
-            });
-            state.setActiveSheet(newSheetId);
+            state.addSheet({ title: "Untitled", group: "aff" });
             return;
         }
         case "sheet.newNeg": {
             if (!round) return;
-            const newSheetId = state.addSheet({
-                title: "Untitled",
-                group: "neg",
-            });
-            state.setActiveSheet(newSheetId);
-            const firstNegSpeech = round.format.speeches.find((s) => s.side === "neg");
-            if (firstNegSpeech) {
-                state.setSelection({
-                    sheetId: newSheetId,
-                    speechId: firstNegSpeech.id,
-                    row: 0,
-                });
-            }
+            state.addSheet({ title: "Untitled", group: "neg" });
             return;
         }
         case "sheet.rename": {
@@ -333,9 +124,6 @@ export function executeCommand(id: CommandId): void {
         case "sheet.quickSwitch":
             state.setQuickSwitcherOpen(true);
             return;
-        case "palette.open":
-            state.setCommandPaletteOpen(true);
-            return;
         case "sheet.jump1":
         case "sheet.jump2":
         case "sheet.jump3":
@@ -345,12 +133,14 @@ export function executeCommand(id: CommandId): void {
         case "sheet.jump7":
         case "sheet.jump8":
         case "sheet.jump9": {
-            const n = Number(id.slice("sheet.jump".length));
-            jumpToSheet(n);
+            jumpToSheet(Number(id.slice("sheet.jump".length)));
             return;
         }
 
-        // ── Settings ──────────────────────────────────────────────────────────
+        // --- UI ---------------------------------------------------------------
+        case "palette.open":
+            state.setCommandPaletteOpen(true);
+            return;
         case "settings.open":
             state.setSettingsOpen(true);
             return;
@@ -363,159 +153,5 @@ export function executeCommand(id: CommandId): void {
         case "sidebar.toggle":
             state.setSidebarCollapsed(!state.sidebarCollapsed);
             return;
-
-        // ── Keyboard grab & move ──────────────────────────────────────────────
-        case "move.grab": {
-            if (!round || state.linkSource !== null) return;
-            const sel = state.selection;
-            if (!sel) return;
-            const node = round.nodes.find(
-                (n) =>
-                    n.sheetId === sel.sheetId && n.speechId === sel.speechId && n.row === sel.row,
-            );
-            if (!node) return;
-            state.setMoveSource(node.id);
-            return;
-        }
-        case "move.cancel": {
-            const src = state.moveSource;
-            state.setMoveSource(null);
-            if (src && round) {
-                const node = round.nodes.find((n) => n.id === src);
-                if (node) {
-                    state.setSelection({
-                        sheetId: node.sheetId,
-                        speechId: node.speechId,
-                        row: node.row,
-                    });
-                }
-            }
-            return;
-        }
-        case "move.commit": {
-            const src = state.moveSource;
-            const sel = state.selection;
-            if (!round || !src || !sel) {
-                state.setMoveSource(null);
-                return;
-            }
-            const srcNode = round.nodes.find((n) => n.id === src);
-            if (!srcNode) {
-                state.setMoveSource(null);
-                return;
-            }
-            const dCol =
-                columnsForSheet(
-                    round.format,
-                    round.sheets.find((s) => s.id === sel.sheetId)!,
-                ).findIndex((s) => s.id === sel.speechId) -
-                columnsForSheet(
-                    round.format,
-                    round.sheets.find((s) => s.id === srcNode.sheetId)!,
-                ).findIndex((s) => s.id === srcNode.speechId);
-            const dRow = sel.row - srcNode.row;
-            state.commitSubtreeMove(dCol, dRow);
-            state.setMoveSource(null);
-            // Re-read after commit
-            const moved = useRoundStore.getState().round?.nodes.find((n) => n.id === src);
-            if (moved) {
-                state.setSelection({
-                    sheetId: moved.sheetId,
-                    speechId: moved.speechId,
-                    row: moved.row,
-                });
-            }
-            state.setFlashNode(src);
-            return;
-        }
-
-        // ── Keyboard grab & link ──────────────────────────────────────────────
-        case "link.grab": {
-            if (!round || state.moveSource !== null || state.linkSource !== null) return;
-            const sel = state.selection;
-            if (!sel) return;
-            const node = round.nodes.find(
-                (n) =>
-                    n.sheetId === sel.sheetId && n.speechId === sel.speechId && n.row === sel.row,
-            );
-            if (!node) return;
-            state.setLinkSource(unitHeadOf(round.nodes, node).id);
-            return;
-        }
-        case "link.cancel": {
-            const src = state.linkSource;
-            state.setLinkSource(null);
-            if (src && round) {
-                const node = round.nodes.find((n) => n.id === src);
-                if (node) {
-                    state.setSelection({
-                        sheetId: node.sheetId,
-                        speechId: node.speechId,
-                        row: node.row,
-                    });
-                }
-            }
-            return;
-        }
-        case "link.commit": {
-            const src = state.linkSource;
-            if (!src) return;
-            const ok = state.commitLink();
-            if (!ok) {
-                // Invalid target: flash the cell under the cursor, stay in link mode.
-                const sel = state.selection;
-                const occ =
-                    sel && round
-                        ? round.nodes.find(
-                              (n) =>
-                                  n.sheetId === sel.sheetId &&
-                                  n.speechId === sel.speechId &&
-                                  n.row === sel.row,
-                          )
-                        : null;
-                if (occ) state.setFlashNode(occ.id);
-                return;
-            }
-            state.setLinkSource(null);
-            const moved = useRoundStore.getState().round?.nodes.find((n) => n.id === src);
-            if (moved) {
-                state.setSelection({
-                    sheetId: moved.sheetId,
-                    speechId: moved.speechId,
-                    row: moved.row,
-                });
-            }
-            state.setFlashNode(src);
-            return;
-        }
-
-        // ── Unit join / split ─────────────────────────────────────────────────
-        case "unit.join":
-            state.joinUnitAbove();
-            return;
-        case "unit.split":
-            state.splitUnitAt();
-            return;
-
-        // ── Column navigation ─────────────────────────────────────────────────
-        case "nav.nextSpeech":
-        case "nav.prevSpeech": {
-            if (!round) return;
-            const sel = state.selection;
-            if (!sel) return;
-            const sheet = round.sheets.find((s) => s.id === sel.sheetId);
-            if (!sheet) return;
-            const speeches = columnsForSheet(round.format, sheet);
-            const currentIdx = speeches.findIndex((s) => s.id === sel.speechId);
-            if (currentIdx === -1) return;
-            const targetIdx = id === "nav.nextSpeech" ? currentIdx + 1 : currentIdx - 1;
-            if (targetIdx < 0 || targetIdx >= speeches.length) return;
-            state.setSelection({
-                sheetId: sel.sheetId,
-                speechId: speeches[targetIdx].id,
-                row: sel.row,
-            });
-            return;
-        }
     }
 }

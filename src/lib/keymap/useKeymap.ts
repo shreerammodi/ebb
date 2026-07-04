@@ -3,20 +3,19 @@
 import { useEffect } from "react";
 
 import { executeCommand } from "@/lib/commands/commands";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import { effectiveKeymap as computeEffectiveKeymap } from "./effective";
 import { shouldIntercept, isTextEntryFocus, isNativeEditingChord } from "./intercept";
-import { GRAB_BINDINGS, LINK_BINDINGS } from "./presets";
 import { resolveCommand, eventToChord } from "./resolve";
 
 /** Returns the keymap currently in effect: flat preset merged with user overrides. */
 export function effectiveKeymap() {
-    const { keymapOverrides } = useRoundStore.getState();
+    const { keymapOverrides } = useFlowStore.getState();
     return computeEffectiveKeymap(keymapOverrides);
 }
 
-// Module-level accumulator — safe because useKeymap is a singleton hook.
+// Module-level accumulator - safe because useKeymap is a singleton hook.
 let pendingPrefix: string | null = null;
 
 export function useKeymap(): void {
@@ -31,36 +30,23 @@ export function useKeymap(): void {
         function onKeyDownCapture(e: KeyboardEvent) {
             if (shouldIntercept(e)) {
                 // preventDefault stops the browser's shortcut handler.
-                // We do NOT stopPropagation — the event must continue to the
+                // We do NOT stopPropagation - the event must continue to the
                 // bubble phase so useKeymap's resolver can fire the command.
                 e.preventDefault();
             }
         }
 
         function onKeyDown(e: KeyboardEvent) {
-            const { moveSource, linkSource } = useRoundStore.getState();
-            const moveActive = moveSource !== null;
-            const linkActive = linkSource !== null;
-            const overrideActive = moveActive || linkActive;
-
-            // In a text-entry field, only intercept navigation keys and
-            // modifier chords; everything else is regular typing.
-            const inTextField = !overrideActive && isTextEntryFocus(e.target);
+            // In a text-entry field (including the grid's cell editor), only
+            // intercept modifier chords; everything else is regular typing or
+            // a grid-native gesture Handsontable owns.
+            const inTextField = isTextEntryFocus(e.target);
             if (inTextField) {
                 pendingPrefix = null;
                 // Native editing chords (Cmd+A/C/V/X/Z, copy, paste, undo, etc.)
-                // must pass through to the browser — do not intercept them.
+                // must pass through to the browser - do not intercept them.
                 if (isNativeEditingChord(e)) return;
-                const isNavKey = [
-                    "ArrowLeft",
-                    "ArrowRight",
-                    "ArrowUp",
-                    "ArrowDown",
-                    "Tab",
-                    "Enter",
-                ].includes(e.key);
-                const isModifierChord = e.metaKey || e.ctrlKey || e.altKey;
-                if (!isNavKey && !isModifierChord) return;
+                if (!(e.metaKey || e.ctrlKey || e.altKey)) return;
             }
 
             const chord = eventToChord({
@@ -73,18 +59,8 @@ export function useKeymap(): void {
 
             const keymap = effectiveKeymap();
 
-            // ── Grab-move override ────────────────────────────────────────────
-            // When grabbing, check grab-specific bindings first (Enter → commit,
-            // Escape → cancel), then fall through to flat bindings for arrows etc.
-            let commandId: string | null = null;
-            if (moveActive && chord in GRAB_BINDINGS) {
-                commandId = GRAB_BINDINGS[chord]!;
-            } else if (linkActive && chord in LINK_BINDINGS) {
-                commandId = LINK_BINDINGS[chord]!;
-            }
-
-            // ── Two-key chord resolution ──────────────────────────────────────
-            if (!commandId && pendingPrefix !== null) {
+            // -- Two-key chord resolution ------------------------------------
+            if (pendingPrefix !== null) {
                 const twoKey = `${pendingPrefix} ${chord}`;
                 if (twoKey in keymap.bindings) {
                     pendingPrefix = null;
@@ -92,35 +68,31 @@ export function useKeymap(): void {
                     executeCommand(keymap.bindings[twoKey]!);
                     return;
                 }
-                // Prefix didn't complete — clear and fall through to single-chord lookup.
+                // Prefix did not complete - clear and fall through.
                 pendingPrefix = null;
             }
 
-            if (!commandId) {
-                // Check whether this chord is a valid prefix for any two-key sequence.
-                const isPrefix = Object.keys(keymap.bindings).some((k) =>
-                    k.startsWith(`${chord} `),
-                );
-                if (isPrefix) {
-                    pendingPrefix = chord;
-                    e.preventDefault();
-                    return;
-                }
-
-                // ── Single-chord resolution ──────────────────────────────────────
-                commandId = resolveCommand(keymap, {
-                    key: e.key,
-                    metaKey: e.metaKey,
-                    ctrlKey: e.ctrlKey,
-                    altKey: e.altKey,
-                    shiftKey: e.shiftKey,
-                });
+            // Check whether this chord is a valid prefix for any two-key sequence.
+            const isPrefix = Object.keys(keymap.bindings).some((k) => k.startsWith(`${chord} `));
+            if (isPrefix) {
+                pendingPrefix = chord;
+                e.preventDefault();
+                return;
             }
+
+            // -- Single-chord resolution ---------------------------------------
+            const commandId = resolveCommand(keymap, {
+                key: e.key,
+                metaKey: e.metaKey,
+                ctrlKey: e.ctrlKey,
+                altKey: e.altKey,
+                shiftKey: e.shiftKey,
+            });
 
             if (!commandId) return;
 
             e.preventDefault();
-            executeCommand(commandId as any);
+            executeCommand(commandId);
         }
 
         window.addEventListener("keydown", onKeyDownCapture, { capture: true });
