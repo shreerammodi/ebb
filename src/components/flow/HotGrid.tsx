@@ -234,8 +234,11 @@ export default memo(function HotGrid() {
         if (hot && (e.metaKey || e.ctrlKey) && dir) {
             e.preventDefault();
             const cur = hot.getSelectedRangeLast();
-            if (!cur || cur.highlight.row == null || cur.highlight.col == null) return false;
-            const { row, col } = smartJump(hot, cur.highlight.row, cur.highlight.col, dir);
+            // Shift-extend jumps from the range's moving edge so repeated presses
+            // walk outward; a plain jump starts from the active cell.
+            const origin = e.shiftKey ? cur?.to : cur?.highlight;
+            if (!origin || origin.row == null || origin.col == null) return false;
+            const { row, col } = smartJump(hot, origin.row, origin.col, dir);
             if (e.shiftKey) hot.selection.setRangeEnd(hot._createCellCoords(row, col));
             else hot.selectCell(row, col);
             // Returning false is Handsontable's contract for suppressing its own
