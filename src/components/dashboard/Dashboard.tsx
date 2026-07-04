@@ -169,24 +169,6 @@ export default function Dashboard() {
                             </button>
                         </div>
 
-                        <div className="border-border/70 text-muted-foreground flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t pt-5 text-[12px]">
-                            <span className="inline-flex items-center gap-1.5">
-                                <Kbd>↑ ↓ ← →</Kbd> move
-                            </span>
-                            <span className="inline-flex items-center gap-1.5">
-                                <Kbd>type</Kbd> to flow an argument
-                            </span>
-                            <span className="inline-flex items-center gap-1.5">
-                                <Kbd>Enter</Kbd> to commit
-                            </span>
-                        </div>
-
-                        <p
-                            className="text-muted-foreground text-[12.5px]"
-                            data-testid="empty-guide-note"
-                        >
-                            The guide is coming back soon.
-                        </p>
                     </div>
                 ) : (
                     <>
