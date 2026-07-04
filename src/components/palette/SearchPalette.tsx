@@ -47,6 +47,7 @@ type Row =
           text: string;
           positions: number[];
           meta: string;
+          card: boolean;
           run: () => void;
       }
     | {
@@ -96,6 +97,7 @@ function SearchPaletteInner() {
             text: hit.text,
             positions: hit.positions,
             meta: hit.colName ? `${hit.sheetTitle} ${hit.colName}` : hit.sheetTitle,
+            card: hit.card,
             run: () => revealCell(hit.sheetId, hit.row, hit.col),
         }));
     }, [isCommandMode, query, round, revealCell]);
@@ -242,6 +244,7 @@ function SearchPaletteInner() {
                                                 </span>
                                                 <span className="mt-0.5 block text-[11px] opacity-70">
                                                     {row.meta}
+                                                    {row.card && " · Card"}
                                                 </span>
                                             </>
                                         )}

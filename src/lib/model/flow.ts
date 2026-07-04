@@ -10,6 +10,8 @@ import type { Role, Scouting } from "@/lib/model/types";
 export interface CellMeta {
     bold?: boolean;
     highlight?: boolean;
+    /** Tags the cell as a card (a piece of evidence). */
+    card?: boolean;
     /** Reserved for the links phase; nothing reads or writes it yet. */
     answers?: { sheetId: string; row: number; col: number };
 }

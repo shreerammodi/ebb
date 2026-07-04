@@ -28,6 +28,7 @@ const RESERVED_KEYS = [
     // -- Format ----------------------------------------------------------------
     "b", // toggle bold
     "H", // toggle highlight (Shift encoded in uppercase key)
+    "t", // toggle card
     // -- UI ---------------------------------------------------------------------
     "\\", // sidebar toggle
     ",", // settings

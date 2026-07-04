@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     BOLD_CLASS,
+    CARD_CLASS,
     classNameToMeta,
     HIGHLIGHT_CLASS,
     metaToClassName,
@@ -23,6 +24,15 @@ describe("meta <-> className", () => {
         });
         expect(classNameToMeta("current area")).toBeUndefined();
         expect(classNameToMeta(`current ${HIGHLIGHT_CLASS}`)).toEqual({ highlight: true });
+    });
+
+    it("round-trips the card tag, alone and combined", () => {
+        expect(metaToClassName({ card: true })).toBe(CARD_CLASS);
+        expect(metaToClassName({ bold: true, highlight: true, card: true })).toBe(
+            `${BOLD_CLASS} ${HIGHLIGHT_CLASS} ${CARD_CLASS}`,
+        );
+        expect(classNameToMeta(CARD_CLASS)).toEqual({ card: true });
+        expect(classNameToMeta(`${BOLD_CLASS} ${CARD_CLASS}`)).toEqual({ bold: true, card: true });
     });
 
     it("toggleClassToken adds and removes without disturbing other tokens", () => {

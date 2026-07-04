@@ -237,6 +237,13 @@ html .ht-theme-main {
     background: #fde047;
 }
 
+/* Card marker: an inset bottom rule under the cell. box-shadow rather than
+   border-bottom so it never shifts HOT's cell metrics, and it reads over the
+   yellow highlight. */
+.handsontable tbody tr td.flow-card {
+    box-shadow: inset 0 -2px 0 #2563eb;
+}
+
 /* Hidden on screen; visible only during print */
 .print-only {
     display: none;
@@ -281,6 +288,11 @@ html .ht-theme-main {
     }
     .print-flow td.flow-highlight {
         background: #fde047;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .print-flow td.flow-card {
+        border-bottom: 2px solid #2563eb;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }

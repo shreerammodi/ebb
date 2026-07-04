@@ -7,7 +7,7 @@
  * commands unconditionally.
  */
 
-import { BOLD_CLASS, HIGHLIGHT_CLASS, toggleClassToken } from "@/lib/grid/codec";
+import { BOLD_CLASS, CARD_CLASS, HIGHLIGHT_CLASS, toggleClassToken } from "@/lib/grid/codec";
 import { getActiveHot, notifyGridMutated } from "@/lib/grid/hotInstance";
 import { sortedSheets } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
@@ -28,7 +28,9 @@ function jumpToSheet(n: number): void {
  * target state comes from the FIRST cell (missing the class = add to all),
  * so mixed ranges converge instead of flip-flopping per cell.
  */
-function toggleDecoration(token: typeof BOLD_CLASS | typeof HIGHLIGHT_CLASS): void {
+function toggleDecoration(
+    token: typeof BOLD_CLASS | typeof HIGHLIGHT_CLASS | typeof CARD_CLASS,
+): void {
     const hot = getActiveHot();
     const ranges = hot?.getSelectedRange();
     if (!hot || !ranges || ranges.length === 0) return;
@@ -78,7 +80,12 @@ function insertCell(): void {
     const values: [number, number, string | null][] = [];
     for (let r = last; r > row; r--) {
         values.push([r, col, hot.getDataAtCell(r - 1, col) as string | null]);
-        hot.setCellMeta(r, col, "className", (hot.getCellMeta(r - 1, col).className ?? "") as string);
+        hot.setCellMeta(
+            r,
+            col,
+            "className",
+            (hot.getCellMeta(r - 1, col).className ?? "") as string,
+        );
     }
     hot.setCellMeta(row, col, "className", "");
     values.push([row, col, ""]);
@@ -106,6 +113,9 @@ export function executeCommand(id: CommandId): void {
             return;
         case "format.toggleHighlight":
             toggleDecoration(HIGHLIGHT_CLASS);
+            return;
+        case "format.toggleCard":
+            toggleDecoration(CARD_CLASS);
             return;
         case "row.insertAbove":
             alterRow("insert_row_above");

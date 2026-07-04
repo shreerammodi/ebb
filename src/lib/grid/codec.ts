@@ -8,20 +8,25 @@ import type { CellMeta } from "@/lib/model/flow";
 
 export const BOLD_CLASS = "flow-bold";
 export const HIGHLIGHT_CLASS = "flow-highlight";
+export const CARD_CLASS = "flow-card";
 
 export function metaToClassName(m: CellMeta | undefined): string {
     if (!m) return "";
-    return [m.bold ? BOLD_CLASS : "", m.highlight ? HIGHLIGHT_CLASS : ""].filter(Boolean).join(" ");
+    return [m.bold ? BOLD_CLASS : "", m.highlight ? HIGHLIGHT_CLASS : "", m.card ? CARD_CLASS : ""]
+        .filter(Boolean)
+        .join(" ");
 }
 
 export function classNameToMeta(cls: string): CellMeta | undefined {
     const tokens = cls.split(/\s+/);
     const bold = tokens.includes(BOLD_CLASS);
     const highlight = tokens.includes(HIGHLIGHT_CLASS);
-    if (!bold && !highlight) return undefined;
+    const card = tokens.includes(CARD_CLASS);
+    if (!bold && !highlight && !card) return undefined;
     const meta: CellMeta = {};
     if (bold) meta.bold = true;
     if (highlight) meta.highlight = true;
+    if (card) meta.card = true;
     return meta;
 }
 

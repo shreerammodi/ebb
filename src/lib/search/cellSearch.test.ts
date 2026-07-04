@@ -32,6 +32,15 @@ describe("collectCells", () => {
         expect(perm.row).toBe(0);
         expect(perm.col).toBe(0);
     });
+
+    it("reads the card flag from sheet meta", () => {
+        const round = roundWithCells();
+        const sheet = round.sheets.find((s) => s.kind !== "cx")!;
+        sheet.meta["0,0"] = { card: true };
+        const cells = collectCells(round);
+        expect(cells.find((c) => c.text === "perm do both")!.card).toBe(true);
+        expect(cells.find((c) => c.text === "topicality")!.card).toBe(false);
+    });
 });
 
 describe("searchCells", () => {

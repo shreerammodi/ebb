@@ -17,6 +17,8 @@ export interface CellHit {
     /** Column header the cell sits under (e.g. "2AC", "Question"), for context. */
     colName: string;
     text: string;
+    /** Cell is tagged as a card (a piece of evidence). */
+    card: boolean;
     /** Indices into `text` that matched the query; empty for the no-query listing. */
     positions: number[];
 }
@@ -39,6 +41,7 @@ export function collectCells(round: FlowRound): Cell[] {
                     col,
                     colName: cols[col]?.name ?? "",
                     text,
+                    card: sheet.meta[`${row},${col}`]?.card ?? false,
                 });
             });
         });
