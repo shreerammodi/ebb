@@ -96,6 +96,16 @@ describe("SearchPalette", () => {
         expect(screen.getByTestId("sp-row-0")).toHaveTextContent("Undo");
     });
 
+    it("places the caret past the > seed rather than selecting it", () => {
+        setupRound();
+        useFlowStore.getState().setQuickSwitcherOpen(true, ">");
+        render(<SearchPalette />);
+        const input = screen.getByTestId("search-palette-input") as HTMLInputElement;
+        // Collapsed selection at the end: typing appends, never overwrites ">".
+        expect(input.selectionStart).toBe(1);
+        expect(input.selectionEnd).toBe(1);
+    });
+
     it("runs the selected command on Enter and closes", async () => {
         setupRound();
         useFlowStore.getState().setQuickSwitcherOpen(true, ">");

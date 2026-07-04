@@ -69,15 +69,12 @@ function SearchPaletteInner() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    // Re-seed when the palette is reopened in a different mode without first
+    // closing (e.g. Cmd+Shift+P while the search palette is already open).
     useEffect(() => {
-        if (!open) return;
         setQuery(seed);
         setSelectedIndex(0);
-        const el = inputRef.current;
-        el?.focus();
-        // Drop the caret past the ">" seed so typing continues the command query.
-        el?.setSelectionRange(seed.length, seed.length);
-    }, [open, seed]);
+    }, [seed]);
 
     const isCommandMode = query.startsWith(">");
 
@@ -167,6 +164,14 @@ function SearchPaletteInner() {
                 aria-label={label}
                 data-testid="search-palette"
                 onKeyDown={onKeyDown}
+                onOpenAutoFocus={(e) => {
+                    // Own focus so the caret lands past the ">" seed instead of
+                    // selecting it (Radix's default autofocus selects the input).
+                    e.preventDefault();
+                    const el = inputRef.current;
+                    el?.focus();
+                    el?.setSelectionRange(seed.length, seed.length);
+                }}
                 className="top-[12vh] w-full max-w-[520px] translate-y-0 gap-0 overflow-hidden p-0"
             >
                 <DialogTitle className="sr-only">{label}</DialogTitle>
