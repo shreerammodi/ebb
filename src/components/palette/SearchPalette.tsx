@@ -3,23 +3,39 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { sortedSheets, type FlowSheet } from "@/lib/model/flow";
+import { searchCells, type CellHit } from "@/lib/search/cellSearch";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
-/**
- * Sheet quick-switcher. Full-text search over flow content returns with the
- * search phase; until then this palette filters sheet titles only.
- */
+/** Fuzzy search over every filled cell in the flow; Enter jumps the grid cursor there. */
 export default function SearchPalette() {
     const open = useFlowStore((s) => s.quickSwitcherOpen);
     if (!open) return null;
     return <SearchPaletteInner />;
 }
 
+/** Bolds the fuzzy-matched characters within a cell's text. */
+function Highlighted({ text, positions }: { text: string; positions: number[] }) {
+    if (positions.length === 0) return <>{text}</>;
+    const hit = new Set(positions);
+    return (
+        <>
+            {Array.from(text, (ch, i) =>
+                hit.has(i) ? (
+                    <span key={i} className="text-foreground font-semibold">
+                        {ch}
+                    </span>
+                ) : (
+                    ch
+                ),
+            )}
+        </>
+    );
+}
+
 function SearchPaletteInner() {
     const open = useFlowStore((s) => s.quickSwitcherOpen);
     const round = useFlowStore((s) => s.round);
-    const setActiveSheet = useFlowStore((s) => s.setActiveSheet);
+    const revealCell = useFlowStore((s) => s.revealCell);
     const setOpen = useFlowStore((s) => s.setQuickSwitcherOpen);
 
     const [query, setQuery] = useState("");
@@ -34,12 +50,9 @@ function SearchPaletteInner() {
         }
     }, [open]);
 
-    const rows = useMemo<FlowSheet[]>(() => {
+    const rows = useMemo<CellHit[]>(() => {
         if (!round) return [];
-        const sheets = sortedSheets(round);
-        const q = query.trim().toLowerCase();
-        if (!q) return sheets;
-        return sheets.filter((s) => s.title.toLowerCase().includes(q));
+        return searchCells(round, query);
     }, [round, query]);
 
     useEffect(() => {
@@ -49,15 +62,13 @@ function SearchPaletteInner() {
     // Keep the highlighted row visible when arrowing past the viewport edge.
     useEffect(() => {
         if (!open) return;
-        const row = rows[selectedIndex];
-        if (!row) return;
-        document.getElementById(`sp-sheet-${row.id}`)?.scrollIntoView?.({ block: "nearest" });
+        document.getElementById(`sp-cell-${selectedIndex}`)?.scrollIntoView?.({ block: "nearest" });
     }, [open, selectedIndex, rows]);
 
     if (!open) return null;
 
-    function select(sheet: FlowSheet) {
-        setActiveSheet(sheet.id);
+    function select(hit: CellHit) {
+        revealCell(hit.sheetId, hit.row, hit.col);
         setOpen(false);
     }
 
@@ -88,7 +99,7 @@ function SearchPaletteInner() {
         }
     }
 
-    const activeId = rows[selectedIndex] ? `sp-sheet-${rows[selectedIndex].id}` : undefined;
+    const activeId = rows[selectedIndex] ? `sp-cell-${selectedIndex}` : undefined;
 
     return (
         <Dialog
@@ -102,21 +113,21 @@ function SearchPaletteInner() {
                 top-anchored and chromeless to keep the command-palette feel. */}
             <DialogContent
                 showCloseButton={false}
-                aria-label="Switch sheet"
+                aria-label="Search cells"
                 data-testid="search-palette"
                 onKeyDown={onKeyDown}
                 className="top-[12vh] w-full max-w-[520px] translate-y-0 gap-0 overflow-hidden p-0"
             >
-                <DialogTitle className="sr-only">Switch sheet</DialogTitle>
+                <DialogTitle className="sr-only">Search cells</DialogTitle>
                 <input
                     ref={inputRef}
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Switch sheet... (text search coming back soon)"
+                    placeholder="Search cells..."
                     className="border-border bg-card text-foreground box-border w-full border-b px-3.5 py-3 text-[14px] focus:outline-none"
                     data-testid="search-palette-input"
-                    aria-label="Switch sheet"
+                    aria-label="Search cells"
                     role="combobox"
                     aria-expanded
                     aria-controls="search-palette-list"
@@ -134,22 +145,36 @@ function SearchPaletteInner() {
                         </div>
                     ) : (
                         <ul className="m-0 list-none p-0">
-                            {rows.map((sheet, i) => (
-                                <li key={sheet.id} role="presentation">
+                            {rows.map((hit, i) => (
+                                <li
+                                    key={`${hit.sheetId}-${hit.row}-${hit.col}`}
+                                    role="presentation"
+                                >
                                     <button
                                         type="button"
-                                        id={`sp-sheet-${sheet.id}`}
+                                        id={`sp-cell-${i}`}
                                         role="option"
                                         aria-selected={i === selectedIndex}
-                                        className={`text-foreground block w-full cursor-pointer rounded-md border-none px-2.5 py-2 text-left text-[13px] ${
+                                        className={`text-muted-foreground block w-full cursor-pointer rounded-md border-none px-2.5 py-2 text-left text-[13px] ${
                                             i === selectedIndex
                                                 ? "bg-accent"
                                                 : "hover:bg-accent/50 bg-transparent"
                                         }`}
-                                        onClick={() => select(sheet)}
-                                        data-testid={`sp-sheet-${sheet.id}`}
+                                        onClick={() => select(hit)}
+                                        data-testid={`sp-cell-${i}`}
                                     >
-                                        {sheet.title}
+                                        <span className="text-foreground line-clamp-2 block">
+                                            <Highlighted
+                                                text={hit.text}
+                                                positions={hit.positions}
+                                            />
+                                        </span>
+                                        <span className="mt-0.5 block text-[11px]">
+                                            {hit.sheetTitle}
+                                            {hit.colName ? (
+                                                <span className="opacity-70"> {hit.colName}</span>
+                                            ) : null}
+                                        </span>
                                     </button>
                                 </li>
                             ))}

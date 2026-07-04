@@ -33,6 +33,8 @@ export interface RemovedFlowSheet {
 export interface FlowState {
     round: FlowRound | null;
     activeSheetId: string | null;
+    /** Grid cell the search palette asked to jump to; HotGrid selects it, then clears via a fresh set on the next reveal. */
+    revealTarget: { row: number; col: number } | null;
     /** CommandId -> custom chord, overriding the preset binding. */
     keymapOverrides: Record<string, string>;
     flowFont: FontId;
@@ -56,6 +58,8 @@ export interface FlowActions {
     /** Renumbers the given flow sheets to contiguous order by array position. */
     reorderSheets(orderedFlowSheetIds: string[]): void;
     setActiveSheet(sheetId: string): void;
+    /** Switch to a sheet and select one of its cells (used by the search palette). */
+    revealCell(sheetId: string, row: number, col: number): void;
     /** Grid snapshot sink: replaces one sheet's data/meta (no-op when unchanged). */
     updateSheetData(
         sheetId: string,
@@ -147,6 +151,7 @@ function touch(round: FlowRound): FlowRound {
 export const useFlowStore = create<FlowStore>()((set, get) => ({
     round: null,
     activeSheetId: null,
+    revealTarget: null,
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
     updateConfig: loadUpdateConfig(),
@@ -237,6 +242,12 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
 
     setActiveSheet(sheetId) {
         set({ activeSheetId: sheetId });
+    },
+
+    revealCell(sheetId, row, col) {
+        // A fresh object each call so HotGrid's effect re-fires even when the
+        // same cell is revealed twice in a row.
+        set({ activeSheetId: sheetId, revealTarget: { row, col } });
     },
 
     updateSheetData(sheetId, data, meta) {

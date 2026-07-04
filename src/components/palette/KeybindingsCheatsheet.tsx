@@ -159,7 +159,7 @@ export default function KeybindingsCheatsheet() {
                 </div>
 
                 <div className="border-border text-muted-foreground shrink-0 border-t px-[18px] py-2 text-[11px]">
-                    Search and the guide are coming back soon.
+                    The guide is coming back soon.
                 </div>
             </DialogContent>
         </Dialog>

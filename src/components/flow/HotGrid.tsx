@@ -178,6 +178,19 @@ export default memo(function HotGrid() {
         hot.selectCell(v.row, v.col);
     }, [activeSheetId]);
 
+    // Search palette jump: declared after the sheet-switch effect so that when
+    // both fire in one commit (a cross-sheet jump) this selection wins. The rAF
+    // defers past Radix's focus restore so the grid keeps keyboard focus.
+    const revealTarget = useFlowStore((s) => s.revealTarget);
+    useEffect(() => {
+        if (!revealTarget) return;
+        const id = requestAnimationFrame(() => {
+            const hot = hotRef.current?.hotInstance;
+            hot?.selectCell(revealTarget.row, revealTarget.col);
+        });
+        return () => cancelAnimationFrame(id);
+    }, [revealTarget]);
+
     const afterGetColHeader = useCallback((col: number, TH: HTMLTableCellElement) => {
         const round = useFlowStore.getState().round;
         const sid = currentSheetIdRef.current;
@@ -210,12 +223,16 @@ export default memo(function HotGrid() {
         const dir = ARROW_DELTAS[e.key];
         if (hot && (e.metaKey || e.ctrlKey) && dir) {
             e.preventDefault();
-            e.stopImmediatePropagation();
             const cur = hot.getSelectedRangeLast();
-            if (!cur || cur.highlight.row == null || cur.highlight.col == null) return;
+            if (!cur || cur.highlight.row == null || cur.highlight.col == null) return false;
             const { row, col } = smartJump(hot, cur.highlight.row, cur.highlight.col, dir);
             if (e.shiftKey) hot.selection.setRangeEnd(hot._createCellCoords(row, col));
             else hot.selectCell(row, col);
+            // Returning false is Handsontable's contract for suppressing its own
+            // key handling; native stopImmediatePropagation does not, since the
+            // shortcut recorder checks its private isImmediatePropagationEnabled
+            // flag rather than the DOM event's state.
+            return false;
         }
     }, []);
 

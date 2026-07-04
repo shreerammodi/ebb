@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 /**
- * SearchPalette (sheet quick-switcher) component tests. Uses the real Zustand
+ * SearchPalette (cell fuzzy-search) component tests. Uses the real Zustand
  * store, reset per test.
  */
 import { describe, it, expect, beforeEach } from "vitest";
@@ -15,19 +15,22 @@ function resetStore() {
     useFlowStore.setState({
         round: null,
         activeSheetId: null,
+        revealTarget: null,
         quickSwitcherOpen: false,
         settingsOpen: false,
     });
 }
 
-/** Round with two extra sheets. */
+/** Round whose first flow sheet holds two filled cells; palette opened. */
 function setupRound() {
-    const store = useFlowStore.getState();
-    store.loadRound(makeFlowRound("aff"));
-    const caseId = store.addSheet({ title: "Case", group: "aff" });
-    const daId = store.addSheet({ title: "Disad", group: "neg" });
+    const round = makeFlowRound("aff");
+    const sheet = round.sheets.find((s) => s.kind !== "cx")!;
+    sheet.title = "Case";
+    // col 0 = "1AC", col 1 = "1NC".
+    sheet.data = [["perm do both", "topicality shell"]];
+    useFlowStore.getState().loadRound(round);
     useFlowStore.getState().setQuickSwitcherOpen(true);
-    return { caseId, daId };
+    return { sheetId: sheet.id };
 }
 
 describe("SearchPalette", () => {
@@ -40,45 +43,44 @@ describe("SearchPalette", () => {
         expect(screen.queryByTestId("search-palette")).not.toBeInTheDocument();
     });
 
-    it("shows all sheets when the query is empty", () => {
+    it("lists filled cells when the query is empty", () => {
         setupRound();
         render(<SearchPalette />);
-        expect(screen.getByText("CX")).toBeInTheDocument();
-        expect(screen.getByText("Case")).toBeInTheDocument();
-        expect(screen.getByText("Disad")).toBeInTheDocument();
+        expect(screen.getByText("perm do both")).toBeInTheDocument();
+        expect(screen.getByText("topicality shell")).toBeInTheDocument();
     });
 
-    it("filters sheets by title substring", async () => {
+    it("fuzzy-filters cells by the query", async () => {
         setupRound();
         render(<SearchPalette />);
-        await userEvent.type(screen.getByTestId("search-palette-input"), "dis");
-        expect(screen.getByText("Disad")).toBeInTheDocument();
-        expect(screen.queryByText("Case")).not.toBeInTheDocument();
+        await userEvent.type(screen.getByTestId("search-palette-input"), "topic");
+        expect(screen.getAllByRole("option")).toHaveLength(1);
+        expect(screen.getByText(/shell/)).toBeInTheDocument();
     });
 
-    it("activates the selected sheet on Enter and closes", async () => {
-        const { daId } = setupRound();
+    it("jumps the grid cursor to the cell on Enter and closes", async () => {
+        const { sheetId } = setupRound();
         render(<SearchPalette />);
-        await userEvent.type(screen.getByTestId("search-palette-input"), "disad");
+        await userEvent.type(screen.getByTestId("search-palette-input"), "perm");
         await userEvent.keyboard("{Enter}");
-        expect(useFlowStore.getState().activeSheetId).toBe(daId);
-        expect(useFlowStore.getState().quickSwitcherOpen).toBe(false);
+        const state = useFlowStore.getState();
+        expect(state.activeSheetId).toBe(sheetId);
+        expect(state.revealTarget).toEqual({ row: 0, col: 0 });
+        expect(state.quickSwitcherOpen).toBe(false);
     });
 
-    it("activates a sheet on click", async () => {
-        const { caseId } = setupRound();
+    it("jumps to a cell on click", async () => {
+        setupRound();
         render(<SearchPalette />);
-        await userEvent.click(screen.getByTestId(`sp-sheet-${caseId}`));
-        expect(useFlowStore.getState().activeSheetId).toBe(caseId);
+        await userEvent.click(screen.getByTestId("sp-cell-0"));
+        expect(useFlowStore.getState().revealTarget).toEqual({ row: 0, col: 0 });
     });
 
-    it("closes on Escape without switching", async () => {
-        const { daId } = setupRound();
-        const before = useFlowStore.getState().activeSheetId;
-        expect(before).toBe(daId);
+    it("closes on Escape without jumping", async () => {
+        setupRound();
         render(<SearchPalette />);
         await userEvent.keyboard("{Escape}");
         expect(useFlowStore.getState().quickSwitcherOpen).toBe(false);
-        expect(useFlowStore.getState().activeSheetId).toBe(before);
+        expect(useFlowStore.getState().revealTarget).toBeNull();
     });
 });

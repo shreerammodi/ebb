@@ -59,7 +59,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "sheet.rename": { id: "sheet.rename", label: "Rename active sheet" },
     "sheet.quickSwitch": {
         id: "sheet.quickSwitch",
-        label: "Quick switch sheet",
+        label: "Search cells",
     },
     "sheet.jump1": { id: "sheet.jump1", label: "Jump to sheet 1" },
     "sheet.jump2": { id: "sheet.jump2", label: "Jump to sheet 2" },

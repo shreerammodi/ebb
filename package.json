@@ -16,6 +16,7 @@
     },
     "dependencies": {
         "@handsontable/react-wrapper": "^18.0.0",
+        "@leeoniya/ufuzzy": "^1.0.19",
         "@phosphor-icons/react": "^2.1.10",
         "@tailwindcss/postcss": "^4.3.0",
         "@tauri-apps/api": "^2.11.1",
