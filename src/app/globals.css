@@ -631,6 +631,38 @@ html .ht-theme-main {
         display: block !important;
     }
 
+    /* Print tables render every row from sheet data, decorations included. */
+    .print-flow .print-sheet {
+        page-break-after: auto;
+        margin-bottom: 24px;
+    }
+    .print-flow h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #000;
+    }
+    .print-flow table {
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed;
+    }
+    .print-flow td,
+    .print-flow th {
+        border: 1px solid #999;
+        padding: 2px 4px;
+        font-size: 10px;
+        vertical-align: top;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: #000;
+    }
+    .print-flow td.flow-highlight {
+        background: #fde047;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
     body {
         background: #fff;
         color: #000;

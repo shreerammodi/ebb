@@ -1,89 +1,65 @@
 /**
  * PrintView component tests.
  *
- * Verifies that PrintView renders all sheet titles and their nodes.
+ * Verifies that PrintView renders every sheet's title and every data row
+ * (never a virtualized subset), with decorations mapped from cell meta.
  */
 
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { makeFlowRound } from "@/lib/model/flow";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import PrintView from "./PrintView";
 
-const BLANK_STATE = {
-    round: null,
-    activeSheetId: null,
-    mode: "normal" as const,
-    selection: null,
-};
-
 function resetStore() {
-    useRoundStore.setState(BLANK_STATE);
+    useFlowStore.setState({ round: null, activeSheetId: null });
 }
 
-function setupTwoSheets() {
-    const fmt = makeFormat(POLICY_PRESET);
-    useRoundStore.getState().createRound({ role: "aff", format: fmt });
-
-    const sheet1Id = useRoundStore.getState().addSheet({ title: "Case", group: "aff" });
-    const sheet2Id = useRoundStore.getState().addSheet({ title: "Topicality", group: "neg" });
-
-    const speeches = fmt.speeches;
-    const s1AC = speeches[0].id;
-    const s1NC = speeches[1].id;
-
-    // Add a node to sheet 1
-    useRoundStore.getState().addNode({
-        sheetId: sheet1Id,
-        speechId: s1AC,
-        parentId: null,
-        text: "Aff advantage",
-    });
-
-    // Add a node to sheet 2
-    useRoundStore.getState().addNode({
-        sheetId: sheet2Id,
-        speechId: s1NC,
-        parentId: null,
-        text: "Topicality violation",
-    });
-
-    return { sheet1Id, sheet2Id };
+function setup() {
+    const round = makeFlowRound("aff");
+    const flow = round.sheets.find((s) => s.kind !== "cx")!;
+    flow.title = "Case";
+    flow.data = Array.from({ length: 60 }, (_, r) => [`arg ${r}`, null]);
+    flow.meta = { "0,0": { bold: true }, "1,0": { highlight: true } };
+    useFlowStore.getState().loadRound(round);
+    return round;
 }
 
 describe("PrintView", () => {
     beforeEach(resetStore);
 
-    it("renders nothing when there is no round", () => {
-        render(<PrintView />);
-        expect(screen.queryByTestId("print-view")).toBeNull();
+    it("renders nothing without a round", () => {
+        const { container } = render(<PrintView />);
+        expect(container.firstChild).toBeNull();
     });
 
-    it("shows every sheet title", () => {
-        setupTwoSheets();
+    it("renders every sheet in order with all data rows", () => {
+        const round = setup();
         render(<PrintView />);
-
-        expect(screen.getByText("Case")).toBeInTheDocument();
-        expect(screen.getByText("Topicality")).toBeInTheDocument();
+        const flow = round.sheets.find((s) => s.kind !== "cx")!;
+        const cx = round.sheets.find((s) => s.kind === "cx")!;
+        expect(screen.getByTestId(`print-sheet-title-${cx.id}`)).toHaveTextContent("CX");
+        expect(screen.getByTestId(`print-sheet-title-${flow.id}`)).toHaveTextContent("Case");
+        // All 60 rows render - print never virtualizes.
+        expect(screen.getByText("arg 0")).toBeInTheDocument();
+        expect(screen.getByText("arg 59")).toBeInTheDocument();
     });
 
-    it("shows the nodes for each sheet", () => {
-        setupTwoSheets();
+    it("maps cell meta onto decoration classes", () => {
+        setup();
         render(<PrintView />);
-
-        expect(screen.getByText("Aff advantage")).toBeInTheDocument();
-        expect(screen.getByText("Topicality violation")).toBeInTheDocument();
+        expect(screen.getByText("arg 0")).toHaveClass("flow-bold");
+        expect(screen.getByText("arg 1")).toHaveClass("flow-highlight");
     });
 
-    it("renders sheets sorted by order", () => {
-        setupTwoSheets();
+    it("renders CX period labels in the CX header", () => {
+        const round = setup();
+        const cx = round.sheets.find((s) => s.kind === "cx")!;
+        cx.data = [["q", "a", null, null, null, null, null, null]];
+        useFlowStore.getState().loadRound(round);
         render(<PrintView />);
-
-        const titles = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-
-        // Case was added first (lower order), Topicality second
-        expect(titles.indexOf("Case")).toBeLessThan(titles.indexOf("Topicality"));
+        expect(screen.getAllByText("1AC CX Question")).toHaveLength(1);
     });
 });

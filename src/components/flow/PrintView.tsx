@@ -1,59 +1,66 @@
 "use client";
 
 /**
- * PrintView — renders all sheets as static read-only grids for printing.
+ * PrintView - renders all sheets as static read-only tables for printing.
  *
- * Iterates over sheets (sorted by order) and renders each with its title
- * and a FlowGrid. Wraps everything in a print-appropriate container.
- * This component is shown in the DOM alongside the normal workspace so that
- * window.print() captures it; the workspace hides via .no-print, and this
- * shows via .print-only.
+ * Rendered from FlowSheet data, never from the Handsontable widget: the
+ * widget's DOM is virtualized and only contains the visible rows. Shown in
+ * the DOM alongside the workspace so window.print() captures it; the
+ * workspace hides via .no-print, this shows via .print-only.
  */
 
-import { useRoundStore } from "@/lib/store/useRoundStore";
-
-import FlowGrid from "./FlowGrid";
+import { trimGrid } from "@/lib/grid/codec";
+import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
+import { sortedSheets } from "@/lib/model/flow";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 export default function PrintView() {
-    const round = useRoundStore((s) => s.round);
+    const round = useFlowStore((s) => s.round);
 
     if (!round) return null;
 
-    const sheets = round.sheets.slice().sort((a, b) => a.order - b.order);
-
     return (
-        <div className="print-only" data-testid="print-view" style={styles.container}>
-            {sheets.map((sheet) => (
-                <div key={sheet.id} style={styles.sheet}>
-                    <h2 style={styles.sheetTitle} data-testid={`print-sheet-title-${sheet.id}`}>
-                        {sheet.title}
-                    </h2>
-                    <FlowGrid sheetId={sheet.id} />
-                </div>
-            ))}
+        <div className="print-only print-flow" data-testid="print-view">
+            {sortedSheets(round).map((sheet) => {
+                const cols = columnsForFlowSheet(sheet);
+                const rows = trimGrid(sheet.data);
+                return (
+                    <section key={sheet.id} className="print-sheet">
+                        <h2 data-testid={`print-sheet-title-${sheet.id}`}>{sheet.title}</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    {cols.map((c, i) => (
+                                        <th key={i}>{c.group ? `${c.group} ${c.name}` : c.name}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row, r) => (
+                                    <tr key={r}>
+                                        {cols.map((_, c) => {
+                                            const m = sheet.meta[`${r},${c}`];
+                                            return (
+                                                <td
+                                                    key={c}
+                                                    className={[
+                                                        m?.bold ? "flow-bold" : "",
+                                                        m?.highlight ? "flow-highlight" : "",
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(" ")}
+                                                >
+                                                    {row[c] ?? ""}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </section>
+                );
+            })}
         </div>
     );
 }
-
-// ─── Inline styles ────────────────────────────────────────────────────────────
-
-const styles = {
-    container: {
-        padding: "16px",
-        background: "white",
-        color: "black",
-    } as React.CSSProperties,
-
-    sheet: {
-        marginBottom: "32px",
-        pageBreakAfter: "auto",
-    } as React.CSSProperties,
-
-    sheetTitle: {
-        fontSize: "16px",
-        fontWeight: 700,
-        marginBottom: "8px",
-        marginTop: 0,
-        color: "black",
-    } as React.CSSProperties,
-} as const;
