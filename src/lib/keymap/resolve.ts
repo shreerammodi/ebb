@@ -27,17 +27,27 @@ function isSinglePrintable(key: string): boolean {
  * Canonical chord string for a key event.
  * Modifier order: Meta+ Ctrl+ Alt+ Shift+ then key.
  *
- * - Single printable chars: key as-is, never prefixed with Shift+.
+ * - Single printable letters: shift encoded in case (uppercase = Shift), driven
+ *   by `shiftKey` rather than `e.key`'s case. macOS reports letters lowercase
+ *   when Meta is held even with Shift down, so trusting the reported case would
+ *   collapse Cmd+Shift+P onto Cmd+P.
+ * - Other single printables (symbols like "?"): key as-is; shift already lives
+ *   in the character, never prefixed with Shift+.
  * - Named keys (Tab, Enter, Escape, ArrowUp, …): Shift+ added when shiftKey.
  */
 export function eventToChord(e: KeyEventLike): Chord {
     const printable = isSinglePrintable(e.key);
+    const isLetter = printable && /^[a-zA-Z]$/.test(e.key);
     const parts: string[] = [];
     if (e.metaKey) parts.push("Meta");
     if (e.ctrlKey) parts.push("Ctrl");
     if (e.altKey) parts.push("Alt");
     if (e.shiftKey && !printable) parts.push("Shift");
-    parts.push(e.key);
+    if (isLetter) {
+        parts.push(e.shiftKey ? e.key.toUpperCase() : e.key.toLowerCase());
+    } else {
+        parts.push(e.key);
+    }
     return parts.join("+");
 }
 

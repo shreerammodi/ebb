@@ -35,6 +35,16 @@ describe("eventToChord", () => {
         expect(eventToChord(ev("O", { shiftKey: true }))).toBe("O");
     });
 
+    it("derives letter case from shiftKey, not the reported key case", () => {
+        // macOS reports a lowercase letter when Meta is held even with Shift.
+        expect(eventToChord(ev("p", { metaKey: true, shiftKey: true }))).toBe("Meta+P");
+        expect(eventToChord(ev("p", { metaKey: true }))).toBe("Meta+p");
+    });
+
+    it("leaves shifted symbols as their character (? stays ?)", () => {
+        expect(eventToChord(ev("?", { shiftKey: true }))).toBe("?");
+    });
+
     it("adds Shift+ for named keys when shiftKey is true", () => {
         expect(eventToChord(ev("Tab", { shiftKey: true }))).toBe("Shift+Tab");
     });
