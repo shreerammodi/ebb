@@ -148,11 +148,16 @@ html .ht-theme-main {
     --ht-header-foreground-color: var(--foreground);
     --ht-accent-color: var(--primary);
 }
-.handsontable th.hd-aff {
+/* Header ink stays put on hover; the theme otherwise recolors hovered th. */
+.handsontable th.hd-aff,
+.handsontable th.hd-aff:hover {
     color: var(--aff);
+    font-weight: 700;
 }
-.handsontable th.hd-neg {
+.handsontable th.hd-neg,
+.handsontable th.hd-neg:hover {
     color: var(--neg);
+    font-weight: 700;
 }
 .flow-bold {
     font-weight: 700;
