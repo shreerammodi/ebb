@@ -6,13 +6,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Tip } from "@/components/ui/tooltip";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { FONTS, DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { eventToChord } from "@/lib/keymap/resolve";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 import { isDesktop } from "@/lib/update/adapter";
 import { cn } from "@/lib/utils";
 
@@ -41,17 +40,13 @@ function chordForCommand(bindings: Record<string, CommandId>): Record<string, st
 }
 
 export default function SettingsPanel() {
-    const open = useRoundStore((s) => s.settingsOpen);
-    const keymapOverrides = useRoundStore((s) => s.keymapOverrides);
-    const setKeymapOverride = useRoundStore((s) => s.setKeymapOverride);
-    const clearKeymapOverride = useRoundStore((s) => s.clearKeymapOverride);
-    const setSettingsOpen = useRoundStore((s) => s.setSettingsOpen);
-    const autoNumber = useRoundStore((s) => s.autoNumber);
-    const labelDrops = useRoundStore((s) => s.labelDrops);
-    const setAutoNumber = useRoundStore((s) => s.setAutoNumber);
-    const setLabelDrops = useRoundStore((s) => s.setLabelDrops);
-    const flowFont = useRoundStore((s) => s.flowFont);
-    const setFlowFont = useRoundStore((s) => s.setFlowFont);
+    const open = useFlowStore((s) => s.settingsOpen);
+    const keymapOverrides = useFlowStore((s) => s.keymapOverrides);
+    const setKeymapOverride = useFlowStore((s) => s.setKeymapOverride);
+    const clearKeymapOverride = useFlowStore((s) => s.clearKeymapOverride);
+    const setSettingsOpen = useFlowStore((s) => s.setSettingsOpen);
+    const flowFont = useFlowStore((s) => s.flowFont);
+    const setFlowFont = useFlowStore((s) => s.setFlowFont);
 
     const [recording, setRecording] = useState<CommandId | null>(null);
     const [category, setCategory] = useState<Category>("display");
@@ -242,27 +237,6 @@ export default function SettingsPanel() {
                                     >
                                         Separation of powers outweighs
                                     </p>
-                                </div>
-
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-foreground flex items-center justify-between py-1.5 text-[13px]">
-                                        Auto-number arguments
-                                        <Switch
-                                            checked={autoNumber}
-                                            onCheckedChange={setAutoNumber}
-                                            data-testid="toggle-autoNumber"
-                                            aria-label="Auto-number arguments"
-                                        />
-                                    </label>
-                                    <label className="text-foreground flex items-center justify-between py-1.5 text-[13px]">
-                                        Label drops
-                                        <Switch
-                                            checked={labelDrops}
-                                            onCheckedChange={setLabelDrops}
-                                            data-testid="toggle-labelDrops"
-                                            aria-label="Label drops"
-                                        />
-                                    </label>
                                 </div>
                             </div>
                         )}

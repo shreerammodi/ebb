@@ -13,8 +13,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { runExport } from "@/lib/export/run";
-import { softDeleteRound, restoreRound } from "@/lib/persistence/autosave";
-import { loadFlow } from "@/lib/persistence/flowPersistence";
+import { loadFlow, restoreFlow, softDeleteFlow } from "@/lib/persistence/flowPersistence";
 
 export interface FlowCardMenuProps {
     id: string;
@@ -34,13 +33,13 @@ export default function FlowCardMenu({ id, onViewDetails, onChanged }: FlowCardM
     }
 
     async function del() {
-        await softDeleteRound(id);
+        await softDeleteFlow(id);
         onChanged();
         toast("Flow moved to trash", {
             action: {
                 label: "Undo",
                 onClick: async () => {
-                    await restoreRound(id);
+                    await restoreFlow(id);
                     onChanged();
                 },
             },

@@ -6,14 +6,13 @@ import { useCallback, useEffect, useState } from "react";
 import FlowCard from "@/components/dashboard/FlowCard";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { flowDb } from "@/lib/persistence/flowDb";
 import {
-    listTrash,
-    restoreRound,
-    deleteRoundForever,
+    deleteFlowForever,
+    listFlowTrash,
+    restoreFlow,
     type RoundSummary,
-} from "@/lib/persistence/autosave";
-import { db } from "@/lib/persistence/db";
-import { deleteSearchIndex } from "@/lib/persistence/searchIndex";
+} from "@/lib/persistence/flowPersistence";
 
 type ConfirmTarget = { type: "one"; id: string } | { type: "all" };
 
@@ -22,7 +21,7 @@ export default function TrashView() {
     const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
 
     const refresh = useCallback(async () => {
-        setItems(await listTrash());
+        setItems(await listFlowTrash());
     }, []);
 
     useEffect(() => {
@@ -30,20 +29,19 @@ export default function TrashView() {
     }, [refresh]);
 
     async function restore(id: string) {
-        await restoreRound(id);
+        await restoreFlow(id);
         await refresh();
     }
 
     async function remove(id: string) {
-        await deleteRoundForever(id);
+        await deleteFlowForever(id);
         await refresh();
     }
 
     async function emptyTrash() {
-        const trashed = (await db.rounds.toArray()).filter((r) => r.deletedAt != null);
+        const trashed = (await flowDb.flows.toArray()).filter((r) => r.deletedAt != null);
         for (const r of trashed) {
-            await db.rounds.delete(r.id);
-            await deleteSearchIndex(r.id);
+            await deleteFlowForever(r.id);
         }
         await refresh();
     }

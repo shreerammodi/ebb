@@ -1,18 +1,18 @@
 import "fake-indexeddb/auto";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { flowDb } from "@/lib/persistence/flowDb";
 
 import NewFlowButton from "./NewFlowButton";
 
-beforeEach(() => {
+beforeEach(async () => {
     push.mockReset();
-    useRoundStore.setState({ round: null });
+    await flowDb.flows.clear();
 });
 
 describe("NewFlowButton", () => {
@@ -20,9 +20,11 @@ describe("NewFlowButton", () => {
         render(<NewFlowButton />);
         await userEvent.click(screen.getByTestId("new-flow"));
         await userEvent.click(screen.getByTestId("new-flow-role-neg"));
-        expect(push).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
         const arg = push.mock.calls[0][0] as string;
         expect(arg).toMatch(/^\/flow\?id=round_/);
-        expect(useRoundStore.getState().round?.role).toBe("neg");
+        const rounds = await flowDb.flows.toArray();
+        expect(rounds).toHaveLength(1);
+        expect(rounds[0].role).toBe("neg");
     });
 });

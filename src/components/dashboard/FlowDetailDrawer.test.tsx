@@ -5,25 +5,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
-import { emptyScouting } from "@/lib/model/normalize";
-import type { Round } from "@/lib/model/types";
-import { persistRound } from "@/lib/persistence/autosave";
-import { db } from "@/lib/persistence/db";
+import { emptyScouting, makeFlowRound, type FlowRound } from "@/lib/model/flow";
+import { flowDb } from "@/lib/persistence/flowDb";
+import { persistFlow } from "@/lib/persistence/flowPersistence";
 
 import FlowDetailDrawer from "./FlowDetailDrawer";
 
-function mk(id: string): Round {
+function mk(id: string): FlowRound {
     return {
+        ...makeFlowRound("aff"),
         id,
         createdAt: 1,
         updatedAt: 1,
-        role: "aff",
-        format: {
-            id: "f",
-            name: "Policy",
-            speeches: [],
-            prepSeconds: { aff: 240, neg: 240 },
-        },
         scouting: {
             ...emptyScouting(),
             affSchool: "Westwood",
@@ -31,20 +24,16 @@ function mk(id: string): Round {
             judge: "K. Strange",
             decision: { vote: "aff", rfd: "clear" },
         },
-        sheets: [{ id: "s", title: "Aff", group: "aff", order: 0, kind: "flow" }],
-        nodes: [],
-        groups: [],
     };
 }
 
 beforeEach(async () => {
-    await db.rounds.clear();
-    await db.searchIndex.clear();
+    await flowDb.flows.clear();
 });
 
 describe("FlowDetailDrawer", () => {
     it("renders full scouting for the open id", async () => {
-        await persistRound(mk("a"));
+        await persistFlow(mk("a"));
         render(<FlowDetailDrawer id="a" onClose={() => {}} onChanged={() => {}} />);
         await waitFor(() => expect(screen.getByText("Berkeley")).toBeInTheDocument());
         expect(screen.getByText("K. Strange")).toBeInTheDocument();

@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 
 import type { RoundSummary } from "@/lib/dashboard/summary";
-import { toSegments } from "@/lib/search/fuzzy";
 import { cn } from "@/lib/utils";
 
 import { relativeTime, resultLabel } from "./format";
@@ -20,7 +19,7 @@ export interface FlowCardProps {
     /** Optional kebab menu element rendered top-right. */
     menu?: React.ReactNode;
     /** Optional snippet (already segmented) shown when a content match exists. */
-    snippet?: ReturnType<typeof toSegments> | null;
+    snippet?: { text: string; match: boolean }[] | null;
     /**
      * Whether the card opens a flow on click/Enter. False for read-only
      * contexts (e.g. Trash) so it isn't announced as an actionable button.

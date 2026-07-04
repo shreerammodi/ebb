@@ -5,9 +5,9 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { downloadBlob } from "@/lib/export/download";
-import { persistRound } from "@/lib/persistence/autosave";
-import { parseImportFile, exportBackupJSON } from "@/lib/persistence/backup";
-import { db } from "@/lib/persistence/db";
+import { flowDb } from "@/lib/persistence/flowDb";
+import { exportFlowBackupJSON, parseFlowImportFile } from "@/lib/persistence/flowIo";
+import { persistFlow } from "@/lib/persistence/flowPersistence";
 
 export interface ImportExportControlsProps {
     onChanged: () => void;
@@ -34,8 +34,8 @@ export default function ImportExportControls({ onChanged }: ImportExportControls
         if (!file) return;
         try {
             const text = await readFileText(file);
-            const rounds = parseImportFile(text);
-            for (const r of rounds) await persistRound(r);
+            const rounds = parseFlowImportFile(text);
+            for (const r of rounds) await persistFlow(r);
             onChanged();
             toast.success(`Imported ${rounds.length} flow${rounds.length === 1 ? "" : "s"}`);
         } catch (err) {
@@ -44,13 +44,13 @@ export default function ImportExportControls({ onChanged }: ImportExportControls
     }
 
     async function exportAll() {
-        const live = await db.rounds.toArray();
+        const live = await flowDb.flows.toArray();
         const rounds = live.filter((r) => r.deletedAt == null);
         if (rounds.length === 0) {
             toast("No flows to export");
             return;
         }
-        const blob = new Blob([exportBackupJSON(rounds)], {
+        const blob = new Blob([exportFlowBackupJSON(rounds)], {
             type: "application/json",
         });
         downloadBlob(blob, `debate-flow-backup-${new Date().toISOString().slice(0, 10)}.json`);

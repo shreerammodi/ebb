@@ -7,46 +7,29 @@ vi.mock("sonner", () => ({
     toast: Object.assign(vi.fn(), { success: vi.fn() }),
 }));
 
-import { emptyScouting } from "@/lib/model/normalize";
-import type { Round } from "@/lib/model/types";
-import { persistRound, listTrash, listRounds } from "@/lib/persistence/autosave";
-import { db } from "@/lib/persistence/db";
+import { makeFlowRound, type FlowRound } from "@/lib/model/flow";
+import { flowDb } from "@/lib/persistence/flowDb";
+import { listFlows, listFlowTrash, persistFlow } from "@/lib/persistence/flowPersistence";
 
 import FlowCardMenu from "./FlowCardMenu";
 
-function mk(id: string): Round {
-    return {
-        id,
-        createdAt: 1,
-        updatedAt: 1,
-        role: "aff",
-        format: {
-            id: "f",
-            name: "Policy",
-            speeches: [],
-            prepSeconds: { aff: 240, neg: 240 },
-        },
-        scouting: emptyScouting(),
-        sheets: [],
-        nodes: [],
-        groups: [],
-    };
+function mk(id: string): FlowRound {
+    return { ...makeFlowRound("aff"), id, createdAt: 1, updatedAt: 1 };
 }
 
 beforeEach(async () => {
-    await db.rounds.clear();
-    await db.searchIndex.clear();
+    await flowDb.flows.clear();
 });
 
 describe("FlowCardMenu", () => {
     it("soft-deletes the flow and calls onChanged", async () => {
-        await persistRound(mk("a"));
+        await persistFlow(mk("a"));
         const onChanged = vi.fn();
         render(<FlowCardMenu id="a" onViewDetails={() => {}} onChanged={onChanged} />);
         await userEvent.click(screen.getByTestId("kebab-a"));
         await userEvent.click(await screen.findByTestId("kebab-delete-a"));
         await waitFor(() => expect(onChanged).toHaveBeenCalled());
-        expect((await listRounds()).length).toBe(0);
-        expect((await listTrash()).map((s) => s.id)).toEqual(["a"]);
+        expect((await listFlows()).length).toBe(0);
+        expect((await listFlowTrash()).map((s) => s.id)).toEqual(["a"]);
     });
 });

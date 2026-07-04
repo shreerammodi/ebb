@@ -7,47 +7,30 @@ vi.mock("sonner", () => ({
     toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }),
 }));
 
-import { emptyScouting } from "@/lib/model/normalize";
-import type { Round } from "@/lib/model/types";
-import { listRounds } from "@/lib/persistence/autosave";
-import { db } from "@/lib/persistence/db";
+import { makeFlowRound, type FlowRound } from "@/lib/model/flow";
+import { flowDb } from "@/lib/persistence/flowDb";
+import { listFlows } from "@/lib/persistence/flowPersistence";
 
 import ImportExportControls from "./ImportExportControls";
 
-function mk(id: string): Round {
-    return {
-        id,
-        createdAt: 1,
-        updatedAt: 1,
-        role: "aff",
-        format: {
-            id: "f",
-            name: "Policy",
-            speeches: [],
-            prepSeconds: { aff: 240, neg: 240 },
-        },
-        scouting: emptyScouting(),
-        sheets: [{ id: "s", title: "Aff", group: "aff", order: 0, kind: "flow" }],
-        nodes: [],
-        groups: [],
-    };
+function mk(id: string): FlowRound {
+    return { ...makeFlowRound("aff"), id, createdAt: 1, updatedAt: 1 };
 }
 
 beforeEach(async () => {
-    await db.rounds.clear();
-    await db.searchIndex.clear();
+    await flowDb.flows.clear();
 });
 
 describe("ImportExportControls", () => {
     it("imports a single-flow file as a new flow", async () => {
         const onChanged = vi.fn();
         render(<ImportExportControls onChanged={onChanged} />);
-        const file = new File([JSON.stringify({ version: 2, round: mk("orig") })], "flow.json", {
+        const file = new File([JSON.stringify({ version: 3, round: mk("orig") })], "flow.json", {
             type: "application/json",
         });
         await userEvent.upload(screen.getByTestId("import-input"), file);
         await waitFor(() => expect(onChanged).toHaveBeenCalled());
-        const live = await listRounds();
+        const live = await listFlows();
         expect(live.length).toBe(1);
         expect(live[0].id).not.toBe("orig");
     });
@@ -58,7 +41,7 @@ describe("ImportExportControls", () => {
         const file = new File(
             [
                 JSON.stringify({
-                    version: 2,
+                    version: 3,
                     kind: "backup",
                     rounds: [mk("a"), mk("b")],
                 }),
@@ -68,6 +51,6 @@ describe("ImportExportControls", () => {
         );
         await userEvent.upload(screen.getByTestId("import-input"), file);
         await waitFor(() => expect(onChanged).toHaveBeenCalled());
-        expect((await listRounds()).length).toBe(2);
+        expect((await listFlows()).length).toBe(2);
     });
 });

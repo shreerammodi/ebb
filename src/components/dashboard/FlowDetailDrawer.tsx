@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import type { FlowRound } from "@/lib/model/flow";
 import { teamCode } from "@/lib/model/teamCode";
-import type { Round } from "@/lib/model/types";
-import { loadRound } from "@/lib/persistence/autosave";
+import { loadFlow } from "@/lib/persistence/flowPersistence";
 
 export interface FlowDetailDrawerProps {
     id: string | null;
@@ -21,14 +21,14 @@ function fullName(d: { first: string; last: string }): string {
 
 export default function FlowDetailDrawer({ id, onClose }: FlowDetailDrawerProps) {
     const router = useRouter();
-    const [round, setRound] = useState<Round | null>(null);
+    const [round, setRound] = useState<FlowRound | null>(null);
 
     useEffect(() => {
         let on = true;
         // Clear immediately so reopening for a new id never flashes the
         // previous flow's details while the new one loads.
         setRound(null);
-        if (id) loadRound(id).then((r) => on && setRound(r ?? null));
+        if (id) loadFlow(id).then((r) => on && setRound(r ?? null));
         return () => {
             on = false;
         };

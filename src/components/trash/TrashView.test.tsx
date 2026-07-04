@@ -8,67 +8,56 @@ vi.mock("sonner", () => ({
     toast: Object.assign(vi.fn(), { success: vi.fn() }),
 }));
 
-import { emptyScouting } from "@/lib/model/normalize";
-import type { Round } from "@/lib/model/types";
-import { persistRound, softDeleteRound, listRounds, listTrash } from "@/lib/persistence/autosave";
-import { db } from "@/lib/persistence/db";
+import { emptyScouting, makeFlowRound, type FlowRound } from "@/lib/model/flow";
+import { flowDb } from "@/lib/persistence/flowDb";
+import { listFlows, persistFlow, softDeleteFlow } from "@/lib/persistence/flowPersistence";
 
 import TrashView from "./TrashView";
 
-function mk(id: string): Round {
+function mk(id: string): FlowRound {
     return {
+        ...makeFlowRound("aff"),
         id,
         createdAt: 1,
         updatedAt: 1,
-        role: "aff",
-        format: {
-            id: "f",
-            name: "Policy",
-            speeches: [],
-            prepSeconds: { aff: 240, neg: 240 },
-        },
         scouting: { ...emptyScouting(), affSchool: id },
-        sheets: [],
-        nodes: [],
-        groups: [],
     };
 }
 
 beforeEach(async () => {
-    await db.rounds.clear();
-    await db.searchIndex.clear();
+    await flowDb.flows.clear();
 });
 
 describe("TrashView", () => {
     it("restores a trashed flow", async () => {
-        await persistRound(mk("a"));
-        await softDeleteRound("a");
+        await persistFlow(mk("a"));
+        await softDeleteFlow("a");
         render(<TrashView />);
         await waitFor(() => screen.getByTestId("trash-restore-a"));
         await userEvent.click(screen.getByTestId("trash-restore-a"));
-        await waitFor(async () => expect((await listRounds()).map((s) => s.id)).toEqual(["a"]));
+        await waitFor(async () => expect((await listFlows()).map((s) => s.id)).toEqual(["a"]));
     });
 
     it("permanently deletes a flow after confirming in the dialog", async () => {
-        await persistRound(mk("a"));
-        await softDeleteRound("a");
+        await persistFlow(mk("a"));
+        await softDeleteFlow("a");
         render(<TrashView />);
         await waitFor(() => screen.getByTestId("trash-delete-a"));
         await userEvent.click(screen.getByTestId("trash-delete-a"));
         // A confirm dialog appears; deletion only happens on accept.
         const accept = await screen.findByTestId("confirm-accept");
         await userEvent.click(accept);
-        await waitFor(async () => expect(await db.rounds.get("a")).toBeUndefined());
+        await waitFor(async () => expect(await flowDb.flows.get("a")).toBeUndefined());
     });
 
     it("does not delete when the confirm dialog is cancelled", async () => {
-        await persistRound(mk("a"));
-        await softDeleteRound("a");
+        await persistFlow(mk("a"));
+        await softDeleteFlow("a");
         render(<TrashView />);
         await waitFor(() => screen.getByTestId("trash-delete-a"));
         await userEvent.click(screen.getByTestId("trash-delete-a"));
         await userEvent.click(await screen.findByTestId("confirm-cancel"));
         // Still present — cancel is safe.
-        expect(await db.rounds.get("a")).toBeDefined();
+        expect(await flowDb.flows.get("a")).toBeDefined();
     });
 });

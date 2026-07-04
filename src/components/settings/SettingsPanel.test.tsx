@@ -17,7 +17,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { COMMANDS } from "@/lib/commands/registry";
 import { FONTS } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import SettingsPanel from "./SettingsPanel";
 
@@ -29,10 +29,10 @@ function renderSettingsPanel() {
     );
 }
 
-const KEY = "df-keymap-settings";
+const KEY = "ebb-keymap-settings";
 
 function resetStore() {
-    useRoundStore.setState({
+    useFlowStore.setState({
         keymapOverrides: {},
         settingsOpen: true,
     });
@@ -64,7 +64,7 @@ describe("SettingsPanel", () => {
     });
 
     it("renders nothing when settings are closed", () => {
-        useRoundStore.setState({ settingsOpen: false });
+        useFlowStore.setState({ settingsOpen: false });
         renderSettingsPanel();
         expect(screen.queryByTestId("settings-panel")).toBeNull();
     });
@@ -74,10 +74,10 @@ describe("SettingsPanel", () => {
         renderSettingsPanel();
         await gotoKeyboard(user);
 
-        // The flat keymap binds move.down to "ArrowDown".
-        const row = screen.getByTestId("cmd-move.down");
-        expect(within(row).getByText(COMMANDS["move.down"].label)).toBeTruthy();
-        expect(screen.getByTestId("chord-move.down").textContent).toBe("ArrowDown");
+        // The flat keymap binds sheet.next to "]".
+        const row = screen.getByTestId("cmd-sheet.next");
+        expect(within(row).getByText(COMMANDS["sheet.next"].label)).toBeTruthy();
+        expect(screen.getByTestId("chord-sheet.next").textContent).toBe("]");
     });
 
     it("records a chord override: click Record then press a key", async () => {
@@ -85,12 +85,12 @@ describe("SettingsPanel", () => {
         renderSettingsPanel();
         await gotoKeyboard(user);
 
-        await user.click(screen.getByTestId("record-move.down"));
-        // Now recording — the next keydown is captured as the new chord.
+        await user.click(screen.getByTestId("record-sheet.next"));
+        // Now recording - the next keydown is captured as the new chord.
         dispatchPanelKey("g");
 
-        expect(useRoundStore.getState().keymapOverrides["move.down"]).toBe("g");
-        expect(screen.getByTestId("chord-move.down").textContent).toBe("g");
+        expect(useFlowStore.getState().keymapOverrides["sheet.next"]).toBe("g");
+        expect(screen.getByTestId("chord-sheet.next").textContent).toBe("g");
     });
 
     it("records a chord with modifiers", async () => {
@@ -98,10 +98,10 @@ describe("SettingsPanel", () => {
         renderSettingsPanel();
         await gotoKeyboard(user);
 
-        await user.click(screen.getByTestId("record-move.up"));
+        await user.click(screen.getByTestId("record-sheet.prev"));
         dispatchPanelKey("k", { metaKey: true });
 
-        expect(useRoundStore.getState().keymapOverrides["move.up"]).toBe("Meta+k");
+        expect(useFlowStore.getState().keymapOverrides["sheet.prev"]).toBe("Meta+k");
     });
 
     it("ignores lone modifier keys while recording", async () => {
@@ -109,39 +109,39 @@ describe("SettingsPanel", () => {
         renderSettingsPanel();
         await gotoKeyboard(user);
 
-        await user.click(screen.getByTestId("record-move.down"));
+        await user.click(screen.getByTestId("record-sheet.next"));
         dispatchPanelKey("Shift", { shiftKey: true });
 
         // Still recording, no override saved yet.
-        expect(useRoundStore.getState().keymapOverrides["move.down"]).toBeUndefined();
-        expect(screen.getByTestId("record-move.down").textContent).toBe("Cancel");
+        expect(useFlowStore.getState().keymapOverrides["sheet.next"]).toBeUndefined();
+        expect(screen.getByTestId("record-sheet.next").textContent).toBe("Cancel");
     });
 
     it("Reset clears an override back to the preset binding", async () => {
         const user = userEvent.setup();
-        useRoundStore.getState().setKeymapOverride("move.down", "g");
+        useFlowStore.getState().setKeymapOverride("sheet.next", "g");
         renderSettingsPanel();
         await gotoKeyboard(user);
 
-        expect(screen.getByTestId("chord-move.down").textContent).toBe("g");
-        await user.click(screen.getByTestId("reset-move.down"));
+        expect(screen.getByTestId("chord-sheet.next").textContent).toBe("g");
+        await user.click(screen.getByTestId("reset-sheet.next"));
 
-        expect(useRoundStore.getState().keymapOverrides["move.down"]).toBeUndefined();
-        expect(screen.getByTestId("chord-move.down").textContent).toBe("ArrowDown");
+        expect(useFlowStore.getState().keymapOverrides["sheet.next"]).toBeUndefined();
+        expect(screen.getByTestId("chord-sheet.next").textContent).toBe("]");
     });
 
     it("shows shortcuts only in the Keyboard pane", async () => {
         const user = userEvent.setup();
         renderSettingsPanel();
 
-        // Display is the default pane — no command rows.
-        expect(screen.queryByTestId("cmd-move.down")).toBeNull();
+        // Display is the default pane - no command rows.
+        expect(screen.queryByTestId("cmd-sheet.next")).toBeNull();
 
         await user.click(screen.getByTestId("settings-nav-keyboard"));
-        expect(screen.getByTestId("cmd-move.down")).toBeTruthy();
+        expect(screen.getByTestId("cmd-sheet.next")).toBeTruthy();
 
         await user.click(screen.getByTestId("settings-nav-display"));
-        expect(screen.queryByTestId("cmd-move.down")).toBeNull();
+        expect(screen.queryByTestId("cmd-sheet.next")).toBeNull();
     });
 
     it("filters the command list by label", async () => {
@@ -153,46 +153,27 @@ describe("SettingsPanel", () => {
 
         // "Undo" matches only the edit.undo command label.
         expect(screen.getByTestId("cmd-edit.undo")).toBeTruthy();
-        expect(screen.queryByTestId("cmd-move.down")).toBeNull();
+        expect(screen.queryByTestId("cmd-sheet.next")).toBeNull();
     });
 
     it("Escape closes the panel", () => {
         renderSettingsPanel();
         dispatchPanelKey("Escape");
-        expect(useRoundStore.getState().settingsOpen).toBe(false);
+        expect(useFlowStore.getState().settingsOpen).toBe(false);
     });
 
     it("close button closes the panel", async () => {
         const user = userEvent.setup();
         renderSettingsPanel();
         await user.click(screen.getByTestId("settings-close"));
-        expect(useRoundStore.getState().settingsOpen).toBe(false);
-    });
-
-    it("toggles autoNumber via the display switch", async () => {
-        useRoundStore.getState().setSettingsOpen(true);
-        renderSettingsPanel();
-        const sw = screen.getByTestId("toggle-autoNumber");
-        await userEvent.click(sw);
-        expect(useRoundStore.getState().autoNumber).toBe(false);
-        // Reset so other tests aren't affected
-        useRoundStore.getState().setAutoNumber(true);
-    });
-
-    it("toggles labelDrops via the display switch", async () => {
-        useRoundStore.getState().setSettingsOpen(true);
-        renderSettingsPanel();
-        const sw = screen.getByTestId("toggle-labelDrops");
-        await userEvent.click(sw);
-        expect(useRoundStore.getState().labelDrops).toBe(false);
-        useRoundStore.getState().setLabelDrops(true);
+        expect(useFlowStore.getState().settingsOpen).toBe(false);
     });
 
     describe("flow font picker", () => {
         it("renders a radio for each curated font with the current one checked", async () => {
-            useRoundStore.getState().setFlowFont("commit-mono");
+            useFlowStore.getState().setFlowFont("commit-mono");
             renderSettingsPanel();
-            // Display is the default pane — no nav click needed.
+            // Display is the default pane - no nav click needed.
 
             for (const f of FONTS) {
                 expect(screen.getByTestId(`flow-font-${f.id}`)).toBeInTheDocument();
@@ -201,17 +182,17 @@ describe("SettingsPanel", () => {
         });
 
         it("calls setFlowFont when a different font is chosen", async () => {
-            useRoundStore.getState().setFlowFont("commit-mono");
+            useFlowStore.getState().setFlowFont("commit-mono");
             renderSettingsPanel();
             await userEvent.click(screen.getByTestId("flow-font-plex-sans"));
-            expect(useRoundStore.getState().flowFont).toBe("plex-sans");
+            expect(useFlowStore.getState().flowFont).toBe("plex-sans");
         });
 
         it("resets to the default font", async () => {
-            useRoundStore.getState().setFlowFont("plex-sans");
+            useFlowStore.getState().setFlowFont("plex-sans");
             renderSettingsPanel();
             await userEvent.click(screen.getByTestId("flow-font-reset"));
-            expect(useRoundStore.getState().flowFont).toBe("plex-sans");
+            expect(useFlowStore.getState().flowFont).toBe("plex-sans");
         });
     });
 
@@ -220,18 +201,18 @@ describe("SettingsPanel", () => {
         renderSettingsPanel();
         await gotoKeyboard(user);
 
-        await user.click(screen.getByTestId("record-move.down"));
+        await user.click(screen.getByTestId("record-sheet.next"));
         dispatchPanelKey("g");
 
         // Persisted to localStorage.
         const raw = window.localStorage.getItem(KEY);
         expect(raw).toBeTruthy();
         const parsed = JSON.parse(raw!);
-        expect(parsed.keymapOverrides["move.down"]).toBe("g");
+        expect(parsed.keymapOverrides["sheet.next"]).toBe("g");
 
-        // effectiveKeymap reflects the override: "g" → move.down, ArrowDown removed.
+        // effectiveKeymap reflects the override: "g" fires sheet.next, "]" removed.
         const keymap = effectiveKeymap(parsed.keymapOverrides);
-        expect(keymap.bindings["g"]).toBe("move.down");
-        expect(keymap.bindings["ArrowDown"]).toBeUndefined();
+        expect(keymap.bindings["g"]).toBe("sheet.next");
+        expect(keymap.bindings["]"]).toBeUndefined();
     });
 });

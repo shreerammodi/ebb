@@ -7,11 +7,10 @@ const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { emptyScouting } from "@/lib/model/normalize";
-import type { Round } from "@/lib/model/types";
-import { persistRound, softDeleteRound } from "@/lib/persistence/autosave";
-import { db } from "@/lib/persistence/db";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { emptyScouting, makeFlowRound, type FlowRound } from "@/lib/model/flow";
+import { flowDb } from "@/lib/persistence/flowDb";
+import { persistFlow } from "@/lib/persistence/flowPersistence";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import Dashboard from "./Dashboard";
 
@@ -23,26 +22,17 @@ function renderDashboard() {
     );
 }
 
-function mk(id: string, over: Partial<Round> = {}): Round {
+function mk(id: string, over: Partial<FlowRound> = {}): FlowRound {
     return {
+        ...makeFlowRound("aff"),
         id,
         createdAt: 1,
         updatedAt: 1,
-        role: "aff",
-        format: {
-            id: "f",
-            name: "Policy",
-            speeches: [],
-            prepSeconds: { aff: 240, neg: 240 },
-        },
         scouting: {
             ...emptyScouting(),
             affSchool: id === "a" ? "Westwood" : "Mission",
             tournament: "Berkeley",
         },
-        sheets: [],
-        nodes: [],
-        groups: [],
         ...over,
     };
 }
@@ -59,25 +49,23 @@ afterEach(() => {
 });
 
 beforeEach(async () => {
-    await db.rounds.clear();
-    await db.searchIndex.clear();
+    await flowDb.flows.clear();
     push.mockReset();
     localStorage.clear();
-    useRoundStore.getState().setGuideOpen(false);
-    useRoundStore.getState().setSettingsOpen(false);
+    useFlowStore.getState().setSettingsOpen(false);
 });
 
 describe("Dashboard", () => {
     it("lists live flows and excludes trashed", async () => {
-        await persistRound(mk("a", { updatedAt: 5 }));
-        await persistRound(mk("b", { updatedAt: 2, deletedAt: 1 }));
+        await persistFlow(mk("a", { updatedAt: 5 }));
+        await persistFlow(mk("b", { updatedAt: 2, deletedAt: 1 }));
         renderDashboard();
         await waitFor(() => expect(screen.getByText("Westwood")).toBeInTheDocument());
         expect(screen.queryByText("Mission")).not.toBeInTheDocument();
     });
 
     it("navigates to the editor on card click", async () => {
-        await persistRound(mk("a"));
+        await persistFlow(mk("a"));
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
         await userEvent.click(screen.getByTestId("flow-card-a"));
@@ -90,54 +78,65 @@ describe("Dashboard", () => {
     });
 
     it("opens settings from the gear", async () => {
-        await persistRound(mk("a"));
+        await persistFlow(mk("a"));
         renderDashboard();
         await waitFor(() => screen.getByTestId("dashboard-settings"));
         await userEvent.click(screen.getByTestId("dashboard-settings"));
         expect(await screen.findByTestId("settings-panel")).toBeInTheDocument();
+    });
+
+    it("filters by scouting fields from the search box", async () => {
+        await persistFlow(mk("a"));
+        await persistFlow(
+            mk("b", { scouting: { ...emptyScouting(), affSchool: "Mission", tournament: "TOC" } }),
+        );
+        renderDashboard();
+        await waitFor(() => screen.getByTestId("flow-card-a"));
+        await userEvent.type(screen.getByTestId("dashboard-search"), "toc");
+        await waitFor(() => expect(screen.queryByTestId("flow-card-a")).not.toBeInTheDocument());
+        expect(screen.getByTestId("flow-card-b")).toBeInTheDocument();
     });
 });
 
 describe("Dashboard first-run", () => {
     beforeEach(() => {
         localStorage.clear();
-        useRoundStore.getState().setGuideOpen(false);
-    });
-
-    it("does not auto-open the guide; it shows the teaching empty state instead", async () => {
-        renderDashboard();
-        await waitFor(() => expect(screen.getByTestId("dashboard-empty")).toBeInTheDocument());
-        expect(useRoundStore.getState().guideOpen).toBe(false);
     });
 
     it("creates an Aff flow and navigates from the empty state", async () => {
         renderDashboard();
         await waitFor(() => screen.getByTestId("empty-start-aff"));
         await userEvent.click(screen.getByTestId("empty-start-aff"));
-        expect(push).toHaveBeenCalledWith(expect.stringMatching(/^\/flow\?id=/));
-        expect(useRoundStore.getState().round?.role).toBe("aff");
+        await waitFor(() =>
+            expect(push).toHaveBeenCalledWith(expect.stringMatching(/^\/flow\?id=/)),
+        );
+        const rounds = await flowDb.flows.toArray();
+        expect(rounds).toHaveLength(1);
+        expect(rounds[0].role).toBe("aff");
+        expect(rounds[0].sheets.some((s) => s.kind === "cx")).toBe(true);
     });
 
     it("creates a Neg flow from the empty state", async () => {
         renderDashboard();
         await waitFor(() => screen.getByTestId("empty-start-neg"));
         await userEvent.click(screen.getByTestId("empty-start-neg"));
-        expect(push).toHaveBeenCalledWith(expect.stringMatching(/^\/flow\?id=/));
-        expect(useRoundStore.getState().round?.role).toBe("neg");
+        await waitFor(() =>
+            expect(push).toHaveBeenCalledWith(expect.stringMatching(/^\/flow\?id=/)),
+        );
+        const rounds = await flowDb.flows.toArray();
+        expect(rounds[0].role).toBe("neg");
     });
 
-    it("opens the guide on demand from the empty-state link", async () => {
+    it("shows the guide-coming-back note instead of a guide dialog", async () => {
         renderDashboard();
-        await waitFor(() => screen.getByTestId("empty-open-guide"));
-        await userEvent.click(screen.getByTestId("empty-open-guide"));
-        expect(useRoundStore.getState().guideOpen).toBe(true);
+        await waitFor(() => expect(screen.getByTestId("dashboard-empty")).toBeInTheDocument());
+        expect(screen.getByTestId("empty-guide-note")).toBeInTheDocument();
     });
 
-    it("opens the guide from the Guide button", async () => {
-        await persistRound(mk("a"));
+    it("keeps the header Guide button disabled", async () => {
+        await persistFlow(mk("a"));
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
-        await userEvent.click(screen.getByTestId("dashboard-guide"));
-        expect(useRoundStore.getState().guideOpen).toBe(true);
+        expect(screen.getByTestId("dashboard-guide")).toBeDisabled();
     });
 });

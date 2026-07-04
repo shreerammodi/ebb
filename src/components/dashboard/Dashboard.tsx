@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
-import GuideDialog from "@/components/guide/GuideDialog";
 import SettingsPanel from "@/components/settings/SettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { filterFlows } from "@/lib/dashboard/filter";
 import { sortSummaries, groupByTournament, type SortKey } from "@/lib/dashboard/organize";
-import { keyHintFor } from "@/lib/keymap/displayChord";
-import { listRounds, type RoundSummary } from "@/lib/persistence/autosave";
-import { loadSearchIndex, backfillSearchIndex } from "@/lib/persistence/searchIndex";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { listFlows, type RoundSummary } from "@/lib/persistence/flowPersistence";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import FlowCard from "./FlowCard";
 import FlowCardMenu from "./FlowCardMenu";
@@ -30,7 +27,6 @@ import { useCreateFlow } from "./useCreateFlow";
 export default function Dashboard() {
     const router = useRouter();
     const [summaries, setSummaries] = useState<RoundSummary[] | null>(null);
-    const [index, setIndex] = useState<Map<string, string>>(new Map());
     const [query, setQuery] = useState("");
     const [sort, setSort] = useState<SortKey>("updated");
     const [grouped, setGrouped] = useState(false);
@@ -39,10 +35,7 @@ export default function Dashboard() {
     const createFlow = useCreateFlow();
 
     const refresh = useCallback(async () => {
-        await backfillSearchIndex();
-        const [list, idx] = await Promise.all([listRounds(), loadSearchIndex()]);
-        setSummaries(list);
-        setIndex(idx);
+        setSummaries(await listFlows());
     }, []);
 
     useEffect(() => {
@@ -51,10 +44,7 @@ export default function Dashboard() {
 
     const open = useCallback((id: string) => router.push(`/flow?id=${id}`), [router]);
 
-    const matches = useMemo(
-        () => filterFlows(summaries ?? [], index, query),
-        [summaries, index, query],
-    );
+    const matches = useMemo(() => filterFlows(summaries ?? [], query), [summaries, query]);
     const sorted = useMemo(() => {
         if (query.trim()) return matches;
         const order = sortSummaries(
@@ -115,7 +105,7 @@ export default function Dashboard() {
                     size="sm"
                     aria-label="Settings"
                     data-testid="dashboard-settings"
-                    onClick={() => useRoundStore.getState().setSettingsOpen(true)}
+                    onClick={() => useFlowStore.getState().setSettingsOpen(true)}
                 >
                     <Gear weight="bold" className="size-4" />
                 </Button>
@@ -124,7 +114,8 @@ export default function Dashboard() {
                     size="sm"
                     aria-label="Guide"
                     data-testid="dashboard-guide"
-                    onClick={() => useRoundStore.getState().setGuideOpen(true)}
+                    disabled
+                    title="Guide is coming back soon"
                 >
                     Guide
                 </Button>
@@ -185,21 +176,17 @@ export default function Dashboard() {
                             <span className="inline-flex items-center gap-1.5">
                                 <Kbd>type</Kbd> to flow an argument
                             </span>
-                            {keyHintFor("node.response") && (
-                                <span className="inline-flex items-center gap-1.5">
-                                    <Kbd>{keyHintFor("node.response")}</Kbd> to answer
-                                </span>
-                            )}
+                            <span className="inline-flex items-center gap-1.5">
+                                <Kbd>Enter</Kbd> to commit
+                            </span>
                         </div>
 
-                        <button
-                            type="button"
-                            data-testid="empty-open-guide"
-                            onClick={() => useRoundStore.getState().setGuideOpen(true)}
-                            className="text-muted-foreground hover:text-foreground text-[12.5px] underline-offset-2 outline-none hover:underline focus-visible:underline"
+                        <p
+                            className="text-muted-foreground text-[12.5px]"
+                            data-testid="empty-guide-note"
                         >
-                            New to Ebb? Read the guide
-                        </button>
+                            The guide is coming back soon.
+                        </p>
                     </div>
                 ) : (
                     <>
@@ -262,7 +249,6 @@ export default function Dashboard() {
                                         key={m.summary.id}
                                         summary={m.summary}
                                         onOpen={open}
-                                        snippet={m.snippet}
                                         menu={
                                             <FlowCardMenu
                                                 id={m.summary.id}
@@ -279,7 +265,6 @@ export default function Dashboard() {
             </div>
 
             <SettingsPanel />
-            <GuideDialog />
             <FlowDetailDrawer id={detailId} onClose={() => setDetailId(null)} onChanged={refresh} />
         </div>
     );
