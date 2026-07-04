@@ -52,7 +52,7 @@ const MAX_RESULTS = 50;
 const uf = new uFuzzy();
 
 /** Expand uFuzzy's flat [start, end, ...] match ranges into character indices. */
-function rangesToPositions(ranges: number[]): number[] {
+export function rangesToPositions(ranges: number[]): number[] {
     const positions: number[] = [];
     for (let i = 0; i < ranges.length; i += 2) {
         for (let p = ranges[i]; p < ranges[i + 1]; p++) positions.push(p);

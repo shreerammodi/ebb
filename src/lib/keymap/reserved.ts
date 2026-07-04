@@ -21,8 +21,8 @@ const RESERVED_KEYS = [
     "a", // new aff
     "n", // new neg
     "r", // rename
-    "k", // quick switch
-    "p", // command palette (also suppresses browser print)
+    "p", // search palette (also suppresses browser print)
+    "P", // command palette (Shift encoded in uppercase key)
     // -- Edit ----------------------------------------------------------------
     "z", // undo (Ctrl+z / Meta+z)
     // -- Format ----------------------------------------------------------------

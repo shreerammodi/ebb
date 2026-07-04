@@ -3,17 +3,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { searchCells, type CellHit } from "@/lib/search/cellSearch";
+import { executeCommand } from "@/lib/commands/commands";
+import { keyHintFor } from "@/lib/keymap/displayChord";
+import { searchCells } from "@/lib/search/cellSearch";
+import { searchCommands } from "@/lib/search/commandSearch";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
-/** Fuzzy search over every filled cell in the flow; Enter jumps the grid cursor there. */
+/**
+ * The command/search palette, VSCode-style: fuzzy-search every filled cell in
+ * the flow, or prefix the query with ">" to fuzzy-search commands instead.
+ * Enter jumps the grid cursor to a cell, or runs the selected command.
+ */
 export default function SearchPalette() {
     const open = useFlowStore((s) => s.quickSwitcherOpen);
     if (!open) return null;
     return <SearchPaletteInner />;
 }
 
-/** Bolds the fuzzy-matched characters within a cell's text. */
+/** Bolds the fuzzy-matched characters within a row's text. */
 function Highlighted({ text, positions }: { text: string; positions: number[] }) {
     if (positions.length === 0) return <>{text}</>;
     const hit = new Set(positions);
@@ -32,28 +39,69 @@ function Highlighted({ text, positions }: { text: string; positions: number[] })
     );
 }
 
+/** A palette row, unified across the cell and command modes. */
+type Row =
+    | {
+          kind: "cell";
+          id: string;
+          text: string;
+          positions: number[];
+          meta: string;
+          run: () => void;
+      }
+    | {
+          kind: "command";
+          id: string;
+          text: string;
+          positions: number[];
+          hint: string | null;
+          run: () => void;
+      };
+
 function SearchPaletteInner() {
     const open = useFlowStore((s) => s.quickSwitcherOpen);
+    const seed = useFlowStore((s) => s.paletteSeed);
     const round = useFlowStore((s) => s.round);
     const revealCell = useFlowStore((s) => s.revealCell);
     const setOpen = useFlowStore((s) => s.setQuickSwitcherOpen);
 
-    const [query, setQuery] = useState("");
+    const [query, setQuery] = useState(seed);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (open) {
-            setQuery("");
-            setSelectedIndex(0);
-            inputRef.current?.focus();
-        }
-    }, [open]);
+        if (!open) return;
+        setQuery(seed);
+        setSelectedIndex(0);
+        const el = inputRef.current;
+        el?.focus();
+        // Drop the caret past the ">" seed so typing continues the command query.
+        el?.setSelectionRange(seed.length, seed.length);
+    }, [open, seed]);
 
-    const rows = useMemo<CellHit[]>(() => {
+    const isCommandMode = query.startsWith(">");
+
+    const rows = useMemo<Row[]>(() => {
+        if (isCommandMode) {
+            return searchCommands(query.slice(1)).map((c) => ({
+                kind: "command",
+                id: c.id,
+                text: c.label,
+                positions: c.positions,
+                hint: keyHintFor(c.id),
+                run: () => executeCommand(c.id),
+            }));
+        }
         if (!round) return [];
-        return searchCells(round, query);
-    }, [round, query]);
+        return searchCells(round, query).map((hit) => ({
+            kind: "cell",
+            id: `${hit.sheetId}-${hit.row}-${hit.col}`,
+            text: hit.text,
+            positions: hit.positions,
+            meta: hit.colName ? `${hit.sheetTitle} ${hit.colName}` : hit.sheetTitle,
+            run: () => revealCell(hit.sheetId, hit.row, hit.col),
+        }));
+    }, [isCommandMode, query, round, revealCell]);
 
     useEffect(() => {
         setSelectedIndex(0);
@@ -62,13 +110,15 @@ function SearchPaletteInner() {
     // Keep the highlighted row visible when arrowing past the viewport edge.
     useEffect(() => {
         if (!open) return;
-        document.getElementById(`sp-cell-${selectedIndex}`)?.scrollIntoView?.({ block: "nearest" });
+        document.getElementById(`sp-row-${selectedIndex}`)?.scrollIntoView?.({ block: "nearest" });
     }, [open, selectedIndex, rows]);
 
     if (!open) return null;
 
-    function select(hit: CellHit) {
-        revealCell(hit.sheetId, hit.row, hit.col);
+    function select(row: Row) {
+        // Run first, then close: a self-listed command (e.g. "Command palette")
+        // reopens the palette, and closing afterwards leaves it dismissed.
+        row.run();
         setOpen(false);
     }
 
@@ -99,7 +149,8 @@ function SearchPaletteInner() {
         }
     }
 
-    const activeId = rows[selectedIndex] ? `sp-cell-${selectedIndex}` : undefined;
+    const activeId = rows[selectedIndex] ? `sp-row-${selectedIndex}` : undefined;
+    const label = isCommandMode ? "Run command" : "Search cells";
 
     return (
         <Dialog
@@ -113,21 +164,23 @@ function SearchPaletteInner() {
                 top-anchored and chromeless to keep the command-palette feel. */}
             <DialogContent
                 showCloseButton={false}
-                aria-label="Search cells"
+                aria-label={label}
                 data-testid="search-palette"
                 onKeyDown={onKeyDown}
                 className="top-[12vh] w-full max-w-[520px] translate-y-0 gap-0 overflow-hidden p-0"
             >
-                <DialogTitle className="sr-only">Search cells</DialogTitle>
+                <DialogTitle className="sr-only">{label}</DialogTitle>
                 <input
                     ref={inputRef}
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search cells..."
+                    placeholder={
+                        isCommandMode ? "Run a command…" : "Search cells, or > for commands…"
+                    }
                     className="border-border bg-card text-foreground box-border w-full border-b px-3.5 py-3 text-[14px] focus:outline-none"
                     data-testid="search-palette-input"
-                    aria-label="Search cells"
+                    aria-label={label}
                     role="combobox"
                     aria-expanded
                     aria-controls="search-palette-list"
@@ -141,18 +194,15 @@ function SearchPaletteInner() {
                 >
                     {rows.length === 0 ? (
                         <div className="text-muted-foreground px-2.5 py-2 text-[13px]">
-                            No results
+                            {isCommandMode ? "No commands" : "No results"}
                         </div>
                     ) : (
                         <ul className="m-0 list-none p-0">
-                            {rows.map((hit, i) => (
-                                <li
-                                    key={`${hit.sheetId}-${hit.row}-${hit.col}`}
-                                    role="presentation"
-                                >
+                            {rows.map((row, i) => (
+                                <li key={row.id} role="presentation">
                                     <button
                                         type="button"
-                                        id={`sp-cell-${i}`}
+                                        id={`sp-row-${i}`}
                                         role="option"
                                         aria-selected={i === selectedIndex}
                                         className={`text-muted-foreground block w-full cursor-pointer rounded-md border-none px-2.5 py-2 text-left text-[13px] ${
@@ -160,21 +210,36 @@ function SearchPaletteInner() {
                                                 ? "bg-accent"
                                                 : "hover:bg-accent/50 bg-transparent"
                                         }`}
-                                        onClick={() => select(hit)}
-                                        data-testid={`sp-cell-${i}`}
+                                        onClick={() => select(row)}
+                                        data-testid={`sp-row-${i}`}
                                     >
-                                        <span className="text-foreground line-clamp-2 block">
-                                            <Highlighted
-                                                text={hit.text}
-                                                positions={hit.positions}
-                                            />
-                                        </span>
-                                        <span className="mt-0.5 block text-[11px]">
-                                            {hit.sheetTitle}
-                                            {hit.colName ? (
-                                                <span className="opacity-70"> {hit.colName}</span>
-                                            ) : null}
-                                        </span>
+                                        {row.kind === "command" ? (
+                                            <span className="flex items-center justify-between gap-3">
+                                                <span className="text-foreground truncate">
+                                                    <Highlighted
+                                                        text={row.text}
+                                                        positions={row.positions}
+                                                    />
+                                                </span>
+                                                {row.hint && (
+                                                    <kbd className="shrink-0 text-[11px]">
+                                                        {row.hint}
+                                                    </kbd>
+                                                )}
+                                            </span>
+                                        ) : (
+                                            <>
+                                                <span className="text-foreground line-clamp-2 block">
+                                                    <Highlighted
+                                                        text={row.text}
+                                                        positions={row.positions}
+                                                    />
+                                                </span>
+                                                <span className="mt-0.5 block text-[11px] opacity-70">
+                                                    {row.meta}
+                                                </span>
+                                            </>
+                                        )}
                                     </button>
                                 </li>
                             ))}

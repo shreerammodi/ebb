@@ -17,6 +17,7 @@ function resetStore() {
         activeSheetId: null,
         revealTarget: null,
         quickSwitcherOpen: false,
+        paletteSeed: "",
         settingsOpen: false,
     });
 }
@@ -72,8 +73,37 @@ describe("SearchPalette", () => {
     it("jumps to a cell on click", async () => {
         setupRound();
         render(<SearchPalette />);
-        await userEvent.click(screen.getByTestId("sp-cell-0"));
+        await userEvent.click(screen.getByTestId("sp-row-0"));
         expect(useFlowStore.getState().revealTarget).toEqual({ row: 0, col: 0 });
+    });
+
+    it("switches to command mode when the query starts with >", async () => {
+        setupRound();
+        render(<SearchPalette />);
+        await userEvent.type(screen.getByTestId("search-palette-input"), ">undo");
+        // The label is split across per-char highlight spans, so match on the row.
+        expect(screen.getByTestId("sp-row-0")).toHaveTextContent("Undo");
+        // No cells listed in command mode.
+        expect(screen.queryByText("perm do both")).not.toBeInTheDocument();
+    });
+
+    it("opens directly in command mode when seeded with >", () => {
+        setupRound();
+        useFlowStore.getState().setQuickSwitcherOpen(true, ">");
+        render(<SearchPalette />);
+        expect(screen.getByTestId("search-palette-input")).toHaveValue(">");
+        // Empty command query lists commands in registry order; Undo is first.
+        expect(screen.getByTestId("sp-row-0")).toHaveTextContent("Undo");
+    });
+
+    it("runs the selected command on Enter and closes", async () => {
+        setupRound();
+        useFlowStore.getState().setQuickSwitcherOpen(true, ">");
+        render(<SearchPalette />);
+        await userEvent.type(screen.getByTestId("search-palette-input"), "settings");
+        await userEvent.keyboard("{Enter}");
+        expect(useFlowStore.getState().settingsOpen).toBe(true);
+        expect(useFlowStore.getState().quickSwitcherOpen).toBe(false);
     });
 
     it("closes on Escape without jumping", async () => {

@@ -40,8 +40,10 @@ export interface FlowState {
     flowFont: FontId;
     /** Desktop auto-update behavior (opt-in, Tournament Mode). */
     updateConfig: UpdateConfig;
+    /** The unified command/search palette. */
     quickSwitcherOpen: boolean;
-    commandPaletteOpen: boolean;
+    /** Initial query the palette opens with; ">" seeds command mode. */
+    paletteSeed: string;
     settingsOpen: boolean;
     cheatsheetOpen: boolean;
     infoOpen: boolean;
@@ -72,8 +74,8 @@ export interface FlowActions {
     setFlowFont(id: FontId): void;
     /** Merges a partial update config, persisting the result. */
     setUpdateConfig(patch: Partial<UpdateConfig>): void;
-    setQuickSwitcherOpen(open: boolean): void;
-    setCommandPaletteOpen(open: boolean): void;
+    /** Opens/closes the palette; `seed` sets the initial query (">" = command mode). */
+    setQuickSwitcherOpen(open: boolean, seed?: string): void;
     setSettingsOpen(open: boolean): void;
     setCheatsheetOpen(open: boolean): void;
     setInfoOpen(open: boolean): void;
@@ -156,7 +158,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     flowFont: initialDisplaySettings.flowFont,
     updateConfig: loadUpdateConfig(),
     quickSwitcherOpen: false,
-    commandPaletteOpen: false,
+    paletteSeed: "",
     settingsOpen: false,
     cheatsheetOpen: false,
     infoOpen: false,
@@ -169,7 +171,6 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             activeSheetId:
                 opts?.activeSheetId !== undefined ? opts.activeSheetId : firstFlowSheetId(round),
             quickSwitcherOpen: false,
-            commandPaletteOpen: false,
             renamingSheetId: null,
         });
     },
@@ -299,11 +300,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         set({ updateConfig });
     },
 
-    setQuickSwitcherOpen(open) {
-        set({ quickSwitcherOpen: open });
-    },
-    setCommandPaletteOpen(open) {
-        set({ commandPaletteOpen: open });
+    setQuickSwitcherOpen(open, seed = "") {
+        set({ quickSwitcherOpen: open, paletteSeed: open ? seed : "" });
     },
     setSettingsOpen(open) {
         set({ settingsOpen: open });

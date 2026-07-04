@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 
-import CommandPalette from "@/components/palette/CommandPalette";
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
 import SearchPalette from "@/components/palette/SearchPalette";
 import SettingsPanel from "@/components/settings/SettingsPanel";
@@ -50,7 +49,6 @@ export default function Workspace() {
                     </main>
                 </div>
                 <SearchPalette />
-                <CommandPalette />
                 <SettingsPanel />
                 <InfoPanel />
                 <KeybindingsCheatsheet />

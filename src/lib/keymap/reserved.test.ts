@@ -69,11 +69,18 @@ describe("reservedChords", () => {
         expect(chords.has("Meta+,")).toBe(true);
     });
 
-    it("reserves the platform modifier+p (command palette / browser print)", () => {
+    it("reserves the platform modifier+p (search palette / browser print)", () => {
         setPlatform("MacIntel");
         expect(reservedChords().has("Meta+p")).toBe(true);
         setPlatform("Win32");
         expect(reservedChords().has("Ctrl+p")).toBe(true);
+    });
+
+    it("reserves the platform modifier+Shift+p (command palette)", () => {
+        setPlatform("MacIntel");
+        expect(reservedChords().has("Meta+P")).toBe(true);
+        setPlatform("Win32");
+        expect(reservedChords().has("Ctrl+P")).toBe(true);
     });
 
     it("reserves the platform modifier+Shift+H (toggle highlight)", () => {

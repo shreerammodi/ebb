@@ -19,7 +19,7 @@ beforeEach(() => {
         round: null,
         activeSheetId: null,
         quickSwitcherOpen: false,
-        commandPaletteOpen: false,
+        paletteSeed: "",
         settingsOpen: false,
         cheatsheetOpen: false,
         infoOpen: false,
@@ -82,7 +82,8 @@ describe("UI commands", () => {
         executeCommand("help.open");
         executeCommand("sidebar.toggle");
         const s = useFlowStore.getState();
-        expect(s.commandPaletteOpen).toBe(true);
+        expect(s.quickSwitcherOpen).toBe(true);
+        expect(s.paletteSeed).toBe(">");
         expect(s.settingsOpen).toBe(true);
         expect(s.infoOpen).toBe(true);
         expect(s.cheatsheetOpen).toBe(true);

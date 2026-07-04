@@ -32,8 +32,12 @@ it("binds row delete to the platform modifier+Backspace", () => {
     expect(FLAT_KEYMAP.bindings[`${mod}+Backspace`]).toBe("row.delete");
 });
 
-it("binds the platform modifier+p to palette.open and 1-9 to sheet jumps", () => {
-    expect(FLAT_KEYMAP.bindings[`${mod}+p`]).toBe("palette.open");
+it("binds modifier+p to the search palette, modifier+Shift+p to command mode", () => {
+    expect(FLAT_KEYMAP.bindings[`${mod}+p`]).toBe("sheet.quickSwitch");
+    expect(FLAT_KEYMAP.bindings[`${mod}+P`]).toBe("palette.open");
+});
+
+it("binds the platform modifier 1-9 to sheet jumps", () => {
     expect(FLAT_KEYMAP.bindings[`${mod}+1`]).toBe("sheet.jump1");
     expect(FLAT_KEYMAP.bindings[`${mod}+9`]).toBe("sheet.jump9");
 });
