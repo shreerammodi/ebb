@@ -18,7 +18,7 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 
 registerAllModules();
 
-const MIN_ROWS = 40;
+const MIN_ROWS = 1000;
 const CONTEXT_MENU = ["row_above", "row_below", "remove_row"] as const;
 
 const ARROW_DELTAS: Record<string, { dr: number; dc: number }> = {
