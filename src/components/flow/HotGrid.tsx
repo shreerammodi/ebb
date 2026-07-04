@@ -165,12 +165,15 @@ export default memo(function HotGrid() {
         currentSheetIdRef.current = sheet.id;
 
         const cols = columnsForFlowSheet(sheet);
-        hot.updateSettings({
-            data: padGrid(sheet.data, cols.length, MIN_ROWS),
-            ...headerSettings(sheet, cols),
+        // Coalesce the data/header swap and the per-cell meta loop into one
+        // render instead of updateSettings' render plus an explicit one.
+        hot.batch(() => {
+            hot.updateSettings({
+                data: padGrid(sheet.data, cols.length, MIN_ROWS),
+                ...headerSettings(sheet, cols),
+            });
+            applyMeta(hot, sheet.meta);
         });
-        applyMeta(hot, sheet.meta);
-        hot.render();
         const v = viewCache.current.get(sheet.id) ?? { row: 0, col: 0 };
         hot.selectCell(v.row, v.col);
     }, [activeSheetId]);
@@ -224,6 +227,7 @@ export default memo(function HotGrid() {
                 colWidths={280}
                 wordWrap={true}
                 autoRowSize={true}
+                autoColumnSize={false}
                 height="100%"
                 minSpareRows={1}
                 undo={true}
