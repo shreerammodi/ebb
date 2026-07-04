@@ -1,7 +1,8 @@
 /**
- * Generates every app icon from the brand mark: the lowercase "e" plus the
- * violet block caret, matching the wordmark in src/components/brand/Logo.tsx.
- * Geometry constants below are shared with that file; change them together.
+ * Generates every app icon from the brand mark: the lowercase "e" alone,
+ * matching the Monogram in src/components/brand/Logo.tsx (the caret appears
+ * only in the wordmark). Geometry constants below are shared with that file;
+ * change them together.
  *
  * Outputs:
  *   src/app/icon.svg            favicon (dark tile, dark-theme violet marks)
@@ -24,16 +25,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const E_PATH =
     "M632 -23Q463 -23 341.5 48Q220 119 154.5 248Q89 377 89 552Q89 725 153.5 855Q218 985 336.5 1058.5Q455 1132 615 1132Q717 1132 809.5 1099Q902 1066 973.5 997Q1045 928 1085.5 821.5Q1126 715 1126 568L1126 486L212 486L212 663L997 663L875 611Q875 705 846 776.5Q817 848 759.5 888Q702 928 616 928Q530 928 470 887.5Q410 847 378.5 779.5Q347 712 347 629L347 507Q347 401 383 328Q419 255 484 218Q549 181 635 181Q692 181 738.5 197.5Q785 214 819 246.5Q853 279 870 326L1109 277Q1082 187 1017 119.5Q952 52 854.5 14.5Q757 -23 632 -23Z";
 
-// Glyph extents and caret geometry in font units (y-up), from Logo.tsx.
+// Glyph extents in font units (y-up), from Logo.tsx.
 const E_LEFT = 89;
 const E_RIGHT = 1126;
 const E_TOP = 1132;
 const E_BOTTOM = -23;
-const GAP = 400;
-const CARET_W = 560;
-const CARET_RX = 48;
 
-const MARK_W = E_RIGHT - E_LEFT + GAP + CARET_W;
+const MARK_W = E_RIGHT - E_LEFT;
 const MARK_H = E_TOP - E_BOTTOM;
 
 const r2 = (n) => Math.round(n * 100) / 100;
@@ -48,11 +46,9 @@ function tileSvg({ size, tileFill, tileRx, markFill, markFrac }) {
     const x0 = (size - MARK_W * s) / 2;
     const yTop = (size - MARK_H * s) / 2;
     const baseline = yTop + E_TOP * s;
-    const caretX = x0 + (E_RIGHT - E_LEFT + GAP) * s;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="ebb">
 <rect width="${size}" height="${size}" rx="${r2(tileRx)}" fill="${tileFill}"/>
 <path transform="translate(${r2(x0 - E_LEFT * s)} ${r2(baseline)}) scale(${r5(s)} ${r5(-s)})" fill="${markFill}" d="${E_PATH}"/>
-<rect x="${r2(caretX)}" y="${r2(yTop)}" width="${r2(CARET_W * s)}" height="${r2(MARK_H * s)}" rx="${r2(CARET_RX * s)}" fill="${markFill}"/>
 </svg>
 `;
 }
