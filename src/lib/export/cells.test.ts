@@ -1,84 +1,53 @@
 import { describe, it, expect } from "vitest";
 
-import { emptyScouting } from "@/lib/model/normalize";
-import type { Round } from "@/lib/model/types";
+import { makeCxFlowSheet, makeFlowRound } from "@/lib/model/flow";
 
 import { buildExportSheets } from "./cells";
-import { DEFAULT_EXPORT_OPTIONS } from "./options";
 
-function round(): Round {
-    return {
-        id: "r",
-        createdAt: 0,
-        updatedAt: 0,
-        role: "aff",
-        format: {
-            id: "f",
-            name: "Policy",
-            prepSeconds: { aff: 0, neg: 0 },
-            speeches: [
-                { id: "s0", name: "1AC", side: "aff", seconds: 0 },
-                { id: "s1", name: "1NC", side: "neg", seconds: 0 },
-            ],
-        },
-        scouting: emptyScouting(),
-        sheets: [{ id: "sh", title: "T", group: "aff", order: 0 }],
-        nodes: [
-            {
-                id: "p",
-                sheetId: "sh",
-                speechId: "s0",
-                parentId: null,
-                row: 0,
-                text: "Root",
-                statuses: [],
-                bold: false,
-                highlight: false,
-            },
-            {
-                id: "c",
-                sheetId: "sh",
-                speechId: "s1",
-                parentId: "p",
-                row: 0,
-                text: "Resp",
-                statuses: ["conceded"],
-                bold: false,
-                highlight: false,
-            },
-        ],
-        groups: [],
-    };
+function round() {
+    const r = makeFlowRound("aff");
+    const flow = r.sheets.find((s) => s.kind !== "cx")!;
+    flow.title = "T";
+    flow.data = [
+        ["arg one", null],
+        [null, "answer"],
+        ["", null],
+    ];
+    flow.meta = { "0,0": { bold: true } };
+    return r;
 }
 
 describe("buildExportSheets", () => {
-    it("produces placed cells with numbering prefix and decorations", () => {
-        const [es] = buildExportSheets(round(), DEFAULT_EXPORT_OPTIONS);
-        expect(es.sheet.title).toBe("T");
-        const root = es.cells.find((c) => c.col === 0)!;
-        expect(root.text).toBe("Root"); // roots are unnumbered
-        expect(root.speechName).toBe("1AC");
-        const resp = es.cells.find((c) => c.col === 1)!;
-        expect(resp.text).toBe("1. Resp"); // response numbered within siblings
-        expect(resp.crossed).toBe(true); // conceded -> crossed
-        expect(resp.row).toBe(0);
+    it("places non-empty cells with column names and decorations", () => {
+        const sheets = buildExportSheets(round());
+        const es = sheets.find((s) => s.sheet.title === "T")!;
+        expect(es.cells).toHaveLength(2);
+        const first = es.cells.find((c) => c.row === 0)!;
+        expect(first).toMatchObject({
+            col: 0,
+            speechName: "1AC",
+            text: "arg one",
+            bold: true,
+            crossed: false,
+            extended: false,
+        });
+        const second = es.cells.find((c) => c.row === 1)!;
+        expect(second).toMatchObject({ col: 1, speechName: "1NC", bold: false });
+        expect(es.rowCount).toBe(2);
     });
 
-    it("omits numbering when autoNumber is off", () => {
-        const [es] = buildExportSheets(round(), { autoNumber: false });
-        expect(es.cells.find((c) => c.text === "Root")).toBeTruthy(); // no "1. " prefix
+    it("includes the CX sheet with CX columns and sorts sheets by order", () => {
+        const sheets = buildExportSheets(round());
+        expect(sheets[0].sheet.kind).toBe("cx");
+        expect(sheets[0].columns[0].id).toBe("cx-1ac-q");
     });
 
-    it("applies numbering when autoNumber is on", () => {
-        const [es] = buildExportSheets(round(), { autoNumber: true });
-        expect(es.cells.some((c) => c.text.startsWith("1. "))).toBe(true);
-    });
-
-    it("carries nodeId, rowSpan and bold on cells", () => {
-        const [es] = buildExportSheets(round(), { autoNumber: true });
-        const root = es.cells.find((c) => c.nodeId === "p");
-        expect(root).toBeTruthy();
-        expect(typeof root!.rowSpan).toBe("number");
-        expect(root!.bold).toBe(false);
+    it("ignores cells beyond the visible column count", () => {
+        const r = makeFlowRound("aff");
+        const cx = r.sheets.find((s) => s.kind === "cx")!;
+        r.sheets = [{ ...makeCxFlowSheet(), id: cx.id }];
+        r.sheets[0].data = [Array.from({ length: 10 }, (_, i) => (i === 9 ? "spill" : null))];
+        const [es] = buildExportSheets(r);
+        expect(es.cells).toHaveLength(0);
     });
 });

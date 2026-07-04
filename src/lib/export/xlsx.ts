@@ -5,12 +5,11 @@
 
 import { unzipSync, zipSync, strToU8, strFromU8 } from "fflate";
 
-import type { Round } from "@/lib/model/types";
+import type { FlowRound } from "@/lib/model/flow";
 
 import { buildExportSheets } from "./cells";
 import { cxPeriods } from "./cx";
 import { isoDate, exportFilename, downloadBlob } from "./download";
-import type { ExportOptions } from "./options";
 import {
     buildFlowSheetXml,
     registerSheetsInRels,
@@ -87,11 +86,10 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
  *   Row 2: Column headers (Question/Response alternating A-H)
  *   Row 3+: Data rows
  *
- * CX data is stored as ArgumentNodes on the CX sheet. Question nodes have
- * speechId like 'cx-1ac-q'; response nodes are children (parentId = question.id)
- * with speechId 'cx-1ac-r'. The 4 periods map to column pairs A/B, C/D, E/F, G/H.
+ * CX data comes from the CX sheet's grid via cxPeriods; the 4 periods map to
+ * column pairs A/B, C/D, E/F, G/H.
  */
-function patchCx(cxXml: string, round: Round): string {
+function patchCx(cxXml: string, round: FlowRound): string {
     // Excel-specific column + style mapping, keyed by CX period order.
     const CELLS = [
         { qCol: "A", rCol: "B", qStyle: 23, rStyle: 27 },
@@ -129,7 +127,7 @@ function patchCx(cxXml: string, round: Round): string {
     return out;
 }
 
-function patchInfo(infoXml: string, round: Round): string {
+function patchInfo(infoXml: string, round: FlowRound): string {
     let xml = infoXml;
     const sc = round.scouting;
     const set = (ref: string, v?: string) => {
@@ -209,11 +207,7 @@ function rebuildWorkbookXml(originalXml: string, newSheets: NewSheet[]): string 
 }
 
 /** Build the populated .xlsx bytes. Pure given the template bytes. */
-export function buildXlsx(
-    round: Round,
-    templateBytes: Uint8Array,
-    opts: ExportOptions,
-): Uint8Array {
+export function buildXlsx(round: FlowRound, templateBytes: Uint8Array): Uint8Array {
     // First, strip revision data from the template to prevent corruption.
     const stripped = unzipSync(templateBytes);
     const stripRevision = (bytes: Uint8Array) => {
@@ -258,7 +252,7 @@ export function buildXlsx(
     // template's dedicated CX sheet above (patchCx), so it must NOT also be
     // appended as a flow tab — doing so creates a duplicate "CX" name and
     // corrupts the workbook.
-    const exportSheets = buildExportSheets(round, opts).filter((es) => es.sheet.kind !== "cx");
+    const exportSheets = buildExportSheets(round).filter((es) => es.sheet.kind !== "cx");
     const baseSheetId = maxSheetId(workbookXml);
     const baseRid = maxRidNumber(relsXml);
     const basePart = nextPartNumber(files);
@@ -308,11 +302,11 @@ export function buildXlsx(
 }
 
 /** Browser orchestrator: fetch template, build, download. */
-export async function downloadXlsx(round: Round, opts: ExportOptions): Promise<void> {
+export async function downloadXlsx(round: FlowRound): Promise<void> {
     const res = await fetch("/templates/Flow.xlsx");
     if (!res.ok) throw new Error("Could not load the Excel template");
     const templateBytes = new Uint8Array(await res.arrayBuffer());
-    const bytes = buildXlsx(round, templateBytes, opts);
+    const bytes = buildXlsx(round, templateBytes);
     const blob = new Blob([bytes.buffer as ArrayBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });

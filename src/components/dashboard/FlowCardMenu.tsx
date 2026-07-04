@@ -13,8 +13,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { runExport } from "@/lib/export/run";
-import { loadRound, softDeleteRound, restoreRound } from "@/lib/persistence/autosave";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { softDeleteRound, restoreRound } from "@/lib/persistence/autosave";
+import { loadFlow } from "@/lib/persistence/flowPersistence";
 
 export interface FlowCardMenuProps {
     id: string;
@@ -23,13 +23,11 @@ export interface FlowCardMenuProps {
 }
 
 export default function FlowCardMenu({ id, onViewDetails, onChanged }: FlowCardMenuProps) {
-    const autoNumber = useRoundStore((s) => s.autoNumber);
-
     async function exportAs(fmt: "json" | "excel") {
-        const round = await loadRound(id);
+        const round = await loadFlow(id);
         if (!round) return;
         try {
-            await runExport(round, { autoNumber }, fmt);
+            await runExport(round, fmt);
         } catch (err) {
             toast.error(`Export failed: ${err instanceof Error ? err.message : "unknown error"}`);
         }

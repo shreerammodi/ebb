@@ -1,9 +1,10 @@
 /**
- * Shared cross-examination pairing. The CX sheet stores nodes as Question
- * (speechId 'cx-<period>-q') with a Response child (speechId 'cx-<period>-r').
- * Both the Excel CX sheet and the PDF CX layout consume this.
+ * Shared cross-examination pairing. The CX sheet stores its grid with one
+ * Question/Response column pair per period (see CX_FLOW_COLUMNS); period i
+ * reads columns 2i and 2i+1. Both the Excel CX worksheet and any print
+ * layout consume this.
  */
-import type { Round } from "@/lib/model/types";
+import type { FlowRound } from "@/lib/model/flow";
 
 export interface CxPeriodDef {
     /** Question column id. */
@@ -31,15 +32,19 @@ export interface CxPeriod extends CxPeriodDef {
 }
 
 /** Resolve ordered Question/Response pairs for each CX period. */
-export function cxPeriods(round: Round): CxPeriod[] {
+export function cxPeriods(round: FlowRound): CxPeriod[] {
     const cxSheet = round.sheets.find((s) => s.kind === "cx");
-    const cxNodes = cxSheet ? round.nodes.filter((n) => n.sheetId === cxSheet.id) : [];
-    return CX_PERIODS.map((p) => {
-        const questions = cxNodes.filter((n) => n.speechId === p.qId).sort((a, b) => a.row - b.row);
-        const pairs = questions.map((q) => {
-            const resp = cxNodes.find((n) => n.parentId === q.id && n.speechId === p.rId);
-            return { question: q.text, response: resp?.text ?? "" };
-        });
+    const data = cxSheet?.data ?? [];
+    return CX_PERIODS.map((p, i) => {
+        const qCol = 2 * i;
+        const rCol = qCol + 1;
+        const pairs: CxPair[] = [];
+        for (const row of data) {
+            const question = row[qCol] ?? "";
+            const response = row[rCol] ?? "";
+            if (question.trim() === "" && response.trim() === "") continue;
+            pairs.push({ question, response });
+        }
         return { ...p, pairs };
     });
 }

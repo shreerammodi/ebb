@@ -1,20 +1,15 @@
-import type { Round } from "@/lib/model/types";
-import { downloadRoundFile } from "@/lib/persistence/io";
+import type { FlowRound } from "@/lib/model/flow";
+import { downloadFlowFile } from "@/lib/persistence/flowIo";
 
-import type { ExportOptions } from "./options";
 import { downloadXlsx } from "./xlsx";
 
 export type ExportFormat = "json" | "excel";
 
 /** Run a per-round export in the requested format. */
-export async function runExport(
-    round: Round,
-    opts: ExportOptions,
-    fmt: ExportFormat,
-): Promise<void> {
+export async function runExport(round: FlowRound, fmt: ExportFormat): Promise<void> {
     if (fmt === "json") {
-        downloadRoundFile(round);
+        downloadFlowFile(round);
         return;
     }
-    await downloadXlsx(round, opts);
+    await downloadXlsx(round);
 }
