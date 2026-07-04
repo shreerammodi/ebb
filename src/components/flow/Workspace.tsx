@@ -32,7 +32,10 @@ export default function Workspace() {
                 <div className="flex min-h-0 flex-1">
                     <Sidebar />
                     <main
-                        className="no-print min-w-0 flex-1 overflow-hidden p-4"
+                        // isolate: trap Handsontable's frozen-header clone layers (z-index up
+                        // to ~1060) in their own stacking context so they can't punch through
+                        // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
+                        className="no-print isolate min-w-0 flex-1 overflow-hidden p-4"
                         data-testid="workspace-content"
                     >
                         {activeSheetId ? (
