@@ -221,6 +221,13 @@ html .ht-theme-main {
     color: var(--neg);
     font-weight: 700;
 }
+/* Cells wear their column's side color, matching the header ink. */
+.handsontable td.cell-aff {
+    color: var(--aff);
+}
+.handsontable td.cell-neg {
+    color: var(--neg);
+}
 .flow-bold {
     font-weight: 700;
 }

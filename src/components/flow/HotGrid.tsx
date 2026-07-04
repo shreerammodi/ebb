@@ -200,6 +200,16 @@ export default memo(function HotGrid() {
         if (side) TH.classList.add(side === "aff" ? "hd-aff" : "hd-neg");
     }, []);
 
+    // Cells inherit their column header's side color: blue for aff, red for neg.
+    const afterRenderer = useCallback((TD: HTMLTableCellElement, _r: number, col: number) => {
+        const round = useFlowStore.getState().round;
+        const sid = currentSheetIdRef.current;
+        const sheet = round?.sheets.find((s) => s.id === sid);
+        if (!sheet) return;
+        const side = columnsForFlowSheet(sheet)[col]?.side;
+        if (side) TD.classList.add(side === "aff" ? "cell-aff" : "cell-neg");
+    }, []);
+
     // changes is null on loadData/updateSettings passes; snapshotting those
     // loops setState -> render -> afterChange forever.
     const afterChange = useCallback(
@@ -251,6 +261,7 @@ export default memo(function HotGrid() {
                 outsideClickDeselects={false}
                 contextMenu={CONTEXT_MENU as unknown as string[]}
                 afterGetColHeader={afterGetColHeader}
+                afterRenderer={afterRenderer}
                 afterChange={afterChange}
                 afterCreateRow={snapshot}
                 afterRemoveRow={snapshot}
