@@ -62,6 +62,31 @@ function alterRow(action: "insert_row_above" | "insert_row_below" | "remove_row"
     notifyGridMutated();
 }
 
+/**
+ * Insert a blank cell at the selection, shifting that column's cells (text and
+ * decoration meta) below it down by one. Unlike a row insert, adjacent speech
+ * columns keep their rows; the last row's value falls off the bottom.
+ */
+function insertCell(): void {
+    const hot = getActiveHot();
+    const sel = hot?.getSelectedLast();
+    if (!hot || !sel) return;
+    const [row, col] = sel;
+    const last = hot.countRows() - 1;
+
+    // Bottom-up so each read of (r-1) sees the pre-shift value/meta.
+    const values: [number, number, string | null][] = [];
+    for (let r = last; r > row; r--) {
+        values.push([r, col, hot.getDataAtCell(r - 1, col) as string | null]);
+        hot.setCellMeta(r, col, "className", (hot.getCellMeta(r - 1, col).className ?? "") as string);
+    }
+    hot.setCellMeta(row, col, "className", "");
+    values.push([row, col, ""]);
+    hot.setDataAtCell(values);
+    hot.render();
+    notifyGridMutated();
+}
+
 export function executeCommand(id: CommandId): void {
     const state = useFlowStore.getState();
     const { round } = state;
@@ -90,6 +115,9 @@ export function executeCommand(id: CommandId): void {
             return;
         case "row.delete":
             alterRow("remove_row");
+            return;
+        case "cell.insert":
+            insertCell();
             return;
 
         // --- Sheets ----------------------------------------------------------

@@ -40,6 +40,8 @@ const GROUPS = [
         rows: [
             { commandId: "edit.undo" as CommandId },
             { commandId: "edit.redo" as CommandId },
+            { commandId: "cell.insert" as CommandId },
+            { commandId: "row.insertAbove" as CommandId },
             { commandId: "row.delete" as CommandId },
         ],
     },

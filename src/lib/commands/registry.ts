@@ -15,6 +15,7 @@ export type CommandId =
     | "row.insertAbove"
     | "row.insertBelow"
     | "row.delete"
+    | "cell.insert"
     | "sheet.next"
     | "sheet.prev"
     | "sheet.newAff"
@@ -55,6 +56,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "row.insertAbove": { id: "row.insertAbove", label: "Insert row above" },
     "row.insertBelow": { id: "row.insertBelow", label: "Insert row below" },
     "row.delete": { id: "row.delete", label: "Delete row" },
+    "cell.insert": { id: "cell.insert", label: "Insert cell" },
     "sheet.next": { id: "sheet.next", label: "Next sheet" },
     "sheet.prev": { id: "sheet.prev", label: "Previous sheet" },
     "sheet.newAff": { id: "sheet.newAff", label: "New aff sheet" },

@@ -150,4 +150,35 @@ describe("grid commands", () => {
         expect(at(0, 0).className).toBe("");
         expect(at(1, 0).className).toBe("");
     });
+
+    it("cell.insert shifts the selected column down and blanks the target", () => {
+        const data = [["a"], ["b"], ["c"]];
+        const meta = new Map<string, { className?: string }>([["0,0", { className: BOLD_CLASS }]]);
+        const at = (r: number, c: number) => {
+            const key = `${r},${c}`;
+            if (!meta.has(key)) meta.set(key, {});
+            return meta.get(key)!;
+        };
+        const onMutated = vi.fn();
+        const fakeHot = {
+            getSelectedLast: () => [1, 0],
+            countRows: () => data.length,
+            getDataAtCell: (r: number, c: number) => data[r][c],
+            getCellMeta: (r: number, c: number) => at(r, c),
+            setCellMeta: (r: number, c: number, _k: string, v: string) => {
+                at(r, c).className = v;
+            },
+            setDataAtCell: (changes: [number, number, string | null][]) => {
+                for (const [r, c, v] of changes) data[r][c] = v as string;
+            },
+            render: vi.fn(),
+        };
+        setActiveHot(fakeHot as never, onMutated);
+
+        executeCommand("cell.insert");
+        // Row 0 untouched, row 1 blanked, "b" pushed to row 2 ("c" falls off).
+        expect(data.map((row) => row[0])).toEqual(["a", "", "b"]);
+        expect(at(1, 0).className).toBe("");
+        expect(onMutated).toHaveBeenCalled();
+    });
 });

@@ -31,8 +31,10 @@ const RESERVED_KEYS = [
     // -- UI ---------------------------------------------------------------------
     "\\", // sidebar toggle
     ",", // settings
-    // -- Rows ---------------------------------------------------------------
+    // -- Rows / cells -------------------------------------------------------
     "Backspace", // row delete
+    "o", // insert cell (suppresses browser open-file)
+    "O", // insert row (Shift encoded in uppercase key)
     // -- Sheet jumps -----------------------------------------------------------
     "1",
     "2",
