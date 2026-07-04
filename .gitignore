@@ -18,9 +18,12 @@ src-tauri/gen/schemas/
 # Design scratch and planning artifacts — kept locally, not committed
 # (except the design system and product briefs, which are tracked)
 design/
-docs/
+docs/*
 .impeccable/
 !docs/DESIGN.md
 !docs/PRODUCT.md
+!docs/analysis
+!docs/desktop
+!docs/security-review.md
 
 TODO.md
