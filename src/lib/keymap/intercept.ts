@@ -6,8 +6,9 @@
  * Cmd+A-in-text-box bug).
  *
  * Rule:
- *   - If the chord is a native editing chord (Cmd/Ctrl+A, C, V, X, Z, Shift+Z)
- *     AND focus is in a text box, do NOT intercept (let the browser handle it).
+ *   - If the chord is a native editing chord (Cmd/Ctrl+A, C, V, X, Z, Shift+Z,
+ *     Backspace) AND focus is in a text box, do NOT intercept (let the
+ *     browser handle it).
  *   - Otherwise, if the chord is in reservedChords, intercept.
  *   - Otherwise, do not intercept.
  */
@@ -20,7 +21,7 @@ import { eventToChord } from "./resolve";
 /**
  * Native editing chords that must pass through to the browser when the user
  * is typing in a text box. These are the chords that the OS reserves for
- * text editing: select-all, copy, paste, cut, undo, redo.
+ * text editing: select-all, copy, paste, cut, undo, delete word/line back.
  *
  * On macOS these are Meta+; on Windows/Linux they are Ctrl+.
  *
@@ -34,6 +35,7 @@ const NATIVE_EDITING_KEYS = [
     "v", // paste
     "x", // cut
     "z", // undo
+    "Backspace", // delete to line start (mac) / delete previous word (win/linux)
 ] as const;
 
 let cachedNativeEditingChords: Set<string> | null = null;
@@ -58,7 +60,7 @@ function nativeEditingChords(): Set<string> {
 
 /**
  * Returns true if the given key event is a native editing chord
- * (select-all, copy, paste, cut, undo, redo) on the current platform.
+ * (select-all, copy, paste, cut, undo, redo, delete word/line back) on the current platform.
  * Does NOT consider focus; the caller must check isTextEntryFocus separately.
  */
 export function isNativeEditingChord(e: KeyboardEvent): boolean {
@@ -140,7 +142,7 @@ export function selectAllInElement(element: HTMLElement | null): boolean {
  */
 export function shouldIntercept(e: KeyboardEvent): boolean {
     // If it's a native editing chord and the user is typing in a text box,
-    // let the browser handle it (select-all, copy, paste, cut, undo, redo).
+    // let the browser handle it (select-all, copy, paste, cut, undo, redo, delete word/line back).
     if (isNativeEditingChord(e) && isTextEntryFocus(e.target)) {
         return false;
     }

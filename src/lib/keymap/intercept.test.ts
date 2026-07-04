@@ -90,6 +90,11 @@ describe("isNativeEditingChord", () => {
         expect(isNativeEditingChord(e)).toBe(true);
     });
 
+    it("returns true for Cmd+Backspace / Ctrl+Backspace (delete word/line back)", () => {
+        const e = makeKeyEvent({ key: "Backspace", [mod === "Meta" ? "metaKey" : "ctrlKey"]: true });
+        expect(isNativeEditingChord(e)).toBe(true);
+    });
+
     it("returns false for Cmd+N / Ctrl+N (new aff, not a native editing chord)", () => {
         const e = makeKeyEvent({ key: "n", [mod === "Meta" ? "metaKey" : "ctrlKey"]: true });
         expect(isNativeEditingChord(e)).toBe(false);
@@ -308,6 +313,27 @@ describe("shouldIntercept", () => {
     it("DOES intercept Cmd+Z outside a text input (app undo)", () => {
         const e = makeKeyEvent({
             key: "z",
+            [mod === "Meta" ? "metaKey" : "ctrlKey"]: true,
+        });
+        Object.defineProperty(e, "target", { value: document.body });
+        expect(shouldIntercept(e)).toBe(true);
+    });
+
+    // --- Row delete ---
+
+    it("does NOT intercept Cmd+Backspace inside a text input (native delete word/line back, not row delete)", () => {
+        const input = document.createElement("input");
+        const e = makeKeyEvent({
+            key: "Backspace",
+            [mod === "Meta" ? "metaKey" : "ctrlKey"]: true,
+        });
+        Object.defineProperty(e, "target", { value: input });
+        expect(shouldIntercept(e)).toBe(false);
+    });
+
+    it("DOES intercept Cmd+Backspace outside a text input (row delete)", () => {
+        const e = makeKeyEvent({
+            key: "Backspace",
             [mod === "Meta" ? "metaKey" : "ctrlKey"]: true,
         });
         Object.defineProperty(e, "target", { value: document.body });
