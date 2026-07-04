@@ -2,88 +2,88 @@
 name: ebb
 description: Local-first, privacy-centric, keyboard-first flowing for competitive debate
 colors:
-  canvas: "oklch(0.972 0.003 286)"
-  panel: "oklch(1 0 0)"
-  popover: "oklch(1 0 0)"
-  ink: "oklch(0.145 0.005 285.8)"
-  ink-muted: "oklch(0.49 0.015 285.9)"
-  fill: "oklch(0.955 0.003 286.3)"
-  line: "oklch(0.898 0.005 286.3)"
-  aff-blue: "#1d4ed8"
-  neg-red: "#c0271f"
-  selection-violet: "#7c3aed"
-  warn-amber: "#b45309"
-  good-green: "#047857"
-  highlight-yellow: "#fde047"
-  canvas-dark: "oklch(0.145 0.005 285.8)"
-  panel-dark: "oklch(0.195 0.006 285.9)"
-  popover-dark: "oklch(0.225 0.006 285.9)"
-  ink-dark: "oklch(0.93 0.004 286)"
-  aff-blue-dark: "#7da2ff"
-  neg-red-dark: "#f0776b"
-  selection-violet-dark: "#a78bfa"
-  warn-amber-dark: "#f59e0b"
-  good-green-dark: "#34d399"
+    canvas: "oklch(0.972 0.003 286)"
+    panel: "oklch(1 0 0)"
+    popover: "oklch(1 0 0)"
+    ink: "oklch(0.145 0.005 285.8)"
+    ink-muted: "oklch(0.49 0.015 285.9)"
+    fill: "oklch(0.955 0.003 286.3)"
+    line: "oklch(0.898 0.005 286.3)"
+    aff-blue: "#1d4ed8"
+    neg-red: "#c0271f"
+    selection-violet: "#7c3aed"
+    warn-amber: "#b45309"
+    good-green: "#047857"
+    highlight-yellow: "#fde047"
+    canvas-dark: "oklch(0.145 0.005 285.8)"
+    panel-dark: "oklch(0.195 0.006 285.9)"
+    popover-dark: "oklch(0.225 0.006 285.9)"
+    ink-dark: "oklch(0.93 0.004 286)"
+    aff-blue-dark: "#7da2ff"
+    neg-red-dark: "#f0776b"
+    selection-violet-dark: "#a78bfa"
+    warn-amber-dark: "#f59e0b"
+    good-green-dark: "#34d399"
 typography:
-  body:
-    fontFamily: "IBM Plex Sans, sans-serif"
-    fontSize: "14px"
-    fontWeight: 400
-    lineHeight: 1.5
-  title:
-    fontFamily: "IBM Plex Sans, sans-serif"
-    fontSize: "15px"
-    fontWeight: 600
-    letterSpacing: "-0.01em"
-  label:
-    fontFamily: "IBM Plex Sans, sans-serif"
-    fontSize: "13px"
-    fontWeight: 500
-  micro-label:
-    fontFamily: "Commit Mono, monospace"
-    fontSize: "9px"
-    fontWeight: 700
-    letterSpacing: "0.1em"
-  flow:
-    fontFamily: "DM Sans, sans-serif"
-    fontSize: "13px"
-    fontWeight: 400
+    body:
+        fontFamily: "IBM Plex Sans, sans-serif"
+        fontSize: "14px"
+        fontWeight: 400
+        lineHeight: 1.5
+    title:
+        fontFamily: "IBM Plex Sans, sans-serif"
+        fontSize: "15px"
+        fontWeight: 600
+        letterSpacing: "-0.01em"
+    label:
+        fontFamily: "IBM Plex Sans, sans-serif"
+        fontSize: "13px"
+        fontWeight: 500
+    micro-label:
+        fontFamily: "Commit Mono, monospace"
+        fontSize: "9px"
+        fontWeight: 700
+        letterSpacing: "0.1em"
+    flow:
+        fontFamily: "DM Sans, sans-serif"
+        fontSize: "13px"
+        fontWeight: 400
 rounded:
-  xs: "4px"
-  sm: "6px"
-  md: "8px"
-  lg: "10px"
-  xl: "14px"
-  pill: "9999px"
+    xs: "4px"
+    sm: "6px"
+    md: "8px"
+    lg: "10px"
+    xl: "14px"
+    pill: "9999px"
 spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "16px"
-  lg: "20px"
+    xs: "4px"
+    sm: "8px"
+    md: "16px"
+    lg: "20px"
 components:
-  button-primary:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.panel}"
-    rounded: "{rounded.md}"
-    padding: "0 12px"
-    height: "32px"
-  button-outline:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    padding: "0 12px"
-    height: "32px"
-  button-outline-hover:
-    backgroundColor: "{colors.fill}"
-  badge-side:
-    textColor: "{colors.aff-blue}"
-    rounded: "{rounded.pill}"
-    padding: "2px 8px"
-  kbd:
-    backgroundColor: "{colors.fill}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.xs}"
-    padding: "1px 4px"
+    button-primary:
+        backgroundColor: "{colors.ink}"
+        textColor: "{colors.panel}"
+        rounded: "{rounded.md}"
+        padding: "0 12px"
+        height: "32px"
+    button-outline:
+        backgroundColor: "transparent"
+        textColor: "{colors.ink}"
+        rounded: "{rounded.md}"
+        padding: "0 12px"
+        height: "32px"
+    button-outline-hover:
+        backgroundColor: "{colors.fill}"
+    badge-side:
+        textColor: "{colors.aff-blue}"
+        rounded: "{rounded.pill}"
+        padding: "2px 8px"
+    kbd:
+        backgroundColor: "{colors.fill}"
+        textColor: "{colors.ink}"
+        rounded: "{rounded.xs}"
+        padding: "1px 4px"
 ---
 
 # Design System: ebb
