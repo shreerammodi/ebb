@@ -270,7 +270,7 @@ export default function SettingsPanel() {
                                         </SelectContent>
                                     </Select>
                                     <p
-                                        className="border-border text-foreground bg-muted mt-1 rounded-md border px-2.5 py-1.5 text-[13px]"
+                                        className="mt-1 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-[13px] text-zinc-900"
                                         style={{
                                             fontFamily:
                                                 FONTS.find((f) => f.id === flowFont)?.cssVar ??
