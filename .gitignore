@@ -22,8 +22,5 @@ docs/*
 .impeccable/
 !docs/DESIGN.md
 !docs/PRODUCT.md
-!docs/analysis
-!docs/desktop
-!docs/security-review.md
 
 TODO.md
