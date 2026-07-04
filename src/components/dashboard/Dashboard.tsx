@@ -64,7 +64,7 @@ export default function Dashboard() {
         // Held frame, not a blank screen: the chrome stays put and card
         // placeholders pulse in, so the load never reads as "lost my flows".
         return (
-            <div className="min-h-screen bg-zinc-50">
+            <div className="bg-background min-h-screen">
                 <div className="border-border bg-card flex items-center gap-3 border-b px-5 py-4">
                     <Logo className="text-foreground h-5 w-auto" />
                     <Skeleton className="h-9 w-[360px]" />
@@ -81,7 +81,7 @@ export default function Dashboard() {
     const empty = summaries.length === 0;
 
     return (
-        <div className="min-h-screen bg-zinc-50">
+        <div className="bg-background min-h-screen">
             <div className="border-border bg-card flex items-center gap-3 border-b px-5 py-4">
                 <Logo className="text-foreground h-5 w-auto" />
                 <Input

@@ -55,7 +55,7 @@ export default function TrashView() {
     if (items === null) return null;
 
     return (
-        <div className="min-h-screen bg-zinc-50">
+        <div className="bg-background min-h-screen">
             <div className="border-border bg-card flex items-center gap-3 border-b px-5 py-4">
                 <Link
                     href="/"

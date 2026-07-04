@@ -136,17 +136,19 @@ body {
    ------------------------------------------------------------ */
 
 /* --- Handsontable theme mapped to app tokens -------------------------------
-   html-prefixed to outrank the stock theme sheet, which loads after globals. */
+   html-prefixed to outrank the stock theme sheet, which loads after globals.
+   The flow sheet is paper: it stays on these fixed light values regardless
+   of the app's own light/dark theme, like a physical page under any light. */
 html .ht-theme-main {
     --ht-font-family: var(--font-flow, inherit);
-    --ht-background-color: var(--background);
-    --ht-foreground-color: var(--foreground);
-    --ht-border-color: var(--border);
-    --ht-cell-vertical-border-color: var(--border);
-    --ht-cell-horizontal-border-color: var(--border);
-    --ht-header-background-color: var(--card);
-    --ht-header-foreground-color: var(--foreground);
-    --ht-accent-color: var(--primary);
+    --ht-background-color: oklch(1 0 0);
+    --ht-foreground-color: oklch(0.141 0.005 285.823);
+    --ht-border-color: oklch(0.92 0.004 286.32);
+    --ht-cell-vertical-border-color: oklch(0.92 0.004 286.32);
+    --ht-cell-horizontal-border-color: oklch(0.92 0.004 286.32);
+    --ht-header-background-color: oklch(1 0 0);
+    --ht-header-foreground-color: oklch(0.141 0.005 285.823);
+    --ht-accent-color: oklch(0.21 0.006 285.885);
 }
 /* Header ink stays put on hover and while its column is selected; the theme
    otherwise recolors hovered and highlighted th. */
@@ -168,10 +170,6 @@ html .ht-theme-main {
 /* Outranks the theme's even/odd row striping (.handsontable tr.ht__row_even td). */
 .handsontable tbody tr td.flow-highlight {
     background: #fde047;
-}
-/* Highlight keeps dark ink in dark mode; the pigment stays light. */
-.dark .handsontable tbody tr td.flow-highlight {
-    color: oklch(0.141 0.005 285.823);
 }
 
 /* Hidden on screen; visible only during print */

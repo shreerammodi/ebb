@@ -154,5 +154,14 @@ export function executeCommand(id: CommandId): void {
         case "sidebar.toggle":
             state.setSidebarCollapsed(!state.sidebarCollapsed);
             return;
+        case "theme.light":
+            state.setTheme("light");
+            return;
+        case "theme.dark":
+            state.setTheme("dark");
+            return;
+        case "theme.system":
+            state.setTheme("system");
+            return;
     }
 }

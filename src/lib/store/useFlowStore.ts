@@ -19,6 +19,7 @@ import {
     type FlowSheet,
 } from "@/lib/model/flow";
 import type { Scouting } from "@/lib/model/types";
+import { resolveThemeMode, type ThemeMode } from "@/lib/theme/mode";
 import { loadUpdateConfig, saveUpdateConfig } from "@/lib/update/settings";
 import type { UpdateConfig } from "@/lib/update/types";
 
@@ -38,6 +39,7 @@ export interface FlowState {
     /** CommandId -> custom chord, overriding the preset binding. */
     keymapOverrides: Record<string, string>;
     flowFont: FontId;
+    theme: ThemeMode;
     /** Desktop auto-update behavior (opt-in, Tournament Mode). */
     updateConfig: UpdateConfig;
     /** The unified command/search palette. */
@@ -72,6 +74,7 @@ export interface FlowActions {
     setKeymapOverride(commandId: CommandId, chord: string): void;
     clearKeymapOverride(commandId: CommandId): void;
     setFlowFont(id: FontId): void;
+    setTheme(mode: ThemeMode): void;
     /** Merges a partial update config, persisting the result. */
     setUpdateConfig(patch: Partial<UpdateConfig>): void;
     /** Opens/closes the palette; `seed` sets the initial query (">" = command mode). */
@@ -114,10 +117,15 @@ function saveKeymapOverrides(keymapOverrides: Record<string, string>): void {
 interface DisplaySettings {
     flowFont: FontId;
     sidebarCollapsed: boolean;
+    theme: ThemeMode;
 }
 
 function loadDisplaySettings(): DisplaySettings {
-    const fallback: DisplaySettings = { flowFont: DEFAULT_FONT_ID, sidebarCollapsed: false };
+    const fallback: DisplaySettings = {
+        flowFont: DEFAULT_FONT_ID,
+        sidebarCollapsed: false,
+        theme: "system",
+    };
     if (typeof window === "undefined") return fallback;
     try {
         const raw = window.localStorage.getItem(DISPLAY_SETTINGS_KEY);
@@ -126,6 +134,7 @@ function loadDisplaySettings(): DisplaySettings {
         return {
             flowFont: resolveFontId(p.flowFont),
             sidebarCollapsed: typeof p.sidebarCollapsed === "boolean" ? p.sidebarCollapsed : false,
+            theme: resolveThemeMode(p.theme),
         };
     } catch {
         return fallback;
@@ -156,6 +165,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     revealTarget: null,
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
+    theme: initialDisplaySettings.theme,
     updateConfig: loadUpdateConfig(),
     quickSwitcherOpen: false,
     paletteSeed: "",
@@ -290,8 +300,21 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     },
 
     setFlowFont(id) {
-        saveDisplaySettings({ flowFont: id, sidebarCollapsed: get().sidebarCollapsed });
+        saveDisplaySettings({
+            flowFont: id,
+            sidebarCollapsed: get().sidebarCollapsed,
+            theme: get().theme,
+        });
         set({ flowFont: id });
+    },
+
+    setTheme(mode) {
+        saveDisplaySettings({
+            flowFont: get().flowFont,
+            sidebarCollapsed: get().sidebarCollapsed,
+            theme: mode,
+        });
+        set({ theme: mode });
     },
 
     setUpdateConfig(patch) {
@@ -313,7 +336,11 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         set({ infoOpen: open });
     },
     setSidebarCollapsed(collapsed) {
-        saveDisplaySettings({ flowFont: get().flowFont, sidebarCollapsed: collapsed });
+        saveDisplaySettings({
+            flowFont: get().flowFont,
+            sidebarCollapsed: collapsed,
+            theme: get().theme,
+        });
         set({ sidebarCollapsed: collapsed });
     },
     setRenamingSheet(id) {

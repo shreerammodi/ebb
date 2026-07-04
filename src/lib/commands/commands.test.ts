@@ -93,6 +93,17 @@ describe("UI commands", () => {
     });
 });
 
+describe("theme commands", () => {
+    it("set the store's theme", () => {
+        executeCommand("theme.dark");
+        expect(useFlowStore.getState().theme).toBe("dark");
+        executeCommand("theme.light");
+        expect(useFlowStore.getState().theme).toBe("light");
+        executeCommand("theme.system");
+        expect(useFlowStore.getState().theme).toBe("system");
+    });
+});
+
 describe("grid commands", () => {
     it("no-op gracefully without a live grid", () => {
         expect(() => {

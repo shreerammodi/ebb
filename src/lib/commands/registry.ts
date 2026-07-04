@@ -34,7 +34,10 @@ export type CommandId =
     | "info.open"
     | "help.open"
     | "sidebar.toggle"
-    | "palette.open";
+    | "palette.open"
+    | "theme.light"
+    | "theme.dark"
+    | "theme.system";
 
 export interface CommandDef {
     id: CommandId;
@@ -75,4 +78,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "help.open": { id: "help.open", label: "Show keybindings" },
     "sidebar.toggle": { id: "sidebar.toggle", label: "Toggle sidebar" },
     "palette.open": { id: "palette.open", label: "Command palette" },
+    "theme.light": { id: "theme.light", label: "Theme: Light" },
+    "theme.dark": { id: "theme.dark", label: "Theme: Dark" },
+    "theme.system": { id: "theme.system", label: "Theme: System" },
 };
