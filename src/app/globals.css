@@ -99,6 +99,10 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-wrap: pretty;
+    /* The workspace owns its own scroll; the page must not rubber-band or
+       chain scroll when a non-scrollable region (menus, panels) is dragged. */
+    overflow: hidden;
+    overscroll-behavior: none;
 }
 
 /* Keyboard-first focus ring — violet, never browser default */
@@ -223,6 +227,9 @@ html .ht-theme-main {
     body {
         background: #fff;
         color: #000;
+        /* Restore normal flow so print pagination isn't clipped by the
+           screen-only overflow lock. */
+        overflow: visible;
     }
 }
 
