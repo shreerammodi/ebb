@@ -13,13 +13,12 @@ import {
 import { Tip } from "@/components/ui/tooltip";
 import { downloadXlsx } from "@/lib/export/xlsx";
 import type { FlowRound } from "@/lib/model/flow";
-import type { Round } from "@/lib/model/types";
-import { downloadRoundFile } from "@/lib/persistence/io";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { downloadFlowFile } from "@/lib/persistence/flowIo";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 export default function ExportMenu() {
-    async function run(fn: (round: Round) => unknown | Promise<unknown>) {
-        const round = useRoundStore.getState().round;
+    async function run(fn: (round: FlowRound) => unknown | Promise<unknown>) {
+        const round = useFlowStore.getState().round;
         if (!round) return;
         try {
             await fn(round);
@@ -41,14 +40,13 @@ export default function ExportMenu() {
             <DropdownMenuContent align="end">
                 <DropdownMenuItem
                     data-testid="export-json"
-                    onSelect={() => run((r) => downloadRoundFile(r))}
+                    onSelect={() => run((r) => downloadFlowFile(r))}
                 >
                     JSON
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     data-testid="export-excel"
-                    // Legacy-store bridge; dies when the editor flips to the flow store.
-                    onSelect={() => run((r) => downloadXlsx(r as unknown as FlowRound))}
+                    onSelect={() => run((r) => downloadXlsx(r))}
                 >
                     Excel
                 </DropdownMenuItem>

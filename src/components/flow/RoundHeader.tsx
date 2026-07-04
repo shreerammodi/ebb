@@ -8,15 +8,15 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import { teamCode } from "@/lib/model/teamCode";
-import { readRoundFile } from "@/lib/persistence/io";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { readFlowFile } from "@/lib/persistence/flowIo";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import ExportMenu from "./ExportMenu";
 import SaveStatus from "./SaveStatus";
 
 export default function RoundHeader() {
-    const role = useRoundStore((s) => s.round?.role);
-    const scouting = useRoundStore((s) => s.round?.scouting);
+    const role = useFlowStore((s) => s.round?.role);
+    const scouting = useFlowStore((s) => s.round?.scouting);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     if (!role || !scouting) return null;
@@ -40,8 +40,8 @@ export default function RoundHeader() {
         const file = e.target.files?.[0];
         if (!file) return;
         try {
-            const imported = await readRoundFile(file);
-            useRoundStore.getState().loadRound(imported);
+            const imported = await readFlowFile(file);
+            useFlowStore.getState().loadRound(imported);
         } catch {
             toast.error("Failed to import: file may be invalid or from an incompatible version.");
         }
@@ -74,11 +74,11 @@ export default function RoundHeader() {
                     onChange={handleImportChange}
                     data-testid="import-file-input"
                 />
-                <Tip label="Guide" command="help.open">
+                <Tip label="Guide is coming back soon">
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => useRoundStore.getState().setGuideOpen(true)}
+                        disabled
                         aria-label="Guide"
                         data-testid="guide-btn"
                     >
@@ -89,7 +89,7 @@ export default function RoundHeader() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => useRoundStore.getState().setInfoOpen(true)}
+                        onClick={() => useFlowStore.getState().setInfoOpen(true)}
                         aria-label="Round info"
                         data-testid="info-btn"
                     >
@@ -100,7 +100,7 @@ export default function RoundHeader() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => useRoundStore.getState().setSettingsOpen(true)}
+                        onClick={() => useFlowStore.getState().setSettingsOpen(true)}
                         aria-label="Settings"
                         data-testid="settings-btn"
                     >

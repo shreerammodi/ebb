@@ -584,6 +584,37 @@ body {
    7. PRINT
    ------------------------------------------------------------ */
 
+/* --- Handsontable theme mapped to app tokens -------------------------------
+   html-prefixed to outrank the stock theme sheet, which loads after globals. */
+html .ht-theme-main {
+    --ht-font-family: var(--font-flow, inherit);
+    --ht-background-color: var(--background);
+    --ht-foreground-color: var(--foreground);
+    --ht-border-color: var(--border);
+    --ht-cell-vertical-border-color: var(--border);
+    --ht-cell-horizontal-border-color: var(--border);
+    --ht-header-background-color: var(--card);
+    --ht-header-foreground-color: var(--foreground);
+    --ht-accent-color: var(--primary);
+}
+.handsontable th.hd-aff {
+    color: var(--aff);
+}
+.handsontable th.hd-neg {
+    color: var(--neg);
+}
+.flow-bold {
+    font-weight: 700;
+}
+/* Outranks the theme's even/odd row striping (.handsontable tr.ht__row_even td). */
+.handsontable tbody tr td.flow-highlight {
+    background: #fde047;
+}
+/* Highlight keeps dark ink in dark mode; the pigment stays light. */
+.dark .handsontable tbody tr td.flow-highlight {
+    color: oklch(0.141 0.005 285.823);
+}
+
 /* Hidden on screen; visible only during print */
 .print-only {
     display: none;

@@ -5,20 +5,15 @@ import { useEffect, useState } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { applyFlowFont } from "@/lib/fonts/applyFlowFont";
-import { createTree } from "@/lib/history/tree";
-import {
-    attachAutosave,
-    attachHistoryPersistence,
-    loadRound,
-    loadHistory,
-} from "@/lib/persistence/autosave";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { loadFlow } from "@/lib/persistence/flowPersistence";
+import { attachFlowAutosave } from "@/lib/persistence/flowPersistence";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 import { useSaveStatus } from "@/lib/store/useSaveStatus";
 
 import Workspace from "./Workspace";
 
 /**
- * AppRoot — boots the editor for the flow identified by ?id=.
+ * AppRoot - boots the editor for the flow identified by ?id=.
  * Attaches autosave, loads the round, and selects an initial sheet.
  * Redirects to "/" when the id is missing, not found, or trashed.
  */
@@ -26,8 +21,8 @@ export default function AppRoot() {
     const router = useRouter();
     const params = useSearchParams();
     const id = params.get("id");
-    const round = useRoundStore((s) => s.round);
-    const flowFont = useRoundStore((s) => s.flowFont);
+    const round = useFlowStore((s) => s.round);
+    const flowFont = useFlowStore((s) => s.flowFont);
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
@@ -36,45 +31,25 @@ export default function AppRoot() {
 
     useEffect(() => {
         let mounted = true;
-        const unsubscribe = attachAutosave(useRoundStore, useSaveStatus.getState().report);
-        const unsubscribeHistory = attachHistoryPersistence(useRoundStore);
+        const unsubscribe = attachFlowAutosave(useFlowStore, useSaveStatus.getState().report);
 
         if (!id) {
             router.replace("/");
             return () => {
                 mounted = false;
                 unsubscribe();
-                unsubscribeHistory();
                 useSaveStatus.getState().reset();
             };
         }
 
-        Promise.all([loadRound(id), loadHistory(id)])
-            .then(([r, storedTree]) => {
+        loadFlow(id)
+            .then((r) => {
                 if (!mounted) return;
                 if (!r || r.deletedAt != null) {
                     router.replace("/");
                     return;
                 }
-                const flowSheets = [...r.sheets]
-                    .filter((s) => s.kind !== "cx")
-                    .sort((a, b) => a.order - b.order);
-                const firstSheet =
-                    flowSheets[0] ?? [...r.sheets].sort((a, b) => a.order - b.order)[0];
-
-                // Use the stored tree only if it actually belongs to this round and
-                // its current snapshot matches the autosaved round (the two persist on
-                // different debounces). Otherwise seed a fresh single-node tree.
-                const treeCurrent = storedTree?.nodes[storedTree.currentId]?.snapshot;
-                const usable =
-                    storedTree !== undefined &&
-                    treeCurrent?.id === r.id &&
-                    treeCurrent.updatedAt === r.updatedAt;
-
-                useRoundStore.getState().loadRound(r, {
-                    activeSheetId: firstSheet?.id ?? null,
-                    history: usable ? storedTree : createTree(r),
-                });
+                useFlowStore.getState().loadRound(r);
             })
             .catch(() => router.replace("/"))
             .finally(() => {
@@ -84,7 +59,6 @@ export default function AppRoot() {
         return () => {
             mounted = false;
             unsubscribe();
-            unsubscribeHistory();
             useSaveStatus.getState().reset();
         };
     }, [id, router]);

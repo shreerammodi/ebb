@@ -6,20 +6,20 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Tip } from "@/components/ui/tooltip";
 import { teamCode } from "@/lib/model/teamCode";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
 
 export default function InfoPanel() {
-    const open = useRoundStore((s) => s.infoOpen);
+    const open = useFlowStore((s) => s.infoOpen);
     if (!open) return null;
     return <InfoPanelInner />;
 }
 
 function InfoPanelInner() {
-    const open = useRoundStore((s) => s.infoOpen);
-    const round = useRoundStore((s) => s.round);
-    const setInfoOpen = useRoundStore((s) => s.setInfoOpen);
-    const setScouting = useRoundStore((s) => s.setScouting);
+    const open = useFlowStore((s) => s.infoOpen);
+    const round = useFlowStore((s) => s.round);
+    const setInfoOpen = useFlowStore((s) => s.setInfoOpen);
+    const setScouting = useFlowStore((s) => s.setScouting);
 
     if (!round) return null;
     const sc = round.scouting;

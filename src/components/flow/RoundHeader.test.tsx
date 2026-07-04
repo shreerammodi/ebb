@@ -9,9 +9,9 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
+import { makeFlowRound } from "@/lib/model/flow";
 import type { Role } from "@/lib/model/types";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import RoundHeader from "./RoundHeader";
 
@@ -29,19 +29,16 @@ vi.mock("next/link", () => ({
 }));
 
 // Mock io functions used by the header
-vi.mock("@/lib/persistence/io", () => ({
-    downloadRoundFile: vi.fn(),
-    readRoundFile: vi.fn(),
+vi.mock("@/lib/persistence/flowIo", () => ({
+    downloadFlowFile: vi.fn(),
+    readFlowFile: vi.fn(),
 }));
 vi.mock("@/lib/export/xlsx", () => ({
     downloadXlsx: vi.fn().mockResolvedValue(undefined),
 }));
 
 function setupRound(role: Role) {
-    useRoundStore.getState().createRound({
-        role,
-        format: makeFormat(POLICY_PRESET),
-    });
+    useFlowStore.getState().loadRound(makeFlowRound(role));
 }
 
 function renderRoundHeader() {
@@ -54,10 +51,9 @@ function renderRoundHeader() {
 
 describe("RoundHeader", () => {
     beforeEach(() => {
-        useRoundStore.setState({
+        useFlowStore.setState({
             round: null,
             activeSheetId: null,
-            selection: null,
             quickSwitcherOpen: false,
             settingsOpen: false,
         });
@@ -77,7 +73,7 @@ describe("RoundHeader", () => {
 
     it('renders "<affCode> (Aff) vs <negCode> (Neg)" for role=judge with scouting', () => {
         setupRound("judge");
-        useRoundStore.getState().setScouting({
+        useFlowStore.getState().setScouting({
             affSchool: "Alpha",
             aff: {
                 first: { first: "T", last: "A" },
@@ -108,12 +104,12 @@ describe("RoundHeader", () => {
         renderRoundHeader();
         const btn = screen.getByTestId("settings-btn");
         await userEvent.click(btn);
-        expect(useRoundStore.getState().settingsOpen).toBe(true);
+        expect(useFlowStore.getState().settingsOpen).toBe(true);
     });
 
     it("shows team codes from scouting", () => {
-        useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
-        useRoundStore.getState().setScouting({
+        setupRound("aff");
+        useFlowStore.getState().setScouting({
             affSchool: "Westwood",
             aff: {
                 first: { first: "Al", last: "Smith" },
@@ -124,40 +120,18 @@ describe("RoundHeader", () => {
         expect(screen.getByTestId("round-header").textContent).toContain("Westwood JS");
     });
 
-    it("opens the guide from the Guide button", async () => {
+    it("keeps the Guide button disabled while the guide is away", () => {
         setupRound("aff");
         renderRoundHeader();
-        expect(useRoundStore.getState().guideOpen).toBe(false);
-        await userEvent.click(screen.getByTestId("guide-btn"));
-        expect(useRoundStore.getState().guideOpen).toBe(true);
+        expect(screen.getByTestId("guide-btn")).toBeDisabled();
     });
 
-    it("updates store round and resets activeSheetId/selection/mode when a valid file is imported", async () => {
-        const { readRoundFile } = await import("@/lib/persistence/io");
+    it("replaces the store round when a valid file is imported", async () => {
+        const { readFlowFile } = await import("@/lib/persistence/flowIo");
 
-        // Set up an initial round
         setupRound("aff");
-        // Simulate stale selection state
-        useRoundStore.setState({
-            activeSheetId: "stale-sheet",
-            selection: { sheetId: "stale-sheet", speechId: "s1", row: 0 },
-        });
-
-        // Build a different round to return from the mock
-        useRoundStore.getState().createRound({
-            role: "neg",
-            format: makeFormat(POLICY_PRESET),
-        });
-        const importedRound = useRoundStore.getState().round!;
-
-        // Reset store back to original so we can observe the change
-        setupRound("aff");
-        useRoundStore.setState({
-            activeSheetId: "stale-sheet",
-            selection: { sheetId: "stale-sheet", speechId: "s1", row: 0 },
-        });
-
-        vi.mocked(readRoundFile).mockResolvedValueOnce(importedRound);
+        const importedRound = makeFlowRound("neg");
+        vi.mocked(readFlowFile).mockResolvedValueOnce(importedRound);
 
         renderRoundHeader();
 
@@ -168,10 +142,10 @@ describe("RoundHeader", () => {
         fireEvent.change(fileInput, { target: { files: [fakeFile] } });
 
         await waitFor(() => {
-            const state = useRoundStore.getState();
+            const state = useFlowStore.getState();
             expect(state.round).toBe(importedRound);
-            expect(state.activeSheetId).toBeNull();
-            expect(state.selection).toBeNull();
+            // The active sheet resets to the imported round's first flow sheet.
+            expect(importedRound.sheets.some((s) => s.id === state.activeSheetId)).toBe(true);
         });
     });
 });

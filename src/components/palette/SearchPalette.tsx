@@ -3,40 +3,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { buildSearchEntries } from "@/lib/search/entries";
-import { fuzzySearch } from "@/lib/search/fuzzy";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { sortedSheets, type FlowSheet } from "@/lib/model/flow";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
-import { Highlighted } from "./Highlighted";
-
-/** Cap argument rows so a broad query never floods the DOM. */
-const MAX_NODE_RESULTS = 50;
-
-/** A flat, keyboard-navigable result row. */
-type Row =
-    | { kind: "sheet"; sheetId: string; title: string; ranges: number[] }
-    | {
-          kind: "node";
-          nodeId: string;
-          sheetId: string;
-          speechId: string;
-          text: string;
-          crumb: string;
-          ranges: number[];
-      };
-
+/**
+ * Sheet quick-switcher. Full-text search over flow content returns with the
+ * search phase; until then this palette filters sheet titles only.
+ */
 export default function SearchPalette() {
-    const open = useRoundStore((s) => s.quickSwitcherOpen);
+    const open = useFlowStore((s) => s.quickSwitcherOpen);
     if (!open) return null;
     return <SearchPaletteInner />;
 }
 
 function SearchPaletteInner() {
-    const open = useRoundStore((s) => s.quickSwitcherOpen);
-    const round = useRoundStore((s) => s.round);
-    const setActiveSheet = useRoundStore((s) => s.setActiveSheet);
-    const setSelection = useRoundStore((s) => s.setSelection);
-    const setOpen = useRoundStore((s) => s.setQuickSwitcherOpen);
+    const open = useFlowStore((s) => s.quickSwitcherOpen);
+    const round = useFlowStore((s) => s.round);
+    const setActiveSheet = useFlowStore((s) => s.setActiveSheet);
+    const setOpen = useFlowStore((s) => s.setQuickSwitcherOpen);
 
     const [query, setQuery] = useState("");
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -50,58 +34,14 @@ function SearchPaletteInner() {
         }
     }, [open]);
 
-    // Rebuild only when sheets or nodes change, not on cursor/selection mutations.
-    const sheets = round?.sheets;
-    const nodes = round?.nodes;
-    const entries = useMemo(
-        () => buildSearchEntries(round),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [sheets, nodes],
-    );
+    const rows = useMemo<FlowSheet[]>(() => {
+        if (!round) return [];
+        const sheets = sortedSheets(round);
+        const q = query.trim().toLowerCase();
+        if (!q) return sheets;
+        return sheets.filter((s) => s.title.toLowerCase().includes(q));
+    }, [round, query]);
 
-    const rows = useMemo<Row[]>(() => {
-        const q = query.trim();
-
-        // Empty query: list all sheets, no arguments.
-        if (!q) {
-            return entries.sheetEntries.map((e) => ({
-                kind: "sheet" as const,
-                sheetId: e.sheetId,
-                title: e.title,
-                ranges: [],
-            }));
-        }
-
-        const sheetRes = fuzzySearch(entries.sheetHaystack, q);
-        const sheetRows: Row[] = sheetRes.order.map((idx, i) => {
-            const e = entries.sheetEntries[idx];
-            return {
-                kind: "sheet",
-                sheetId: e.sheetId,
-                title: e.title,
-                ranges: sheetRes.ranges[i],
-            };
-        });
-
-        const nodeRes = fuzzySearch(entries.nodeHaystack, q);
-        const nodeRows: Row[] = nodeRes.order.slice(0, MAX_NODE_RESULTS).map((idx, i) => {
-            const e = entries.nodeEntries[idx];
-            const crumb = e.speechName ? `${e.sheetTitle} · ${e.speechName}` : e.sheetTitle;
-            return {
-                kind: "node",
-                nodeId: e.nodeId,
-                sheetId: e.sheetId,
-                speechId: e.speechId,
-                text: e.text,
-                crumb,
-                ranges: nodeRes.ranges[i],
-            };
-        });
-
-        return [...sheetRows, ...nodeRows];
-    }, [entries, query]);
-
-    // Keep selection in range as results change.
     useEffect(() => {
         setSelectedIndex(0);
     }, [query]);
@@ -111,27 +51,13 @@ function SearchPaletteInner() {
         if (!open) return;
         const row = rows[selectedIndex];
         if (!row) return;
-        const id = row.kind === "sheet" ? `sp-sheet-${row.sheetId}` : `sp-node-${row.nodeId}`;
-        document.getElementById(id)?.scrollIntoView?.({ block: "nearest" });
+        document.getElementById(`sp-sheet-${row.id}`)?.scrollIntoView?.({ block: "nearest" });
     }, [open, selectedIndex, rows]);
 
     if (!open) return null;
 
-    const sheetRows = rows.filter((r) => r.kind === "sheet");
-    const nodeRows = rows.filter((r) => r.kind === "node");
-
-    function select(row: Row) {
-        if (row.kind === "sheet") {
-            setActiveSheet(row.sheetId);
-        } else {
-            setActiveSheet(row.sheetId);
-            const node = round?.nodes.find((n) => n.id === row.nodeId);
-            setSelection({
-                sheetId: row.sheetId,
-                speechId: row.speechId,
-                row: node ? node.row : 0,
-            });
-        }
+    function select(sheet: FlowSheet) {
+        setActiveSheet(sheet.id);
         setOpen(false);
     }
 
@@ -162,16 +88,7 @@ function SearchPaletteInner() {
         }
     }
 
-    // Sheets render first, so a sheet row's flat index is its own position and a
-    // node row's is offset by the number of sheet rows.
-    const nodeOffset = sheetRows.length;
-
-    // Stable DOM id of the currently highlighted row, for aria-activedescendant
-    // and scroll-into-view (selection lives in the input; the list is virtual).
-    const rowId = (row: Row) =>
-        row.kind === "sheet" ? `sp-sheet-${row.sheetId}` : `sp-node-${row.nodeId}`;
-    const activeRow = rows[selectedIndex];
-    const activeId = activeRow ? rowId(activeRow) : undefined;
+    const activeId = rows[selectedIndex] ? `sp-sheet-${rows[selectedIndex].id}` : undefined;
 
     return (
         <Dialog
@@ -185,21 +102,21 @@ function SearchPaletteInner() {
                 top-anchored and chromeless to keep the command-palette feel. */}
             <DialogContent
                 showCloseButton={false}
-                aria-label="Search flow"
+                aria-label="Switch sheet"
                 data-testid="search-palette"
                 onKeyDown={onKeyDown}
                 className="top-[12vh] w-full max-w-[520px] translate-y-0 gap-0 overflow-hidden p-0"
             >
-                <DialogTitle className="sr-only">Search flow</DialogTitle>
+                <DialogTitle className="sr-only">Switch sheet</DialogTitle>
                 <input
                     ref={inputRef}
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search sheets and arguments…"
+                    placeholder="Switch sheet... (text search coming back soon)"
                     className="border-border bg-card text-foreground box-border w-full border-b px-3.5 py-3 text-[14px] focus:outline-none"
                     data-testid="search-palette-input"
-                    aria-label="Search flow"
+                    aria-label="Switch sheet"
                     role="combobox"
                     aria-expanded
                     aria-controls="search-palette-list"
@@ -216,90 +133,30 @@ function SearchPaletteInner() {
                             No results
                         </div>
                     ) : (
-                        <>
-                            {sheetRows.length > 0 && (
-                                <Section label="Sheets">
-                                    {sheetRows.map((row, i) => (
-                                        <RowButton
-                                            key={row.sheetId}
-                                            active={i === selectedIndex}
-                                            onClick={() => select(row)}
-                                            testId={`sp-sheet-${row.sheetId}`}
-                                        >
-                                            <Highlighted text={row.title} ranges={row.ranges} />
-                                        </RowButton>
-                                    ))}
-                                </Section>
-                            )}
-                            {nodeRows.length > 0 && (
-                                <Section label="Arguments">
-                                    {nodeRows.map((row, i) =>
-                                        row.kind === "node" ? (
-                                            <RowButton
-                                                key={row.nodeId}
-                                                active={nodeOffset + i === selectedIndex}
-                                                onClick={() => select(row)}
-                                                testId={`sp-node-${row.nodeId}`}
-                                            >
-                                                <span className="block truncate">
-                                                    <Highlighted
-                                                        text={row.text}
-                                                        ranges={row.ranges}
-                                                    />
-                                                </span>
-                                                <span className="text-muted-foreground block truncate text-[11px]">
-                                                    {row.crumb}
-                                                </span>
-                                            </RowButton>
-                                        ) : null,
-                                    )}
-                                </Section>
-                            )}
-                        </>
+                        <ul className="m-0 list-none p-0">
+                            {rows.map((sheet, i) => (
+                                <li key={sheet.id} role="presentation">
+                                    <button
+                                        type="button"
+                                        id={`sp-sheet-${sheet.id}`}
+                                        role="option"
+                                        aria-selected={i === selectedIndex}
+                                        className={`text-foreground block w-full cursor-pointer rounded-md border-none px-2.5 py-2 text-left text-[13px] ${
+                                            i === selectedIndex
+                                                ? "bg-accent"
+                                                : "hover:bg-accent/50 bg-transparent"
+                                        }`}
+                                        onClick={() => select(sheet)}
+                                        data-testid={`sp-sheet-${sheet.id}`}
+                                    >
+                                        {sheet.title}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
                     )}
                 </div>
             </DialogContent>
         </Dialog>
-    );
-}
-
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-        <div className="mb-1">
-            <div className="text-muted-foreground px-2.5 py-1 text-[11px] font-medium tracking-wide uppercase">
-                {label}
-            </div>
-            <ul className="m-0 list-none p-0">{children}</ul>
-        </div>
-    );
-}
-
-function RowButton({
-    active,
-    onClick,
-    testId,
-    children,
-}: {
-    active: boolean;
-    onClick: () => void;
-    testId: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <li role="presentation">
-            <button
-                type="button"
-                id={testId}
-                role="option"
-                aria-selected={active}
-                className={`text-foreground block w-full cursor-pointer rounded-md border-none px-2.5 py-2 text-left text-[13px] ${
-                    active ? "bg-accent" : "hover:bg-accent/50 bg-transparent"
-                }`}
-                onClick={onClick}
-                data-testid={testId}
-            >
-                {children}
-            </button>
-        </li>
     );
 }

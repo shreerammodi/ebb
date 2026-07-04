@@ -3,18 +3,18 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { makeFormat, POLICY_PRESET } from "@/lib/format/presets";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { makeFlowRound } from "@/lib/model/flow";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import ExportMenu from "./ExportMenu";
 
-vi.mock("@/lib/persistence/io", () => ({ downloadRoundFile: vi.fn() }));
+vi.mock("@/lib/persistence/flowIo", () => ({ downloadFlowFile: vi.fn() }));
 vi.mock("@/lib/export/xlsx", () => ({
     downloadXlsx: vi.fn().mockResolvedValue(undefined),
 }));
 
 beforeEach(() => {
-    useRoundStore.getState().createRound({ role: "aff", format: makeFormat(POLICY_PRESET) });
+    useFlowStore.getState().loadRound(makeFlowRound("aff"));
 });
 
 describe("ExportMenu", () => {
@@ -30,9 +30,9 @@ describe("ExportMenu", () => {
         expect(screen.getByTestId("export-excel")).toBeInTheDocument();
     });
 
-    it("JSON item invokes downloadRoundFile", async () => {
+    it("JSON item invokes downloadFlowFile", async () => {
         const user = userEvent.setup();
-        const { downloadRoundFile } = await import("@/lib/persistence/io");
+        const { downloadFlowFile } = await import("@/lib/persistence/flowIo");
         render(
             <TooltipProvider>
                 <ExportMenu />
@@ -40,7 +40,7 @@ describe("ExportMenu", () => {
         );
         await user.click(screen.getByTestId("export-btn"));
         await user.click(screen.getByTestId("export-json"));
-        expect(downloadRoundFile).toHaveBeenCalled();
+        expect(downloadFlowFile).toHaveBeenCalled();
     });
 
     it("Excel item invokes downloadXlsx", async () => {

@@ -9,11 +9,10 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { emptyScouting } from "@/lib/model/normalize";
-import type { Round, Format } from "@/lib/model/types";
-import { persistRound } from "@/lib/persistence/autosave";
-import { db } from "@/lib/persistence/db";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { makeFlowRound, type FlowRound } from "@/lib/model/flow";
+import { flowDb } from "@/lib/persistence/flowDb";
+import { persistFlow } from "@/lib/persistence/flowPersistence";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 // ─── Navigation mock ──────────────────────────────────────────────────────────
 
@@ -34,40 +33,19 @@ import AppRoot from "./AppRoot";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-const FORMAT: Format = {
-    id: "fmt_test",
-    name: "Test Format",
-    speeches: [],
-    prepSeconds: { aff: 240, neg: 240 },
-};
-
-function makeRound(overrides: Partial<Round> = {}): Round {
-    const now = Date.now();
-    return {
-        id: `round_test_${Math.random().toString(36).slice(2, 7)}`,
-        createdAt: now,
-        updatedAt: now,
-        role: "aff",
-        format: FORMAT,
-        scouting: emptyScouting(),
-        sheets: [],
-        nodes: [],
-        groups: [],
-        ...overrides,
-    };
+function makeRound(overrides: Partial<FlowRound> = {}): FlowRound {
+    return { ...makeFlowRound("aff"), ...overrides };
 }
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
 beforeEach(async () => {
-    await db.rounds.clear();
-    await db.searchIndex.clear();
+    await flowDb.flows.clear();
     mockSearch = "";
     replace.mockReset();
-    useRoundStore.setState({
+    useFlowStore.setState({
         round: null,
         activeSheetId: null,
-        selection: null,
     });
 });
 
@@ -100,7 +78,7 @@ describe("AppRoot", () => {
 
     it("shows Workspace when ?id= matches a live round", async () => {
         const round = makeRound();
-        await persistRound(round);
+        await persistFlow(round);
         mockSearch = `id=${round.id}`;
 
         render(
@@ -116,7 +94,7 @@ describe("AppRoot", () => {
 
     it("redirects to / when the round is trashed", async () => {
         const round = makeRound({ deletedAt: 1 });
-        await persistRound(round);
+        await persistFlow(round);
         mockSearch = `id=${round.id}`;
 
         render(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import dynamic from "next/dynamic";
 
 import CommandPalette from "@/components/palette/CommandPalette";
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
@@ -10,44 +10,20 @@ import CriticalUpdateModal from "@/components/update/CriticalUpdateModal";
 import UpdateChip from "@/components/update/UpdateChip";
 import { UpdateProvider } from "@/components/update/UpdateProvider";
 import { useKeymap } from "@/lib/keymap/useKeymap";
-import { CX_COLUMNS } from "@/lib/model/cxColumns";
-import { useRoundStore } from "@/lib/store/useRoundStore";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
-import FlowGrid from "./FlowGrid";
 import InfoPanel from "./InfoPanel";
 import PrintView from "./PrintView";
 import RoundHeader from "./RoundHeader";
 import Sidebar from "./Sidebar";
 
+// Handsontable touches window at import time; keep it out of prerendering.
+const HotGrid = dynamic(() => import("./HotGrid"), { ssr: false });
+
 export default function Workspace() {
     useKeymap();
 
-    const activeSheetId = useRoundStore((s) => s.activeSheetId);
-
-    useEffect(() => {
-        const { round, selection } = useRoundStore.getState();
-        if (!activeSheetId || !round) return;
-        if (selection?.sheetId === activeSheetId) return;
-
-        const activeSheet = round.sheets.find((s) => s.id === activeSheetId);
-        const columns = activeSheet?.kind === "cx" ? CX_COLUMNS : round.format.speeches;
-        // Land on the topmost-leftmost occupied cell, else the first cell.
-        const sheetNodes = round.nodes
-            .filter((n) => n.sheetId === activeSheetId)
-            .sort((a, b) => {
-                if (a.row !== b.row) return a.row - b.row;
-                const colA = columns.findIndex((s) => s.id === a.speechId);
-                const colB = columns.findIndex((s) => s.id === b.speechId);
-                return colA - colB;
-            });
-
-        const first = sheetNodes[0];
-        useRoundStore.getState().setSelection({
-            sheetId: activeSheetId,
-            speechId: first ? first.speechId : columns[0].id,
-            row: first ? first.row : 0,
-        });
-    }, [activeSheetId]);
+    const activeSheetId = useFlowStore((s) => s.activeSheetId);
 
     return (
         <UpdateProvider>
@@ -56,11 +32,11 @@ export default function Workspace() {
                 <div className="flex min-h-0 flex-1">
                     <Sidebar />
                     <main
-                        className="min-w-0 flex-1 overflow-auto p-4"
+                        className="no-print min-w-0 flex-1 overflow-hidden p-4"
                         data-testid="workspace-content"
                     >
                         {activeSheetId ? (
-                            <FlowGrid sheetId={activeSheetId} />
+                            <HotGrid />
                         ) : (
                             <div className="text-muted-foreground p-6 text-[13px]">
                                 No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
