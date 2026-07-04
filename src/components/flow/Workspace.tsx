@@ -26,7 +26,7 @@ export default function Workspace() {
 
     return (
         <UpdateProvider>
-            <div className="flex h-screen flex-col bg-zinc-50" data-testid="workspace">
+            <div className="bg-background flex h-screen flex-col" data-testid="workspace">
                 <RoundHeader />
                 <div className="flex min-h-0 flex-1">
                     <Sidebar />
@@ -34,7 +34,7 @@ export default function Workspace() {
                         // isolate: trap Handsontable's frozen-header clone layers (z-index up
                         // to ~1060) in their own stacking context so they can't punch through
                         // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
-                        className="no-print isolate min-w-0 flex-1 overflow-hidden p-4"
+                        className="no-print isolate min-w-0 flex-1 overflow-hidden"
                         data-testid="workspace-content"
                     >
                         {activeSheetId ? (

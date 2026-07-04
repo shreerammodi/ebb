@@ -5,83 +5,144 @@
     --font-sans: var(--font-ibm-plex-sans);
     --font-mono: var(--font-commit-mono);
     --font-flow: var(--font-dm-sans);
-
-    --color-aff: #1d4ed8;
-    --color-neg: #c0271f;
-    --color-sel: #7c3aed;
-    --color-warn: #b45309;
-    --color-good: #047857;
 }
 
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================
-   DEBATE FLOW — GLOBAL DESIGN SYSTEM
-   Light-mode only. Blue = Aff, Red = Neg — reserved colors.
+   EBB — GLOBAL DESIGN SYSTEM
+
+   Every UI color flows through one of the tokens below so the
+   light and dark themes swap a small set of values instead of
+   sweeping through components. Color is reserved and meaningful:
+   Blue = Aff, Red = Neg, violet = selection/focus, amber = warn,
+   green = good. Everything else is a neutral.
+
+   RULE: hex / oklch / rgba literals outside this file are a bug.
+   A component that needs a color reuses a token (via its Tailwind
+   utility: bg-card, text-aff, border-border, ...); only add a new
+   token here when the role is genuinely distinct. The one
+   exception is deliberately theme-invariant surfaces (the flow
+   sheet is paper and stays light; the settings font sample
+   mirrors it).
    ============================================================ */
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.141 0.005 285.823);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.141 0.005 285.823);
+    /* Surfaces. The canvas sits a step below the panels so headers,
+       cards, and the paper-white flow sheet read as lifted. */
+    --background: oklch(0.972 0.003 286); /* app canvas */
+    --foreground: oklch(0.145 0.005 285.8);
+    --card: oklch(1 0 0); /* panels: headers, sidebar, cards */
+    --card-foreground: var(--foreground);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.141 0.005 285.823);
-    --primary: oklch(0.21 0.006 285.885);
+    --popover-foreground: var(--foreground);
+
+    /* Neutral interaction fills. Secondary/muted/accent share one
+       step so hover and rest fills stay legible on both the canvas
+       and white panels. */
+    --primary: oklch(0.205 0.006 285.9);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted-foreground: oklch(0.552 0.016 285.938);
-    --accent: oklch(0.967 0.001 286.375);
-    --accent-foreground: oklch(0.21 0.006 285.885);
+    --secondary: oklch(0.955 0.003 286.3);
+    --secondary-foreground: var(--primary);
+    --muted: oklch(0.955 0.003 286.3);
+    /* AA on both white panels and the tinted canvas (>=4.5:1). */
+    --muted-foreground: oklch(0.49 0.015 285.9);
+    --accent: oklch(0.955 0.003 286.3);
+    --accent-foreground: var(--primary);
+
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.92 0.004 286.32);
-    --input: oklch(0.92 0.004 286.32);
-    /* Focus ring is the selection violet, matching the bare-element :focus-visible
-       outline so shadcn primitives and grid cells share one focus language. */
+    --border: oklch(0.898 0.005 286.3);
+    --input: oklch(0.898 0.005 286.3);
+    /* Focus ring is the selection violet, matching the bare-element
+       :focus-visible outline so shadcn primitives and grid cells
+       share one focus language. */
     --ring: var(--sel);
-    --chart-1: oklch(0.871 0.006 286.286);
-    --chart-2: oklch(0.552 0.016 285.938);
-    --chart-3: oklch(0.442 0.017 285.786);
-    --chart-4: oklch(0.37 0.013 285.805);
-    --chart-5: oklch(0.274 0.006 286.033);
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.141 0.005 285.823);
-    --sidebar-primary: oklch(0.21 0.006 285.885);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.967 0.001 286.375);
-    --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-    --sidebar-border: oklch(0.92 0.004 286.32);
-    --sidebar-ring: oklch(0.705 0.015 286.067);
     --radius: 0.625rem;
 
-    /* Motion: natural deceleration for state-conveying transitions (drag, flash). */
-    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-/* Semantic aliases consumed across the app (grid theme, sidebar, badges) */
-:root {
-    --bg: var(--background);
-    --panel: var(--card);
-    --ink: var(--foreground);
-    --muted: var(--muted-foreground);
-    --line: var(--border);
-
-    /* Side colors for headers and markers; selection, warning, highlight tones. */
+    /* Side + status colors. These appear on chrome (dashboard,
+       info panel, save status), so the dark theme brightens them;
+       the flow sheet re-pins the light values because it is paper. */
     --aff: #1d4ed8;
     --neg: #c0271f;
     --sel: #7c3aed;
-    --sel-rel: color-mix(in srgb, var(--sel) 55%, transparent);
     --warn: #b45309;
     --good: #047857;
 
-    /* Cell highlighter swipe. Solid yellow in light mode (dark ink stays
-       legible); the dark-theme override keeps light text readable. */
-    --highlight: #fde047;
+    /* Motion: natural deceleration for state-conveying transitions
+       (drag, flash). */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.dark {
+    /* Render native form controls (select popups, scrollbars,
+       pickers) in their dark variants. */
+    color-scheme: dark;
+
+    --background: oklch(0.145 0.005 285.8);
+    /* Text off pure white: pure white on dark halates on LCDs. */
+    --foreground: oklch(0.93 0.004 286);
+    --card: oklch(0.195 0.006 285.9);
+    --card-foreground: var(--foreground);
+    /* Popovers float above cards, so one step lighter again. */
+    --popover: oklch(0.225 0.006 285.9);
+    --popover-foreground: var(--foreground);
+
+    --primary: oklch(0.92 0.004 286.32);
+    --primary-foreground: oklch(0.205 0.006 285.9);
+    --secondary: oklch(0.27 0.006 286);
+    --secondary-foreground: var(--foreground);
+    --muted: oklch(0.27 0.006 286);
+    --muted-foreground: oklch(0.712 0.013 286);
+    --accent: oklch(0.27 0.006 286);
+    --accent-foreground: var(--foreground);
+
+    --destructive: oklch(0.704 0.191 22.216);
+    /* Borders slightly lighter than the surfaces they edge; they
+       carry elevation because shadows barely read on dark. */
+    --border: oklch(1 0 0 / 12%);
+    --input: oklch(1 0 0 / 16%);
+    --ring: var(--sel);
+
+    /* Brightened so they hold AA contrast on dark chrome. */
+    --aff: #7da2ff;
+    --neg: #f0776b;
+    --sel: #a78bfa;
+    --warn: #f59e0b;
+    --good: #34d399;
+}
+
+@theme inline {
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-aff: var(--aff);
+    --color-neg: var(--neg);
+    --color-sel: var(--sel);
+    --color-warn: var(--warn);
+    --color-good: var(--good);
 }
 
 /* ------------------------------------------------------------
-   2. BASE RESET & BODY
+   BASE RESET & BODY
    ------------------------------------------------------------ */
 *,
 *::before,
@@ -90,8 +151,8 @@
 }
 
 body {
-    background: var(--bg);
-    color: var(--ink);
+    background: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans);
     font-size: 14px;
     line-height: 1.5;
@@ -117,42 +178,34 @@ body {
     outline: none;
 }
 
-/* Text selection */
+/* Text selection. Background only: the tint is translucent so the text's
+   own color stays readable on any surface, including light-locked paper
+   (flow sheet, font sample) under the dark theme. Never set `color` here:
+   dark-theme foreground on a light surface vanishes. */
 ::selection {
-    background: color-mix(in srgb, var(--sel) 20%, transparent);
-    color: var(--ink);
+    background: color-mix(in srgb, var(--sel) 30%, transparent);
 }
-
-/* ------------------------------------------------------------
-   3. PANEL / SURFACE
-   ------------------------------------------------------------ */
-
-/* ------------------------------------------------------------
-   5. SIDEBAR / HEADER HELPERS
-   ------------------------------------------------------------ */
-
-/* ------------------------------------------------------------
-   6. BUTTONS
-   ------------------------------------------------------------ */
-
-/* ------------------------------------------------------------
-   7. PRINT
-   ------------------------------------------------------------ */
 
 /* --- Handsontable theme mapped to app tokens -------------------------------
    html-prefixed to outrank the stock theme sheet, which loads after globals.
    The flow sheet is paper: it stays on these fixed light values regardless
-   of the app's own light/dark theme, like a physical page under any light. */
+   of the app's own light/dark theme, like a physical page under any light.
+   Side colors are re-pinned to their light values for the same reason. */
 html .ht-theme-main {
     --ht-font-family: var(--font-flow, inherit);
     --ht-background-color: oklch(1 0 0);
-    --ht-foreground-color: oklch(0.141 0.005 285.823);
-    --ht-border-color: oklch(0.92 0.004 286.32);
-    --ht-cell-vertical-border-color: oklch(0.92 0.004 286.32);
-    --ht-cell-horizontal-border-color: oklch(0.92 0.004 286.32);
+    --ht-foreground-color: oklch(0.145 0.005 285.8);
+    --ht-border-color: oklch(0.898 0.005 286.3);
+    --ht-cell-vertical-border-color: oklch(0.898 0.005 286.3);
+    --ht-cell-horizontal-border-color: oklch(0.898 0.005 286.3);
     --ht-header-background-color: oklch(1 0 0);
-    --ht-header-foreground-color: oklch(0.141 0.005 285.823);
-    --ht-accent-color: oklch(0.21 0.006 285.885);
+    --ht-header-foreground-color: oklch(0.145 0.005 285.8);
+    /* Selection violet: cell selection speaks the app's focus language. */
+    --ht-accent-color: #7c3aed;
+    /* The sheet meets the chrome flush and squared, like a full page. */
+    --ht-border-radius: 0;
+    --aff: #1d4ed8;
+    --neg: #c0271f;
 }
 /* Header ink stays put on hover and while its column is selected; the theme
    otherwise recolors hovered and highlighted th. */
@@ -171,7 +224,8 @@ html .ht-theme-main {
 .flow-bold {
     font-weight: 700;
 }
-/* Outranks the theme's even/odd row striping (.handsontable tr.ht__row_even td). */
+/* Outranks the theme's even/odd row striping (.handsontable tr.ht__row_even td).
+   Solid yellow on the light-locked sheet; dark ink stays legible. */
 .handsontable tbody tr td.flow-highlight {
     background: #fde047;
 }
@@ -231,80 +285,6 @@ html .ht-theme-main {
            screen-only overflow lock. */
         overflow: visible;
     }
-}
-
-@theme inline {
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-    --color-sidebar: var(--sidebar);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
-}
-
-.dark {
-    --background: oklch(0.141 0.005 285.823);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.21 0.006 285.885);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.21 0.006 285.885);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.92 0.004 286.32);
-    --primary-foreground: oklch(0.21 0.006 285.885);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.274 0.006 286.033);
-    --muted-foreground: oklch(0.705 0.015 286.067);
-    --accent: oklch(0.274 0.006 286.033);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: var(--sel);
-    /* Translucent amber so the light cell text stays readable on dark bg. */
-    --highlight: color-mix(in srgb, #facc15 28%, transparent);
-    --chart-1: oklch(0.871 0.006 286.286);
-    --chart-2: oklch(0.552 0.016 285.938);
-    --chart-3: oklch(0.442 0.017 285.786);
-    --chart-4: oklch(0.37 0.013 285.805);
-    --chart-5: oklch(0.274 0.006 286.033);
-    --sidebar: oklch(0.21 0.006 285.885);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.274 0.006 286.033);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
 @layer base {

@@ -113,7 +113,7 @@ export default function KeybindingsCheatsheet() {
                             <div className="flex flex-col gap-0.5">
                                 {group.rows.map((row) => (
                                     <div key={row.label} className="flex items-center gap-2">
-                                        <kbd className="text-foreground inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 border-zinc-200 bg-zinc-50 px-1.5 py-px font-mono text-[12px] whitespace-nowrap">
+                                        <kbd className="text-foreground border-border bg-muted inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 px-1.5 py-px font-mono text-[12px] whitespace-nowrap">
                                             {row.chord}
                                         </kbd>
                                         <span className="text-foreground text-[12px]">
@@ -144,7 +144,7 @@ export default function KeybindingsCheatsheet() {
 
                                     return (
                                         <div key={commandId} className="flex items-center gap-2">
-                                            <kbd className="text-foreground inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 border-zinc-200 bg-zinc-50 px-1.5 py-px font-mono text-[12px] whitespace-nowrap">
+                                            <kbd className="text-foreground border-border bg-muted inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 px-1.5 py-px font-mono text-[12px] whitespace-nowrap">
                                                 {displayChord}
                                             </kbd>
                                             <span className="text-foreground text-[12px]">

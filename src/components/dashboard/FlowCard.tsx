@@ -10,7 +10,7 @@ import { relativeTime, resultLabel } from "./format";
 const rolePill: Record<RoundSummary["role"], { label: string; cls: string }> = {
     aff: { label: "Aff", cls: "bg-aff/10 text-aff" },
     neg: { label: "Neg", cls: "bg-neg/10 text-neg" },
-    judge: { label: "Judge", cls: "bg-zinc-100 text-muted-foreground" },
+    judge: { label: "Judge", cls: "bg-muted text-muted-foreground" },
 };
 
 export interface FlowCardProps {
@@ -64,7 +64,7 @@ export default function FlowCard({
             {...interactiveProps}
             className={cn(
                 "group relative rounded-lg border border-border bg-card p-5 transition-colors",
-                interactive && "cursor-pointer hover:border-zinc-400 hover:bg-accent/40",
+                interactive && "hover:border-muted-foreground/50 hover:bg-accent/40 cursor-pointer",
             )}
         >
             {menu}
@@ -88,7 +88,7 @@ export default function FlowCard({
                 </span>
             </div>
 
-            <hr className="-mx-5 my-3 border-zinc-100" />
+            <hr className="border-border/60 -mx-5 my-3" />
 
             <div className="grid grid-cols-[78px_1fr] gap-x-3 gap-y-1.5 text-[12.5px]">
                 <span className="text-muted-foreground">Tournament</span>
@@ -126,7 +126,7 @@ export default function FlowCard({
                 </p>
             )}
 
-            <hr className="-mx-5 my-3 border-zinc-100" />
+            <hr className="border-border/60 -mx-5 my-3" />
             <div className="text-muted-foreground text-[12px]">edited {edited}</div>
         </div>
     );

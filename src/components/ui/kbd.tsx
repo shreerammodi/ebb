@@ -11,7 +11,7 @@ export function Kbd({ className, ...props }: ComponentProps<"kbd">) {
     return (
         <kbd
             className={cn(
-                "text-foreground inline-flex min-w-[22px] items-center justify-center rounded border border-b-2 border-zinc-200 bg-zinc-50 px-1 py-px font-mono text-[11px] whitespace-nowrap",
+                "text-foreground border-border bg-muted inline-flex min-w-[22px] items-center justify-center rounded border border-b-2 px-1 py-px font-mono text-[11px] whitespace-nowrap",
                 className,
             )}
             {...props}
