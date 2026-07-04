@@ -5,6 +5,34 @@ import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { prettyChord, buildChordMap } from "@/lib/keymap/displayChord";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
+/** Short prose orientation shown above the shortcut tables. */
+const BASICS: { heading: string; body: string }[] = [
+    {
+        heading: "Flowing",
+        body: "Each column is a speech. Type an argument in a cell; Enter commits and drops down so responses stack beneath it, Tab commits and moves right to answer across into the next speech.",
+    },
+    {
+        heading: "Sheets and sides",
+        body: "A sheet is one flow. Aff sheets read blue, neg red. Add them with the shortcuts below, reorder them in the sidebar, and jump straight to one by its number.",
+    },
+    {
+        heading: "Marking cells",
+        body: "Bold a claim, highlight what matters, or tag a cell as a card (evidence). The three combine freely and surface in search.",
+    },
+    {
+        heading: "Find anything",
+        body: "Search cells to jump to any argument across every sheet. The command palette runs every action by name when a shortcut slips your mind.",
+    },
+    {
+        heading: "Round info",
+        body: "Open round info to record the teams, judge, and decision for scouting later.",
+    },
+    {
+        heading: "Your data",
+        body: "Everything lives in this browser and autosaves as you type. Nothing is sent anywhere, and undo reaches back through your whole history.",
+    },
+];
+
 /** Grid-native gestures owned by Handsontable; fixed, not rebindable. */
 const FIXED_GROUPS: { label: string; rows: { chord: string; label: string }[] }[] = [
     {
@@ -99,15 +127,29 @@ export default function KeybindingsCheatsheet() {
             >
                 <DialogHeader className="border-border shrink-0 border-b px-[18px] pt-[14px] pb-2.5">
                     <DialogTitle className="text-foreground text-sm font-semibold">
-                        Keyboard shortcuts
+                        Guide
                     </DialogTitle>
                 </DialogHeader>
 
-                <div
-                    className="grid gap-4 overflow-y-auto px-[18px] py-3"
-                    style={{ gridTemplateColumns: "1fr 1fr" }}
-                >
-                    {FIXED_GROUPS.map((group) => (
+                <div className="overflow-y-auto">
+                    <div className="border-border flex flex-col gap-2.5 border-b px-[18px] py-3">
+                        {BASICS.map((item) => (
+                            <div key={item.heading} className="flex flex-col gap-0.5">
+                                <div className="text-muted-foreground font-mono text-[9px] font-bold tracking-widest uppercase">
+                                    {item.heading}
+                                </div>
+                                <p className="text-foreground text-[12px] leading-snug">
+                                    {item.body}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div
+                        className="grid gap-4 px-[18px] py-3"
+                        style={{ gridTemplateColumns: "1fr 1fr" }}
+                    >
+                        {FIXED_GROUPS.map((group) => (
                         <div key={group.label} className="flex flex-col gap-1">
                             <div className="text-muted-foreground mb-1 font-mono text-[9px] font-bold tracking-widest uppercase">
                                 {group.label}
@@ -158,10 +200,11 @@ export default function KeybindingsCheatsheet() {
                             </div>
                         </div>
                     ))}
+                    </div>
                 </div>
 
                 <div className="border-border text-muted-foreground shrink-0 border-t px-[18px] py-2 text-[11px]">
-                    The guide is coming back soon.
+                    Every action here also lives in the command palette. Press ? to close.
                 </div>
             </DialogContent>
         </Dialog>

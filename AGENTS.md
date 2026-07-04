@@ -121,6 +121,10 @@ edge case; otherwise leave the code bare.
 ## Notes for agents
 
 - There is no server; `npm run build` produces a static site in `./out`.
+- **Keep the in-app guide current.** When a change adds, removes, or reshapes a
+  component or anything a user sees or does, update the guide in the same change
+  so it never drifts: shortcut tables and the Basics copy live in
+  `src/components/palette/KeybindingsCheatsheet.tsx` (the `?` dialog).
 - When adding a UI primitive, follow the existing `components/ui` (shadcn-style)
   patterns; `components.json` configures the generator.
 - Prefer `git rebase` over `git merge` when integrating changes to maintain a
