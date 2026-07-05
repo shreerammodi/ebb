@@ -100,6 +100,20 @@ export default function RoundHeader() {
                         Info
                     </Button>
                 </Tip>
+                <Tip label="RFD" command="rfd.toggle">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            const s = useFlowStore.getState();
+                            s.setRfdOpen(!s.rfdOpen);
+                        }}
+                        aria-label="RFD"
+                        data-testid="rfd-btn"
+                    >
+                        RFD
+                    </Button>
+                </Tip>
                 <Tip label="Settings" command="settings.open">
                     <Button
                         variant="ghost"

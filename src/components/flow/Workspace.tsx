@@ -13,6 +13,7 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import InfoPanel from "./InfoPanel";
 import PrintView from "./PrintView";
+import RfdDrawer from "./RfdDrawer";
 import RoundHeader from "./RoundHeader";
 import Sidebar from "./Sidebar";
 
@@ -23,6 +24,8 @@ export default function Workspace() {
     useKeymap();
 
     const activeSheetId = useFlowStore((s) => s.activeSheetId);
+    const rfdOpen = useFlowStore((s) => s.rfdOpen);
+    const roundId = useFlowStore((s) => s.round?.id);
 
     return (
         <UpdateProvider>
@@ -48,6 +51,7 @@ export default function Workspace() {
                         )}
                     </main>
                 </div>
+                {rfdOpen && roundId && <RfdDrawer key={roundId} />}
                 <SearchPalette />
                 <SettingsPanel />
                 <InfoPanel />
