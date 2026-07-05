@@ -11,6 +11,7 @@ import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Tip } from "@/components/ui/tooltip";
+import { focusActiveHot } from "@/lib/grid/hotInstance";
 import { makeCellCompletionSource } from "@/lib/rfd/cellCompletion";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -139,6 +140,9 @@ export default function RfdDrawer() {
             cancelAnimationFrame(focusRaf);
             view.destroy();
             viewRef.current = null;
+            // Closing hands keyboard focus back to the grid so the next
+            // keystroke edits the flow instead of falling on <body>.
+            focusActiveHot();
         };
     }, []);
 

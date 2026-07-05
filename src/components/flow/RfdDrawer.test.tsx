@@ -1,12 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
+import { focusActiveHot } from "@/lib/grid/hotInstance";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { makeFlowRound } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import RfdDrawer from "./RfdDrawer";
+
+vi.mock("@/lib/grid/hotInstance", () => ({ focusActiveHot: vi.fn() }));
 
 function renderDrawer() {
     return render(
@@ -35,5 +38,12 @@ describe("RfdDrawer", () => {
         renderDrawer();
         await userEvent.click(screen.getByTestId("rfd-close"));
         expect(useFlowStore.getState().rfdOpen).toBe(false);
+    });
+
+    it("returns focus to the grid when it unmounts", () => {
+        vi.mocked(focusActiveHot).mockClear();
+        const { unmount } = renderDrawer();
+        unmount();
+        expect(focusActiveHot).toHaveBeenCalled();
     });
 });
