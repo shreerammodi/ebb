@@ -1,0 +1,42 @@
+# Flatpak manifest — wraps the Tauri-built .deb into an org.gnome.Platform
+# sandbox (the GNOME runtime bundles the WebKitGTK 4.1 webview Tauri needs; the
+# freedesktop runtime does not). Consumed by the `flatpak` job in
+# .github/workflows/release.yml, which copies the built .deb next to this file
+# as `ebb.deb` before building. Flatpak apps update through their own repo, not
+# the Tauri updater, so this is a self-contained distribution path.
+id: net.smodi.ebb
+runtime: org.gnome.Platform
+runtime-version: "47"
+sdk: org.gnome.Sdk
+command: ebb
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # The app contacts github.com to check for and download updates.
+  - --share=network
+modules:
+  - name: ebb
+    buildsystem: simple
+    build-commands:
+      # Unpack the .deb (ar archive -> data tarball) and re-root /usr into /app.
+      - ar x ebb.deb
+      - tar -xf data.tar.* -C .
+      - install -Dm755 usr/bin/ebb /app/bin/ebb
+      # Rename the desktop entry to the flatpak app id and point it at the
+      # sandboxed binary + icon (flatpak requires app-id-prefixed metadata).
+      - |
+        desktop=$(ls usr/share/applications/*.desktop | head -n1)
+        install -Dm644 "$desktop" /app/share/applications/net.smodi.ebb.desktop
+        sed -i 's/^Icon=.*/Icon=net.smodi.ebb/' /app/share/applications/net.smodi.ebb.desktop
+        sed -i 's/^Exec=.*/Exec=ebb/' /app/share/applications/net.smodi.ebb.desktop
+      # Rename each icon to the app id, preserving its size directory.
+      - |
+        for f in $(find usr/share/icons -name '*.png'); do
+          size=$(echo "$f" | grep -oE '[0-9]+x[0-9]+' | head -n1)
+          install -Dm644 "$f" "/app/share/icons/hicolor/$size/apps/net.smodi.ebb.png"
+        done
+    sources:
+      - type: file
+        path: ebb.deb
