@@ -72,12 +72,12 @@ export function Logo({
         <>
             <Monogram
                 aria-label={ariaLabel}
-                className={cn(className, "h-6 min-[900px]:hidden")}
+                className={cn(className, "h-6 shrink-0 min-[900px]:hidden")}
                 {...props}
             />
             <Wordmark
                 aria-label={ariaLabel}
-                className={cn(className, "max-[899.98px]:hidden")}
+                className={cn(className, "shrink-0 max-[899.98px]:hidden")}
                 {...props}
             />
         </>
