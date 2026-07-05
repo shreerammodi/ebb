@@ -13,7 +13,10 @@
         "icons": "node scripts/generate-icons.mjs && tauri icon public/icons/icon-1024.png",
         "tauri": "tauri",
         "desktop:dev": "tauri dev",
-        "desktop:build": "tauri build"
+        "desktop:build": "tauri build",
+        "release": "npm version patch",
+        "version": "node scripts/sync-version.mjs && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock",
+        "postversion": "git push --follow-tags"
     },
     "dependencies": {
         "@handsontable/react-wrapper": "^18.0.0",
