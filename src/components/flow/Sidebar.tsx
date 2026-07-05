@@ -291,7 +291,7 @@ function SheetRow({
                         }
                     }}
                     onBlur={commit}
-                    className="text-foreground outline-aff flex-1 rounded-sm border-none bg-transparent px-0.5 font-[inherit] text-[13px] outline outline-1"
+                    className="text-foreground outline-aff flex-1 rounded-md border-none bg-transparent px-0.5 font-[inherit] text-[13px] outline outline-1"
                     data-testid={`rename-input-${sheet.id}`}
                 />
             </div>
