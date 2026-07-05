@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 
 import { makeFlowRound, type FlowRound } from "@/lib/model/flow";
 
-import { cellCompletions, makeCellCompletionSource } from "./cellCompletion";
+import { cellCompletions, makeCellCompletionSource, quoteContinuation } from "./cellCompletion";
 
 /** Aff round whose first flow sheet has a filled 1AC and 1NC cell. */
 function roundWithCells(): FlowRound {
@@ -32,6 +32,22 @@ describe("cellCompletions", () => {
     it("returns nothing when the round has no filled cells", () => {
         const round = makeFlowRound("aff");
         expect(cellCompletions(round)).toEqual([]);
+    });
+});
+
+describe("quoteContinuation", () => {
+    it("re-prefixes continuation lines with the accept line's blockquote marker", () => {
+        expect(quoteContinuation("shaped by play\nzagorin 9", "> ")).toBe(
+            "shaped by play\n> zagorin 9",
+        );
+    });
+
+    it("carries leading indentation of a nested quote onto continuation lines", () => {
+        expect(quoteContinuation("a\nb", "  > ")).toBe("a\n  > b");
+    });
+
+    it("leaves the text verbatim when the accept line is not a blockquote", () => {
+        expect(quoteContinuation("a\nb", "the 2nr said ")).toBe("a\nb");
     });
 });
 

@@ -7,9 +7,30 @@
  */
 
 import type { Completion, CompletionContext, CompletionResult } from "@codemirror/autocomplete";
+import type { EditorView } from "@codemirror/view";
 
 import type { FlowRound } from "@/lib/model/flow";
 import { collectCells } from "@/lib/search/cellSearch";
+
+/**
+ * Re-prefix every line after the first with the blockquote marker the accept
+ * line already carries, so a multi-line cell stays one quote instead of
+ * breaking out into prose after line one. `prefix` is the text before the
+ * insert point; off a blockquote line the cell drops in verbatim.
+ */
+export function quoteContinuation(text: string, prefix: string): string {
+    return /^\s*>\s?$/.test(prefix) ? text.replace(/\n/g, `\n${prefix}`) : text;
+}
+
+/** Inserts the cell text, keeping a multi-line cell inside the blockquote. */
+function applyCellText(view: EditorView, completion: Completion, from: number, to: number) {
+    const line = view.state.doc.lineAt(from);
+    const insert = quoteContinuation(completion.label, line.text.slice(0, from - line.from));
+    view.dispatch({
+        changes: { from, to, insert },
+        selection: { anchor: from + insert.length },
+    });
+}
 
 /** Every filled cell as a completion labelled by its text; side drives the ink. */
 export function cellCompletions(round: FlowRound): Completion[] {
@@ -18,6 +39,7 @@ export function cellCompletions(round: FlowRound): Completion[] {
         // Side (aff/neg) drives the leading dot and text color; the drawer keys
         // its theme off `type`.
         type: cell.side,
+        apply: applyCellText,
     }));
 }
 
