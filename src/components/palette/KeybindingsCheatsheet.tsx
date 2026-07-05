@@ -12,7 +12,7 @@ const BASICS: { heading: string; body: string }[] = [
     },
     {
         heading: "Sheets and sides",
-        body: "A sheet is one flow. Aff sheets read blue, neg red. Add them with the shortcuts below, reorder them in the sidebar, and jump straight to one by its number.",
+        body: "A sheet is one flow. Aff sheets read blue, neg red, recolor either side under Settings > Display. Add them with the shortcuts below, reorder them in the sidebar, and jump straight to one by its number.",
     },
     {
         heading: "Marking cells",

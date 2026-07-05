@@ -18,7 +18,7 @@ import {
     type FlowRound,
     type FlowSheet,
 } from "@/lib/model/flow";
-import type { Scouting } from "@/lib/model/types";
+import type { Scouting, Side } from "@/lib/model/types";
 import { resolveThemeMode, type ThemeMode } from "@/lib/theme/mode";
 import { loadUpdateConfig, saveUpdateConfig } from "@/lib/update/settings";
 import type { UpdateConfig } from "@/lib/update/types";
@@ -40,6 +40,9 @@ export interface FlowState {
     keymapOverrides: Record<string, string>;
     flowFont: FontId;
     theme: ThemeMode;
+    /** Custom aff/neg ink; null keeps the theme default. */
+    affColor: string | null;
+    negColor: string | null;
     /** Desktop auto-update behavior (opt-in, Tournament Mode). */
     updateConfig: UpdateConfig;
     /** The unified command/search palette. */
@@ -75,6 +78,8 @@ export interface FlowActions {
     clearKeymapOverride(commandId: CommandId): void;
     setFlowFont(id: FontId): void;
     setTheme(mode: ThemeMode): void;
+    /** Sets one side's custom ink; null resets it to the theme default. */
+    setSideColor(side: Side, color: string | null): void;
     /** Merges a partial update config, persisting the result. */
     setUpdateConfig(patch: Partial<UpdateConfig>): void;
     /** Opens/closes the palette; `seed` sets the initial query (">" = command mode). */
@@ -118,6 +123,13 @@ interface DisplaySettings {
     flowFont: FontId;
     sidebarCollapsed: boolean;
     theme: ThemeMode;
+    affColor: string | null;
+    negColor: string | null;
+}
+
+/** Accepts only a `#rrggbb` literal, the shape native color inputs emit. */
+function resolveColor(value: unknown): string | null {
+    return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value) ? value : null;
 }
 
 function loadDisplaySettings(): DisplaySettings {
@@ -125,6 +137,8 @@ function loadDisplaySettings(): DisplaySettings {
         flowFont: DEFAULT_FONT_ID,
         sidebarCollapsed: false,
         theme: "system",
+        affColor: null,
+        negColor: null,
     };
     if (typeof window === "undefined") return fallback;
     try {
@@ -135,6 +149,8 @@ function loadDisplaySettings(): DisplaySettings {
             flowFont: resolveFontId(p.flowFont),
             sidebarCollapsed: typeof p.sidebarCollapsed === "boolean" ? p.sidebarCollapsed : false,
             theme: resolveThemeMode(p.theme),
+            affColor: resolveColor(p.affColor),
+            negColor: resolveColor(p.negColor),
         };
     } catch {
         return fallback;
@@ -148,6 +164,17 @@ function saveDisplaySettings(s: DisplaySettings): void {
     } catch {
         // ignore
     }
+}
+
+/** The persisted display fields as they currently stand in the store. */
+function displaySettingsOf(s: FlowState): DisplaySettings {
+    return {
+        flowFont: s.flowFont,
+        sidebarCollapsed: s.sidebarCollapsed,
+        theme: s.theme,
+        affColor: s.affColor,
+        negColor: s.negColor,
+    };
 }
 
 const initialDisplaySettings = loadDisplaySettings();
@@ -166,6 +193,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
     theme: initialDisplaySettings.theme,
+    affColor: initialDisplaySettings.affColor,
+    negColor: initialDisplaySettings.negColor,
     updateConfig: loadUpdateConfig(),
     quickSwitcherOpen: false,
     paletteSeed: "",
@@ -300,21 +329,19 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     },
 
     setFlowFont(id) {
-        saveDisplaySettings({
-            flowFont: id,
-            sidebarCollapsed: get().sidebarCollapsed,
-            theme: get().theme,
-        });
+        saveDisplaySettings({ ...displaySettingsOf(get()), flowFont: id });
         set({ flowFont: id });
     },
 
     setTheme(mode) {
-        saveDisplaySettings({
-            flowFont: get().flowFont,
-            sidebarCollapsed: get().sidebarCollapsed,
-            theme: mode,
-        });
+        saveDisplaySettings({ ...displaySettingsOf(get()), theme: mode });
         set({ theme: mode });
+    },
+
+    setSideColor(side, color) {
+        const patch = side === "aff" ? { affColor: color } : { negColor: color };
+        saveDisplaySettings({ ...displaySettingsOf(get()), ...patch });
+        set(patch);
     },
 
     setUpdateConfig(patch) {
@@ -336,11 +363,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         set({ infoOpen: open });
     },
     setSidebarCollapsed(collapsed) {
-        saveDisplaySettings({
-            flowFont: get().flowFont,
-            sidebarCollapsed: collapsed,
-            theme: get().theme,
-        });
+        saveDisplaySettings({ ...displaySettingsOf(get()), sidebarCollapsed: collapsed });
         set({ sidebarCollapsed: collapsed });
     },
     setRenamingSheet(id) {

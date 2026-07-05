@@ -14,6 +14,17 @@ beforeEach(() => {
     useFlowStore.setState({ round: null, activeSheetId: null });
 });
 
+describe("setSideColor", () => {
+    it("sets a side's ink and persists it, and null resets it", () => {
+        useFlowStore.getState().setSideColor("aff", "#123456");
+        expect(useFlowStore.getState().affColor).toBe("#123456");
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain("#123456");
+
+        useFlowStore.getState().setSideColor("aff", null);
+        expect(useFlowStore.getState().affColor).toBeNull();
+    });
+});
+
 describe("loadRound", () => {
     it("defaults the active sheet to the first flow sheet", () => {
         const round = loadFresh();

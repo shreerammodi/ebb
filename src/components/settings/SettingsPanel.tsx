@@ -18,7 +18,9 @@ import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { FONTS, DEFAULT_FONT_ID, type FontId } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { eventToChord } from "@/lib/keymap/resolve";
+import type { Side } from "@/lib/model/types";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+import { DEFAULT_SIDE_COLORS } from "@/lib/theme/applySideColors";
 import type { ThemeMode } from "@/lib/theme/mode";
 import { isDesktop } from "@/lib/update/adapter";
 import { cn } from "@/lib/utils";
@@ -29,6 +31,11 @@ const THEME_OPTIONS: { id: ThemeMode; label: string }[] = [
     { id: "light", label: "Light" },
     { id: "dark", label: "Dark" },
     { id: "system", label: "System" },
+];
+
+const SIDE_OPTIONS: { id: Side; label: string }[] = [
+    { id: "aff", label: "Aff" },
+    { id: "neg", label: "Neg" },
 ];
 
 const COMMAND_LIST = Object.values(COMMANDS);
@@ -63,6 +70,9 @@ export default function SettingsPanel() {
     const setFlowFont = useFlowStore((s) => s.setFlowFont);
     const theme = useFlowStore((s) => s.theme);
     const setTheme = useFlowStore((s) => s.setTheme);
+    const affColor = useFlowStore((s) => s.affColor);
+    const negColor = useFlowStore((s) => s.negColor);
+    const setSideColor = useFlowStore((s) => s.setSideColor);
 
     const [recording, setRecording] = useState<CommandId | null>(null);
     const [category, setCategory] = useState<Category>("display");
@@ -280,6 +290,57 @@ export default function SettingsPanel() {
                                     >
                                         Separation of powers outweighs
                                     </p>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-foreground text-[13px] font-medium">
+                                            Argument colors
+                                        </span>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setSideColor("aff", null);
+                                                setSideColor("neg", null);
+                                            }}
+                                            disabled={affColor === null && negColor === null}
+                                            data-testid="side-colors-reset"
+                                            aria-label="Reset argument colors to default"
+                                        >
+                                            Default
+                                        </Button>
+                                    </div>
+                                    <p className="text-muted-foreground mb-1 text-[12px]">
+                                        Ink used for aff and neg columns, headers, and labels.
+                                    </p>
+                                    <div className="flex flex-col gap-1.5">
+                                        {SIDE_OPTIONS.map((s) => {
+                                            const value =
+                                                (s.id === "aff" ? affColor : negColor) ??
+                                                DEFAULT_SIDE_COLORS[s.id];
+                                            return (
+                                                <label
+                                                    key={s.id}
+                                                    className="flex items-center gap-2.5 rounded-md px-2 py-1.5"
+                                                >
+                                                    <input
+                                                        type="color"
+                                                        value={value}
+                                                        onChange={(e) =>
+                                                            setSideColor(s.id, e.target.value)
+                                                        }
+                                                        data-testid={`side-color-${s.id}`}
+                                                        aria-label={`${s.label} color`}
+                                                        className="border-border size-6 cursor-pointer rounded border bg-transparent p-0"
+                                                    />
+                                                    <span className="text-foreground text-[14px]">
+                                                        {s.label}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         )}

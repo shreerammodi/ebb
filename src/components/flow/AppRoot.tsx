@@ -8,6 +8,7 @@ import { applyFlowFont } from "@/lib/fonts/applyFlowFont";
 import { loadFlow } from "@/lib/persistence/flowPersistence";
 import { attachFlowAutosave } from "@/lib/persistence/flowPersistence";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+import { applySideColors } from "@/lib/theme/applySideColors";
 import { useSaveStatus } from "@/lib/store/useSaveStatus";
 
 import Workspace from "./Workspace";
@@ -23,11 +24,17 @@ export default function AppRoot() {
     const id = params.get("id");
     const round = useFlowStore((s) => s.round);
     const flowFont = useFlowStore((s) => s.flowFont);
+    const affColor = useFlowStore((s) => s.affColor);
+    const negColor = useFlowStore((s) => s.negColor);
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
         applyFlowFont(flowFont);
     }, [flowFont]);
+
+    useEffect(() => {
+        applySideColors({ aff: affColor, neg: negColor });
+    }, [affColor, negColor]);
 
     useEffect(() => {
         let mounted = true;
