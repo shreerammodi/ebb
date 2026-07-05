@@ -76,4 +76,22 @@ he/him`;
         expect(sc.negSchool).toBe("Strake Jesuit");
         expect(sc.judge).toBe("Shreeram Modi");
     });
+
+    it("merges an aff-only pasted pairing without wiping an already-entered neg debater", async () => {
+        useFlowStore.getState().setScouting({
+            neg: { first: { first: "Existing", last: "Partner" }, second: { first: "", last: "" } },
+        });
+        renderInfoPanel();
+        const box = screen.getByTestId("scout-paste");
+        const text = `Round 1 of Varsity Lincoln-Douglas
+Competitors
+AFF Marlborough CS`;
+        box.focus();
+        await userEvent.paste(text);
+
+        const sc = useFlowStore.getState().round!.scouting;
+        expect(sc.affSchool).toBe("Marlborough");
+        expect(sc.aff.first).toEqual({ first: "C", last: "S" });
+        expect(sc.neg.first).toEqual({ first: "Existing", last: "Partner" });
+    });
 });

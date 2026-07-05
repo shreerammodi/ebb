@@ -25,9 +25,10 @@ function splitTeam(text: string): { school: string; code: string } {
 }
 
 /**
- * Fold an entry code into debater name(s) so teamCode() reproduces it.
- * LD: one debater, first initial + last initial. Policy: two debaters whose
- * last-name initials are the code's characters.
+ * Fold an entry code into debater name(s). For LD (one debater) this makes
+ * teamCode() reproduce the pairing code exactly (first initial + last initial).
+ * For Policy the code's chars become the two debaters' last-name initials;
+ * teamCode() alphabetizes them, so a non-alphabetical code may reorder.
  */
 function foldCode(code: string, name: string, isPolicy: boolean): DebaterPatch {
     if (isPolicy) {
