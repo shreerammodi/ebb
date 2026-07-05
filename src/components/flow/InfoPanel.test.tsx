@@ -89,10 +89,42 @@ Competitors
 AFF Lynbrook OM`;
         box.focus();
         await userEvent.paste(text);
+        // The sheet already has a neg debater, so replacing is confirmed first.
+        await userEvent.click(screen.getByTestId("scout-paste-confirm"));
 
         const sc = useFlowStore.getState().round!.scouting;
         expect(sc.affSchool).toBe("Lynbrook");
         expect(sc.aff.first).toEqual({ first: "O", last: "M" });
         expect(sc.neg.first).toEqual({ first: "Existing", last: "Partner" });
+    });
+
+    it("asks before replacing existing info and applies only on confirm", async () => {
+        useFlowStore.getState().setScouting({ affSchool: "Oldschool" });
+        renderInfoPanel();
+        const box = screen.getByTestId("scout-paste");
+        box.focus();
+        await userEvent.paste(`Round 3 of Varsity Lincoln-Douglas
+Competitors
+AFF Lynbrook VV
+NEG Lynbrook OM`);
+
+        // Nothing changes until the replacement is confirmed.
+        expect(useFlowStore.getState().round!.scouting.affSchool).toBe("Oldschool");
+        await userEvent.click(screen.getByTestId("scout-paste-confirm"));
+        expect(useFlowStore.getState().round!.scouting.affSchool).toBe("Lynbrook");
+    });
+
+    it("cancels a pending pairing without changing existing info", async () => {
+        useFlowStore.getState().setScouting({ affSchool: "Oldschool" });
+        renderInfoPanel();
+        const box = screen.getByTestId("scout-paste");
+        box.focus();
+        await userEvent.paste(`Round 3 of Varsity Lincoln-Douglas
+Competitors
+AFF Lynbrook VV`);
+        await userEvent.click(screen.getByTestId("scout-paste-cancel"));
+
+        expect(screen.queryByTestId("scout-paste-confirm")).toBeNull();
+        expect(useFlowStore.getState().round!.scouting.affSchool).toBe("Oldschool");
     });
 });

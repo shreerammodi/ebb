@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { X } from "lucide-react";
 
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +25,17 @@ function applyPairing(sc: Scouting, patch: PairingPatch): Partial<Scouting> {
     return out;
 }
 
+/** True when the sheet already holds details a pasted pairing would overwrite. */
+function hasScoutingInfo(sc: Scouting): boolean {
+    const named = [sc.aff.first, sc.aff.second, sc.neg.first, sc.neg.second].some(
+        (d) => d.first.trim() || d.last.trim(),
+    );
+    const filled = [sc.affSchool, sc.negSchool, sc.tournament, sc.round, sc.date, sc.judge].some(
+        (f) => (f ?? "").trim().length > 0,
+    );
+    return named || filled || Boolean(sc.decision?.vote || sc.decision?.rfd?.trim());
+}
+
 export default function InfoPanel() {
     const open = useFlowStore((s) => s.infoOpen);
     if (!open) return null;
@@ -34,6 +47,8 @@ function InfoPanelInner() {
     const round = useFlowStore((s) => s.round);
     const setInfoOpen = useFlowStore((s) => s.setInfoOpen);
     const setScouting = useFlowStore((s) => s.setScouting);
+    // A parsed pairing awaiting confirmation before it overwrites existing details.
+    const [pending, setPending] = useState<PairingPatch | null>(null);
 
     if (!round) return null;
     const sc = round.scouting;
@@ -77,11 +92,41 @@ function InfoPanelInner() {
                             rows={2}
                             className="border-input placeholder:text-muted-foreground w-full resize-y rounded-md border bg-transparent px-3 py-2 text-[13px] focus-visible:outline-2"
                             onPaste={(e) => {
-                                const text = e.clipboardData.getData("text");
-                                const result = applyPairing(sc, parsePairing(text));
-                                if (Object.keys(result).length > 0) setScouting(result);
+                                const patch = parsePairing(e.clipboardData.getData("text"));
+                                if (Object.keys(patch).length === 0) return;
+                                // Confirm before overwriting details already on the sheet.
+                                if (hasScoutingInfo(sc)) setPending(patch);
+                                else setScouting(applyPairing(sc, patch));
                             }}
                         />
+                        {pending && (
+                            <div className="border-border bg-accent/40 mt-2 flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-[12px]">
+                                <span className="text-muted-foreground">
+                                    Replace the current round info with this pairing?
+                                </span>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        data-testid="scout-paste-cancel"
+                                        onClick={() => setPending(null)}
+                                        className="text-muted-foreground hover:text-foreground rounded px-2 py-1"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        data-testid="scout-paste-confirm"
+                                        onClick={() => {
+                                            setScouting(applyPairing(sc, pending));
+                                            setPending(null);
+                                        }}
+                                        className="border-input hover:bg-accent rounded-md border px-2 py-1 font-medium"
+                                    >
+                                        Replace
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 p-4">
