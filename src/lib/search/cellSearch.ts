@@ -8,6 +8,7 @@ import uFuzzy from "@leeoniya/ufuzzy";
 
 import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import { sortedSheets, type FlowRound } from "@/lib/model/flow";
+import type { Side } from "@/lib/model/types";
 
 export interface CellHit {
     sheetId: string;
@@ -16,6 +17,8 @@ export interface CellHit {
     col: number;
     /** Column header the cell sits under (e.g. "2AC", "Question"), for context. */
     colName: string;
+    /** Side of the cell's speech column; drives the aff/neg ink, as in the grid. */
+    side: Side;
     text: string;
     /** Cell is tagged as a card (a piece of evidence). */
     card: boolean;
@@ -40,6 +43,7 @@ export function collectCells(round: FlowRound): Cell[] {
                     row,
                     col,
                     colName: cols[col]?.name ?? "",
+                    side: cols[col]?.side ?? "aff",
                     text,
                     card: sheet.meta[`${row},${col}`]?.card ?? false,
                 });

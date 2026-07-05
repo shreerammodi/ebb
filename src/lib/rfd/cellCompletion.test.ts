@@ -20,10 +20,12 @@ function contextAt(doc: string, pos: number, explicit = false): CompletionContex
 }
 
 describe("cellCompletions", () => {
-    it("maps matching cells to completions with the column header as detail", () => {
+    it("maps matching cells to completions with the column header and side", () => {
         const opts = cellCompletions(roundWithCells(), "prol");
         expect(opts[0].label).toBe("prolif good");
         expect(opts[0].detail).toBe("1AC");
+        // 1AC is an aff speech; the type drives the aff/neg icon and ink.
+        expect(opts[0].type).toBe("aff");
     });
 
     it("returns nothing when no cell matches", () => {

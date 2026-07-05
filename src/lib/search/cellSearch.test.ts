@@ -29,6 +29,7 @@ describe("collectCells", () => {
         const cells = collectCells(roundWithCells());
         const perm = cells.find((c) => c.text === "perm do both")!;
         expect(perm.colName).toBe("1AC");
+        expect(perm.side).toBe("aff");
         expect(perm.row).toBe(0);
         expect(perm.col).toBe(0);
     });

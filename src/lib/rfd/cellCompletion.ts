@@ -16,6 +16,9 @@ export function cellCompletions(round: FlowRound, query: string): Completion[] {
         label: hit.text,
         // The speech the line was said in (e.g. "2NR"), for context.
         detail: hit.colName || undefined,
+        // Side drives the option's icon and ink (aff blue / neg red), matching
+        // the grid; the theme styles ".cm-completionIcon-aff"/"-neg".
+        type: hit.side,
     }));
 }
 
