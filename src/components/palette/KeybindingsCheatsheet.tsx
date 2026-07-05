@@ -24,7 +24,7 @@ const BASICS: { heading: string; body: string }[] = [
     },
     {
         heading: "Round info",
-        body: "Open round info to record the teams, judge, and decision for scouting later.",
+        body: "Open round info to record the teams, judge, and decision for scouting later. Paste a Tabroom pairing into the box at the top to autofill the sheet.",
     },
     {
         heading: "Writing an RFD",

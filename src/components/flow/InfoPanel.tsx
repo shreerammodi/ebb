@@ -5,9 +5,23 @@ import { X } from "lucide-react";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tip } from "@/components/ui/tooltip";
+import { parsePairing, type PairingPatch } from "@/lib/model/parsePairing";
 import { teamCode } from "@/lib/model/teamCode";
+import type { Scouting } from "@/lib/model/types";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
+
+/** Deep-merges a parsed pairing into scouting so a parsed aff never wipes an existing neg debater. */
+function applyPairing(sc: Scouting, patch: PairingPatch): Partial<Scouting> {
+    const out: Partial<Scouting> = {};
+    if (patch.round !== undefined) out.round = patch.round;
+    if (patch.affSchool !== undefined) out.affSchool = patch.affSchool;
+    if (patch.negSchool !== undefined) out.negSchool = patch.negSchool;
+    if (patch.judge !== undefined) out.judge = patch.judge;
+    if (patch.aff) out.aff = { ...sc.aff, ...patch.aff };
+    if (patch.neg) out.neg = { ...sc.neg, ...patch.neg };
+    return out;
+}
 
 export default function InfoPanel() {
     const open = useFlowStore((s) => s.infoOpen);
@@ -56,6 +70,20 @@ function InfoPanelInner() {
                 </div>
 
                 <div className="max-h-[78vh] overflow-y-auto">
+                    <div className="border-border border-b p-4">
+                        <textarea
+                            data-testid="scout-paste"
+                            placeholder="Paste a Tabroom pairing to autofill"
+                            rows={2}
+                            className="border-input placeholder:text-muted-foreground w-full resize-y rounded-md border bg-transparent px-3 py-2 text-[13px] focus-visible:outline-2"
+                            onPaste={(e) => {
+                                const text = e.clipboardData.getData("text");
+                                const result = applyPairing(sc, parsePairing(text));
+                                if (Object.keys(result).length > 0) setScouting(result);
+                            }}
+                        />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4 p-4">
                         <div className="flex flex-col gap-2">
                             <div className="text-aff font-mono text-[9px] font-bold tracking-widest uppercase">

@@ -53,4 +53,27 @@ describe("InfoPanel", () => {
         // The vote buttons remain under Decision.
         expect(screen.getByTestId("scout-vote-aff")).toBeInTheDocument();
     });
+
+    it("autofills fields from a pasted pairing", async () => {
+        renderInfoPanel();
+        const box = screen.getByTestId("scout-paste");
+        const text = `Round 5 of Varsity Lincoln-Douglas
+Competitors
+AFF Marlborough CS
+Chloe : she/her/hers
+NEG Strake Jesuit SR
+Judging
+Shreeram Modi
+he/him`;
+        // Simulate a paste of the pairing text.
+        box.focus();
+        await userEvent.paste(text);
+
+        const sc = useFlowStore.getState().round!.scouting;
+        expect(sc.round).toBe("Round 5");
+        expect(sc.affSchool).toBe("Marlborough");
+        expect(sc.aff.first).toEqual({ first: "Chloe", last: "S" });
+        expect(sc.negSchool).toBe("Strake Jesuit");
+        expect(sc.judge).toBe("Shreeram Modi");
+    });
 });
