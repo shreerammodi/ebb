@@ -56,7 +56,11 @@ export default function AppRoot() {
                     router.replace("/");
                     return;
                 }
-                useFlowStore.getState().loadRound(r);
+                const newFlow = params.get("new") != null;
+                useFlowStore.getState().loadRound(r, { newFlow });
+                // Drop the one-shot marker so a later refresh loads this flow
+                // as existing and restores the persisted RFD preference.
+                if (newFlow) router.replace(`/flow?id=${id}`);
             })
             .catch(() => router.replace("/"))
             .finally(() => {
@@ -68,6 +72,7 @@ export default function AppRoot() {
             unsubscribe();
             useSaveStatus.getState().reset();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- id keys the load; params is read as a one-shot snapshot
     }, [id, router]);
 
     if (!loaded || !round) {

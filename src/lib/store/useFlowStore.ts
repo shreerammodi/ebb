@@ -59,7 +59,10 @@ export interface FlowState {
 }
 
 export interface FlowActions {
-    loadRound(round: FlowRound, opts?: { activeSheetId?: string | null }): void;
+    loadRound(
+        round: FlowRound,
+        opts?: { activeSheetId?: string | null; newFlow?: boolean },
+    ): void;
     addSheet(input: { title: string; group: "aff" | "neg" }): string;
     renameSheet(sheetId: string, title: string): void;
     removeSheet(sheetId: string): RemovedFlowSheet | null;
@@ -217,6 +220,10 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             round,
             activeSheetId:
                 opts?.activeSheetId !== undefined ? opts.activeSheetId : firstFlowSheetId(round),
+            // A brand-new flow always opens with the RFD drawer closed; an
+            // existing flow restores the persisted preference. loadRound never
+            // persists rfdOpen, so forcing it closed here stays transient.
+            rfdOpen: opts?.newFlow ? false : loadDisplaySettings().rfdOpen,
             quickSwitcherOpen: false,
             renamingSheetId: null,
         });

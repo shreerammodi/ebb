@@ -38,6 +38,18 @@ describe("loadRound", () => {
         useFlowStore.getState().loadRound(round, { activeSheetId: cx.id });
         expect(useFlowStore.getState().activeSheetId).toBe(cx.id);
     });
+
+    it("forces the RFD drawer closed for a new flow but restores the preference otherwise", () => {
+        useFlowStore.getState().setRfdOpen(true);
+
+        useFlowStore.getState().loadRound(makeFlowRound("aff"), { newFlow: true });
+        expect(useFlowStore.getState().rfdOpen).toBe(false);
+        // Forcing it closed stays transient: the persisted preference is intact.
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain('"rfdOpen":true');
+
+        useFlowStore.getState().loadRound(makeFlowRound("aff"));
+        expect(useFlowStore.getState().rfdOpen).toBe(true);
+    });
 });
 
 describe("sheet operations", () => {

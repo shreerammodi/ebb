@@ -20,7 +20,7 @@ export function useCreateFlow() {
     return useCallback(
         (role: Role) => {
             const round = makeFlowRound(role);
-            void persistFlow(round).then(() => router.push(`/flow?id=${round.id}`));
+            void persistFlow(round).then(() => router.push(`/flow?id=${round.id}&new=1`));
         },
         [router],
     );
