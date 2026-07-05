@@ -27,6 +27,7 @@ const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
         [`${mod}+r`]: "sheet.rename",
         [`${mod}+,`]: "settings.open",
         [`${mod}+\\`]: "sidebar.toggle",
+        [`${mod}+j`]: "rfd.toggle",
         [`${mod}+Backspace`]: "row.delete",
         [`${mod}+o`]: "cell.insert",
         // Default pushes the current row down; rebind to row.insertBelow in

@@ -186,6 +186,9 @@ export function executeCommand(id: CommandId): void {
         case "info.open":
             state.setInfoOpen(true);
             return;
+        case "rfd.toggle":
+            state.setRfdOpen(!state.rfdOpen);
+            return;
         case "help.open":
             state.setCheatsheetOpen(!state.cheatsheetOpen);
             return;

@@ -91,6 +91,17 @@ describe("UI commands", () => {
         executeCommand("help.open");
         expect(useFlowStore.getState().cheatsheetOpen).toBe(false);
     });
+
+    it("rfd.toggle flips the drawer open state", () => {
+        useFlowStore.getState().loadRound(makeFlowRound("aff"));
+        expect(useFlowStore.getState().rfdOpen).toBe(false);
+
+        executeCommand("rfd.toggle");
+        expect(useFlowStore.getState().rfdOpen).toBe(true);
+
+        executeCommand("rfd.toggle");
+        expect(useFlowStore.getState().rfdOpen).toBe(false);
+    });
 });
 
 describe("theme commands", () => {

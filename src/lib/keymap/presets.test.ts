@@ -37,6 +37,10 @@ it("binds modifier+p to the search palette, modifier+Shift+p to command mode", (
     expect(FLAT_KEYMAP.bindings[`${mod}+P`]).toBe("palette.open");
 });
 
+it("binds the platform modifier+j to rfd.toggle", () => {
+    expect(FLAT_KEYMAP.bindings[`${mod}+j`]).toBe("rfd.toggle");
+});
+
 it("binds the platform modifier 1-9 to sheet jumps", () => {
     expect(FLAT_KEYMAP.bindings[`${mod}+1`]).toBe("sheet.jump1");
     expect(FLAT_KEYMAP.bindings[`${mod}+9`]).toBe("sheet.jump9");

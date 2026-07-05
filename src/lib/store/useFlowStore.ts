@@ -53,6 +53,8 @@ export interface FlowState {
     cheatsheetOpen: boolean;
     infoOpen: boolean;
     sidebarCollapsed: boolean;
+    /** RFD drawer open/closed; persisted like sidebarCollapsed. */
+    rfdOpen: boolean;
     renamingSheetId: string | null;
 }
 
@@ -88,6 +90,7 @@ export interface FlowActions {
     setCheatsheetOpen(open: boolean): void;
     setInfoOpen(open: boolean): void;
     setSidebarCollapsed(collapsed: boolean): void;
+    setRfdOpen(open: boolean): void;
     setRenamingSheet(id: string | null): void;
 }
 
@@ -122,6 +125,7 @@ function saveKeymapOverrides(keymapOverrides: Record<string, string>): void {
 interface DisplaySettings {
     flowFont: FontId;
     sidebarCollapsed: boolean;
+    rfdOpen: boolean;
     theme: ThemeMode;
     affColor: string | null;
     negColor: string | null;
@@ -136,6 +140,7 @@ function loadDisplaySettings(): DisplaySettings {
     const fallback: DisplaySettings = {
         flowFont: DEFAULT_FONT_ID,
         sidebarCollapsed: false,
+        rfdOpen: false,
         theme: "system",
         affColor: null,
         negColor: null,
@@ -148,6 +153,7 @@ function loadDisplaySettings(): DisplaySettings {
         return {
             flowFont: resolveFontId(p.flowFont),
             sidebarCollapsed: typeof p.sidebarCollapsed === "boolean" ? p.sidebarCollapsed : false,
+            rfdOpen: typeof p.rfdOpen === "boolean" ? p.rfdOpen : false,
             theme: resolveThemeMode(p.theme),
             affColor: resolveColor(p.affColor),
             negColor: resolveColor(p.negColor),
@@ -171,6 +177,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
     return {
         flowFont: s.flowFont,
         sidebarCollapsed: s.sidebarCollapsed,
+        rfdOpen: s.rfdOpen,
         theme: s.theme,
         affColor: s.affColor,
         negColor: s.negColor,
@@ -202,6 +209,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     cheatsheetOpen: false,
     infoOpen: false,
     sidebarCollapsed: initialDisplaySettings.sidebarCollapsed,
+    rfdOpen: initialDisplaySettings.rfdOpen,
     renamingSheetId: null,
 
     loadRound(round, opts) {
@@ -365,6 +373,10 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setSidebarCollapsed(collapsed) {
         saveDisplaySettings({ ...displaySettingsOf(get()), sidebarCollapsed: collapsed });
         set({ sidebarCollapsed: collapsed });
+    },
+    setRfdOpen(open) {
+        saveDisplaySettings({ ...displaySettingsOf(get()), rfdOpen: open });
+        set({ rfdOpen: open });
     },
     setRenamingSheet(id) {
         set({ renamingSheetId: id });

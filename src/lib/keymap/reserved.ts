@@ -32,6 +32,7 @@ const RESERVED_KEYS = [
     // -- UI ---------------------------------------------------------------------
     "\\", // sidebar toggle
     ",", // settings
+    "j", // rfd toggle
     // -- Rows / cells -------------------------------------------------------
     "Backspace", // row delete
     "o", // insert cell (suppresses browser open-file)

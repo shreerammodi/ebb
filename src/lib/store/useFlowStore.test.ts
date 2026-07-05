@@ -104,6 +104,19 @@ describe("updateSheetData", () => {
     });
 });
 
+describe("setRfdOpen", () => {
+    it("toggles the RFD drawer and persists the open state", () => {
+        useFlowStore.getState().setRfdOpen(true);
+        expect(useFlowStore.getState().rfdOpen).toBe(true);
+
+        const raw = window.localStorage.getItem("ebb-display-settings");
+        expect(JSON.parse(raw!).rfdOpen).toBe(true);
+
+        useFlowStore.getState().setRfdOpen(false);
+        expect(useFlowStore.getState().rfdOpen).toBe(false);
+    });
+});
+
 describe("setScouting", () => {
     it("merges partial patches and bumps updatedAt", () => {
         loadFresh();

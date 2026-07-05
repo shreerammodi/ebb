@@ -89,4 +89,9 @@ describe("reservedChords", () => {
         setPlatform("Win32");
         expect(reservedChords().has("Ctrl+H")).toBe(true);
     });
+
+    it("reserves the platform modifier+j (rfd toggle)", () => {
+        setPlatform("MacIntel");
+        expect(reservedChords().has("Meta+j")).toBe(true);
+    });
 });
