@@ -5,7 +5,6 @@ import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { prettyChord, buildChordMap } from "@/lib/keymap/displayChord";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
-/** Short prose orientation shown above the shortcut tables. */
 const BASICS: { heading: string; body: string }[] = [
     {
         heading: "Flowing",

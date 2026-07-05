@@ -3,10 +3,10 @@
  *
  * The capture-phase and bubble-phase listeners in useKeymap both call
  * `shouldIntercept`, so they can never diverge (the root cause of the
- * Cmd+A-in-text-box bug).
+ * Meta+A-in-text-box bug).
  *
  * Rule:
- *   - If the chord is a native editing chord (Cmd/Ctrl+A, C, V, X, Z, Shift+Z,
+ *   - If the chord is a native editing chord (Meta/Ctrl+A, C, V, X, Z, Shift+Z,
  *     Backspace) AND focus is in a text box, do NOT intercept (let the
  *     browser handle it).
  *   - Otherwise, if the chord is in reservedChords, intercept.
@@ -42,7 +42,7 @@ let cachedNativeEditingChords: Set<string> | null = null;
 
 /**
  * Returns the set of native editing chords for the current platform.
- * Includes both Cmd+Z (undo) and Cmd+Shift+Z / Cmd+Z (redo, shift variant).
+ * Includes both Meta+Z (undo) and Meta+Shift+Z / Meta+Z (redo, shift variant).
  */
 function nativeEditingChords(): Set<string> {
     const mod = isMacPlatform() ? "Meta" : "Ctrl";
@@ -50,7 +50,7 @@ function nativeEditingChords(): Set<string> {
     for (const key of NATIVE_EDITING_KEYS) {
         chords.add(`${mod}+${key}`);
     }
-    // Redo: Cmd+Shift+Z on Mac, Ctrl+Shift+Z on Windows/Linux.
+    // Redo: Meta+Shift+Z on Mac, Ctrl+Shift+Z on Windows/Linux.
     // eventToChord encodes shift in the case of single printables (Z, not z),
     // so the redo chord is Meta+Z / Ctrl+Z (uppercase), matching eventToChord output.
     // We don't add a Shift+ prefix here.

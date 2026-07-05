@@ -20,7 +20,6 @@ export default function SearchPalette() {
     return <SearchPaletteInner />;
 }
 
-/** Bolds the fuzzy-matched characters within a row's text. */
 function Highlighted({ text, positions }: { text: string; positions: number[] }) {
     if (positions.length === 0) return <>{text}</>;
     const hit = new Set(positions);

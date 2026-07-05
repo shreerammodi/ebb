@@ -20,7 +20,7 @@ import {
     type NewSheet,
 } from "./xlsxParts";
 
-/** Resolve a sheet name → part filename (e.g. "AFF" → "sheet2.xml") using workbook + rels XML. */
+/** Resolve a worksheet name -> part filename (e.g. "AFF" -> "sheet2.xml") using workbook + rels XML. */
 function resolveSheetPart(workbookXml: string, relsXml: string, sheetName: string): string {
     const ridMatch = workbookXml.match(new RegExp(`name="${sheetName}"[^>]*r:id="([^"]+)"`));
     if (!ridMatch) throw new Error(`Sheet "${sheetName}" not found in workbook`);
@@ -79,15 +79,15 @@ function updateAppXml(appXml: string, newSheets: NewSheet[]): string {
 }
 
 /**
- * Write CX nodes into the CX sheet.
+ * Write CX question/response pairs into the CX worksheet.
  *
- * CX sheet layout (from xl/worksheets/sheet5.xml in Flow.xlsx template):
+ * CX worksheet layout (from xl/worksheets/sheet5.xml in Flow.xlsx template):
  *   Row 1: Period headers merged over column pairs (A1:B1=1AC CX, C1:D1=1NC CX, E1:F1=2AC CX, G1:H1=2NC CX)
  *   Row 2: Column headers (Question/Response alternating A-H)
  *   Row 3+: Data rows
  *
- * CX data comes from the CX sheet's grid via cxPeriods; the 4 periods map to
- * column pairs A/B, C/D, E/F, G/H.
+ * CX data comes from the app's CX sheet grid via cxPeriods; the 4 periods map
+ * to column pairs A/B, C/D, E/F, G/H.
  */
 function patchCx(cxXml: string, round: FlowRound): string {
     // Excel-specific column + style mapping, keyed by CX period order.
@@ -155,7 +155,7 @@ function patchInfo(infoXml: string, round: FlowRound): string {
 /**
  * Coerce a flow-sheet title into a legal, unique Excel tab name. Excel rejects
  * the characters : \ / ? * [ ], caps names at 31 chars, and requires names to
- * be unique case-insensitively across the workbook — any violation triggers the
+ * be unique case-insensitively across the workbook - any violation triggers the
  * "Worksheet properties" repair dialog. `used` holds the lowercased names already
  * taken; the chosen name is added to it so callers stay collision-free.
  */
@@ -184,7 +184,7 @@ function safeSheetName(title: string, used: Set<string>): string {
  * entries and appending the new ones. Drops all co-authoring / revision /
  * VBA extension attributes that cause Excel's repair dialog on programmatically
  * generated .xlsx files (xr:revisionPtr, xr:uid, xr2:uid, mc:AlternateContent,
- * extLst, codeName, etc.) by simply not copying them — only the default and
+ * extLst, codeName, etc.) by simply not copying them - only the default and
  * r: namespaces and the <sheet> entries are carried over.
  */
 function rebuildWorkbookXml(originalXml: string, newSheets: NewSheet[]): string {
@@ -237,21 +237,19 @@ export function buildXlsx(round: FlowRound, templateBytes: Uint8Array): Uint8Arr
     const negPart = resolveSheetPart(workbookXml, relsXml, "NEG");
     const infoPart = resolveSheetPart(workbookXml, relsXml, "Info");
 
-    // Patch Info sheet.
     files[`xl/worksheets/${infoPart}`] = strToU8(
         patchInfo(strFromU8(files[`xl/worksheets/${infoPart}`]), round),
     );
 
-    // Patch CX sheet.
     const cxPart = resolveSheetPart(workbookXml, relsXml, "CX");
     files[`xl/worksheets/${cxPart}`] = strToU8(
         patchCx(strFromU8(files[`xl/worksheets/${cxPart}`]), round),
     );
 
-    // Build one new sheet per flow sheet. The CX sheet is written into the
-    // template's dedicated CX sheet above (patchCx), so it must NOT also be
-    // appended as a flow tab — doing so creates a duplicate "CX" name and
-    // corrupts the workbook.
+    // Build one new worksheet per flow sheet. The CX flow sheet's content is
+    // already written into the template's dedicated CX worksheet above
+    // (patchCx), so it must not also get its own worksheet - doing so creates
+    // a duplicate "CX" tab name and corrupts the workbook.
     const exportSheets = buildExportSheets(round).filter((es) => es.sheet.kind !== "cx");
     const baseSheetId = maxSheetId(workbookXml);
     const baseRid = maxRidNumber(relsXml);
@@ -259,7 +257,7 @@ export function buildXlsx(round: FlowRound, templateBytes: Uint8Array): Uint8Arr
     const newSheets: NewSheet[] = [];
 
     // Excel tab names must be unique (case-insensitively) across the whole
-    // workbook, so seed the used-name set with the template's existing sheets.
+    // workbook, so seed the used-name set with the template's existing tab names.
     const usedNames = new Set(
         [...workbookXml.matchAll(/<sheet [^>]*name="([^"]*)"/g)].map((m) => m[1].toLowerCase()),
     );
@@ -290,12 +288,12 @@ export function buildXlsx(round: FlowRound, templateBytes: Uint8Array): Uint8Arr
         registerSheetsInContentTypes(strFromU8(files["[Content_Types].xml"]), newSheets),
     );
 
-    // Sync app.xml sheet count — mismatch triggers Excel's repair dialog.
+    // Sync app.xml's worksheet count - a mismatch triggers Excel's repair dialog.
     files["docProps/app.xml"] = strToU8(
         updateAppXml(strFromU8(files["docProps/app.xml"]), newSheets),
     );
 
-    // Drop calcChain so Excel rebuilds it (sheet set changed).
+    // Drop calcChain so Excel rebuilds it (worksheet set changed).
     delete files["xl/calcChain.xml"];
 
     return zipSync(files);

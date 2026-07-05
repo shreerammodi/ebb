@@ -1,7 +1,7 @@
 /**
  * JSON file import/export for FlowRounds. File version 3 is the
  * Handsontable-native model; versions 1-2 (the legacy node model) are
- * rejected - the rewrite is a fresh start.
+ * rejected outright, never migrated.
  */
 
 import { normalizeFlow, type FlowRound } from "@/lib/model/flow";

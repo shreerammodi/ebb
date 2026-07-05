@@ -5,7 +5,7 @@
  * The capture-phase listener in useKeymap calls preventDefault() for any
  * chord in this set, guaranteeing the app's keybindings win.
  *
- * Platform-conditional: on macOS the browser reserves Meta (Cmd) chords;
+ * Platform-conditional: on macOS the browser reserves Meta chords;
  * on Windows/Linux it reserves Ctrl chords.
  */
 
@@ -50,7 +50,7 @@ const RESERVED_KEYS = [
 
 /**
  * Chords to intercept at the capture phase. On Mac these are Meta+key;
- * on Windows/Linux they are Ctrl+key. Includes Cmd/Ctrl+Shift+Z (redo),
+ * on Windows/Linux they are Ctrl+key. Includes Meta/Ctrl+Shift+Z (redo),
  * whose shift rides in the uppercase key per the eventToChord rule.
  */
 export function reservedChords(): Set<string> {

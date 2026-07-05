@@ -8,7 +8,7 @@ import { saveFlowNow } from "@/lib/persistence/flowPersistence";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 import { useSaveStatus } from "@/lib/store/useSaveStatus";
 
-/** Coarse "time since save" — exact enough for reassurance, never ticking seconds. */
+/** Coarse "time since save" - exact enough for reassurance, never ticking seconds. */
 function relTime(savedAt: number, now: number): string {
     const s = Math.max(0, Math.round((now - savedAt) / 1000));
     if (s < 5) return "just now";
@@ -21,7 +21,7 @@ function relTime(savedAt: number, now: number): string {
 
 /**
  * The editor's quiet autosave indicator. Light-touch reassurance that a
- * backend-less, data-holding round is safe — and a loud-enough failure with a
+ * backend-less, data-holding round is safe - and a loud-enough failure with a
  * retry, because a silent save failure is the one thing a flowing debater
  * cannot afford. Meaning is carried by text + icon, never color alone.
  */

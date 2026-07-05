@@ -29,8 +29,7 @@ export function useKeymap(): void {
          */
         function onKeyDownCapture(e: KeyboardEvent) {
             if (shouldIntercept(e)) {
-                // preventDefault stops the browser's shortcut handler.
-                // We do NOT stopPropagation - the event must continue to the
+                // Does not call stopPropagation - the event must continue to the
                 // bubble phase so useKeymap's resolver can fire the command.
                 e.preventDefault();
             }
@@ -43,7 +42,7 @@ export function useKeymap(): void {
             const inTextField = isTextEntryFocus(e.target);
             if (inTextField) {
                 pendingPrefix = null;
-                // Native editing chords (Cmd+A/C/V/X/Z, copy, paste, undo, etc.)
+                // Native editing chords (Meta+A/C/V/X/Z, copy, paste, undo, etc.)
                 // must pass through to the browser - do not intercept them.
                 if (isNativeEditingChord(e)) return;
                 if (!(e.metaKey || e.ctrlKey || e.altKey)) return;

@@ -1,7 +1,7 @@
 /**
- * Pure OOXML string surgery for the Excel exporter. Each function is string→string
+ * Pure OOXML string surgery for the Excel exporter. Each function is string -> string
  * so it is unit-testable without a zip. Values are written as inline strings
- * (t="inlineStr") so we never touch sharedStrings.xml or styles.xml — cells keep
+ * (t="inlineStr") so we never touch sharedStrings.xml or styles.xml - cells keep
  * their template column style, and bold/strike ride on inline runs.
  */
 
@@ -23,7 +23,7 @@ interface CellText {
 }
 
 /**
- * Parse <col> elements into a 0-indexed column → style-index map.
+ * Parse <col> elements into a 0-indexed column -> style-index map.
  * Capped at column 25 (Z) so the catch-all range (min=8 max=16384) does not
  * allocate thousands of entries.
  */
@@ -46,7 +46,7 @@ export function parseColStyles(sheetXml: string): Map<number, number> {
 }
 
 /** An inline-string cell. Strike rides on the run's rPr; extended prefixes an arrow.
- *  style is the column's xf style index from styles.xml — preserves template background/borders.
+ *  style is the column's xf style index from styles.xml - preserves template background/borders.
  */
 export function inlineCell(ref: string, cell: CellText, style?: number): string {
     const text = escXml((cell.extended ? "→ " : "") + cell.text);
@@ -81,7 +81,7 @@ export function setCellInline(xml: string, ref: string, value: string): string {
     if (selfClose.test(xml)) {
         return xml.replace(selfClose, `<c r="${ref}"$1 t="inlineStr">${inline}</c>`);
     }
-    // Cell with existing content (shared strings, formulas, etc.) — replace everything
+    // Cell with existing content (shared strings, formulas, etc.) - replace everything
     // between the opening and closing tags, strip t/cm/vm attrs from the opening tag.
     const withContent = new RegExp(`<c r="${ref}"([^>]*)>(?:.|\\n)*?<\\/c>`);
     return xml.replace(withContent, (_, attrs) => {
@@ -92,7 +92,7 @@ export function setCellInline(xml: string, ref: string, value: string): string {
 }
 
 /**
- * Build a populated flow worksheet from a template (AFF or NEG) worksheet XML.
+ * Build a worksheet for one flow sheet, from a template (AFF or NEG) worksheet XML.
  * Keeps template rows 1 (title) and 2 (speech headers); replaces the body with
  * generated rows; strips codeName and the duplicate xr:uid; updates the dimension.
  * Body cells carry the column style index so they inherit the template's alternating
@@ -104,13 +104,13 @@ export function buildFlowSheetXml(templateXml: string, es: ExportSheet): string 
     const side = es.sheet.group;
     const colStyles = parseColStyles(templateXml);
 
-    // Group cells by Excel row → (template column → cell).
+    // Group cells by Excel row, mapping template column to cell.
     const byRow = new Map<number, Map<number, CellText>>();
     let maxRow = 2;
     for (const cell of es.cells) {
         const tcol = templateColumn(side, cell.speechName);
         if (tcol < 0) continue;
-        const excelRow = cell.row + 3; // rows 1–2 are title + headers
+        const excelRow = cell.row + 3; // rows 1-2 are title + headers
         if (!byRow.has(excelRow)) byRow.set(excelRow, new Map());
         byRow.get(excelRow)!.set(tcol, {
             text: cell.text,
@@ -136,7 +136,7 @@ export function buildFlowSheetXml(templateXml: string, es: ExportSheet): string 
     const lastCol = side === "aff" ? "G" : "F";
     return templateXml
         .replace(/ codeName="[^"]*"/, "")
-        .replace(/ xr:uid="[^"]*"/, "") // strip duplicate UID — Excel flags two sheets sharing a revision UID as corrupt
+        .replace(/ xr:uid="[^"]*"/, "") // strip duplicate UID - Excel flags two worksheets sharing a revision UID as corrupt
         .replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:${lastCol}${maxRow}"/>`)
         .replace(
             /<sheetData>[\s\S]*?<\/sheetData>/,

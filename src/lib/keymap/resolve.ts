@@ -30,10 +30,10 @@ function isSinglePrintable(key: string): boolean {
  * - Single printable letters: shift encoded in case (uppercase = Shift), driven
  *   by `shiftKey` rather than `e.key`'s case. macOS reports letters lowercase
  *   when Meta is held even with Shift down, so trusting the reported case would
- *   collapse Cmd+Shift+P onto Cmd+P.
+ *   collapse Meta+Shift+P onto Meta+P.
  * - Other single printables (symbols like "?"): key as-is; shift already lives
  *   in the character, never prefixed with Shift+.
- * - Named keys (Tab, Enter, Escape, ArrowUp, …): Shift+ added when shiftKey.
+ * - Named keys (Tab, Enter, Escape, ArrowUp, etc.): Shift+ added when shiftKey.
  */
 export function eventToChord(e: KeyEventLike): Chord {
     const printable = isSinglePrintable(e.key);

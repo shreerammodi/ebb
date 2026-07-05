@@ -6,7 +6,6 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import { useUpdate } from "../update/UpdateProvider";
 
-/** Short human status for the manual-check feedback line. */
 function statusLine(status: string, version?: string): string | null {
     switch (status) {
         case "checking":

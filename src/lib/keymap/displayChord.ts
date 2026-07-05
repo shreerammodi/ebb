@@ -30,7 +30,7 @@ export function prettyChord(chord: string): string {
             if (part === "Alt") return "Alt";
             if (part === "Shift") return "Shift";
             // A single uppercase letter encodes Shift (eventToChord never adds an
-            // explicit Shift+ for printables), so spell it out: "X" → "Shift-X".
+            // explicit Shift+ for printables), so spell it out: "X" -> "Shift-X".
             if (/^[A-Z]$/.test(part)) return `Shift-${part}`;
             return KEY_LABELS[part] ?? part;
         })

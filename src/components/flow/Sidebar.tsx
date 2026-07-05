@@ -32,7 +32,7 @@ export default function Sidebar() {
     if (sheets.length === 0) return null;
 
     // Deleting a sheet wipes a whole column of a live round, so it must be
-    // reversible at the point of action — not only via a keyboard Undo the user
+    // reversible at the point of action - not only via a keyboard Undo the user
     // may not know about. Mirror the dashboard's soft-delete + Undo toast.
     function deleteSheet(sheetId: string) {
         const removed = removeSheet(sheetId);

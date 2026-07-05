@@ -15,15 +15,15 @@ export interface ExportCell {
     speechName: string;
     /** 0-based body row (header excluded). */
     row: number;
-    /** Number of leaf rows this cell spans. */
+    /** Number of grid rows this cell spans. */
     rowSpan: number;
     /** Display text. */
     text: string;
     /** Emphasis. */
     bold: boolean;
-    /** conceded -> strikethrough; always false until the statuses phase. */
+    /** conceded -> strikethrough; unimplemented, so always false. */
     crossed: boolean;
-    /** extended -> arrow marker; always false until the statuses phase. */
+    /** extended -> arrow marker; unimplemented, so always false. */
     extended: boolean;
 }
 

@@ -1,5 +1,5 @@
 /**
- * The flows database. A fresh Dexie database ("ebbflow") separate from the
+ * The flows database. A Dexie database ("ebbflow") separate from the
  * legacy "debateflow" store, which new code never opens; legacy rounds stay
  * on disk but are inaccessible from the app.
  */
