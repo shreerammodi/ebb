@@ -133,8 +133,7 @@ export default function Dashboard() {
                                 Flow your first round
                             </h1>
                             <p className="text-muted-foreground text-[13px] leading-relaxed text-pretty">
-                                Ebb is a keyboard-first flow sheet. Pick a side to start —
-                                everything stays on this device.
+                                Ebb is a keyboard-first flowing app. Everything stays on this device. Pick a side to start.
                             </p>
                         </div>
 
@@ -165,7 +164,7 @@ export default function Dashboard() {
                                 onClick={() => createFlow("judge")}
                                 className="text-muted-foreground hover:text-foreground text-[12.5px] outline-none focus-visible:underline"
                             >
-                                or start as Judge
+                                or Judge
                             </button>
                         </div>
 
