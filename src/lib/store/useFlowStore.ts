@@ -36,6 +36,8 @@ export interface FlowState {
     activeSheetId: string | null;
     /** Grid cell the search palette asked to jump to; HotGrid selects it, then clears via a fresh set on the next reveal. */
     revealTarget: { row: number; col: number } | null;
+    /** Speech (column) to switch to; HotGrid seeds every sheet's cursor to its top row and selects it on the active sheet. A fresh object re-fires the effect. */
+    speechTarget: { speechId: string } | null;
     /** CommandId -> custom chord, overriding the preset binding. */
     keymapOverrides: Record<string, string>;
     flowFont: FontId;
@@ -59,10 +61,7 @@ export interface FlowState {
 }
 
 export interface FlowActions {
-    loadRound(
-        round: FlowRound,
-        opts?: { activeSheetId?: string | null; newFlow?: boolean },
-    ): void;
+    loadRound(round: FlowRound, opts?: { activeSheetId?: string | null; newFlow?: boolean }): void;
     addSheet(input: { title: string; group: "aff" | "neg" }): string;
     renameSheet(sheetId: string, title: string): void;
     removeSheet(sheetId: string): RemovedFlowSheet | null;
@@ -72,6 +71,8 @@ export interface FlowActions {
     setActiveSheet(sheetId: string): void;
     /** Switch to a sheet and select one of its cells (used by the search palette). */
     revealCell(sheetId: string, row: number, col: number): void;
+    /** Focus the topmost flow sheet and place the cursor at the given speech's top row on every sheet. */
+    switchSpeech(speechId: string): void;
     /** Grid snapshot sink: replaces one sheet's data/meta (no-op when unchanged). */
     updateSheetData(
         sheetId: string,
@@ -200,6 +201,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     round: null,
     activeSheetId: null,
     revealTarget: null,
+    speechTarget: null,
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
     theme: initialDisplaySettings.theme,
@@ -303,6 +305,16 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         // A fresh object each call so HotGrid's effect re-fires even when the
         // same cell is revealed twice in a row.
         set({ activeSheetId: sheetId, revealTarget: { row, col } });
+    },
+
+    switchSpeech(speechId) {
+        const { round } = get();
+        if (!round) return;
+        const topId = firstFlowSheetId(round);
+        if (!topId) return;
+        // A fresh speechTarget object re-fires HotGrid's effect even for a
+        // repeat pick of the same speech.
+        set({ activeSheetId: topId, speechTarget: { speechId } });
     },
 
     updateSheetData(sheetId, data, meta) {

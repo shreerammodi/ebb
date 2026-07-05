@@ -191,6 +191,32 @@ export default memo(function HotGrid() {
         return () => cancelAnimationFrame(id);
     }, [revealTarget]);
 
+    // Speech switch: seed every sheet's remembered cursor to row 0 of the
+    // chosen speech's column, then select it on the now-active topmost sheet.
+    // Declared after the sheet-switch effect so its rAF selection wins when a
+    // switch changes activeSheetId and speechTarget in the same commit.
+    const speechTarget = useFlowStore((s) => s.speechTarget);
+    useEffect(() => {
+        if (!speechTarget) return;
+        const round = useFlowStore.getState().round;
+        if (!round) return;
+        const { speechId } = speechTarget;
+        for (const sheet of round.sheets) {
+            const col = columnsForFlowSheet(sheet).findIndex((c) => c.id === speechId);
+            if (col >= 0) viewCache.current.set(sheet.id, { row: 0, col });
+        }
+        // The rAF defers past the dropdown's focus restore so the grid keeps
+        // keyboard focus.
+        const id = requestAnimationFrame(() => {
+            const hot = hotRef.current?.hotInstance;
+            const sheet = round.sheets.find((s) => s.id === currentSheetIdRef.current);
+            if (!hot || !sheet) return;
+            const col = columnsForFlowSheet(sheet).findIndex((c) => c.id === speechId);
+            hot.selectCell(0, col >= 0 ? col : 0);
+        });
+        return () => cancelAnimationFrame(id);
+    }, [speechTarget]);
+
     const afterGetColHeader = useCallback((col: number, TH: HTMLTableCellElement) => {
         const round = useFlowStore.getState().round;
         const sid = currentSheetIdRef.current;

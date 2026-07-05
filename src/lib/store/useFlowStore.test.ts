@@ -11,7 +11,7 @@ function loadFresh(role: "aff" | "neg" = "aff") {
 }
 
 beforeEach(() => {
-    useFlowStore.setState({ round: null, activeSheetId: null });
+    useFlowStore.setState({ round: null, activeSheetId: null, speechTarget: null });
 });
 
 describe("setSideColor", () => {
@@ -49,6 +49,25 @@ describe("loadRound", () => {
 
         useFlowStore.getState().loadRound(makeFlowRound("aff"));
         expect(useFlowStore.getState().rfdOpen).toBe(true);
+    });
+});
+
+describe("switchSpeech", () => {
+    it("focuses the topmost flow sheet and records the speech target", () => {
+        const round = loadFresh();
+        const top = round.sheets.find((s) => s.kind !== "cx")!;
+        // Move focus off the topmost sheet so the switch has to bring it back.
+        const other = useFlowStore.getState().addSheet({ title: "DA", group: "neg" });
+        expect(useFlowStore.getState().activeSheetId).toBe(other);
+
+        useFlowStore.getState().switchSpeech("2ac");
+        expect(useFlowStore.getState().activeSheetId).toBe(top.id);
+        expect(useFlowStore.getState().speechTarget).toEqual({ speechId: "2ac" });
+    });
+
+    it("is a no-op without a round", () => {
+        useFlowStore.getState().switchSpeech("2ac");
+        expect(useFlowStore.getState().speechTarget).toBeNull();
     });
 });
 

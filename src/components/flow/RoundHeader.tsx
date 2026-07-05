@@ -13,6 +13,7 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import ExportMenu from "./ExportMenu";
 import SaveStatus from "./SaveStatus";
+import SpeechSwitcher from "./SpeechSwitcher";
 
 export default function RoundHeader() {
     const role = useFlowStore((s) => s.round?.role);
@@ -77,6 +78,7 @@ export default function RoundHeader() {
                     onChange={handleImportChange}
                     data-testid="import-file-input"
                 />
+                <SpeechSwitcher />
                 <Tip label="Guide" command="help.open">
                     <Button
                         variant="ghost"
