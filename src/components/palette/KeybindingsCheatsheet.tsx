@@ -27,6 +27,10 @@ const BASICS: { heading: string; body: string }[] = [
         body: "Open round info to record the teams, judge, and decision for scouting later.",
     },
     {
+        heading: "Writing an RFD",
+        body: "Open the RFD drawer to write your decision while scanning the flow. On a > blockquote line, start typing and pick a suggestion to drop the exact wording of any cell straight into your reasoning.",
+    },
+    {
         heading: "Your data",
         body: "Everything lives in this browser and autosaves as you type. Nothing is sent anywhere, and undo reaches back through your whole history.",
     },
@@ -90,6 +94,7 @@ const GROUPS = [
             { commandId: "palette.open" as CommandId },
             { commandId: "settings.open" as CommandId },
             { commandId: "info.open" as CommandId },
+            { commandId: "rfd.toggle" as CommandId },
             { commandId: "sidebar.toggle" as CommandId },
             { commandId: "help.open" as CommandId },
         ],
