@@ -260,6 +260,7 @@ export default memo(function HotGrid() {
                 autoColumnSize={false}
                 height="100%"
                 minSpareRows={1}
+                enterBeginsEditing={false}
                 undo={true}
                 outsideClickDeselects={false}
                 contextMenu={CONTEXT_MENU as unknown as string[]}
