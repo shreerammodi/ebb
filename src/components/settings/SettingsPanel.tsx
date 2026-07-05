@@ -332,7 +332,7 @@ export default function SettingsPanel() {
                                                         }
                                                         data-testid={`side-color-${s.id}`}
                                                         aria-label={`${s.label} color`}
-                                                        className="border-border size-6 cursor-pointer rounded border bg-transparent p-0"
+                                                        className="border-border h-5 w-9 cursor-pointer rounded border bg-transparent p-0"
                                                     />
                                                     <span className="text-foreground text-[14px]">
                                                         {s.label}
