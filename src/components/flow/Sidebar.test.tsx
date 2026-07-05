@@ -252,9 +252,13 @@ describe("Sidebar", () => {
         // before the hovered row" - Disad lands at index 0.
         const source = screen.getByTestId(`sheet-${daId}`);
         const target = screen.getByTestId(`sheet-${caseId}`);
-        fireEvent.dragStart(source);
-        fireEvent.dragOver(target);
-        fireEvent.drop(target);
+        // A shared dataTransfer mirrors the browser: dragstart must set the
+        // payload or Chrome never fires drop (the copy-cursor no-op bug).
+        // jsdom has no DataTransfer, so stub the surface the handlers touch.
+        const dataTransfer = { effectAllowed: "", dropEffect: "", setData: () => {} };
+        fireEvent.dragStart(source, { dataTransfer });
+        fireEvent.dragOver(target, { dataTransfer });
+        fireEvent.drop(target, { dataTransfer });
 
         const sheets = useFlowStore.getState().round!.sheets;
         const order = (id: string) => sheets.find((s) => s.id === id)!.order;

@@ -176,9 +176,16 @@ export default function Sidebar() {
                                     onStartRename={() => setRenamingSheet(sheet.id)}
                                     onDelete={() => deleteSheet(sheet.id)}
                                     dragging={dragId === sheet.id}
-                                    onDragStartRow={() => setDragId(sheet.id)}
+                                    onDragStartRow={(e) => {
+                                        // Chrome only fires a drop when the drag carries data;
+                                        // without this the row drags but releasing does nothing.
+                                        e.dataTransfer.effectAllowed = "move";
+                                        e.dataTransfer.setData("text/plain", sheet.id);
+                                        setDragId(sheet.id);
+                                    }}
                                     onDragOverRow={(e) => {
                                         e.preventDefault();
+                                        e.dataTransfer.dropEffect = "move";
                                         const rect = e.currentTarget.getBoundingClientRect();
                                         const after = e.clientY - rect.top > rect.height / 2;
                                         setDropIndex(after ? i + 1 : i);
@@ -216,7 +223,7 @@ interface SheetRowProps {
     onStartRename: () => void;
     onDelete: () => void;
     dragging: boolean;
-    onDragStartRow: () => void;
+    onDragStartRow: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragOverRow: (e: React.DragEvent<HTMLDivElement>) => void;
     onDropRow: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragEndRow: () => void;
