@@ -1,6 +1,6 @@
 "use client";
 
-import { Warning } from "@phosphor-icons/react";
+import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Tip } from "@/components/ui/tooltip";
@@ -49,7 +49,7 @@ export default function SaveStatus() {
                 data-state="error"
                 className="text-warn flex items-center gap-1.5 text-xs font-medium"
             >
-                <Warning weight="bold" size={13} aria-hidden="true" />
+                <TriangleAlert size={13} aria-hidden="true" />
                 Not saved
                 <button
                     type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowClockwise } from "@phosphor-icons/react";
+import { RotateCw } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -28,7 +28,7 @@ export default function UpdateChip() {
                 "hover:bg-accent transition-colors focus-visible:outline-2",
             )}
         >
-            <ArrowClockwise weight="bold" className="size-3.5" />
+            <RotateCw className="size-3.5" />
             <span className="font-medium">Update ready</span>
             <span className="text-muted-foreground">· Restart</span>
         </button>

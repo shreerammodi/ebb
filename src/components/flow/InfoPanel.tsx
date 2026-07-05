@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "@phosphor-icons/react";
+import { X } from "lucide-react";
 
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,7 @@ function InfoPanelInner() {
                             data-testid="info-close"
                             className="text-muted-foreground hover:text-foreground rounded transition-colors focus-visible:outline-2"
                         >
-                            <X weight="bold" className="size-4" />
+                            <X className="size-4" />
                         </DialogClose>
                     </Tip>
                 </div>

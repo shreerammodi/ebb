@@ -1,6 +1,6 @@
 "use client";
 
-import { DotsThree } from "@phosphor-icons/react";
+import { Ellipsis } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -56,7 +56,7 @@ export default function FlowCardMenu({ id, onViewDetails, onChanged }: FlowCardM
                     onClick={(e) => e.stopPropagation()}
                     className="bg-accent text-muted-foreground hover:bg-accent/70 absolute top-3.5 right-3.5 z-10 flex h-7 w-7 items-center justify-center rounded-md opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
                 >
-                    <DotsThree weight="bold" className="size-4" />
+                    <Ellipsis className="size-4" />
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>

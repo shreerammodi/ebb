@@ -21,7 +21,6 @@
     "dependencies": {
         "@handsontable/react-wrapper": "^18.0.0",
         "@leeoniya/ufuzzy": "^1.0.19",
-        "@phosphor-icons/react": "^2.1.10",
         "@tailwindcss/postcss": "^4.3.0",
         "@tauri-apps/api": "^2.11.1",
         "@tauri-apps/plugin-process": "^2.3.1",
@@ -31,6 +30,7 @@
         "dexie": "^4.0.10",
         "fflate": "^0.8.3",
         "handsontable": "^18.0.0",
+        "lucide-react": "^1.23.0",
         "next": "^15.3.3",
         "radix-ui": "^1.4.3",
         "react": "^19.1.0",
