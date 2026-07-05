@@ -1,6 +1,6 @@
 "use client";
 
-import { TriangleAlert } from "lucide-react";
+import { Check, LoaderCircle, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Tip } from "@/components/ui/tooltip";
@@ -75,14 +75,14 @@ export default function SaveStatus() {
             tabIndex={savedAt ? 0 : undefined}
             className="text-muted-foreground flex items-center gap-1.5 text-xs select-none"
         >
-            <span
-                aria-hidden="true"
-                className={
-                    saving
-                        ? "bg-muted-foreground h-1.5 w-1.5 rounded-full motion-safe:animate-pulse"
-                        : "bg-good h-1.5 w-1.5 rounded-full"
-                }
-            />
+            {saving ? (
+                <LoaderCircle
+                    aria-hidden="true"
+                    className="text-muted-foreground size-3.5 motion-safe:animate-spin"
+                />
+            ) : (
+                <Check aria-hidden="true" className="text-good size-3.5" />
+            )}
             {saving ? "Saving…" : `Saved${savedAt ? ` ${relTime(savedAt, now)}` : ""}`}
         </span>
     );

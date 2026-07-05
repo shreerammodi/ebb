@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { House, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 import { toast } from "sonner";
@@ -53,17 +53,21 @@ export default function RoundHeader() {
             className="border-border bg-card flex h-12 flex-none items-center justify-between border-b px-4"
             data-testid="round-header"
         >
+
             <div className="flex items-center gap-3">
                 <Link
                     href="/"
-                    className="text-muted-foreground hover:text-foreground text-[13px]"
+                    className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-[13px]"
                     data-testid="back-to-flows"
                 >
-                    ← Flows
+                    <House className="size-3.5" aria-hidden="true" />
+                    Flows
                 </Link>
+                <span aria-hidden="true" className="bg-border h-4 w-px" />
                 <span className="text-foreground text-sm font-semibold">{participants}</span>
                 <SaveStatus />
             </div>
+
             <div className="no-print flex items-center gap-2">
                 <input
                     ref={fileInputRef}
