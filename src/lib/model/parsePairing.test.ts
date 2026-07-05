@@ -122,6 +122,22 @@ Lopez, Delmy
         });
     });
 
+    it("schematic row with a judge panel joins every judge", () => {
+        const text = `2
+Harvard-Westlake AS
+Harker AA
+Modi, Shreeram
+Castillo, Chris
+Taylor-Ward, Nigel`;
+        expect(parsePairing(text)).toEqual({
+            affSchool: "Harvard-Westlake",
+            aff: { first: { first: "A", last: "S" } },
+            negSchool: "Harker",
+            neg: { first: { first: "A", last: "A" } },
+            judge: "Shreeram Modi, Chris Castillo, Nigel Taylor-Ward",
+        });
+    });
+
     it("returns {} for unrecognized text", () => {
         expect(parsePairing("hello world")).toEqual({});
     });

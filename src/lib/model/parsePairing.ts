@@ -160,10 +160,12 @@ function parseBlock(lines: string[], isPolicy: boolean, patch: PairingPatch): vo
 
 function parseSchematic(lines: string[], patch: PairingPatch): void {
     const rows = lines.filter((l) => !/^\d+$/.test(l));
-    const judgeIdx = rows.findIndex((l) => /^(.+?),\s+(.+)$/.test(l));
-    if (judgeIdx < 0) return;
-    patch.judge = flipName(rows[judgeIdx]);
-    const teams = rows.filter((_, i) => i !== judgeIdx);
+    const isJudge = (l: string): boolean => /^(.+?),\s+(.+)$/.test(l);
+    const judges = rows.filter(isJudge);
+    if (judges.length === 0) return;
+    // A panel lists every "Last, First" line; the remaining lines are the two teams.
+    patch.judge = judges.map(flipName).join(", ");
+    const teams = rows.filter((l) => !isJudge(l));
     if (teams[0]) assignTeam(patch, "aff", teams[0], false);
     if (teams[1]) assignTeam(patch, "neg", teams[1], false);
 }
