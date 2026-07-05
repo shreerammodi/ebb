@@ -25,9 +25,7 @@ export default function RfdDrawer() {
     const setRfdOpen = useFlowStore((s) => s.setRfdOpen);
     const hostRef = useRef<HTMLDivElement>(null);
     // Default to roughly a third of the viewport; dragging the handle resizes.
-    const [height, setHeight] = useState(() =>
-        typeof window === "undefined" ? 240 : Math.round(window.innerHeight * 0.3),
-    );
+    const [height, setHeight] = useState(() => Math.round(window.innerHeight * 0.3));
 
     useEffect(() => {
         const host = hostRef.current;
@@ -66,7 +64,7 @@ export default function RfdDrawer() {
         e.preventDefault();
         const startY = e.clientY;
         const startHeight = height;
-        const max = typeof window === "undefined" ? 800 : window.innerHeight * 0.8;
+        const max = window.innerHeight * 0.8;
         function onMove(ev: PointerEvent) {
             // Dragging up (smaller clientY) grows the drawer.
             setHeight(Math.max(120, Math.min(max, startHeight + (startY - ev.clientY))));

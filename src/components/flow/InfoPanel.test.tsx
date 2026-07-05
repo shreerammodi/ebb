@@ -47,7 +47,7 @@ describe("InfoPanel", () => {
         expect(useFlowStore.getState().round!.scouting.decision?.vote).toBeUndefined();
     });
 
-    it("no longer renders the RFD textarea (it now lives in the drawer)", () => {
+    it("renders no RFD textarea; RFD lives in the drawer", () => {
         renderInfoPanel();
         expect(screen.queryByTestId("scout-rfd")).toBeNull();
         // The vote buttons remain under Decision.
