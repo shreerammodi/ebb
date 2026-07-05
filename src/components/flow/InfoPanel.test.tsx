@@ -59,9 +59,10 @@ describe("InfoPanel", () => {
         const box = screen.getByTestId("scout-paste");
         const text = `Round 5 of Varsity Lincoln-Douglas
 Competitors
-AFF Marlborough CS
-Chloe : she/her/hers
-NEG Strake Jesuit SR
+AFF Lynbrook VV
+Vikrant : he/him/his
+NEG Lynbrook OM
+Access Your Ballot
 Judging
 Shreeram Modi
 he/him`;
@@ -71,9 +72,9 @@ he/him`;
 
         const sc = useFlowStore.getState().round!.scouting;
         expect(sc.round).toBe("Round 5");
-        expect(sc.affSchool).toBe("Marlborough");
-        expect(sc.aff.first).toEqual({ first: "Chloe", last: "S" });
-        expect(sc.negSchool).toBe("Strake Jesuit");
+        expect(sc.affSchool).toBe("Lynbrook");
+        expect(sc.aff.first).toEqual({ first: "Vikrant", last: "V" });
+        expect(sc.negSchool).toBe("Lynbrook");
         expect(sc.judge).toBe("Shreeram Modi");
     });
 
@@ -85,13 +86,13 @@ he/him`;
         const box = screen.getByTestId("scout-paste");
         const text = `Round 1 of Varsity Lincoln-Douglas
 Competitors
-AFF Marlborough CS`;
+AFF Lynbrook OM`;
         box.focus();
         await userEvent.paste(text);
 
         const sc = useFlowStore.getState().round!.scouting;
-        expect(sc.affSchool).toBe("Marlborough");
-        expect(sc.aff.first).toEqual({ first: "C", last: "S" });
+        expect(sc.affSchool).toBe("Lynbrook");
+        expect(sc.aff.first).toEqual({ first: "O", last: "M" });
         expect(sc.neg.first).toEqual({ first: "Existing", last: "Partner" });
     });
 });

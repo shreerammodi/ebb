@@ -8,19 +8,19 @@ describe("parsePairing", () => {
 Start: 11:00 CDT
 Room: A108
 Competitors
-AFF Marlborough CS
-Chloe : she/her/hers
-NEG Strake Jesuit SR
+AFF Lynbrook VV
+Vikrant : he/him/his
+NEG Lynbrook OM
 Access Your Ballot
 Judging
 Shreeram Modi
 he/him`;
         expect(parsePairing(text)).toEqual({
             round: "Round 5",
-            affSchool: "Marlborough",
-            aff: { first: { first: "Chloe", last: "S" } },
-            negSchool: "Strake Jesuit",
-            neg: { first: { first: "S", last: "R" } },
+            affSchool: "Lynbrook",
+            aff: { first: { first: "Vikrant", last: "V" } },
+            negSchool: "Lynbrook",
+            neg: { first: { first: "O", last: "M" } },
             judge: "Shreeram Modi",
         });
     });
