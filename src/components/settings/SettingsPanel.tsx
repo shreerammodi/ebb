@@ -322,7 +322,7 @@ export default function SettingsPanel() {
                                             return (
                                                 <label
                                                     key={s.id}
-                                                    className="flex items-center gap-2.5 rounded-md px-2 py-1.5"
+                                                    className="flex w-fit items-center gap-2.5 rounded-md px-2 py-1.5"
                                                 >
                                                     <input
                                                         type="color"
