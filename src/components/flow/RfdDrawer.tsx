@@ -3,9 +3,10 @@
 import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { markdown } from "@codemirror/lang-markdown";
-import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
-import { EditorState } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import { drawSelection, EditorView, keymap } from "@codemirror/view";
+import { githubDark } from "@fsegurai/codemirror-theme-github-dark";
+import { githubLight } from "@fsegurai/codemirror-theme-github-light";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -13,80 +14,83 @@ import { Tip } from "@/components/ui/tooltip";
 import { makeCellCompletionSource } from "@/lib/rfd/cellCompletion";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
-/** Inherit the app's fonts/colors; CodeMirror's chrome stays transparent. */
+/**
+ * Structural tweaks over the GitHub theme, which owns the editor and the
+ * completion popup. Strips the popup's border and chrome to a bare list (it is
+ * a tool, not a card), marks each option with a side-colored dot in the icon
+ * slot, and inks the whole option aff blue / neg red to match the grid.
+ * Applied after the theme so these selectors win.
+ */
 const rfdTheme = EditorView.theme({
-    "&": { height: "100%", fontSize: "14px", color: "inherit" },
+    "&": { height: "100%", fontSize: "14px" },
     "&.cm-focused": { outline: "none" },
     ".cm-scroller": { overflow: "auto", fontFamily: "inherit", lineHeight: "1.5" },
-    // Caret follows the theme ink (light on dark, dark on light) so it stays
-    // visible in dark mode, where CodeMirror's default dark caret vanishes.
-    ".cm-content": { padding: "10px 14px", caretColor: "var(--foreground)" },
-    ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--foreground)" },
-    // Match the completion popup to the app's menu tokens so it stays legible
-    // in both themes; CodeMirror's default popup is light-only.
+    ".cm-content": { padding: "10px 14px" },
     ".cm-tooltip.cm-tooltip-autocomplete": {
-        border: "1px solid var(--border)",
-        borderRadius: "8px",
+        border: "none",
+        borderRadius: "0",
         backgroundColor: "var(--popover)",
-        color: "var(--popover-foreground)",
-        boxShadow: "0 10px 30px oklch(0 0 0 / 0.25)",
-        overflow: "hidden",
+        boxShadow: "none",
+        padding: "0",
     },
-    ".cm-tooltip.cm-tooltip-autocomplete > ul": {
+    ".cm-tooltip-autocomplete > ul": {
+        border: "none",
         fontFamily: "inherit",
         fontSize: "13px",
-        maxHeight: "16rem",
-        padding: "4px",
+        maxHeight: "16em",
     },
-    ".cm-tooltip.cm-tooltip-autocomplete > ul > li": {
-        padding: "4px 10px",
-        borderRadius: "6px",
-        lineHeight: "1.5",
-        color: "var(--foreground)",
+    ".cm-tooltip-autocomplete > ul > li": {
+        padding: "2px 8px",
+        color: "var(--popover-foreground)",
     },
-    ".cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]": {
+    ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
         backgroundColor: "var(--accent)",
-        color: "var(--foreground)",
     },
-    ".cm-completionDetail": {
-        marginLeft: "0.75rem",
-        color: "var(--muted-foreground)",
-        fontStyle: "italic",
-    },
-    ".cm-completionMatchedText": {
-        textDecoration: "none",
-        fontWeight: "600",
-        color: "inherit",
-    },
-    // Each option carries its speech's side (via the completion `type`): a
-    // colored dot plus aff/neg ink on the label, matching the grid so the
-    // reference reads as the same argument. The speech name stays muted italic.
-    ".cm-completionIcon-aff, .cm-completionIcon-neg": {
-        width: "1.1em",
-        paddingRight: "0.4em",
-        opacity: "1",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-    },
+    // CodeMirror underlines the matched substring; make it clearly the query.
+    ".cm-completionMatchedText": { textDecoration: "underline", fontWeight: "600" },
+    // The icon slot holds a bare side-colored dot instead of a code-symbol glyph.
+    ".cm-completionIcon": { paddingRight: "8px", opacity: "1" },
     ".cm-completionIcon-aff::after, .cm-completionIcon-neg::after": {
         content: '""',
-        display: "block",
+        display: "inline-block",
         width: "6px",
         height: "6px",
         borderRadius: "50%",
+        verticalAlign: "middle",
     },
     ".cm-completionIcon-aff::after": { backgroundColor: "var(--aff)" },
     ".cm-completionIcon-neg::after": { backgroundColor: "var(--neg)" },
-    ".cm-completionIcon-aff ~ .cm-completionLabel": { color: "var(--aff)" },
-    ".cm-completionIcon-neg ~ .cm-completionLabel": { color: "var(--neg)" },
+    // Scoped to the row so the side ink outweighs the default option color above.
+    ".cm-tooltip-autocomplete > ul > li.cm-rfd-aff": { color: "var(--aff)" },
+    ".cm-tooltip-autocomplete > ul > li.cm-rfd-neg": { color: "var(--neg)" },
 });
+
+/**
+ * Tracks the resolved appearance off the `.dark` class on <html>, the single
+ * source of truth useThemeSync maintains, so it covers both the manual setting
+ * and live OS changes under "system".
+ */
+function useIsDark(): boolean {
+    const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
+    useEffect(() => {
+        const el = document.documentElement;
+        const obs = new MutationObserver(() => setDark(el.classList.contains("dark")));
+        obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+        return () => obs.disconnect();
+    }, []);
+    return dark;
+}
 
 export default function RfdDrawer() {
     const setRfdOpen = useFlowStore((s) => s.setRfdOpen);
     const hostRef = useRef<HTMLDivElement>(null);
     // Default to roughly a third of the viewport; dragging the handle resizes.
     const [height, setHeight] = useState(() => Math.round(window.innerHeight * 0.3));
+
+    const isDark = useIsDark();
+    const viewRef = useRef<EditorView | null>(null);
+    // Swaps the GitHub light/dark theme in place without rebuilding the editor.
+    const themeComp = useRef(new Compartment());
 
     useEffect(() => {
         const host = hostRef.current;
@@ -102,8 +106,18 @@ export default function RfdDrawer() {
                     drawSelection(),
                     EditorView.lineWrapping,
                     markdown(),
-                    syntaxHighlighting(defaultHighlightStyle),
-                    autocompletion({ override: [source], activateOnTyping: true }),
+                    themeComp.current.of(
+                        document.documentElement.classList.contains("dark")
+                            ? githubDark
+                            : githubLight,
+                    ),
+                    autocompletion({
+                        override: [source],
+                        activateOnTyping: true,
+                        // The icon slot renders the side dot; optionClass inks the row.
+                        icons: true,
+                        optionClass: (c) => (c.type ? `cm-rfd-${c.type}` : ""),
+                    }),
                     keymap.of([...defaultKeymap, ...historyKeymap, ...completionKeymap]),
                     rfdTheme,
                     EditorView.updateListener.of((u) => {
@@ -117,14 +131,22 @@ export default function RfdDrawer() {
                 ],
             }),
         });
+        viewRef.current = view;
         // Defer focus past the current keydown (the Meta+j that opened the
         // drawer) so the grid's focus handling cannot reclaim it.
         const focusRaf = requestAnimationFrame(() => view.focus());
         return () => {
             cancelAnimationFrame(focusRaf);
             view.destroy();
+            viewRef.current = null;
         };
     }, []);
+
+    useEffect(() => {
+        viewRef.current?.dispatch({
+            effects: themeComp.current.reconfigure(isDark ? githubDark : githubLight),
+        });
+    }, [isDark]);
 
     function startResize(e: React.PointerEvent) {
         e.preventDefault();

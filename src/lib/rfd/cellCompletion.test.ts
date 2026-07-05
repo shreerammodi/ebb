@@ -20,16 +20,18 @@ function contextAt(doc: string, pos: number, explicit = false): CompletionContex
 }
 
 describe("cellCompletions", () => {
-    it("maps matching cells to completions with the column header and side", () => {
-        const opts = cellCompletions(roundWithCells(), "prol");
-        expect(opts[0].label).toBe("prolif good");
-        expect(opts[0].detail).toBe("1AC");
-        // 1AC is an aff speech; the type drives the aff/neg icon and ink.
-        expect(opts[0].type).toBe("aff");
+    it("maps every filled cell to a completion labelled by text, typed by side", () => {
+        const opts = cellCompletions(roundWithCells());
+        const aff = opts.find((o) => o.label === "prolif good")!;
+        const neg = opts.find((o) => o.label === "topicality")!;
+        // 1AC is aff, 1NC is neg; type drives the dot and text ink.
+        expect(aff.type).toBe("aff");
+        expect(neg.type).toBe("neg");
     });
 
-    it("returns nothing when no cell matches", () => {
-        expect(cellCompletions(roundWithCells(), "zzzzz")).toEqual([]);
+    it("returns nothing when the round has no filled cells", () => {
+        const round = makeFlowRound("aff");
+        expect(cellCompletions(round)).toEqual([]);
     });
 });
 
