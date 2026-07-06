@@ -254,4 +254,34 @@ describe("split view", () => {
         expect(useFlowStore.getState().splitSheetId).toBe(b);
         expect(useFlowStore.getState().speechTarget).toEqual({ speechId: "2ac" });
     });
+
+    it("removeSheet on pane 2's sheet collapses the split, leaving pane 1 untouched", () => {
+        const { a, b } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit(); // a | b, focus 1
+        const removed = useFlowStore.getState().removeSheet(b)!;
+        expect(removed.wasActive).toBe(false);
+        expect(useFlowStore.getState().splitSheetId).toBeNull();
+        expect(useFlowStore.getState().activeSheetId).toBe(a);
+        expect(useFlowStore.getState().focusedPane).toBe(1);
+    });
+
+    it("removeSheet on pane 1's sheet promotes pane 2's sheet and collapses the split", () => {
+        const { a, b } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit(); // a | b, focus 1
+        const removed = useFlowStore.getState().removeSheet(a)!;
+        expect(removed.wasActive).toBe(true);
+        expect(useFlowStore.getState().activeSheetId).toBe(b);
+        expect(useFlowStore.getState().splitSheetId).toBeNull();
+        expect(useFlowStore.getState().focusedPane).toBe(1);
+    });
+
+    it("removeSheet on a sheet shown in neither pane leaves the split untouched", () => {
+        const { a, b, c } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit(); // a | b, focus 1
+        const removed = useFlowStore.getState().removeSheet(c)!;
+        expect(removed.wasActive).toBe(false);
+        expect(useFlowStore.getState().activeSheetId).toBe(a);
+        expect(useFlowStore.getState().splitSheetId).toBe(b);
+        expect(useFlowStore.getState().focusedPane).toBe(1);
+    });
 });

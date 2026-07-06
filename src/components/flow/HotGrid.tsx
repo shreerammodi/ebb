@@ -210,10 +210,10 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     }, [revealTarget, sheetId]);
 
     // Speech switch: seed every sheet's remembered cursor to row 0 of the
-    // chosen speech's column, then select it on the now-active topmost sheet.
-    // Declared after the sheet-switch effect so its rAF selection wins when a
-    // switch changes activeSheetId and speechTarget in the same commit. Only
-    // the focused pane moves its selection; the other pane just gets the seed.
+    // chosen speech's column, then select it on this pane only when this
+    // pane is focused; the other pane just gets the seed. Declared after the
+    // sheet-switch effect so its rAF selection wins when a switch also
+    // changes activeSheetId in the same commit (single-pane mode).
     const speechTarget = useFlowStore((s) => s.speechTarget);
     useEffect(() => {
         if (!speechTarget) return;

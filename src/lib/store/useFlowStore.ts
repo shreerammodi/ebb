@@ -78,7 +78,11 @@ export interface FlowActions {
     setActiveSheet(sheetId: string): void;
     /** Switch to a sheet and select one of its cells (used by the search palette). */
     revealCell(sheetId: string, row: number, col: number): void;
-    /** Focus the topmost flow sheet and place the cursor at the given speech's top row on every sheet. */
+    /**
+     * In single-pane mode, focuses the topmost flow sheet and seeds the
+     * cursor at the given speech's top row. In split mode, records the
+     * speech target for the focused pane without changing which sheets show.
+     */
     switchSpeech(speechId: string): void;
     /** Opens a second pane on the next sheet, or collapses back to the focused pane's sheet. */
     toggleSplit(): void;
@@ -301,13 +305,29 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     },
 
     removeSheet(sheetId) {
-        const { round, activeSheetId } = get();
+        const { round, activeSheetId, splitSheetId } = get();
         if (!round) return null;
         const sheet = round.sheets.find((s) => s.id === sheetId);
         if (!sheet || sheet.kind === "cx") return null;
 
         const wasActive = activeSheetId === sheetId;
         const remaining = round.sheets.filter((s) => s.id !== sheetId);
+        const nextRound = touch({ ...round, sheets: remaining });
+
+        // Deleting a sheet that a split pane is showing collapses the split:
+        // the surviving pane keeps its sheet, so the two panes never end up
+        // pointing at the same sheet or at one that no longer exists.
+        if (splitSheetId != null) {
+            if (sheetId === splitSheetId) {
+                set({ round: nextRound, splitSheetId: null, focusedPane: 1 });
+            } else if (wasActive) {
+                set({ round: nextRound, activeSheetId: splitSheetId, splitSheetId: null, focusedPane: 1 });
+            } else {
+                set({ round: nextRound });
+            }
+            return { sheet, wasActive };
+        }
+
         let nextActive = activeSheetId;
         if (wasActive) {
             const flows = remaining
@@ -316,7 +336,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             const below = flows.filter((s) => s.order < sheet.order).pop();
             nextActive = (below ?? flows[0])?.id ?? null;
         }
-        set({ round: touch({ ...round, sheets: remaining }), activeSheetId: nextActive });
+        set({ round: nextRound, activeSheetId: nextActive });
         return { sheet, wasActive };
     },
 
