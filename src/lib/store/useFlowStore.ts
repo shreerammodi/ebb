@@ -57,6 +57,8 @@ export interface FlowState {
     sidebarCollapsed: boolean;
     /** RFD drawer open/closed; persisted like sidebarCollapsed. */
     rfdOpen: boolean;
+    /** Vim keybindings in the RFD editor; persisted like sidebarCollapsed. */
+    rfdVim: boolean;
     renamingSheetId: string | null;
 }
 
@@ -83,6 +85,7 @@ export interface FlowActions {
     setKeymapOverride(commandId: CommandId, chord: string): void;
     clearKeymapOverride(commandId: CommandId): void;
     setFlowFont(id: FontId): void;
+    setRfdVim(on: boolean): void;
     setTheme(mode: ThemeMode): void;
     /** Sets one side's custom ink; null resets it to the theme default. */
     setSideColor(side: Side, color: string | null): void;
@@ -130,6 +133,7 @@ interface DisplaySettings {
     flowFont: FontId;
     sidebarCollapsed: boolean;
     rfdOpen: boolean;
+    rfdVim: boolean;
     theme: ThemeMode;
     affColor: string | null;
     negColor: string | null;
@@ -145,6 +149,7 @@ function loadDisplaySettings(): DisplaySettings {
         flowFont: DEFAULT_FONT_ID,
         sidebarCollapsed: false,
         rfdOpen: false,
+        rfdVim: false,
         theme: "system",
         affColor: null,
         negColor: null,
@@ -158,6 +163,7 @@ function loadDisplaySettings(): DisplaySettings {
             flowFont: resolveFontId(p.flowFont),
             sidebarCollapsed: typeof p.sidebarCollapsed === "boolean" ? p.sidebarCollapsed : false,
             rfdOpen: typeof p.rfdOpen === "boolean" ? p.rfdOpen : false,
+            rfdVim: typeof p.rfdVim === "boolean" ? p.rfdVim : false,
             theme: resolveThemeMode(p.theme),
             affColor: resolveColor(p.affColor),
             negColor: resolveColor(p.negColor),
@@ -182,6 +188,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
         flowFont: s.flowFont,
         sidebarCollapsed: s.sidebarCollapsed,
         rfdOpen: s.rfdOpen,
+        rfdVim: s.rfdVim,
         theme: s.theme,
         affColor: s.affColor,
         negColor: s.negColor,
@@ -215,6 +222,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     infoOpen: false,
     sidebarCollapsed: initialDisplaySettings.sidebarCollapsed,
     rfdOpen: initialDisplaySettings.rfdOpen,
+    rfdVim: initialDisplaySettings.rfdVim,
     renamingSheetId: null,
 
     loadRound(round, opts) {
@@ -358,6 +366,11 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setFlowFont(id) {
         saveDisplaySettings({ ...displaySettingsOf(get()), flowFont: id });
         set({ flowFont: id });
+    },
+
+    setRfdVim(on) {
+        saveDisplaySettings({ ...displaySettingsOf(get()), rfdVim: on });
+        set({ rfdVim: on });
     },
 
     setTheme(mode) {

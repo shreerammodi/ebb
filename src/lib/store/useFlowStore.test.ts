@@ -50,6 +50,12 @@ describe("loadRound", () => {
         useFlowStore.getState().loadRound(makeFlowRound("aff"));
         expect(useFlowStore.getState().rfdOpen).toBe(true);
     });
+
+    it("persists rfdVim through setRfdVim", () => {
+        useFlowStore.getState().setRfdVim(true);
+        expect(useFlowStore.getState().rfdVim).toBe(true);
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain('"rfdVim":true');
+    });
 });
 
 describe("switchSpeech", () => {
