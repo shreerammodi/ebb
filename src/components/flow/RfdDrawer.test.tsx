@@ -53,4 +53,19 @@ describe("RfdDrawer", () => {
         const { container } = renderDrawer();
         expect(container.querySelector(".cm-vim-panel")).not.toBeNull();
     });
+
+    it("renders the RFD as markdown in preview mode", async () => {
+        const round = makeFlowRound("judge");
+        round.scouting.decision = { rfd: "## Voter\n\n- aff on T" };
+        useFlowStore.getState().loadRound(round);
+        useFlowStore.getState().setRfdOpen(true);
+
+        renderDrawer();
+        await userEvent.click(screen.getByTestId("rfd-preview-toggle"));
+
+        const preview = screen.getByTestId("rfd-preview");
+        expect(preview.querySelector("h2")).not.toBeNull();
+        expect(preview.querySelector("li")).not.toBeNull();
+        expect(preview.textContent).toContain("Voter");
+    });
 });

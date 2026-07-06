@@ -8,7 +8,9 @@ import { drawSelection, EditorView, keymap } from "@codemirror/view";
 import { githubDark } from "@fsegurai/codemirror-theme-github-dark";
 import { githubLight } from "@fsegurai/codemirror-theme-github-light";
 import { vim } from "@replit/codemirror-vim";
+import DOMPurify from "dompurify";
 import { X } from "lucide-react";
+import { marked } from "marked";
 import { useEffect, useRef, useState } from "react";
 
 import { Tip } from "@/components/ui/tooltip";
@@ -88,6 +90,8 @@ export default function RfdDrawer() {
     const hostRef = useRef<HTMLDivElement>(null);
     // Default to roughly a third of the viewport; dragging the handle resizes.
     const [height, setHeight] = useState(() => Math.round(window.innerHeight * 0.3));
+    // Transient per-mount; the drawer always opens in edit mode.
+    const [mode, setMode] = useState<"edit" | "preview">("edit");
 
     const isDark = useIsDark();
     const rfdVim = useFlowStore((s) => s.rfdVim);
@@ -184,6 +188,13 @@ export default function RfdDrawer() {
         window.addEventListener("pointerup", onUp);
     }
 
+    // The editor's updateListener keeps this current on every keystroke, so
+    // preview reads straight from the store. Sanitized because an imported
+    // flow's RFD is a trust boundary, not purely the user's own text.
+    const rfd = useFlowStore((s) => s.round?.scouting.decision?.rfd ?? "");
+    const previewHtml =
+        mode === "preview" ? DOMPurify.sanitize(marked.parse(rfd) as string) : "";
+
     return (
         <section
             data-testid="rfd-drawer"
@@ -199,19 +210,65 @@ export default function RfdDrawer() {
             />
             <div className="border-border flex items-center justify-between border-b px-3.5 py-2">
                 <span className="text-foreground text-[13px] font-semibold tracking-wide">RFD</span>
-                <Tip label="Close">
-                    <button
-                        type="button"
-                        aria-label="Close RFD"
-                        data-testid="rfd-close"
-                        onClick={() => setRfdOpen(false)}
-                        className="text-muted-foreground hover:text-foreground rounded transition-colors focus-visible:outline-2"
+                <div className="flex items-center gap-2">
+                    <div
+                        role="tablist"
+                        aria-label="RFD view"
+                        className="border-border flex overflow-hidden rounded-md border text-[12px]"
                     >
-                        <X className="size-4" />
-                    </button>
-                </Tip>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={mode === "edit"}
+                            onClick={() => setMode("edit")}
+                            className={
+                                mode === "edit"
+                                    ? "bg-accent text-accent-foreground px-2 py-0.5"
+                                    : "text-muted-foreground hover:bg-accent/50 px-2 py-0.5"
+                            }
+                        >
+                            Edit
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={mode === "preview"}
+                            data-testid="rfd-preview-toggle"
+                            onClick={() => setMode("preview")}
+                            className={
+                                mode === "preview"
+                                    ? "bg-accent text-accent-foreground px-2 py-0.5"
+                                    : "text-muted-foreground hover:bg-accent/50 px-2 py-0.5"
+                            }
+                        >
+                            Preview
+                        </button>
+                    </div>
+                    <Tip label="Close">
+                        <button
+                            type="button"
+                            aria-label="Close RFD"
+                            data-testid="rfd-close"
+                            onClick={() => setRfdOpen(false)}
+                            className="text-muted-foreground hover:text-foreground rounded transition-colors focus-visible:outline-2"
+                        >
+                            <X className="size-4" />
+                        </button>
+                    </Tip>
+                </div>
             </div>
-            <div ref={hostRef} className="min-h-0 flex-1 overflow-hidden" />
+            <div
+                ref={hostRef}
+                className="min-h-0 flex-1 overflow-hidden"
+                style={{ display: mode === "preview" ? "none" : undefined }}
+            />
+            {mode === "preview" && (
+                <div
+                    data-testid="rfd-preview"
+                    className="text-foreground min-h-0 flex-1 overflow-auto px-3.5 py-2.5 text-[14px] leading-relaxed [&_h1]:mt-2 [&_h1]:mb-1 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-base [&_h2]:font-semibold [&_blockquote]:border-border [&_blockquote]:text-muted-foreground [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_li]:ml-4 [&_li]:list-disc [&_p]:my-1.5"
+                    dangerouslySetInnerHTML={{ __html: previewHtml }}
+                />
+            )}
         </section>
     );
 }
