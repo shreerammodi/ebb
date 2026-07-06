@@ -25,6 +25,7 @@ describe("RfdDrawer", () => {
         round.scouting.decision = { rfd: "aff on T" };
         useFlowStore.getState().loadRound(round);
         useFlowStore.getState().setRfdOpen(true);
+        useFlowStore.getState().setRfdVim(false);
     });
 
     it("mounts a CodeMirror editor seeded with the stored RFD", () => {
@@ -45,5 +46,11 @@ describe("RfdDrawer", () => {
         const { unmount } = renderDrawer();
         unmount();
         expect(focusActiveHot).toHaveBeenCalled();
+    });
+
+    it("shows the vim status bar when rfdVim is enabled", () => {
+        useFlowStore.getState().setRfdVim(true);
+        const { container } = renderDrawer();
+        expect(container.querySelector(".cm-vim-panel")).not.toBeNull();
     });
 });

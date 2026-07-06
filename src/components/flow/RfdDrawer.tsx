@@ -7,6 +7,7 @@ import { Compartment, EditorState } from "@codemirror/state";
 import { drawSelection, EditorView, keymap } from "@codemirror/view";
 import { githubDark } from "@fsegurai/codemirror-theme-github-dark";
 import { githubLight } from "@fsegurai/codemirror-theme-github-light";
+import { vim } from "@replit/codemirror-vim";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -89,9 +90,12 @@ export default function RfdDrawer() {
     const [height, setHeight] = useState(() => Math.round(window.innerHeight * 0.3));
 
     const isDark = useIsDark();
+    const rfdVim = useFlowStore((s) => s.rfdVim);
     const viewRef = useRef<EditorView | null>(null);
     // Swaps the GitHub light/dark theme in place without rebuilding the editor.
     const themeComp = useRef(new Compartment());
+    // Swaps vim keybindings on/off in place without rebuilding the editor.
+    const vimComp = useRef(new Compartment());
 
     useEffect(() => {
         const host = hostRef.current;
@@ -103,6 +107,11 @@ export default function RfdDrawer() {
             state: EditorState.create({
                 doc: useFlowStore.getState().round?.scouting.decision?.rfd ?? "",
                 extensions: [
+                    // Vim's keymap must precede the default keymaps so it wins;
+                    // read at mount from the store to avoid a stale closure.
+                    vimComp.current.of(
+                        useFlowStore.getState().rfdVim ? vim({ status: true }) : [],
+                    ),
                     history(),
                     drawSelection(),
                     EditorView.lineWrapping,
@@ -151,6 +160,12 @@ export default function RfdDrawer() {
             effects: themeComp.current.reconfigure(isDark ? githubDark : githubLight),
         });
     }, [isDark]);
+
+    useEffect(() => {
+        viewRef.current?.dispatch({
+            effects: vimComp.current.reconfigure(rfdVim ? vim({ status: true }) : []),
+        });
+    }, [rfdVim]);
 
     function startResize(e: React.PointerEvent) {
         e.preventDefault();

@@ -29,6 +29,7 @@
         "@fsegurai/codemirror-theme-github-light": "^6.2.5",
         "@handsontable/react-wrapper": "^18.0.0",
         "@leeoniya/ufuzzy": "^1.0.19",
+        "@replit/codemirror-vim": "^6.3.0",
         "@tailwindcss/postcss": "^4.3.0",
         "@tauri-apps/api": "^2.11.1",
         "@tauri-apps/plugin-process": "^2.3.1",
