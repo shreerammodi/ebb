@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { makeFlowRound, makeFlowSheet } from "@/lib/model/flow";
 
-import { useFlowStore } from "./useFlowStore";
+import { focusedSheetId, useFlowStore } from "./useFlowStore";
 
 function loadFresh(role: "aff" | "neg" = "aff") {
     const round = makeFlowRound(role);
@@ -162,5 +162,96 @@ describe("setScouting", () => {
         const sc = useFlowStore.getState().round!.scouting;
         expect(sc.tournament).toBe("TOC");
         expect(sc.judge).toBe("Lee");
+    });
+});
+
+function threeFlowSheets() {
+    // Fresh aff round has CX + one flow sheet ("Aff", order 0). Add two more.
+    const round = makeFlowRound("aff");
+    useFlowStore.getState().loadRound(round);
+    const a = round.sheets.find((s) => s.kind !== "cx")!.id;
+    const b = useFlowStore.getState().addSheet({ title: "DA", group: "neg" });
+    const c = useFlowStore.getState().addSheet({ title: "CP", group: "neg" });
+    // addSheet makes the new sheet active; reset to the first flow sheet.
+    useFlowStore.getState().setActiveSheet(a);
+    return { a, b, c };
+}
+
+describe("split view", () => {
+    beforeEach(() => {
+        useFlowStore.setState({
+            round: null,
+            activeSheetId: null,
+            splitSheetId: null,
+            focusedPane: 1,
+            revealTarget: null,
+            speechTarget: null,
+        });
+    });
+
+    it("toggleSplit opens with the next sheet in the second pane", () => {
+        const { a, b } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit();
+        expect(useFlowStore.getState().activeSheetId).toBe(a);
+        expect(useFlowStore.getState().splitSheetId).toBe(b);
+        expect(useFlowStore.getState().focusedPane).toBe(1);
+    });
+
+    it("toggleSplit collapses back to the focused pane's sheet", () => {
+        const { b } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit();
+        useFlowStore.getState().focusPane(2);
+        useFlowStore.getState().toggleSplit();
+        expect(useFlowStore.getState().splitSheetId).toBeNull();
+        expect(useFlowStore.getState().activeSheetId).toBe(b);
+        expect(useFlowStore.getState().focusedPane).toBe(1);
+    });
+
+    it("setActiveSheet retargets the focused pane", () => {
+        const { a, b, c } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit(); // panes a | b, focus 1
+        useFlowStore.getState().focusPane(2);
+        useFlowStore.getState().setActiveSheet(c);
+        expect(useFlowStore.getState().activeSheetId).toBe(a); // pane 1 unchanged
+        expect(useFlowStore.getState().splitSheetId).toBe(c); // pane 2 retargeted
+    });
+
+    it("picking the other pane's sheet swaps the panes (no duplicates)", () => {
+        const { a, b } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit(); // a | b, focus 1
+        useFlowStore.getState().setActiveSheet(b); // b already in pane 2
+        expect(useFlowStore.getState().activeSheetId).toBe(b);
+        expect(useFlowStore.getState().splitSheetId).toBe(a);
+    });
+
+    it("focusPane is a no-op outside split", () => {
+        threeFlowSheets();
+        useFlowStore.getState().focusPane(2);
+        expect(useFlowStore.getState().focusedPane).toBe(1);
+    });
+
+    it("focusedSheetId reads the focused pane", () => {
+        const { a, b } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit();
+        expect(focusedSheetId(useFlowStore.getState())).toBe(a);
+        useFlowStore.getState().focusPane(2);
+        expect(focusedSheetId(useFlowStore.getState())).toBe(b);
+    });
+
+    it("revealCell carries the sheet id and retargets the focused pane", () => {
+        const { a, b, c } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit(); // a | b, focus 1
+        useFlowStore.getState().revealCell(c, 2, 3);
+        expect(useFlowStore.getState().activeSheetId).toBe(c); // pane 1 retargeted
+        expect(useFlowStore.getState().revealTarget).toEqual({ sheetId: c, row: 2, col: 3 });
+    });
+
+    it("switchSpeech in split records the target without moving sheets", () => {
+        const { a, b } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit();
+        useFlowStore.getState().switchSpeech("2ac");
+        expect(useFlowStore.getState().activeSheetId).toBe(a);
+        expect(useFlowStore.getState().splitSheetId).toBe(b);
+        expect(useFlowStore.getState().speechTarget).toEqual({ speechId: "2ac" });
     });
 });

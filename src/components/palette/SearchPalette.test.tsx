@@ -66,15 +66,15 @@ describe("SearchPalette", () => {
         await userEvent.keyboard("{Enter}");
         const state = useFlowStore.getState();
         expect(state.activeSheetId).toBe(sheetId);
-        expect(state.revealTarget).toEqual({ row: 0, col: 0 });
+        expect(state.revealTarget).toEqual({ sheetId, row: 0, col: 0 });
         expect(state.quickSwitcherOpen).toBe(false);
     });
 
     it("jumps to a cell on click", async () => {
-        setupRound();
+        const { sheetId } = setupRound();
         render(<SearchPalette />);
         await userEvent.click(screen.getByTestId("sp-row-0"));
-        expect(useFlowStore.getState().revealTarget).toEqual({ row: 0, col: 0 });
+        expect(useFlowStore.getState().revealTarget).toEqual({ sheetId, row: 0, col: 0 });
     });
 
     it("switches to command mode when the query starts with >", async () => {

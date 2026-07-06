@@ -14,6 +14,7 @@ import { type FontId, DEFAULT_FONT_ID, resolveFontId } from "@/lib/fonts/registr
 import {
     firstFlowSheetId,
     makeFlowSheet,
+    sortedSheets,
     type CellMeta,
     type FlowRound,
     type FlowSheet,
@@ -34,8 +35,12 @@ export interface RemovedFlowSheet {
 export interface FlowState {
     round: FlowRound | null;
     activeSheetId: string | null;
-    /** Grid cell the search palette asked to jump to; HotGrid selects it, then clears via a fresh set on the next reveal. */
-    revealTarget: { row: number; col: number } | null;
+    /** Grid cell the reveal asked to jump to; carries the sheet so the matching pane selects it. */
+    revealTarget: { sheetId: string; row: number; col: number } | null;
+    /** Second pane's sheet id when split; null = single pane. */
+    splitSheetId: string | null;
+    /** Which pane is focused (1 = left, 2 = right); only meaningful when split. */
+    focusedPane: 1 | 2;
     /** Speech (column) to switch to; HotGrid seeds every sheet's cursor to its top row and selects it on the active sheet. A fresh object re-fires the effect. */
     speechTarget: { speechId: string } | null;
     /** CommandId -> custom chord, overriding the preset binding. */
@@ -75,6 +80,10 @@ export interface FlowActions {
     revealCell(sheetId: string, row: number, col: number): void;
     /** Focus the topmost flow sheet and place the cursor at the given speech's top row on every sheet. */
     switchSpeech(speechId: string): void;
+    /** Opens a second pane on the next sheet, or collapses back to the focused pane's sheet. */
+    toggleSplit(): void;
+    /** Focuses the given pane; no-op outside split. */
+    focusPane(pane: 1 | 2): void;
     /** Grid snapshot sink: replaces one sheet's data/meta (no-op when unchanged). */
     updateSheetData(
         sheetId: string,
@@ -204,10 +213,37 @@ function touch(round: FlowRound): FlowRound {
     return { ...round, updatedAt: Date.now() };
 }
 
+/** The sheet id shown in the focused pane. */
+export function focusedSheetId(
+    s: Pick<FlowState, "activeSheetId" | "splitSheetId" | "focusedPane">,
+): string | null {
+    return s.splitSheetId != null && s.focusedPane === 2 ? s.splitSheetId : s.activeSheetId;
+}
+
+/**
+ * Assign `sheetId` to the focused pane. In single mode that is just
+ * `activeSheetId`. In split mode, picking the sheet already in the OTHER pane
+ * swaps the two panes rather than showing a sheet twice.
+ */
+function assignFocused(
+    s: Pick<FlowState, "activeSheetId" | "splitSheetId" | "focusedPane">,
+    sheetId: string,
+): { activeSheetId: string | null; splitSheetId: string | null } {
+    if (s.splitSheetId == null) return { activeSheetId: sheetId, splitSheetId: null };
+    const focusedCur = s.focusedPane === 1 ? s.activeSheetId : s.splitSheetId;
+    const other = s.focusedPane === 1 ? s.splitSheetId : s.activeSheetId;
+    const newOther = sheetId === other ? focusedCur : other;
+    return s.focusedPane === 1
+        ? { activeSheetId: sheetId, splitSheetId: newOther }
+        : { activeSheetId: newOther, splitSheetId: sheetId };
+}
+
 export const useFlowStore = create<FlowStore>()((set, get) => ({
     round: null,
     activeSheetId: null,
     revealTarget: null,
+    splitSheetId: null,
+    focusedPane: 1,
     speechTarget: null,
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
@@ -230,6 +266,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             round,
             activeSheetId:
                 opts?.activeSheetId !== undefined ? opts.activeSheetId : firstFlowSheetId(round),
+            splitSheetId: null,
+            focusedPane: 1,
             // A brand-new flow always opens with the RFD drawer closed; an
             // existing flow restores the persisted preference. loadRound never
             // persists rfdOpen, so forcing it closed here stays transient.
@@ -306,23 +344,48 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     },
 
     setActiveSheet(sheetId) {
-        set({ activeSheetId: sheetId });
+        set(assignFocused(get(), sheetId));
     },
 
     revealCell(sheetId, row, col) {
-        // A fresh object each call so HotGrid's effect re-fires even when the
+        // A fresh object each call so the pane's effect re-fires even when the
         // same cell is revealed twice in a row.
-        set({ activeSheetId: sheetId, revealTarget: { row, col } });
+        set({ ...assignFocused(get(), sheetId), revealTarget: { sheetId, row, col } });
     },
 
     switchSpeech(speechId) {
-        const { round } = get();
+        const { round, splitSheetId } = get();
         if (!round) return;
+        // A fresh speechTarget object re-fires the pane effect even for a
+        // repeat pick of the same speech.
+        if (splitSheetId != null) {
+            // Split: apply to the focused pane; do not disturb which sheets show.
+            set({ speechTarget: { speechId } });
+            return;
+        }
         const topId = firstFlowSheetId(round);
         if (!topId) return;
-        // A fresh speechTarget object re-fires HotGrid's effect even for a
-        // repeat pick of the same speech.
         set({ activeSheetId: topId, speechTarget: { speechId } });
+    },
+
+    toggleSplit() {
+        const { round, splitSheetId, activeSheetId } = get();
+        if (!round) return;
+        if (splitSheetId != null) {
+            set({ activeSheetId: focusedSheetId(get()), splitSheetId: null, focusedPane: 1 });
+            return;
+        }
+        const order = sortedSheets(round);
+        const i = order.findIndex((s) => s.id === activeSheetId);
+        const next = order[i + 1] ?? order[i - 1];
+        // No second sheet to show -> stay single-pane.
+        if (!next || next.id === activeSheetId) return;
+        set({ splitSheetId: next.id, focusedPane: 1 });
+    },
+
+    focusPane(pane) {
+        if (get().splitSheetId == null) return;
+        set({ focusedPane: pane });
     },
 
     updateSheetData(sheetId, data, meta) {
