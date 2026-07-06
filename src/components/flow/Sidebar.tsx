@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import { executeCommand } from "@/lib/commands/commands";
 import type { FlowSheet } from "@/lib/model/flow";
-import { useFlowStore } from "@/lib/store/useFlowStore";
+import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
 
 const EMPTY_SHEETS: FlowSheet[] = [];
@@ -17,7 +17,9 @@ const EMPTY_SHEETS: FlowSheet[] = [];
 export default function Sidebar() {
     const sheets = useFlowStore((s) => s.round?.sheets ?? EMPTY_SHEETS);
 
-    const activeSheetId = useFlowStore((s) => s.activeSheetId);
+    // Highlight follows the focused pane's sheet, so in split view the marker
+    // tracks Tab 1/Tab 2 focus rather than always sitting on pane 1.
+    const focusedId = useFlowStore((s) => focusedSheetId(s));
     const setActiveSheet = useFlowStore((s) => s.setActiveSheet);
     const renamingSheetId = useFlowStore((s) => s.renamingSheetId);
     const setRenamingSheet = useFlowStore((s) => s.setRenamingSheet);
@@ -140,11 +142,11 @@ export default function Sidebar() {
                         <button
                             type="button"
                             onClick={() => setActiveSheet(cxSheet.id)}
-                            aria-current={cxSheet.id === activeSheetId ? "true" : undefined}
+                            aria-current={cxSheet.id === focusedId ? "true" : undefined}
                             data-testid="cx-sheet-row"
                             className={cn(
                                 "flex w-full items-center rounded-md border px-2 py-1.5 text-left text-[13px] text-foreground transition-colors",
-                                cxSheet.id === activeSheetId
+                                cxSheet.id === focusedId
                                     ? "border-border bg-accent font-semibold text-foreground"
                                     : "border-transparent hover:bg-accent/50",
                             )}
@@ -170,7 +172,7 @@ export default function Sidebar() {
                                 {dropIndex === i && <DropLine />}
                                 <SheetRow
                                     sheet={sheet}
-                                    active={sheet.id === activeSheetId}
+                                    active={sheet.id === focusedId}
                                     onSelect={() => setActiveSheet(sheet.id)}
                                     isRenaming={sheet.id === renamingSheetId}
                                     onStartRename={() => setRenamingSheet(sheet.id)}

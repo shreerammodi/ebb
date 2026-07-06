@@ -221,6 +221,14 @@ html .ht-theme-main {
     color: var(--neg);
     font-weight: 700;
 }
+/* In split view the blurred pane keeps its cursor in memory but hides the
+   selection marker, so only the focused pane shows an active cell. */
+.ht-theme-main.ht-blurred {
+    --ht-accent-color: transparent;
+}
+.ht-theme-main.ht-blurred .wtBorder {
+    display: none !important;
+}
 /* Cells wear their column's side color, matching the header ink. */
 .handsontable td.cell-aff {
     color: var(--aff);

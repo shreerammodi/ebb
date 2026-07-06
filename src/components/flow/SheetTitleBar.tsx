@@ -4,15 +4,18 @@ import { cn } from "@/lib/utils";
 
 /**
  * The strip above a pane's grid. Shows the sheet title always (so a collapsed
- * sidebar still names the sheet); in split view it also carries the pane's
- * "Tab 1"/"Tab 2" label and an accent on the focused pane.
+ * sidebar still names the sheet); the title wears its side color (aff blue,
+ * neg red). In split view it also carries the pane's "Tab 1"/"Tab 2" label and
+ * an accent on the focused pane.
  */
 export default function SheetTitleBar({
     title,
+    side,
     tabLabel,
     focused,
 }: {
     title: string;
+    side: "aff" | "neg";
     tabLabel?: string;
     focused?: boolean;
 }) {
@@ -30,7 +33,14 @@ export default function SheetTitleBar({
                     {tabLabel}
                 </span>
             )}
-            <span className="text-foreground truncate text-[13px] font-semibold">{title}</span>
+            <span
+                className={cn(
+                    "truncate text-[13px] font-semibold",
+                    side === "aff" ? "text-aff" : "text-neg",
+                )}
+            >
+                {title}
+            </span>
         </div>
     );
 }

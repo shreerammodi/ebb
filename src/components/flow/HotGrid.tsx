@@ -315,7 +315,12 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     }, []);
 
     return (
-        <div className="ht-theme-main h-full min-h-0" data-testid="hot-grid">
+        // ht-blurred hides this pane's cell-selection marker while its cursor
+        // stays in memory, so only the focused pane shows an active cell.
+        <div
+            className={`ht-theme-main h-full min-h-0${isFocused ? "" : " ht-blurred"}`}
+            data-testid="hot-grid"
+        >
             <HotTable
                 ref={hotRef}
                 rowHeaders={false}

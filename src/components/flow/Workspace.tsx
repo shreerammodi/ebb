@@ -33,7 +33,9 @@ export default function Workspace() {
     const rfdOpen = useFlowStore((s) => s.rfdOpen);
     const roundId = useFlowStore((s) => s.round?.id);
 
-    const titleOf = (id: string | null) => round?.sheets.find((s) => s.id === id)?.title ?? "";
+    const sheetOf = (id: string | null) => round?.sheets.find((s) => s.id === id);
+    const titleOf = (id: string | null) => sheetOf(id)?.title ?? "";
+    const sideOf = (id: string | null): "aff" | "neg" => (sheetOf(id)?.group === "neg" ? "neg" : "aff");
 
     return (
         <UpdateProvider>
@@ -58,6 +60,7 @@ export default function Workspace() {
                                 >
                                     <SheetTitleBar
                                         title={titleOf(activeSheetId)}
+                                        side={sideOf(activeSheetId)}
                                         tabLabel={splitSheetId ? "Tab 1" : undefined}
                                         focused={splitSheetId ? focusedPane === 1 : undefined}
                                     />
@@ -74,6 +77,7 @@ export default function Workspace() {
                                         >
                                             <SheetTitleBar
                                                 title={titleOf(splitSheetId)}
+                                                side={sideOf(splitSheetId)}
                                                 tabLabel="Tab 2"
                                                 focused={focusedPane === 2}
                                             />
