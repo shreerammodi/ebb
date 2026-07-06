@@ -50,6 +50,7 @@ export function useKeymap(): void {
 
             const chord = eventToChord({
                 key: e.key,
+                code: e.code,
                 metaKey: e.metaKey,
                 ctrlKey: e.ctrlKey,
                 altKey: e.altKey,
@@ -82,6 +83,7 @@ export function useKeymap(): void {
             // -- Single-chord resolution ---------------------------------------
             const commandId = resolveCommand(keymap, {
                 key: e.key,
+                code: e.code,
                 metaKey: e.metaKey,
                 ctrlKey: e.ctrlKey,
                 altKey: e.altKey,

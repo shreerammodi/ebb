@@ -68,6 +68,33 @@ describe("eventToChord", () => {
     });
 });
 
+describe("eventToChord under Alt (macOS composes e.key)", () => {
+    it("derives a letter from e.code when Alt is held", () => {
+        // macOS reports Option+H as key "˙"; the physical code is stable.
+        expect(
+            eventToChord({ key: "˙", code: "KeyH", metaKey: false, ctrlKey: false, altKey: true, shiftKey: false }),
+        ).toBe("Alt+h");
+    });
+
+    it("encodes Shift into the letter case for Alt chords", () => {
+        expect(
+            eventToChord({ key: "H", code: "KeyH", metaKey: false, ctrlKey: false, altKey: true, shiftKey: true }),
+        ).toBe("Alt+H");
+    });
+
+    it("derives backslash from e.code for Alt+\\", () => {
+        expect(
+            eventToChord({ key: "«", code: "Backslash", metaKey: false, ctrlKey: false, altKey: true, shiftKey: false }),
+        ).toBe("Alt+\\");
+    });
+
+    it("leaves non-Alt chords untouched", () => {
+        expect(
+            eventToChord({ key: "h", code: "KeyH", metaKey: true, ctrlKey: false, altKey: false, shiftKey: false }),
+        ).toBe("Meta+h");
+    });
+});
+
 describe("resolveCommand (flat keymap)", () => {
     it("] resolves to sheet.next and [ to sheet.prev", () => {
         expect(resolveCommand(FLAT_KEYMAP, ev("]"))).toBe("sheet.next");
