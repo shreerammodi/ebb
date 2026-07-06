@@ -16,6 +16,7 @@ import InfoPanel from "./InfoPanel";
 import PrintView from "./PrintView";
 import RfdDrawer from "./RfdDrawer";
 import RoundHeader from "./RoundHeader";
+import SheetTitleBar from "./SheetTitleBar";
 import Sidebar from "./Sidebar";
 
 // Handsontable touches window at import time; keep it out of prerendering.
@@ -26,8 +27,13 @@ export default function Workspace() {
     useDesktopMenu();
 
     const activeSheetId = useFlowStore((s) => s.activeSheetId);
+    const splitSheetId = useFlowStore((s) => s.splitSheetId);
+    const focusedPane = useFlowStore((s) => s.focusedPane);
+    const round = useFlowStore((s) => s.round);
     const rfdOpen = useFlowStore((s) => s.rfdOpen);
     const roundId = useFlowStore((s) => s.round?.id);
+
+    const titleOf = (id: string | null) => round?.sheets.find((s) => s.id === id)?.title ?? "";
 
     return (
         <UpdateProvider>
@@ -39,11 +45,48 @@ export default function Workspace() {
                         // isolate: trap Handsontable's frozen-header clone layers (z-index up
                         // to ~1060) in their own stacking context so they can't punch through
                         // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
-                        className="no-print isolate min-w-0 flex-1 overflow-hidden"
+                        className="no-print isolate flex min-w-0 flex-1 overflow-hidden"
                         data-testid="workspace-content"
                     >
                         {activeSheetId ? (
-                            <HotGrid />
+                            splitSheetId ? (
+                                <>
+                                    <div
+                                        data-testid="pane-1"
+                                        className="flex min-w-0 flex-1 flex-col overflow-hidden"
+                                    >
+                                        <SheetTitleBar
+                                            title={titleOf(activeSheetId)}
+                                            tabLabel="Tab 1"
+                                            focused={focusedPane === 1}
+                                        />
+                                        <div className="min-h-0 flex-1">
+                                            <HotGrid key="pane1" sheetId={activeSheetId} pane={1} />
+                                        </div>
+                                    </div>
+                                    <div className="border-border w-px shrink-0 border-l" />
+                                    <div
+                                        data-testid="pane-2"
+                                        className="flex min-w-0 flex-1 flex-col overflow-hidden"
+                                    >
+                                        <SheetTitleBar
+                                            title={titleOf(splitSheetId)}
+                                            tabLabel="Tab 2"
+                                            focused={focusedPane === 2}
+                                        />
+                                        <div className="min-h-0 flex-1">
+                                            <HotGrid key="pane2" sheetId={splitSheetId} pane={2} />
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                                    <SheetTitleBar title={titleOf(activeSheetId)} />
+                                    <div className="min-h-0 flex-1">
+                                        <HotGrid key="pane1" sheetId={activeSheetId} pane={1} />
+                                    </div>
+                                </div>
+                            )
                         ) : (
                             <div className="text-muted-foreground p-6 text-[13px]">
                                 No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
