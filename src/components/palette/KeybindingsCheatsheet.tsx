@@ -28,7 +28,7 @@ const BASICS: { heading: string; body: string }[] = [
     },
     {
         heading: "Writing an RFD",
-        body: "Open the RFD drawer to write your decision while scanning the flow. On a > blockquote line, start typing and pick a suggestion to drop the exact wording of any cell straight into your reasoning.",
+        body: "Open the RFD drawer to write your decision while scanning the flow. On a > blockquote line, start typing and pick a suggestion to drop the exact wording of any cell straight into your reasoning. Toggle Preview in the drawer header to see it rendered, and turn on vim keybindings for the editor in Settings > Display.",
     },
     {
         heading: "Your data",
