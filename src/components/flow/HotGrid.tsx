@@ -155,8 +155,27 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     }, []);
 
     // The focused pane owns the singleton so commands (undo, bold, rows) hit it.
+    const wasFocusedRef = useRef(isFocused);
     useEffect(() => {
-        if (isFocused) setActiveHot(hotRef.current?.hotInstance ?? null, snapshot);
+        if (!isFocused) {
+            wasFocusedRef.current = false;
+            return;
+        }
+        const hot = hotRef.current?.hotInstance ?? null;
+        setActiveHot(hot, snapshot);
+        const gainedFocus = !wasFocusedRef.current;
+        wasFocusedRef.current = true;
+        // A keyboard focus switch (Alt+h/Alt+l) moves the accent and command
+        // target to this pane; pull the grid's DOM focus too so typing edits here.
+        // Split mode only: single-pane focus never transitions and the click path
+        // already holds focus.
+        if (gainedFocus && useFlowStore.getState().splitSheetId != null && hot) {
+            const sel = hot.getSelectedLast();
+            const id = requestAnimationFrame(() =>
+                hot.selectCell(sel?.[0] ?? 0, sel?.[1] ?? 0),
+            );
+            return () => cancelAnimationFrame(id);
+        }
     }, [isFocused, snapshot]);
 
     // Sheet switching swaps data/columns on this pane's instance.

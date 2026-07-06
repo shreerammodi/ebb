@@ -224,6 +224,15 @@ describe("split view", () => {
         expect(useFlowStore.getState().splitSheetId).toBe(a);
     });
 
+    it("picking the other pane's sheet swaps the panes, focused on pane 2", () => {
+        const { a, b } = threeFlowSheets();
+        useFlowStore.getState().toggleSplit(); // a | b, focus 1
+        useFlowStore.getState().focusPane(2);
+        useFlowStore.getState().setActiveSheet(a); // a already in pane 1
+        expect(useFlowStore.getState().activeSheetId).toBe(b);
+        expect(useFlowStore.getState().splitSheetId).toBe(a);
+    });
+
     it("focusPane is a no-op outside split", () => {
         threeFlowSheets();
         useFlowStore.getState().focusPane(2);

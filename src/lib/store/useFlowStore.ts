@@ -399,7 +399,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         const i = order.findIndex((s) => s.id === activeSheetId);
         const next = order[i + 1] ?? order[i - 1];
         // No second sheet to show -> stay single-pane.
-        if (!next || next.id === activeSheetId) return;
+        if (!next) return;
         set({ splitSheetId: next.id, focusedPane: 1 });
     },
 
