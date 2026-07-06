@@ -181,6 +181,13 @@ function SearchPaletteInner() {
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    // Suppress the browser's form-history dropdown: otherwise the
+                    // first Escape only dismisses that native suggestion popup,
+                    // and it takes a second Escape to close the palette itself.
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder={
                         isCommandMode ? "Run a command…" : "Search cells, or > for commands…"
                     }
