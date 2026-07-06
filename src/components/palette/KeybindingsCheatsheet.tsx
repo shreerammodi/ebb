@@ -15,6 +15,10 @@ const BASICS: { heading: string; body: string }[] = [
         body: "A sheet is one flow. Aff sheets read blue, neg red, recolor either side under Settings > Display. Add them with the shortcuts below, reorder them in the sidebar, and jump straight to one by its number. Switch speeches from the header to drop your cursor on any speech's top row across every sheet.",
     },
     {
+        heading: "Split view",
+        body: "Toggle split view to lay two sheets side by side, like reading a DA next to case on paper. Move focus between the panes with the focus-left and focus-right shortcuts; picking a sheet in the sidebar or palette retargets the focused pane.",
+    },
+    {
         heading: "Marking cells",
         body: "Bold a claim, highlight what matters, or tag a cell as a card (evidence). The three combine freely and surface in search.",
     },
@@ -85,6 +89,9 @@ const GROUPS = [
             { commandId: "sheet.newAff" as CommandId },
             { commandId: "sheet.newNeg" as CommandId },
             { commandId: "sheet.rename" as CommandId },
+            { commandId: "split.toggle" as CommandId },
+            { commandId: "split.focusLeft" as CommandId },
+            { commandId: "split.focusRight" as CommandId },
             { commandId: "sheet.jump1" as CommandId },
         ],
     },
