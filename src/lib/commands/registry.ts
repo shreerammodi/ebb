@@ -37,6 +37,9 @@ export type CommandId =
     | "rfd.toggle"
     | "help.open"
     | "sidebar.toggle"
+    | "split.toggle"
+    | "split.focusLeft"
+    | "split.focusRight"
     | "palette.open"
     | "theme.light"
     | "theme.dark"
@@ -83,6 +86,9 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "rfd.toggle": { id: "rfd.toggle", label: "Toggle RFD" },
     "help.open": { id: "help.open", label: "Open guide" },
     "sidebar.toggle": { id: "sidebar.toggle", label: "Toggle sidebar" },
+    "split.toggle": { id: "split.toggle", label: "Toggle split view" },
+    "split.focusLeft": { id: "split.focusLeft", label: "Focus left pane" },
+    "split.focusRight": { id: "split.focusRight", label: "Focus right pane" },
     "palette.open": { id: "palette.open", label: "Command palette" },
     "theme.light": { id: "theme.light", label: "Theme: Light" },
     "theme.dark": { id: "theme.dark", label: "Theme: Dark" },

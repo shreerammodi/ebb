@@ -45,3 +45,9 @@ it("binds the platform modifier 1-9 to sheet jumps", () => {
     expect(FLAT_KEYMAP.bindings[`${mod}+1`]).toBe("sheet.jump1");
     expect(FLAT_KEYMAP.bindings[`${mod}+9`]).toBe("sheet.jump9");
 });
+
+it("binds the split-view chords", () => {
+    expect(FLAT_KEYMAP.bindings["Alt+\\"]).toBe("split.toggle");
+    expect(FLAT_KEYMAP.bindings["Alt+h"]).toBe("split.focusLeft");
+    expect(FLAT_KEYMAP.bindings["Alt+l"]).toBe("split.focusRight");
+});

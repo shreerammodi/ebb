@@ -115,6 +115,53 @@ describe("theme commands", () => {
     });
 });
 
+function loadWithThreeSheets() {
+    const round = makeFlowRound("aff");
+    useFlowStore.getState().loadRound(round);
+    const a = round.sheets.find((s) => s.kind !== "cx")!.id;
+    const b = useFlowStore.getState().addSheet({ title: "DA", group: "neg" });
+    const c = useFlowStore.getState().addSheet({ title: "CP", group: "neg" });
+    useFlowStore.getState().setActiveSheet(a);
+    return { a, b, c };
+}
+
+describe("split commands", () => {
+    beforeEach(() => {
+        useFlowStore.setState({
+            round: null,
+            activeSheetId: null,
+            splitSheetId: null,
+            focusedPane: 1,
+        });
+    });
+
+    it("split.toggle opens and closes split", () => {
+        loadWithThreeSheets();
+        executeCommand("split.toggle");
+        expect(useFlowStore.getState().splitSheetId).not.toBeNull();
+        executeCommand("split.toggle");
+        expect(useFlowStore.getState().splitSheetId).toBeNull();
+    });
+
+    it("split.focusRight/Left move the focused pane", () => {
+        loadWithThreeSheets();
+        executeCommand("split.toggle");
+        executeCommand("split.focusRight");
+        expect(useFlowStore.getState().focusedPane).toBe(2);
+        executeCommand("split.focusLeft");
+        expect(useFlowStore.getState().focusedPane).toBe(1);
+    });
+
+    it("sheet.next advances the focused pane relative to its own sheet", () => {
+        const { a, b, c } = loadWithThreeSheets();
+        executeCommand("split.toggle"); // a | b, focus 1
+        executeCommand("split.focusRight"); // focus pane 2 (b)
+        executeCommand("sheet.next"); // from b -> c in pane 2
+        expect(useFlowStore.getState().activeSheetId).toBe(a);
+        expect(useFlowStore.getState().splitSheetId).toBe(c);
+    });
+});
+
 describe("grid commands", () => {
     it("no-op gracefully without a live grid", () => {
         expect(() => {

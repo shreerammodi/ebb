@@ -52,6 +52,13 @@ const SHEET_JUMPS: Record<Chord, CommandId> = (() => {
     };
 })();
 
+/** Split-view chords. Alt on all platforms; e.code resolution keeps them stable on macOS. */
+const SPLIT_BINDINGS: Record<Chord, CommandId> = {
+    "Alt+\\": "split.toggle",
+    "Alt+h": "split.focusLeft",
+    "Alt+l": "split.focusRight",
+};
+
 /** The single flat keymap: sheet switching, formatting, and utility chords. */
 export const FLAT_KEYMAP: Keymap = {
     name: "default",
@@ -61,6 +68,7 @@ export const FLAT_KEYMAP: Keymap = {
         "?": "help.open",
         ...LETTER_BINDINGS,
         ...SHEET_JUMPS,
+        ...SPLIT_BINDINGS,
     },
 };
 

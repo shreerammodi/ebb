@@ -10,7 +10,7 @@
 import { BOLD_CLASS, CARD_CLASS, HIGHLIGHT_CLASS, toggleClassToken } from "@/lib/grid/codec";
 import { getActiveHot, notifyGridMutated } from "@/lib/grid/hotInstance";
 import { sortedSheets } from "@/lib/model/flow";
-import { useFlowStore } from "@/lib/store/useFlowStore";
+import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
 
 import type { CommandId } from "./registry";
 
@@ -136,7 +136,7 @@ export function executeCommand(id: CommandId): void {
             if (!round) return;
             const sheets = sortedSheets(round).filter((s) => s.kind !== "cx");
             if (sheets.length === 0) return;
-            const idx = sheets.findIndex((s) => s.id === state.activeSheetId);
+            const idx = sheets.findIndex((s) => s.id === focusedSheetId(state));
             const base = idx === -1 ? 0 : idx;
             const next =
                 id === "sheet.next" ? Math.min(base + 1, sheets.length - 1) : Math.max(base - 1, 0);
@@ -194,6 +194,15 @@ export function executeCommand(id: CommandId): void {
             return;
         case "sidebar.toggle":
             state.setSidebarCollapsed(!state.sidebarCollapsed);
+            return;
+        case "split.toggle":
+            state.toggleSplit();
+            return;
+        case "split.focusLeft":
+            state.focusPane(1);
+            return;
+        case "split.focusRight":
+            state.focusPane(2);
             return;
         case "theme.light":
             state.setTheme("light");
