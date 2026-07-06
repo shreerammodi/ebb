@@ -73,6 +73,8 @@ export default function SettingsPanel() {
     const affColor = useFlowStore((s) => s.affColor);
     const negColor = useFlowStore((s) => s.negColor);
     const setSideColor = useFlowStore((s) => s.setSideColor);
+    const rfdVim = useFlowStore((s) => s.rfdVim);
+    const setRfdVim = useFlowStore((s) => s.setRfdVim);
 
     const [recording, setRecording] = useState<CommandId | null>(null);
     const [category, setCategory] = useState<Category>("display");
@@ -341,6 +343,23 @@ export default function SettingsPanel() {
                                             );
                                         })}
                                     </div>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-foreground text-[13px] font-medium">
+                                        RFD editor
+                                    </span>
+                                    <label className="flex w-fit cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5">
+                                        <input
+                                            type="checkbox"
+                                            checked={rfdVim}
+                                            onChange={(e) => setRfdVim(e.target.checked)}
+                                            data-testid="rfd-vim-toggle"
+                                            className="accent-sel"
+                                        />
+                                        <span className="text-foreground text-[14px]">
+                                            Vim keybindings
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
                         )}

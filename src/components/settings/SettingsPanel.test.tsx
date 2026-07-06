@@ -224,6 +224,15 @@ describe("SettingsPanel", () => {
         });
     });
 
+    it("toggles the RFD vim setting", async () => {
+        renderSettingsPanel();
+        const toggle = screen.getByTestId("rfd-vim-toggle");
+        expect(toggle).not.toBeChecked();
+        await userEvent.click(toggle);
+        expect(useFlowStore.getState().rfdVim).toBe(true);
+        expect(toggle).toBeChecked();
+    });
+
     it("persists overrides to localStorage and effectiveKeymap uses them", async () => {
         const user = userEvent.setup();
         renderSettingsPanel();
