@@ -12,7 +12,7 @@ import "handsontable/styles/ht-theme-main.min.css";
 import { executeCommand } from "@/lib/commands/commands";
 import { classNameToMeta, metaToClassName, padGrid, trimGrid } from "@/lib/grid/codec";
 import { columnsForFlowSheet, type SpeechCol } from "@/lib/grid/flowColumns";
-import { setActiveHot } from "@/lib/grid/hotInstance";
+import { getActiveHot, setActiveHot } from "@/lib/grid/hotInstance";
 import type { CellMeta, FlowSheet } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -114,14 +114,19 @@ function headerSettings(sheet: FlowSheet, cols: SpeechCol[]) {
 }
 
 /**
- * The single grid instance. `data` and `colHeaders` are deliberately NOT
- * JSX props: the react-wrapper re-applies every prop through updateSettings
- * on each re-render, which would wipe the live grid back to its initial
- * state. The sheet-switch effect below owns data, headers, and cell meta.
- * memo() keeps parent re-renders (store updates) away from the wrapper.
+ * One grid instance for one pane. In split mode two instances coexist, one
+ * per pane; the focused pane owns the shared active-grid singleton so
+ * commands (undo, bold, row insert) reach the right one. `data` and
+ * `colHeaders` are deliberately NOT JSX props: the react-wrapper re-applies
+ * every prop through updateSettings on each re-render, which would wipe the
+ * live grid back to its initial state. The sheet-switch effect below owns
+ * data, headers, and cell meta. memo() keeps parent re-renders (store
+ * updates) away from the wrapper.
  */
-export default memo(function HotGrid() {
-    const activeSheetId = useFlowStore((s) => s.activeSheetId);
+export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane: 1 | 2 }) {
+    const splitSheetId = useFlowStore((s) => s.splitSheetId);
+    const focusedPane = useFlowStore((s) => s.focusedPane);
+    const isFocused = splitSheetId == null || focusedPane === pane;
     const hotRef = useRef<HotTableRef>(null);
     const currentSheetIdRef = useRef<string | null>(null);
     const viewCache = useRef(new Map<string, { row: number; col: number }>());
@@ -137,7 +142,6 @@ export default memo(function HotGrid() {
 
     useEffect(() => {
         const hot = hotRef.current?.hotInstance ?? null;
-        setActiveHot(hot, snapshot);
         if (hot) {
             // The app keymap owns undo/redo; strip the grid's own bindings so
             // Cmd/Ctrl+Z cannot fire twice.
@@ -145,15 +149,22 @@ export default memo(function HotGrid() {
             grid?.removeShortcutsByKeys(["control/meta", "z"]);
             grid?.removeShortcutsByKeys(["control/meta", "shift", "z"]);
         }
-        return () => setActiveHot(null, null);
-    }, [snapshot]);
+        return () => {
+            if (getActiveHot() === hot) setActiveHot(null, null);
+        };
+    }, []);
 
-    // Sheet switching swaps data/columns on the single instance.
+    // The focused pane owns the singleton so commands (undo, bold, rows) hit it.
+    useEffect(() => {
+        if (isFocused) setActiveHot(hotRef.current?.hotInstance ?? null, snapshot);
+    }, [isFocused, snapshot]);
+
+    // Sheet switching swaps data/columns on this pane's instance.
     useEffect(() => {
         const hot = hotRef.current?.hotInstance;
         const round = useFlowStore.getState().round;
-        if (!hot || !round || !activeSheetId) return;
-        const sheet = round.sheets.find((s) => s.id === activeSheetId);
+        if (!hot || !round || !sheetId) return;
+        const sheet = round.sheets.find((s) => s.id === sheetId);
         if (!sheet) return;
 
         const prev = currentSheetIdRef.current;
@@ -176,25 +187,33 @@ export default memo(function HotGrid() {
         });
         const v = viewCache.current.get(sheet.id) ?? { row: 0, col: 0 };
         hot.selectCell(v.row, v.col);
-    }, [activeSheetId]);
+    }, [sheetId]);
+
+    // Clicking or arrowing into a pane focuses it (so keystrokes route here).
+    const afterSelectionEnd = useCallback(() => {
+        setActiveHot(hotRef.current?.hotInstance ?? null, snapshot);
+        const { splitSheetId, focusedPane, focusPane } = useFlowStore.getState();
+        if (splitSheetId != null && focusedPane !== pane) focusPane(pane);
+    }, [pane, snapshot]);
 
     // Search palette jump: declared after the sheet-switch effect so that when
     // both fire in one commit (a cross-sheet jump) this selection wins. The rAF
     // defers past Radix's focus restore so the grid keeps keyboard focus.
     const revealTarget = useFlowStore((s) => s.revealTarget);
     useEffect(() => {
-        if (!revealTarget) return;
+        if (!revealTarget || revealTarget.sheetId !== sheetId) return;
         const id = requestAnimationFrame(() => {
             const hot = hotRef.current?.hotInstance;
             hot?.selectCell(revealTarget.row, revealTarget.col);
         });
         return () => cancelAnimationFrame(id);
-    }, [revealTarget]);
+    }, [revealTarget, sheetId]);
 
     // Speech switch: seed every sheet's remembered cursor to row 0 of the
     // chosen speech's column, then select it on the now-active topmost sheet.
     // Declared after the sheet-switch effect so its rAF selection wins when a
-    // switch changes activeSheetId and speechTarget in the same commit.
+    // switch changes activeSheetId and speechTarget in the same commit. Only
+    // the focused pane moves its selection; the other pane just gets the seed.
     const speechTarget = useFlowStore((s) => s.speechTarget);
     useEffect(() => {
         if (!speechTarget) return;
@@ -205,6 +224,7 @@ export default memo(function HotGrid() {
             const col = columnsForFlowSheet(sheet).findIndex((c) => c.id === speechId);
             if (col >= 0) viewCache.current.set(sheet.id, { row: 0, col });
         }
+        if (!isFocused) return;
         // The rAF defers past the dropdown's focus restore so the grid keeps
         // keyboard focus.
         const id = requestAnimationFrame(() => {
@@ -215,7 +235,7 @@ export default memo(function HotGrid() {
             hot.selectCell(0, col >= 0 ? col : 0);
         });
         return () => cancelAnimationFrame(id);
-    }, [speechTarget]);
+    }, [speechTarget, isFocused]);
 
     const afterGetColHeader = useCallback((col: number, TH: HTMLTableCellElement) => {
         const round = useFlowStore.getState().round;
@@ -295,6 +315,7 @@ export default memo(function HotGrid() {
                 afterChange={afterChange}
                 afterCreateRow={snapshot}
                 afterRemoveRow={snapshot}
+                afterSelectionEnd={afterSelectionEnd}
                 beforeKeyDown={beforeKeyDown}
                 licenseKey="non-commercial-and-evaluation"
             />
