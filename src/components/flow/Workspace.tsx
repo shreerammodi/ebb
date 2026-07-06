@@ -49,46 +49,43 @@ export default function Workspace() {
                         data-testid="workspace-content"
                     >
                         {activeSheetId ? (
-                            splitSheetId ? (
-                                <>
-                                    <div
-                                        data-testid="pane-1"
-                                        className="flex min-w-0 flex-1 flex-col overflow-hidden"
-                                    >
-                                        <SheetTitleBar
-                                            title={titleOf(activeSheetId)}
-                                            tabLabel="Tab 1"
-                                            focused={focusedPane === 1}
-                                        />
-                                        <div className="min-h-0 flex-1">
-                                            <HotGrid key="pane1" sheetId={activeSheetId} pane={1} />
-                                        </div>
-                                    </div>
-                                    <div className="border-border w-px shrink-0 border-l" />
-                                    <div
-                                        data-testid="pane-2"
-                                        className="flex min-w-0 flex-1 flex-col overflow-hidden"
-                                    >
-                                        <SheetTitleBar
-                                            title={titleOf(splitSheetId)}
-                                            tabLabel="Tab 2"
-                                            focused={focusedPane === 2}
-                                        />
-                                        <div className="min-h-0 flex-1">
-                                            <HotGrid key="pane2" sheetId={splitSheetId} pane={2} />
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-                                    <SheetTitleBar title={titleOf(activeSheetId)} />
+                            <>
+                                {/* Same element/position in single and split mode so toggling
+                                    split never remounts pane 1's live HotGrid. */}
+                                <div
+                                    data-testid="pane-1"
+                                    className="flex min-w-0 flex-1 flex-col overflow-hidden"
+                                >
+                                    <SheetTitleBar
+                                        title={titleOf(activeSheetId)}
+                                        tabLabel={splitSheetId ? "Tab 1" : undefined}
+                                        focused={splitSheetId ? focusedPane === 1 : undefined}
+                                    />
                                     <div className="min-h-0 flex-1">
                                         <HotGrid key="pane1" sheetId={activeSheetId} pane={1} />
                                     </div>
                                 </div>
-                            )
+                                {splitSheetId && (
+                                    <>
+                                        <div className="border-border w-px shrink-0 border-l" />
+                                        <div
+                                            data-testid="pane-2"
+                                            className="flex min-w-0 flex-1 flex-col overflow-hidden"
+                                        >
+                                            <SheetTitleBar
+                                                title={titleOf(splitSheetId)}
+                                                tabLabel="Tab 2"
+                                                focused={focusedPane === 2}
+                                            />
+                                            <div className="min-h-0 flex-1">
+                                                <HotGrid key="pane2" sheetId={splitSheetId} pane={2} />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </>
                         ) : (
-                            <div className="text-muted-foreground p-6 text-[13px]">
+                            <div className="text-muted-foreground w-full p-6 text-[13px]">
                                 No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
                                 <span className="text-foreground font-medium">+ Aff</span> /{" "}
                                 <span className="text-foreground font-medium">+ Neg</span>.
