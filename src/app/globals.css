@@ -222,12 +222,19 @@ html .ht-theme-main {
     font-weight: 700;
 }
 /* In split view the blurred pane keeps its cursor in memory but hides the
-   selection marker, so only the focused pane shows an active cell. */
-.ht-theme-main.ht-blurred {
-    --ht-accent-color: transparent;
-}
+   active-cell markers, so only the focused pane shows an active cell. Both the
+   selection border (.wtBorder) and the editor's own border (.handsontableInput,
+   parked over the active cell) are suppressed by hitting the elements directly:
+   the react-wrapper nests a second .ht-theme-main inside this one that re-pins
+   --ht-accent-color, so recoloring the accent on the blurred wrapper never
+   reaches them. The editor marker matters because a keyboard focus switch
+   selects the new pane programmatically without deselecting this one, so its
+   editor border would otherwise linger. */
 .ht-theme-main.ht-blurred .wtBorder {
     display: none !important;
+}
+.ht-theme-main.ht-blurred .handsontableInput {
+    box-shadow: none !important;
 }
 /* Cells wear their column's side color, matching the header ink. */
 .handsontable td.cell-aff {
