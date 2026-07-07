@@ -53,12 +53,19 @@ const SHEET_JUMPS: Record<Chord, CommandId> = (() => {
     };
 })();
 
-/** Split-view chords. Alt on all platforms; e.code resolution keeps them stable on macOS. */
-const SPLIT_BINDINGS: Record<Chord, CommandId> = {
-    "Alt+\\": "split.toggle",
-    "Alt+h": "split.focusLeft",
-    "Alt+l": "split.focusRight",
-};
+/**
+ * Split-view chords. Toggle stays on Alt+\; pane focus uses the platform
+ * modifier + h/l (vim-style). On macOS Meta+h shadows the native "hide app"
+ * accelerator, which menu.rs drops so the chord reaches the app.
+ */
+const SPLIT_BINDINGS: Record<Chord, CommandId> = (() => {
+    const mod = isMacPlatform() ? "Meta" : "Ctrl";
+    return {
+        "Alt+\\": "split.toggle",
+        [`${mod}+h`]: "split.focusLeft",
+        [`${mod}+l`]: "split.focusRight",
+    };
+})();
 
 /** The single flat keymap: sheet switching, formatting, and utility chords. */
 export const FLAT_KEYMAP: Keymap = {

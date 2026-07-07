@@ -34,6 +34,8 @@ const RESERVED_KEYS = [
     "\\", // sidebar toggle
     ",", // settings
     "j", // rfd toggle
+    "h", // focus left pane (suppresses mac hide-app / win-linux browser history)
+    "l", // focus right pane
     // -- Rows / cells -------------------------------------------------------
     "Backspace", // row delete
     "o", // insert cell (suppresses browser open-file)

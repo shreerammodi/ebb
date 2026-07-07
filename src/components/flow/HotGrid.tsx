@@ -165,7 +165,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         setActiveHot(hot, snapshot);
         const gainedFocus = !wasFocusedRef.current;
         wasFocusedRef.current = true;
-        // A keyboard focus switch (Alt+h/Alt+l) moves the accent and command
+        // A keyboard focus switch (Meta/Ctrl+h/l) moves the accent and command
         // target to this pane; pull the grid's DOM focus too so typing edits here.
         // Split mode only: single-pane focus never transitions and the click path
         // already holds focus.

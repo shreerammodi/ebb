@@ -96,7 +96,10 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .separator()
         .item(&cmd("settings.open", "Settings", "\u{2318},")?)
         .separator()
-        .item(&PredefinedMenuItem::hide(app, None)?)
+        // No "Hide" item: its baked-in Meta+H accelerator would be consumed by
+        // macOS before the webview's keydown, shadowing the app's Meta+h
+        // (split.focusLeft). Users minimize with Meta+M instead. Hide Others /
+        // Show All keep their own non-conflicting accelerators.
         .item(&PredefinedMenuItem::hide_others(app, None)?)
         .item(&PredefinedMenuItem::show_all(app, None)?)
         .separator()
