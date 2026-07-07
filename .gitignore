@@ -22,5 +22,6 @@ docs/*
 .impeccable/
 !docs/DESIGN.md
 !docs/PRODUCT.md
+!docs/RELEASE.md
 
 TODO.md
