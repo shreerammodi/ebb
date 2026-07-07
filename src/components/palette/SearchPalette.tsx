@@ -173,37 +173,42 @@ function SearchPaletteInner() {
                     el?.focus();
                     el?.setSelectionRange(seed.length, seed.length);
                 }}
-                className="bg-popover top-[12vh] w-full max-w-[560px] translate-y-0 gap-0 overflow-hidden rounded-none border p-0 shadow-none"
+                className="bg-popover top-[12vh] w-full max-w-[560px] translate-y-0 gap-0 overflow-hidden rounded-md border p-0 shadow-2xl"
             >
                 <DialogTitle className="sr-only">{label}</DialogTitle>
-                <input
-                    ref={inputRef}
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    // Suppress the browser's form-history dropdown: otherwise the
-                    // first Escape only dismisses that native suggestion popup,
-                    // and it takes a second Escape to close the palette itself.
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    placeholder={
-                        isCommandMode ? "Run a command…" : "Search cells, or > for commands…"
-                    }
-                    className="border-border text-foreground box-border w-full border-b bg-transparent px-3 py-2.5 text-[14px] focus:outline-none"
-                    data-testid="search-palette-input"
-                    aria-label={label}
-                    role="combobox"
-                    aria-expanded
-                    aria-controls="search-palette-list"
-                    aria-activedescendant={activeId}
-                />
+                <div className="p-2">
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        // Suppress the browser's form-history dropdown: otherwise the
+                        // first Escape only dismisses that native suggestion popup,
+                        // and it takes a second Escape to close the palette itself.
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        placeholder={
+                            isCommandMode ? "Run a command…" : "Search cells, or > for commands…"
+                        }
+                        // outline-none! wins over the global keyboard-first :focus-visible
+                        // ring (unlayered, so it outranks layered utilities); the caret and
+                        // focus border carry focus instead of a violet outline.
+                        className="border-border text-foreground focus:border-foreground/40 box-border w-full rounded-sm border bg-transparent px-2.5 py-1.5 text-[13px] outline-none!"
+                        data-testid="search-palette-input"
+                        aria-label={label}
+                        role="combobox"
+                        aria-expanded
+                        aria-controls="search-palette-list"
+                        aria-activedescendant={activeId}
+                    />
+                </div>
                 <div
                     id="search-palette-list"
                     role="listbox"
                     aria-label="Results"
-                    className="max-h-[55vh] overflow-y-auto p-0"
+                    className="max-h-[55vh] overflow-y-auto p-0 pb-1"
                 >
                     {rows.length === 0 ? (
                         <div className="text-muted-foreground px-3 py-2 text-[13px]">
