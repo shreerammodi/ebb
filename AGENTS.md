@@ -44,9 +44,8 @@ src/
     dashboard/   Flows dashboard components
     flow/        Flow screen: AppRoot, Workspace, FlowGrid, cells, header,
                  sidebar, info panel, print/export
-    guide/       Onboarding guide dialog and flow coach
     history/     Undo tree panel
-    palette/     Command/search palettes, keybindings cheatsheet
+    palette/     Command/search palettes, keybindings cheatsheet (the `?` guide)
     settings/    Settings panel
     trash/       Trash view
     update/      Update provider, chip, critical-update modal
