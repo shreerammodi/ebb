@@ -126,5 +126,12 @@ edge case; otherwise leave the code bare.
   `src/components/palette/KeybindingsCheatsheet.tsx` (the `?` dialog).
 - When adding a UI primitive, follow the existing `components/ui` (shadcn-style)
   patterns; `components.json` configures the generator.
+- **Binding a printable key (no Ctrl/Meta) to a command is a trap.** With the
+  grid focused and no editor open, Handsontable "fast edits" the selected cell
+  on any printable keydown, opening an empty editor that commits over the cell
+  and erases it before the app command even runs. `HotGrid`'s `beforeKeyDown`
+  guard resolves such chords (bare keys, Alt+key) against the keymap and runs
+  them itself so the grid never touches the cell; keep new printable bindings
+  flowing through that path, not around it.
 - Prefer `git rebase` over `git merge` when integrating changes to maintain a
   linear history.

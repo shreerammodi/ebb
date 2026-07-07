@@ -13,6 +13,8 @@ import { executeCommand } from "@/lib/commands/commands";
 import { classNameToMeta, metaToClassName, padGrid, trimGrid } from "@/lib/grid/codec";
 import { columnsForFlowSheet, type SpeechCol } from "@/lib/grid/flowColumns";
 import { getActiveHot, setActiveHot } from "@/lib/grid/hotInstance";
+import { effectiveKeymap } from "@/lib/keymap/effective";
+import { resolveCommand } from "@/lib/keymap/resolve";
 import type { CellMeta, FlowSheet } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -287,13 +289,24 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     const beforeKeyDown = useCallback(function (this: unknown, e: KeyboardEvent) {
         const hot = hotRef.current?.hotInstance;
         if (hot?.getActiveEditor()?.isOpened()) return;
-        if (e.key === "[" || e.key === "]" || e.key === "?") {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            executeCommand(
-                e.key === "[" ? "sheet.prev" : e.key === "]" ? "sheet.next" : "help.open",
+        // A chord bound to an app command must run as a command, not type into
+        // the grid. With no Ctrl/Meta modifier Handsontable "fast edits" the
+        // selected cell - opening an empty editor whose later commit wipes the
+        // cell (e.g. Alt+\ split-toggle, or the bare [ ] ? sheet keys). Run the
+        // command here and stop the grid touching the cell; stopImmediate keeps
+        // useKeymap from firing it a second time. Ctrl/Meta chords never
+        // fast-edit, so the window keymap owns them.
+        if (!e.metaKey && !e.ctrlKey) {
+            const commandId = resolveCommand(
+                effectiveKeymap(useFlowStore.getState().keymapOverrides),
+                { key: e.key, code: e.code, metaKey: false, ctrlKey: false, altKey: e.altKey, shiftKey: e.shiftKey },
             );
-            return;
+            if (commandId) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                executeCommand(commandId);
+                return;
+            }
         }
         const dir = ARROW_DELTAS[e.key];
         if (hot && (e.metaKey || e.ctrlKey) && dir) {
