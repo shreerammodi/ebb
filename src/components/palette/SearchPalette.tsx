@@ -173,7 +173,7 @@ function SearchPaletteInner() {
                     el?.focus();
                     el?.setSelectionRange(seed.length, seed.length);
                 }}
-                className="top-[12vh] w-full max-w-[520px] translate-y-0 gap-0 overflow-hidden p-0"
+                className="bg-popover top-[12vh] w-full max-w-[560px] translate-y-0 gap-0 overflow-hidden rounded-none border p-0 shadow-none"
             >
                 <DialogTitle className="sr-only">{label}</DialogTitle>
                 <input
@@ -191,7 +191,7 @@ function SearchPaletteInner() {
                     placeholder={
                         isCommandMode ? "Run a command…" : "Search cells, or > for commands…"
                     }
-                    className="border-border bg-card text-foreground box-border w-full border-b px-3.5 py-3 text-[14px] focus:outline-none"
+                    className="border-border text-foreground box-border w-full border-b bg-transparent px-3 py-2.5 text-[14px] focus:outline-none"
                     data-testid="search-palette-input"
                     aria-label={label}
                     role="combobox"
@@ -203,10 +203,10 @@ function SearchPaletteInner() {
                     id="search-palette-list"
                     role="listbox"
                     aria-label="Results"
-                    className="max-h-[55vh] overflow-y-auto p-1.5"
+                    className="max-h-[55vh] overflow-y-auto p-0"
                 >
                     {rows.length === 0 ? (
-                        <div className="text-muted-foreground px-2.5 py-2 text-[13px]">
+                        <div className="text-muted-foreground px-3 py-2 text-[13px]">
                             {isCommandMode ? "No commands" : "No results"}
                         </div>
                     ) : (
@@ -218,7 +218,7 @@ function SearchPaletteInner() {
                                         id={`sp-row-${i}`}
                                         role="option"
                                         aria-selected={i === selectedIndex}
-                                        className={`text-muted-foreground block w-full cursor-pointer rounded-md border-none px-2.5 py-2 text-left text-[13px] ${
+                                        className={`text-muted-foreground block w-full cursor-pointer rounded-none border-none px-3 py-2 text-left text-[13px] ${
                                             i === selectedIndex
                                                 ? "bg-accent"
                                                 : "hover:bg-accent/50 bg-transparent"
