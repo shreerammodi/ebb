@@ -12,6 +12,8 @@ export interface CellMeta {
     highlight?: boolean;
     /** Tags the cell as a card (a piece of evidence). */
     card?: boolean;
+    /** Marks the cell as part of a visual group (a left bar hugging the run). */
+    group?: boolean;
     /** Reserved for the links phase; nothing reads or writes it yet. */
     answers?: { sheetId: string; row: number; col: number };
 }

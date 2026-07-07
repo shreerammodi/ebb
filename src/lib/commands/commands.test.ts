@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { BOLD_CLASS } from "@/lib/grid/codec";
+import { BOLD_CLASS, GROUP_CLASS } from "@/lib/grid/codec";
 import { setActiveHot } from "@/lib/grid/hotInstance";
 import { makeFlowRound } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
@@ -207,6 +207,35 @@ describe("grid commands", () => {
         executeCommand("format.toggleBold");
         expect(at(0, 0).className).toBe("");
         expect(at(1, 0).className).toBe("");
+    });
+
+    it("toggleGroup writes the group className over the selection", () => {
+        const meta = new Map<string, { className?: string }>();
+        const at = (r: number, c: number) => {
+            const key = `${r},${c}`;
+            if (!meta.has(key)) meta.set(key, {});
+            return meta.get(key)!;
+        };
+        const fakeHot = {
+            getSelectedRange: () => [
+                {
+                    highlight: { row: 0, col: 0 },
+                    getTopLeftCorner: () => ({ row: 0, col: 0 }),
+                    getBottomRightCorner: () => ({ row: 2, col: 0 }),
+                },
+            ],
+            getCellMeta: (r: number, c: number) => at(r, c),
+            setCellMeta: (r: number, c: number, _k: string, v: string) => {
+                at(r, c).className = v;
+            },
+            render: vi.fn(),
+        };
+        setActiveHot(fakeHot as never, vi.fn());
+
+        executeCommand("format.toggleGroup");
+        expect(at(0, 0).className).toBe(GROUP_CLASS);
+        expect(at(1, 0).className).toBe(GROUP_CLASS);
+        expect(at(2, 0).className).toBe(GROUP_CLASS);
     });
 
     it("cell.insert shifts the selected column down and blanks the target", () => {

@@ -13,6 +13,7 @@ export type CommandId =
     | "format.toggleBold"
     | "format.toggleHighlight"
     | "format.toggleCard"
+    | "format.toggleGroup"
     | "row.insertAbove"
     | "row.insertBelow"
     | "row.delete"
@@ -59,6 +60,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
         label: "Toggle highlight",
     },
     "format.toggleCard": { id: "format.toggleCard", label: "Toggle card" },
+    "format.toggleGroup": { id: "format.toggleGroup", label: "Toggle group" },
     "row.insertAbove": { id: "row.insertAbove", label: "Insert row above" },
     "row.insertBelow": { id: "row.insertBelow", label: "Insert row below" },
     "row.delete": { id: "row.delete", label: "Delete row" },

@@ -9,10 +9,16 @@ import type { CellMeta } from "@/lib/model/flow";
 export const BOLD_CLASS = "flow-bold";
 export const HIGHLIGHT_CLASS = "flow-highlight";
 export const CARD_CLASS = "flow-card";
+export const GROUP_CLASS = "flow-group";
 
 export function metaToClassName(m: CellMeta | undefined): string {
     if (!m) return "";
-    return [m.bold ? BOLD_CLASS : "", m.highlight ? HIGHLIGHT_CLASS : "", m.card ? CARD_CLASS : ""]
+    return [
+        m.bold ? BOLD_CLASS : "",
+        m.highlight ? HIGHLIGHT_CLASS : "",
+        m.card ? CARD_CLASS : "",
+        m.group ? GROUP_CLASS : "",
+    ]
         .filter(Boolean)
         .join(" ");
 }
@@ -22,11 +28,13 @@ export function classNameToMeta(cls: string): CellMeta | undefined {
     const bold = tokens.includes(BOLD_CLASS);
     const highlight = tokens.includes(HIGHLIGHT_CLASS);
     const card = tokens.includes(CARD_CLASS);
-    if (!bold && !highlight && !card) return undefined;
+    const group = tokens.includes(GROUP_CLASS);
+    if (!bold && !highlight && !card && !group) return undefined;
     const meta: CellMeta = {};
     if (bold) meta.bold = true;
     if (highlight) meta.highlight = true;
     if (card) meta.card = true;
+    if (group) meta.group = true;
     return meta;
 }
 

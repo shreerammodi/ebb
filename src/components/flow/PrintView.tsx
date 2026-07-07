@@ -46,6 +46,7 @@ export default function PrintView() {
                                                     className={[
                                                         m?.bold ? "flow-bold" : "",
                                                         m?.highlight ? "flow-highlight" : "",
+                                                        m?.group ? "flow-group" : "",
                                                     ]
                                                         .filter(Boolean)
                                                         .join(" ")}

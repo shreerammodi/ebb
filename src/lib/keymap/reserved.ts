@@ -29,6 +29,7 @@ const RESERVED_KEYS = [
     "b", // toggle bold
     "H", // toggle highlight (Shift encoded in uppercase key)
     "t", // toggle card
+    "g", // toggle group (suppresses browser find-next)
     // -- UI ---------------------------------------------------------------------
     "\\", // sidebar toggle
     ",", // settings

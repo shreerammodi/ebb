@@ -252,6 +252,20 @@ html .ht-theme-main {
     box-shadow: inset 0 -2px 0 #2563eb;
 }
 
+/* Group marker: a neutral inset bar down the cell's left edge, so a vertical
+   run reads as one cluster. Inset box-shadow (not border-left) keeps HOT's
+   cell metrics intact, matching the card marker. */
+.handsontable tbody tr td.flow-group {
+    box-shadow: inset 3px 0 0 var(--muted-foreground);
+}
+/* box-shadow does not stack across rules, so carded + grouped cells need both
+   insets listed together. */
+.handsontable tbody tr td.flow-card.flow-group {
+    box-shadow:
+        inset 0 -2px 0 #2563eb,
+        inset 3px 0 0 var(--muted-foreground);
+}
+
 /* Hidden on screen; visible only during print */
 .print-only {
     display: none;
@@ -301,6 +315,11 @@ html .ht-theme-main {
     }
     .print-flow td.flow-card {
         border-bottom: 2px solid #2563eb;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .print-flow td.flow-group {
+        box-shadow: inset 3px 0 0 #6b7280;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }

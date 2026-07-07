@@ -7,7 +7,13 @@
  * commands unconditionally.
  */
 
-import { BOLD_CLASS, CARD_CLASS, HIGHLIGHT_CLASS, toggleClassToken } from "@/lib/grid/codec";
+import {
+    BOLD_CLASS,
+    CARD_CLASS,
+    GROUP_CLASS,
+    HIGHLIGHT_CLASS,
+    toggleClassToken,
+} from "@/lib/grid/codec";
 import { getActiveHot, notifyGridMutated } from "@/lib/grid/hotInstance";
 import { sortedSheets } from "@/lib/model/flow";
 import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
@@ -29,7 +35,7 @@ function jumpToSheet(n: number): void {
  * so mixed ranges converge instead of flip-flopping per cell.
  */
 function toggleDecoration(
-    token: typeof BOLD_CLASS | typeof HIGHLIGHT_CLASS | typeof CARD_CLASS,
+    token: typeof BOLD_CLASS | typeof HIGHLIGHT_CLASS | typeof CARD_CLASS | typeof GROUP_CLASS,
 ): void {
     const hot = getActiveHot();
     const ranges = hot?.getSelectedRange();
@@ -116,6 +122,9 @@ export function executeCommand(id: CommandId): void {
             return;
         case "format.toggleCard":
             toggleDecoration(CARD_CLASS);
+            return;
+        case "format.toggleGroup":
+            toggleDecoration(GROUP_CLASS);
             return;
         case "row.insertAbove":
             alterRow("insert_row_above");

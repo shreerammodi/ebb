@@ -4,6 +4,7 @@ import {
     BOLD_CLASS,
     CARD_CLASS,
     classNameToMeta,
+    GROUP_CLASS,
     HIGHLIGHT_CLASS,
     metaToClassName,
     padGrid,
@@ -33,6 +34,16 @@ describe("meta <-> className", () => {
         );
         expect(classNameToMeta(CARD_CLASS)).toEqual({ card: true });
         expect(classNameToMeta(`${BOLD_CLASS} ${CARD_CLASS}`)).toEqual({ bold: true, card: true });
+    });
+
+    it("round-trips the group tag, alone and combined", () => {
+        expect(metaToClassName({ group: true })).toBe(GROUP_CLASS);
+        expect(metaToClassName({ card: true, group: true })).toBe(`${CARD_CLASS} ${GROUP_CLASS}`);
+        expect(classNameToMeta(GROUP_CLASS)).toEqual({ group: true });
+        expect(classNameToMeta(`${BOLD_CLASS} ${GROUP_CLASS}`)).toEqual({
+            bold: true,
+            group: true,
+        });
     });
 
     it("toggleClassToken adds and removes without disturbing other tokens", () => {

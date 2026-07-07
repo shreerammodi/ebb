@@ -20,7 +20,7 @@ const BASICS: { heading: string; body: string }[] = [
     },
     {
         heading: "Marking cells",
-        body: "Bold a claim, highlight what matters, or tag a cell as a card (evidence). The three combine freely and surface in search.",
+        body: "Bold a claim, highlight what matters, or tag a cell as a card (evidence). Select a run of cells and group them to bracket a cluster of responses under one argument. These combine freely and surface in search.",
     },
     {
         heading: "Find anything",
@@ -68,6 +68,8 @@ const GROUPS = [
         rows: [
             { commandId: "format.toggleBold" as CommandId },
             { commandId: "format.toggleHighlight" as CommandId },
+            { commandId: "format.toggleCard" as CommandId },
+            { commandId: "format.toggleGroup" as CommandId },
         ],
     },
     {
