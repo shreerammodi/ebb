@@ -9,6 +9,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { UpdateProvider } from "@/components/update/UpdateProvider";
 import { makeFlowRound, type FlowRound } from "@/lib/model/flow";
 import { flowDb } from "@/lib/persistence/flowDb";
 import { persistFlow } from "@/lib/persistence/flowPersistence";
@@ -56,7 +57,9 @@ describe("AppRoot", () => {
         mockSearch = "";
         render(
             <TooltipProvider>
-                <AppRoot />
+                <UpdateProvider>
+                    <AppRoot />
+                </UpdateProvider>
             </TooltipProvider>,
         );
         await waitFor(() => {
@@ -68,7 +71,9 @@ describe("AppRoot", () => {
         mockSearch = "id=nonexistent_id";
         render(
             <TooltipProvider>
-                <AppRoot />
+                <UpdateProvider>
+                    <AppRoot />
+                </UpdateProvider>
             </TooltipProvider>,
         );
         await waitFor(() => {
@@ -83,7 +88,9 @@ describe("AppRoot", () => {
 
         render(
             <TooltipProvider>
-                <AppRoot />
+                <UpdateProvider>
+                    <AppRoot />
+                </UpdateProvider>
             </TooltipProvider>,
         );
 
@@ -99,7 +106,9 @@ describe("AppRoot", () => {
 
         render(
             <TooltipProvider>
-                <AppRoot />
+                <UpdateProvider>
+                    <AppRoot />
+                </UpdateProvider>
             </TooltipProvider>,
         );
 

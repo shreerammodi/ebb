@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import DesktopSelectAll from "@/components/DesktopSelectAll";
 import ThemeSync from "@/components/ThemeSync";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { UpdateProvider } from "@/components/update/UpdateProvider";
 
 import "./globals.css";
 
@@ -297,7 +298,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <body className="font-sans antialiased">
                 <DesktopSelectAll />
                 <ThemeSync />
-                <TooltipProvider>{children}</TooltipProvider>
+                <TooltipProvider>
+                    <UpdateProvider>{children}</UpdateProvider>
+                </TooltipProvider>
                 <Toaster position="bottom-center" />
             </body>
         </html>

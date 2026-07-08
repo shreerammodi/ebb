@@ -7,7 +7,6 @@ import SearchPalette from "@/components/palette/SearchPalette";
 import SettingsPanel from "@/components/settings/SettingsPanel";
 import CriticalUpdateModal from "@/components/update/CriticalUpdateModal";
 import UpdateChip from "@/components/update/UpdateChip";
-import { UpdateProvider } from "@/components/update/UpdateProvider";
 import { useConfigFileSync } from "@/lib/config/useConfigFileSync";
 import { useDesktopMenu } from "@/lib/keymap/useDesktopMenu";
 import { useKeymap } from "@/lib/keymap/useKeymap";
@@ -41,78 +40,72 @@ export default function Workspace() {
         sheetOf(id)?.group === "neg" ? "neg" : "aff";
 
     return (
-        <UpdateProvider>
-            <div className="bg-background flex h-screen flex-col" data-testid="workspace">
-                <RoundHeader />
-                <div className="flex min-h-0 flex-1">
-                    <Sidebar />
-                    <main
-                        // isolate: trap Handsontable's frozen-header clone layers (z-index up
-                        // to ~1060) in their own stacking context so they can't punch through
-                        // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
-                        className="no-print isolate flex min-w-0 flex-1 overflow-hidden"
-                        data-testid="workspace-content"
-                    >
-                        {activeSheetId ? (
-                            <>
-                                {/* Same element/position in single and split mode so toggling
+        <div className="bg-background flex h-screen flex-col" data-testid="workspace">
+            <RoundHeader />
+            <div className="flex min-h-0 flex-1">
+                <Sidebar />
+                <main
+                    // isolate: trap Handsontable's frozen-header clone layers (z-index up
+                    // to ~1060) in their own stacking context so they can't punch through
+                    // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
+                    className="no-print isolate flex min-w-0 flex-1 overflow-hidden"
+                    data-testid="workspace-content"
+                >
+                    {activeSheetId ? (
+                        <>
+                            {/* Same element/position in single and split mode so toggling
                                     split never remounts pane 1's live HotGrid. */}
-                                <div
-                                    data-testid="pane-1"
-                                    className="flex min-w-0 flex-1 flex-col overflow-hidden"
-                                >
-                                    <SheetTitleBar
-                                        title={titleOf(activeSheetId)}
-                                        side={sideOf(activeSheetId)}
-                                        tabLabel={splitSheetId ? "Tab 1" : undefined}
-                                        focused={splitSheetId ? focusedPane === 1 : undefined}
-                                    />
-                                    <div className="min-h-0 flex-1">
-                                        <HotGrid key="pane1" sheetId={activeSheetId} pane={1} />
-                                    </div>
+                            <div
+                                data-testid="pane-1"
+                                className="flex min-w-0 flex-1 flex-col overflow-hidden"
+                            >
+                                <SheetTitleBar
+                                    title={titleOf(activeSheetId)}
+                                    side={sideOf(activeSheetId)}
+                                    tabLabel={splitSheetId ? "Tab 1" : undefined}
+                                    focused={splitSheetId ? focusedPane === 1 : undefined}
+                                />
+                                <div className="min-h-0 flex-1">
+                                    <HotGrid key="pane1" sheetId={activeSheetId} pane={1} />
                                 </div>
-                                {splitSheetId && (
-                                    <>
-                                        <div className="border-border w-px shrink-0 border-l" />
-                                        <div
-                                            data-testid="pane-2"
-                                            className="flex min-w-0 flex-1 flex-col overflow-hidden"
-                                        >
-                                            <SheetTitleBar
-                                                title={titleOf(splitSheetId)}
-                                                side={sideOf(splitSheetId)}
-                                                tabLabel="Tab 2"
-                                                focused={focusedPane === 2}
-                                            />
-                                            <div className="min-h-0 flex-1">
-                                                <HotGrid
-                                                    key="pane2"
-                                                    sheetId={splitSheetId}
-                                                    pane={2}
-                                                />
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </>
-                        ) : (
-                            <div className="text-muted-foreground w-full p-6 text-[13px]">
-                                No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
-                                <span className="text-foreground font-medium">+ Aff</span> /{" "}
-                                <span className="text-foreground font-medium">+ Neg</span>.
                             </div>
-                        )}
-                    </main>
-                </div>
-                {rfdOpen && roundId && <RfdDrawer key={roundId} />}
-                <SearchPalette />
-                <SettingsPanel />
-                <InfoPanel />
-                <KeybindingsCheatsheet />
-                <PrintView />
-                <UpdateChip />
-                <CriticalUpdateModal />
+                            {splitSheetId && (
+                                <>
+                                    <div className="border-border w-px shrink-0 border-l" />
+                                    <div
+                                        data-testid="pane-2"
+                                        className="flex min-w-0 flex-1 flex-col overflow-hidden"
+                                    >
+                                        <SheetTitleBar
+                                            title={titleOf(splitSheetId)}
+                                            side={sideOf(splitSheetId)}
+                                            tabLabel="Tab 2"
+                                            focused={focusedPane === 2}
+                                        />
+                                        <div className="min-h-0 flex-1">
+                                            <HotGrid key="pane2" sheetId={splitSheetId} pane={2} />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        <div className="text-muted-foreground w-full p-6 text-[13px]">
+                            No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
+                            <span className="text-foreground font-medium">+ Aff</span> /{" "}
+                            <span className="text-foreground font-medium">+ Neg</span>.
+                        </div>
+                    )}
+                </main>
             </div>
-        </UpdateProvider>
+            {rfdOpen && roundId && <RfdDrawer key={roundId} />}
+            <SearchPalette />
+            <SettingsPanel />
+            <InfoPanel />
+            <KeybindingsCheatsheet />
+            <PrintView />
+            <UpdateChip />
+            <CriticalUpdateModal />
+        </div>
     );
 }
