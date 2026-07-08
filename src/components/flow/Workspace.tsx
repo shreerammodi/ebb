@@ -8,6 +8,7 @@ import SettingsPanel from "@/components/settings/SettingsPanel";
 import CriticalUpdateModal from "@/components/update/CriticalUpdateModal";
 import UpdateChip from "@/components/update/UpdateChip";
 import { UpdateProvider } from "@/components/update/UpdateProvider";
+import { useConfigFileSync } from "@/lib/config/useConfigFileSync";
 import { useDesktopMenu } from "@/lib/keymap/useDesktopMenu";
 import { useKeymap } from "@/lib/keymap/useKeymap";
 import { useFlowStore } from "@/lib/store/useFlowStore";
@@ -25,6 +26,7 @@ const HotGrid = dynamic(() => import("./HotGrid"), { ssr: false });
 export default function Workspace() {
     useKeymap();
     useDesktopMenu();
+    useConfigFileSync();
 
     const activeSheetId = useFlowStore((s) => s.activeSheetId);
     const splitSheetId = useFlowStore((s) => s.splitSheetId);
@@ -35,7 +37,8 @@ export default function Workspace() {
 
     const sheetOf = (id: string | null) => round?.sheets.find((s) => s.id === id);
     const titleOf = (id: string | null) => sheetOf(id)?.title ?? "";
-    const sideOf = (id: string | null): "aff" | "neg" => (sheetOf(id)?.group === "neg" ? "neg" : "aff");
+    const sideOf = (id: string | null): "aff" | "neg" =>
+        sheetOf(id)?.group === "neg" ? "neg" : "aff";
 
     return (
         <UpdateProvider>
@@ -82,7 +85,11 @@ export default function Workspace() {
                                                 focused={focusedPane === 2}
                                             />
                                             <div className="min-h-0 flex-1">
-                                                <HotGrid key="pane2" sheetId={splitSheetId} pane={2} />
+                                                <HotGrid
+                                                    key="pane2"
+                                                    sheetId={splitSheetId}
+                                                    pane={2}
+                                                />
                                             </div>
                                         </div>
                                     </>

@@ -20,6 +20,10 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Plain-text config file sync: notify watches it for external edits, toml_edit
+# rewrites it in place so hand-added comments and formatting survive.
+notify = "6"
+toml_edit = { version = "0.22", features = ["serde"] }
 
 # Signed auto-updates. The updater verifies the Ed25519 signature internally and
 # discards anything it can't verify; `process` provides the relaunch used to

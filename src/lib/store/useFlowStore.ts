@@ -104,6 +104,13 @@ export interface FlowActions {
     setSideColor(side: Side, color: string | null): void;
     /** Merges a partial update config, persisting the result. */
     setUpdateConfig(patch: Partial<UpdateConfig>): void;
+    /**
+     * Replaces every externally-syncable setting at once and persists all three
+     * localStorage buckets. Used by the desktop config-file sync when the file
+     * changes underneath the app; the caller suppresses the write-back so this
+     * does not bounce straight back out to disk.
+     */
+    applyExternalConfig(config: AppConfig): void;
     /** Opens/closes the palette; `seed` sets the initial query (">" = command mode). */
     setQuickSwitcherOpen(open: boolean, seed?: string): void;
     setSettingsOpen(open: boolean): void;
@@ -115,6 +122,22 @@ export interface FlowActions {
 }
 
 export type FlowStore = FlowState & FlowActions;
+
+/**
+ * The full set of settings the desktop config file mirrors, in the store's own
+ * camelCase vocabulary. The config module maps this to/from the plain-text file.
+ */
+export interface AppConfig {
+    flowFont: FontId;
+    sidebarCollapsed: boolean;
+    rfdOpen: boolean;
+    rfdVim: boolean;
+    theme: ThemeMode;
+    affColor: string | null;
+    negColor: string | null;
+    keymapOverrides: Record<string, string>;
+    updateConfig: UpdateConfig;
+}
 
 // --- Settings persistence (localStorage) --------------------------------------
 
@@ -321,7 +344,12 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             if (sheetId === splitSheetId) {
                 set({ round: nextRound, splitSheetId: null, focusedPane: 1 });
             } else if (wasActive) {
-                set({ round: nextRound, activeSheetId: splitSheetId, splitSheetId: null, focusedPane: 1 });
+                set({
+                    round: nextRound,
+                    activeSheetId: splitSheetId,
+                    splitSheetId: null,
+                    focusedPane: 1,
+                });
             } else {
                 set({ round: nextRound });
             }
@@ -471,6 +499,14 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         const updateConfig = { ...get().updateConfig, ...patch };
         saveUpdateConfig(updateConfig);
         set({ updateConfig });
+    },
+
+    applyExternalConfig(config) {
+        const { keymapOverrides, updateConfig, ...display } = config;
+        saveDisplaySettings(display);
+        saveKeymapOverrides(keymapOverrides);
+        saveUpdateConfig(updateConfig);
+        set({ ...display, keymapOverrides, updateConfig });
     },
 
     setQuickSwitcherOpen(open, seed = "") {
