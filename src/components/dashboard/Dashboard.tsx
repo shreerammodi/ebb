@@ -138,34 +138,33 @@ export default function Dashboard() {
                             </p>
                         </div>
 
-                        <div className="flex flex-col items-center gap-2.5">
-                            <div className="flex items-center gap-2.5">
-                                <button
-                                    type="button"
-                                    data-testid="empty-start-aff"
-                                    onClick={() => createFlow("aff")}
-                                    className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
-                                >
-                                    <span className="bg-aff size-2 rounded-full" aria-hidden />
-                                    Aff
-                                </button>
-                                <button
-                                    type="button"
-                                    data-testid="empty-start-neg"
-                                    onClick={() => createFlow("neg")}
-                                    className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
-                                >
-                                    <span className="bg-neg size-2 rounded-full" aria-hidden />
-                                    Neg
-                                </button>
-                            </div>
+                        <div className="flex items-center justify-center gap-2.5">
+                            <button
+                                type="button"
+                                data-testid="empty-start-aff"
+                                onClick={() => createFlow("aff")}
+                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
+                            >
+                                <span className="bg-aff size-2 rounded-full" aria-hidden />
+                                Aff
+                            </button>
+                            <button
+                                type="button"
+                                data-testid="empty-start-neg"
+                                onClick={() => createFlow("neg")}
+                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
+                            >
+                                <span className="bg-neg size-2 rounded-full" aria-hidden />
+                                Neg
+                            </button>
                             <button
                                 type="button"
                                 data-testid="empty-start-judge"
                                 onClick={() => createFlow("judge")}
-                                className="text-muted-foreground hover:text-foreground text-[12.5px] outline-none focus-visible:underline"
+                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
                             >
-                                or Judge
+                                <span className="bg-muted-foreground size-2 rounded-full" aria-hidden />
+                                Judge
                             </button>
                         </div>
                     </div>
