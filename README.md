@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/icons/icon-512.png" alt="ebb logo" width="96" height="96" />
+<img src="public/logo.svg" alt="ebb" width="180" />
 
 # ebb
 
