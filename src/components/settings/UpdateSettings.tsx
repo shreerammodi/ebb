@@ -87,8 +87,7 @@ export default function UpdateSettings() {
                 <span>
                     Tournament Mode
                     <span className="text-muted-foreground mt-0.5 block text-[12px]">
-                        Pins the current version and disables automatic updates, for the duration of
-                        an event.
+                        Pins the current version and disables automatic updates.
                     </span>
                 </span>
                 <Switch
