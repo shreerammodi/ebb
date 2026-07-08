@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Kbd } from "@/components/ui/kbd";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { prettyChord, buildChordMap } from "@/lib/keymap/displayChord";
+import { isMacPlatform } from "@/lib/platform";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 const BASICS: { heading: string; body: string }[] = [
@@ -62,7 +63,11 @@ const FIXED_GROUPS: { label: string; rows: { chord: string; label: string }[] }[
         label: "Navigate (fixed)",
         rows: [
             { chord: "Arrows", label: "Move selection" },
-            { chord: "Ctrl+Arrows", label: "Jump to data edge" },
+            {
+                // Handsontable's jump-to-edge follows the platform primary modifier.
+                chord: isMacPlatform() ? "Cmd+Arrows" : "Ctrl+Arrows",
+                label: "Jump to data edge",
+            },
         ],
     },
 ];
