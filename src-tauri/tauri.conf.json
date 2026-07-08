@@ -5,7 +5,7 @@
     "identifier": "net.smodi.ebb",
     "build": {
         "beforeDevCommand": "npm run dev",
-        "devUrl": "http://localhost:3000",
+        "devUrl": "http://localhost:1280",
         "beforeBuildCommand": "npm run build",
         "frontendDist": "../out"
     },
