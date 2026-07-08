@@ -90,7 +90,7 @@ jobs:
                   # of it. The tag that triggered the run names the release.
                   tagName: ${{ github.ref_name }}
                   releaseName: "Ebb ${{ github.ref_name }}"
-                  releaseBody: "See the assets below to download and install. First run on an unsigned build needs a manual trust step — see docs/desktop/manual-trust.md."
+                  releaseBody: "See the assets below to download and install."
                   releaseDraft: true
                   prerelease: false
                   includeUpdaterJson: true
