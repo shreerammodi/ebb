@@ -8,7 +8,7 @@ export type ExportFormat = "json" | "excel";
 /** Run a per-round export in the requested format. */
 export async function runExport(round: FlowRound, fmt: ExportFormat): Promise<void> {
     if (fmt === "json") {
-        downloadFlowFile(round);
+        await downloadFlowFile(round);
         return;
     }
     await downloadXlsx(round);

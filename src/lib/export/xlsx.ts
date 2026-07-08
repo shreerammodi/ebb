@@ -9,7 +9,7 @@ import type { FlowRound } from "@/lib/model/flow";
 
 import { buildExportSheets } from "./cells";
 import { cxPeriods } from "./cx";
-import { isoDate, exportFilename, downloadBlob } from "./download";
+import { isoDate, exportFilename, saveBlob } from "./download";
 import {
     buildFlowSheetXml,
     registerSheetsInRels,
@@ -308,5 +308,5 @@ export async function downloadXlsx(round: FlowRound): Promise<void> {
     const blob = new Blob([bytes.buffer as ArrayBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-    downloadBlob(blob, exportFilename(round.role, round.createdAt, "xlsx"));
+    await saveBlob(blob, exportFilename(round.role, round.createdAt, "xlsx"));
 }

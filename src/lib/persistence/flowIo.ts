@@ -4,6 +4,7 @@
  * rejected outright, never migrated.
  */
 
+import { saveBlob } from "@/lib/export/download";
 import { normalizeFlow, type FlowRound } from "@/lib/model/flow";
 import { uid } from "@/lib/model/ids";
 
@@ -107,24 +108,12 @@ function sanitizeSegment(s: string): string {
     return s.replace(/[^a-z0-9_-]/gi, "-").toLowerCase();
 }
 
-/** Trigger a browser download of the round as a JSON file. */
-export function downloadFlowFile(round: FlowRound): void {
-    const json = exportFlowJSON(round);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-
+/** Save the round as a JSON file, prompting for a location where supported. */
+export async function downloadFlowFile(round: FlowRound): Promise<void> {
+    const blob = new Blob([exportFlowJSON(round)], { type: "application/json" });
     const date = formatDate(round.updatedAt ?? Date.now());
-    const role = sanitizeSegment(round.role);
-    const filename = `debate-flow-${role}-${date}.json`;
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = `debate-flow-${sanitizeSegment(round.role)}-${date}.json`;
+    await saveBlob(blob, filename);
 }
 
 /** Read a File object and return the parsed FlowRound. */

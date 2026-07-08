@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { downloadBlob } from "@/lib/export/download";
+import { saveBlob } from "@/lib/export/download";
 import { flowDb } from "@/lib/persistence/flowDb";
 import { exportFlowBackupJSON, parseFlowImportFile } from "@/lib/persistence/flowIo";
 import { persistFlow } from "@/lib/persistence/flowPersistence";
@@ -53,7 +53,7 @@ export default function ImportExportControls({ onChanged }: ImportExportControls
         const blob = new Blob([exportFlowBackupJSON(rounds)], {
             type: "application/json",
         });
-        downloadBlob(blob, `debate-flow-backup-${new Date().toISOString().slice(0, 10)}.json`);
+        await saveBlob(blob, `debate-flow-backup-${new Date().toISOString().slice(0, 10)}.json`);
     }
 
     return (
