@@ -13,6 +13,8 @@
 
 import { COMMANDS } from "@/lib/commands/registry";
 import { resolveFontId } from "@/lib/fonts/registry";
+import { effectiveKeymap } from "@/lib/keymap/effective";
+import { getPresetKeymap } from "@/lib/keymap/presets";
 import { type AppConfig, useFlowStore } from "@/lib/store/useFlowStore";
 import { resolveThemeMode } from "@/lib/theme/mode";
 import { isDesktop } from "@/lib/update/adapter";
@@ -28,7 +30,11 @@ export interface ConfigFileShape {
     /** null means "reset to theme default"; Rust removes the key from the file. */
     aff_color: string | null;
     neg_color: string | null;
-    /** commandId -> chord overrides. */
+    /**
+     * commandId -> chord for every bound command, defaults included, so the
+     * file ships the full keybinding set editable in place. Reading keeps only
+     * the entries that differ from the preset as overrides.
+     */
     keymap: Record<string, string>;
     update: { auto_check_enabled: boolean; tournament_mode: boolean };
 }
@@ -42,6 +48,13 @@ function bool(value: unknown, fallback: boolean): boolean {
     return typeof value === "boolean" ? value : fallback;
 }
 
+/** Inverts a chord -> commandId map into commandId -> chord (one chord each). */
+function byCommand(bindings: Record<string, string>): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const [chord, commandId] of Object.entries(bindings)) out[commandId] = chord;
+    return out;
+}
+
 /** Serializes the store's current settings into the file shape. */
 export function configFromState(s: AppConfig): ConfigFileShape {
     return {
@@ -52,7 +65,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         rfd_vim: s.rfdVim,
         aff_color: s.affColor,
         neg_color: s.negColor,
-        keymap: { ...s.keymapOverrides },
+        keymap: byCommand(effectiveKeymap(s.keymapOverrides).bindings),
         update: {
             auto_check_enabled: s.updateConfig.autoCheckEnabled,
             tournament_mode: s.updateConfig.tournamentMode,
@@ -64,11 +77,21 @@ export function configFromState(s: AppConfig): ConfigFileShape {
 export function toAppConfig(raw: unknown): AppConfig {
     const o = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
 
+    // The file lists every default binding; keep only chords that deviate from
+    // the preset as real overrides, so a shipped default file reads as no
+    // customization at all.
+    const defaults = byCommand(getPresetKeymap().bindings);
     const keymapOverrides: Record<string, string> = {};
     if (o.keymap && typeof o.keymap === "object") {
         for (const [commandId, chord] of Object.entries(o.keymap as Record<string, unknown>)) {
-            // Drop overrides for commands that no longer exist or non-string chords.
-            if (commandId in COMMANDS && typeof chord === "string" && chord.length > 0) {
+            // Drop entries for commands that no longer exist, non-string chords,
+            // and any chord that just restates the default.
+            if (
+                commandId in COMMANDS &&
+                typeof chord === "string" &&
+                chord.length > 0 &&
+                chord !== defaults[commandId]
+            ) {
                 keymapOverrides[commandId] = chord;
             }
         }

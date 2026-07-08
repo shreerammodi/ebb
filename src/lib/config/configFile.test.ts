@@ -32,6 +32,12 @@ describe("configFromState -> toAppConfig round-trip", () => {
         expect(file.neg_color).toBeNull();
         expect(file.update.auto_check_enabled).toBe(true);
     });
+
+    it("ships every default binding but stores none of them as overrides", () => {
+        const file = configFromState({ ...sample, keymapOverrides: {} });
+        expect(Object.keys(file.keymap).length).toBeGreaterThan(10);
+        expect(toAppConfig(file).keymapOverrides).toEqual({});
+    });
 });
 
 describe("toAppConfig validation", () => {
