@@ -43,7 +43,7 @@ export interface UpdateConfig {
     tournamentMode: boolean;
 }
 
-/** Default update configuration: opt-out background checks, Tournament Mode off. */
+/** Default update configuration: background checks opt-in (off), Tournament Mode off. */
 export const DEFAULT_UPDATE_CONFIG: UpdateConfig = {
     autoCheckEnabled: false,
     tournamentMode: false,
