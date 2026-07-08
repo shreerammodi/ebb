@@ -23,11 +23,24 @@ Desktop builds are found on the [releases page](https://github.com/shreerammodi/
   - Intel: `*.dmg`
 2. Open the `*.dmg` file, and drag Ebb to your Applications folder.
 
-On first launch, you will need to authorize the app to open since it's unsigned. You will see the following message
+On first launch, you will need to authorize the app to open since it's unsigned.
+
+If you see:
 
 > Can’t be opened because Apple cannot check it for malicious software
 
-To resolve this, go to System Settings > Privacy & Security > scroll down > click "Open Anyway"
+go to System Settings > Privacy & Security > scroll down > click "Open Anyway".
+
+If instead you see:
+
+> "Ebb.app" is damaged and can't be opened. You should move it to the Trash
+
+this is macOS Gatekeeper quarantining the download, not actual damage. Remove
+the quarantine flag in Terminal, then open the app normally:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Ebb.app
+```
 
 If you would like to download standalone versions, you can download the
 `*.app.tar.gz` file for your respective architecture.
