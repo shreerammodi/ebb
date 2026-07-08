@@ -38,6 +38,13 @@ describe("configFromState -> toAppConfig round-trip", () => {
         expect(Object.keys(file.keymap).length).toBeGreaterThan(10);
         expect(toAppConfig(file).keymapOverrides).toEqual({});
     });
+
+    it("ships every configurable command, emitting unbound ones as empty strings", () => {
+        const file = configFromState({ ...sample, keymapOverrides: {} });
+        for (const id of Object.keys(COMMANDS)) expect(file.keymap).toHaveProperty(id);
+        // info.open has no default chord, so it ships as "" ready to fill in.
+        expect(file.keymap["info.open"]).toBe("");
+    });
 });
 
 describe("toAppConfig validation", () => {

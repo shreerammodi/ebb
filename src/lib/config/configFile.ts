@@ -31,9 +31,10 @@ export interface ConfigFileShape {
     aff_color: string | null;
     neg_color: string | null;
     /**
-     * commandId -> chord for every bound command, defaults included, so the
-     * file ships the full keybinding set editable in place. Reading keeps only
-     * the entries that differ from the preset as overrides.
+     * commandId -> chord for every configurable command, defaults included and
+     * unbound commands emitted as "", so the file ships the full keybinding set
+     * editable in place. Reading keeps only the entries that differ from the
+     * preset as overrides.
      */
     keymap: Record<string, string>;
     update: { auto_check_enabled: boolean; tournament_mode: boolean };
@@ -48,9 +49,14 @@ function bool(value: unknown, fallback: boolean): boolean {
     return typeof value === "boolean" ? value : fallback;
 }
 
-/** Inverts a chord -> commandId map into commandId -> chord (one chord each). */
+/**
+ * Inverts a chord -> commandId map into commandId -> chord, seeding an entry for
+ * every command so configurable-but-unbound commands ship as "" (editable in
+ * place) rather than being absent from the file.
+ */
 function byCommand(bindings: Record<string, string>): Record<string, string> {
     const out: Record<string, string> = {};
+    for (const commandId of Object.keys(COMMANDS)) out[commandId] = "";
     for (const [chord, commandId] of Object.entries(bindings)) out[commandId] = chord;
     return out;
 }
