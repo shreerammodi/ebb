@@ -1,5 +1,6 @@
 [package]
 name = "ebb"
+version = "0.1.0"
 description = "Ebb - keyboard-first debate flow"
 authors = ["Shreeram Modi <smodi@smodi.net>"]
 edition = "2021"
