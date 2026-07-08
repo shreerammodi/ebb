@@ -76,15 +76,14 @@ jobs:
                   # `npm run tauri signer generate` and store these as repo secrets.
                   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
                   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-                  # ── OS code signing (deferred). Leave these secrets unset to ship
-                  # ── unsigned beta builds; populate them later with no other changes.
-                  # macOS Developer ID + notarization:
-                  APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-                  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-                  APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-                  APPLE_ID: ${{ secrets.APPLE_ID }}
-                  APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-                  APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+                  # OS code signing (deferred, ships unsigned beta builds). Do NOT wire
+                  # the APPLE_* env vars from unset secrets: an unset secret becomes a
+                  # defined-but-empty env var, and the bundler treats a *present*
+                  # APPLE_CERTIFICATE as "sign me", then fails on `security import` with
+                  # empty cert data. To enable Developer ID signing + notarization, add
+                  # these env keys back here alongside their (non-empty) repo secrets:
+                  #   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD,
+                  #   APPLE_SIGNING_IDENTITY, APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
               with:
                   # tauri-action creates the release, builds per-platform installers,
                   # signs the updater artifacts, generates latest.json, and uploads all
