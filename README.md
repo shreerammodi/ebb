@@ -12,7 +12,44 @@
 All data lives on your machine, and ebb is open source under the [Mozilla
 Public License 2.0](https://www.mozilla.org/MPL/2.0/).
 
-## Getting started
+## Installing
+
+Desktop builds are found on the [releases page](https://github.com/shreerammodi/ebb/releases).
+
+
+### MacOS
+
+1. Download the `.dmg` file for your Mac.
+  - Apple Silicon: `*.aarch64.dmg`
+  - Intel: `*.dmg`
+2. Open the `*.dmg` file, and drag Ebb to your Applications folder.
+
+On first launch, you will need to authorize the app to open since it's unsigned. You will see the following message
+
+> Can’t be opened because Apple cannot check it for malicious software
+
+To resolve this, go to System Settings > Privacy & Security > scroll down > click "Open Anyway"
+
+### Windows
+
+1. Download  `*-setup.exe`
+2. Run the installer
+
+On first launch, you'll see "Windows protected your PC." Click More info > Run anyway.
+
+
+### Linux
+
+1. Download the `*.AppImage` file.
+2. Make it executable and run it:
+
+```bash
+chmod +x Ebb_*.AppImage
+./Ebb_*.AppImage
+```
+
+
+## Building From Source
 
 Requires [Node.js](https://nodejs.org/) and npm.
 

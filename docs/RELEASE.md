@@ -18,7 +18,6 @@ links carry the internals.
 | --------------- | --------------------------------------- | ------------------------------- | ------------------------------------------------ |
 | **Web build**   | Static export in `out/`                 | Vercel CDN, no backend          | User reloads; the CDN always serves current      |
 | **Desktop app** | Tauri 2 shell wrapping the same `out/`  | Signed installers, GitHub Release | In-app signed auto-updater, tournament-gated   |
-| **Flatpak**     | The Linux `.deb`, sandboxed for GNOME   | `.flatpak` on the GitHub Release | Its own flatpak repo, **not** the Tauri updater  |
 
 Local-first invariant holds for all three: no backend, no telemetry. The only
 network the runtime touches is fetching `latest.json` + update artifacts from
@@ -80,9 +79,7 @@ autosave) and the user controls when they reload.
 A 4-way build matrix (`fail-fast: false`) - macOS arm64, macOS x64, Linux x64,
 Windows x64 - runs `tauri-apps/tauri-action`, which builds each installer, signs
 the updater artifacts with the Ed25519 key, generates `latest.json`, and uploads
-everything to a **draft** GitHub Release named `Ebb vX.Y.Z`. A follow-up
-`flatpak` job rebuilds the Linux `.deb`, wraps it as a single-file `.flatpak`,
-and attaches it to the same release.
+everything to a **draft** GitHub Release named `Ebb vX.Y.Z`.
 
 `releaseDraft: true` is the safety valve: the updater reads
 `releases/latest/download/latest.json`, and a draft is never "latest", so
@@ -125,9 +122,6 @@ the signed artifact in the background, then applies it **only when safe**:
 Full state machine, eligibility layers, and failure properties:
 [`desktop/ci-and-deployment.md`](desktop/ci-and-deployment.md) sections 7-10.
 
-**Flatpak:** updates through its own flatpak repo (`flatpak update`), not the
-Tauri updater.
-
 ## 8. Beta ship checklist
 
 Blocking before the first real release:
@@ -152,7 +146,7 @@ Ships fine for beta, worth doing after:
 ```bash
 # From a clean main with CI green:
 npm run release            # bump + sync all version files + commit + tag + push
-# -> release.yml builds 4 installers + flatpak into a DRAFT GitHub Release
+# -> release.yml builds 4 installers into a DRAFT GitHub Release
 # Review the draft on GitHub, then click Publish.
 # -> the /latest/ redirect flips; desktop clients pick it up on next check.
 ```
