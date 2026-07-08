@@ -166,7 +166,7 @@ describe("setScouting", () => {
 });
 
 function threeFlowSheets() {
-    // Fresh aff round has CX + one flow sheet ("Aff", order 0). Add two more.
+    // Fresh aff round has CX + one flow sheet ("1.", order 0). Add two more.
     const round = makeFlowRound("aff");
     useFlowStore.getState().loadRound(round);
     const a = round.sheets.find((s) => s.kind !== "cx")!.id;

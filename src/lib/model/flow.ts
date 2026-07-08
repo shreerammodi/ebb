@@ -95,7 +95,7 @@ export function makeFlowRound(role: Role): FlowRound {
         scouting: emptyScouting(),
         sheets: [
             makeCxFlowSheet(),
-            makeFlowSheet({ title: side === "neg" ? "Neg" : "Aff", group: side, order: 0 }),
+            makeFlowSheet({ title: "1.", group: side, order: 0 }),
         ],
     };
 }

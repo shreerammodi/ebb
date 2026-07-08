@@ -154,12 +154,12 @@ export function executeCommand(id: CommandId): void {
         }
         case "sheet.newAff": {
             if (!round) return;
-            state.addSheet({ title: "Untitled", group: "aff" });
+            state.addSheet({ group: "aff" });
             return;
         }
         case "sheet.newNeg": {
             if (!round) return;
-            state.addSheet({ title: "Untitled", group: "neg" });
+            state.addSheet({ group: "neg" });
             return;
         }
         case "sheet.rename": {

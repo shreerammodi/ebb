@@ -69,7 +69,7 @@ export interface FlowState {
 
 export interface FlowActions {
     loadRound(round: FlowRound, opts?: { activeSheetId?: string | null; newFlow?: boolean }): void;
-    addSheet(input: { title: string; group: "aff" | "neg" }): string;
+    addSheet(input: { title?: string; group: "aff" | "neg" }): string;
     renameSheet(sheetId: string, title: string): void;
     removeSheet(sheetId: string): RemovedFlowSheet | null;
     restoreSheet(removed: RemovedFlowSheet): void;
@@ -308,7 +308,12 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         const { round } = get();
         if (!round) return "";
         const maxOrder = round.sheets.length ? Math.max(...round.sheets.map((s) => s.order)) : -1;
-        const sheet = makeFlowSheet({ ...input, order: maxOrder + 1 });
+        // Default title enumerates flow sheets per-side: the nth aff sheet is "n.".
+        const count = round.sheets.filter(
+            (s) => s.kind === "flow" && s.group === input.group,
+        ).length;
+        const title = input.title ?? `${count + 1}.`;
+        const sheet = makeFlowSheet({ ...input, title, order: maxOrder + 1 });
         set({
             round: touch({ ...round, sheets: [...round.sheets, sheet] }),
             activeSheetId: sheet.id,

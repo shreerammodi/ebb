@@ -11,13 +11,13 @@ import {
 } from "./flow";
 
 describe("makeFlowRound", () => {
-    it("creates a CX sheet plus one flow sheet named for the side", () => {
+    it("creates a CX sheet plus one flow sheet numbered for the side", () => {
         const r = makeFlowRound("neg");
         expect(r.sheets).toHaveLength(2);
         const cx = r.sheets.find((s) => s.kind === "cx")!;
         const flow = r.sheets.find((s) => s.kind !== "cx")!;
         expect(cx.order).toBe(-1);
-        expect(flow.title).toBe("Neg");
+        expect(flow.title).toBe("1.");
         expect(flow.group).toBe("neg");
         expect(flow.startSpeechId).toBe("1nc");
         expect(flow.data).toEqual([]);
@@ -65,7 +65,7 @@ describe("sheet ordering", () => {
         const r = makeFlowRound("aff");
         const extra = makeFlowSheet({ title: "DA", group: "neg", order: 5 });
         const round = { ...r, sheets: [extra, ...r.sheets] };
-        expect(sortedSheets(round).map((s) => s.title)).toEqual(["CX", "Aff", "DA"]);
+        expect(sortedSheets(round).map((s) => s.title)).toEqual(["CX", "1.", "DA"]);
         expect(firstFlowSheetId(round)).toBe(r.sheets.find((s) => s.kind !== "cx")!.id);
         expect(firstFlowSheetId({ ...round, sheets: [makeCxFlowSheet()] })).not.toBeNull();
     });

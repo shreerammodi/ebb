@@ -29,12 +29,12 @@ beforeEach(() => {
 });
 
 describe("sheet commands", () => {
-    it("newAff/newNeg add and activate an Untitled sheet", () => {
+    it("newAff/newNeg add and activate a sheet numbered per-side", () => {
         loadRound();
         executeCommand("sheet.newNeg");
         const state = useFlowStore.getState();
         const active = state.round!.sheets.find((s) => s.id === state.activeSheetId)!;
-        expect(active.title).toBe("Untitled");
+        expect(active.title).toBe("1.");
         expect(active.group).toBe("neg");
     });
 
