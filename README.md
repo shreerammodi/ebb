@@ -1,7 +1,6 @@
 # ebb
 
-**ebb** is a local-first, privacy-centric, keyboard-first web app for flowing
-competitive debate rounds. All data lives in your browser; there is no backend.
+**ebb** is a modern, keyboard-first app for flowing competitive debate rounds. All data lives on your machine, and ebb is ebb is [free software, as in freedom](https://www.gnu.org/licenses/gpl-3.0.html).
 
 ## Getting started
 
