@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import { focusActiveHot } from "@/lib/grid/hotInstance";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { focusActiveHot } from "@/lib/grid/hotInstance";
 import { makeFlowRound } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 

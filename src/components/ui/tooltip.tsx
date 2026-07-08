@@ -70,10 +70,7 @@ function Tip({ label, command, side, hoverOnly, children }: TipProps) {
     const hint = command ? keyHintFor(command) : null;
     return (
         <Tooltip>
-            <TooltipTrigger
-                asChild
-                onFocus={hoverOnly ? (e) => e.preventDefault() : undefined}
-            >
+            <TooltipTrigger asChild onFocus={hoverOnly ? (e) => e.preventDefault() : undefined}>
                 {children}
             </TooltipTrigger>
             <TooltipContent side={side}>

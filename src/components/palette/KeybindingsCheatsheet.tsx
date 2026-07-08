@@ -180,7 +180,9 @@ export default function KeybindingsCheatsheet() {
                 </div>
 
                 <div className="border-border text-muted-foreground flex shrink-0 items-center justify-between gap-2 border-t px-[18px] py-2 text-[11px]">
-                    <span>Every action here also lives in the command palette. Press ? to close.</span>
+                    <span>
+                        Every action here also lives in the command palette. Press ? to close.
+                    </span>
                     <a
                         href={GUIDE_URL}
                         target="_blank"

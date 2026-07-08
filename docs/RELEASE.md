@@ -14,10 +14,10 @@ links carry the internals.
 
 ## 1. Shipping model
 
-| Product         | What it is                              | Distribution                    | How it updates                                   |
-| --------------- | --------------------------------------- | ------------------------------- | ------------------------------------------------ |
-| **Web build**   | Static export in `out/`                 | Vercel CDN, no backend          | User reloads; the CDN always serves current      |
-| **Desktop app** | Tauri 2 shell wrapping the same `out/`  | Signed installers, GitHub Release | In-app signed auto-updater, tournament-gated   |
+| Product         | What it is                             | Distribution                      | How it updates                               |
+| --------------- | -------------------------------------- | --------------------------------- | -------------------------------------------- |
+| **Web build**   | Static export in `out/`                | Vercel CDN, no backend            | User reloads; the CDN always serves current  |
+| **Desktop app** | Tauri 2 shell wrapping the same `out/` | Signed installers, GitHub Release | In-app signed auto-updater, tournament-gated |
 
 Local-first invariant holds for all three: no backend, no telemetry. The only
 network the runtime touches is fetching `latest.json` + update artifacts from

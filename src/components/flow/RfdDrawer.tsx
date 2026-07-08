@@ -113,9 +113,7 @@ export default function RfdDrawer() {
                 extensions: [
                     // Vim's keymap must precede the default keymaps so it wins;
                     // read at mount from the store to avoid a stale closure.
-                    vimComp.current.of(
-                        useFlowStore.getState().rfdVim ? vim({ status: true }) : [],
-                    ),
+                    vimComp.current.of(useFlowStore.getState().rfdVim ? vim({ status: true }) : []),
                     history(),
                     drawSelection(),
                     EditorView.lineWrapping,
@@ -192,8 +190,7 @@ export default function RfdDrawer() {
     // preview reads straight from the store. Sanitized because an imported
     // flow's RFD is a trust boundary, not purely the user's own text.
     const rfd = useFlowStore((s) => s.round?.scouting.decision?.rfd ?? "");
-    const previewHtml =
-        mode === "preview" ? DOMPurify.sanitize(marked.parse(rfd) as string) : "";
+    const previewHtml = mode === "preview" ? DOMPurify.sanitize(marked.parse(rfd) as string) : "";
 
     return (
         <section
@@ -265,7 +262,7 @@ export default function RfdDrawer() {
             {mode === "preview" && (
                 <div
                     data-testid="rfd-preview"
-                    className="text-foreground min-h-0 flex-1 overflow-auto px-3.5 py-2.5 text-[14px] leading-relaxed [&_h1]:mt-2 [&_h1]:mb-1 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-base [&_h2]:font-semibold [&_blockquote]:border-border [&_blockquote]:text-muted-foreground [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_li]:ml-4 [&_li]:list-disc [&_p]:my-1.5"
+                    className="text-foreground [&_blockquote]:border-border [&_blockquote]:text-muted-foreground min-h-0 flex-1 overflow-auto px-3.5 py-2.5 text-[14px] leading-relaxed [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_h1]:mt-2 [&_h1]:mb-1 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mt-2 [&_h2]:mb-1 [&_h2]:text-base [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_p]:my-1.5"
                     dangerouslySetInnerHTML={{ __html: previewHtml }}
                 />
             )}

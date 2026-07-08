@@ -34,9 +34,7 @@ describe("saveBlob", () => {
         const blob = new Blob(["hi"]);
         await saveBlob(blob, "x.json");
 
-        expect(picker).toHaveBeenCalledWith(
-            expect.objectContaining({ suggestedName: "x.json" }),
-        );
+        expect(picker).toHaveBeenCalledWith(expect.objectContaining({ suggestedName: "x.json" }));
         expect(write).toHaveBeenCalledWith(blob);
         expect(close).toHaveBeenCalled();
     });

@@ -241,9 +241,7 @@ function SearchPaletteInner() {
                                                     />
                                                 </span>
                                                 {row.hint && (
-                                                    <Kbd className="shrink-0">
-                                                        {row.hint}
-                                                    </Kbd>
+                                                    <Kbd className="shrink-0">{row.hint}</Kbd>
                                                 )}
                                             </span>
                                         ) : (

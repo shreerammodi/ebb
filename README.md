@@ -19,8 +19,10 @@ Desktop builds are found on the [releases page](https://github.com/shreerammodi/
 ### MacOS
 
 1. Download the `.dmg` file for your Mac.
-  - Apple Silicon: `*.aarch64.dmg`
-  - Intel: `*.dmg`
+
+- Apple Silicon: `*.aarch64.dmg`
+- Intel: `*.dmg`
+
 2. Open the `*.dmg` file, and drag Ebb to your Applications folder.
 
 On first launch, you will need to authorize the app to open since it's unsigned.
@@ -47,11 +49,10 @@ If you would like to download standalone versions, you can download the
 
 ### Windows
 
-1. Download  `*-setup.exe`
+1. Download `*-setup.exe`
 2. Run the installer
 
 On first launch, you'll see "Windows protected your PC." Click More info > Run anyway.
-
 
 ### Linux
 
@@ -62,7 +63,6 @@ On first launch, you'll see "Windows protected your PC." Click More info > Run a
 chmod +x Ebb_*.AppImage
 ./Ebb_*.AppImage
 ```
-
 
 ## Building From Source
 

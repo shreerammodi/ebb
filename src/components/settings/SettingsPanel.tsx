@@ -351,7 +351,8 @@ export default function SettingsPanel() {
                                     </span>
                                     <p className="text-muted-foreground mb-1 text-[12px]">
                                         The RFD drawer is where you write your reason for decision
-                                        while reading the flow. Vim keybindings apply to that editor.
+                                        while reading the flow. Vim keybindings apply to that
+                                        editor.
                                     </p>
                                     <label className="flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5">
                                         <span className="text-foreground text-[14px]">

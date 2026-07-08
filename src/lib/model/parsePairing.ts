@@ -74,7 +74,12 @@ export function parsePairing(text: string): PairingPatch {
     return patch;
 }
 
-function assignTeam(patch: PairingPatch, side: "aff" | "neg", team: string, isPolicy: boolean): void {
+function assignTeam(
+    patch: PairingPatch,
+    side: "aff" | "neg",
+    team: string,
+    isPolicy: boolean,
+): void {
     const { school, code } = splitTeam(team);
     if (side === "aff") {
         patch.affSchool = school;

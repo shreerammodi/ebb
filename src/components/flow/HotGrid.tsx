@@ -173,9 +173,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         // already holds focus.
         if (gainedFocus && useFlowStore.getState().splitSheetId != null && hot) {
             const sel = hot.getSelectedLast();
-            const id = requestAnimationFrame(() =>
-                hot.selectCell(sel?.[0] ?? 0, sel?.[1] ?? 0),
-            );
+            const id = requestAnimationFrame(() => hot.selectCell(sel?.[0] ?? 0, sel?.[1] ?? 0));
             return () => cancelAnimationFrame(id);
         }
     }, [isFocused, snapshot]);
@@ -299,7 +297,14 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         if (!e.metaKey && !e.ctrlKey) {
             const commandId = resolveCommand(
                 effectiveKeymap(useFlowStore.getState().keymapOverrides),
-                { key: e.key, code: e.code, metaKey: false, ctrlKey: false, altKey: e.altKey, shiftKey: e.shiftKey },
+                {
+                    key: e.key,
+                    code: e.code,
+                    metaKey: false,
+                    ctrlKey: false,
+                    altKey: e.altKey,
+                    shiftKey: e.shiftKey,
+                },
             );
             if (commandId) {
                 e.preventDefault();
