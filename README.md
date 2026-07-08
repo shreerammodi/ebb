@@ -1,24 +1,43 @@
+<div align="center">
+
+<img src="public/icons/icon-512.png" alt="ebb logo" width="96" height="96" />
+
 # ebb
 
-**ebb** is a modern, keyboard-first app for flowing competitive debate rounds. All data lives on your machine, and ebb is ebb is [free software, as in freedom](https://www.gnu.org/licenses/gpl-3.0.html).
+**A modern, keyboard-first app for flowing competitive debate rounds.**
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-7c3aed.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+
+</div>
+
+**ebb** is a modern, keyboard-first app for flowing competitive debate rounds.
+All data lives on your machine, ebb is ebb is [free software, as in
+freedom](https://www.gnu.org/licenses/gpl-3.0.html).
 
 ## Getting started
 
-To start a local web instance, run:
+Requires [Node.js](https://nodejs.org/) and npm.
 
 ```bash
 npm install
-npm run dev
+npm run dev        # start the local web app at http://localhost:3000
 ```
 
-To generate an installer for the desktop app (preferred), run:
+### Desktop app
+
+The desktop build (via [Tauri](https://tauri.app/)) is the preferred way to run
+ebb.
 
 ```bash
-npm run desktop:build
+npm run desktop:dev      # run the desktop app against a live dev server
+npm run desktop:build    # produce a native installer in src-tauri/target
 ```
 
-Or you could run a live server for the desktop app using
+## Development
 
 ```bash
-npm run desktop:dev
+npm test           # run the test suite (Vitest)
+npm run lint       # lint (ESLint)
+npm run format     # format (oxfmt)
+npm run build      # static production build to ./out
 ```
