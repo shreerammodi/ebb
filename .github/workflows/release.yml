@@ -90,7 +90,7 @@ jobs:
                   # of it. The tag that triggered the run names the release.
                   tagName: ${{ github.ref_name }}
                   releaseName: "Ebb ${{ github.ref_name }}"
-                  releaseBody: "See the assets below to download and install."
+                  releaseBody: "See the assets below to download and install, and the [changelog](https://github.com/shreerammodi/ebb/blob/main/CHANGELOG.md) for a log of updates."
                   releaseDraft: true
                   prerelease: false
                   includeUpdaterJson: true
