@@ -57,6 +57,7 @@ export interface FlowState {
     /** Initial query the palette opens with; ">" seeds command mode. */
     paletteSeed: string;
     settingsOpen: boolean;
+    bulkAddOpen: boolean;
     cheatsheetOpen: boolean;
     infoOpen: boolean;
     sidebarCollapsed: boolean;
@@ -70,6 +71,8 @@ export interface FlowState {
 export interface FlowActions {
     loadRound(round: FlowRound, opts?: { activeSheetId?: string | null; newFlow?: boolean }): void;
     addSheet(input: { title?: string; group: "aff" | "neg" }): string;
+    /** Batch version of addSheet: appends all in one update, activates the first. */
+    addSheets(inputs: { title?: string; group: "aff" | "neg" }[]): string[];
     renameSheet(sheetId: string, title: string): void;
     removeSheet(sheetId: string): RemovedFlowSheet | null;
     restoreSheet(removed: RemovedFlowSheet): void;
@@ -114,6 +117,7 @@ export interface FlowActions {
     /** Opens/closes the palette; `seed` sets the initial query (">" = command mode). */
     setQuickSwitcherOpen(open: boolean, seed?: string): void;
     setSettingsOpen(open: boolean): void;
+    setBulkAddOpen(open: boolean): void;
     setCheatsheetOpen(open: boolean): void;
     setInfoOpen(open: boolean): void;
     setSidebarCollapsed(collapsed: boolean): void;
@@ -281,6 +285,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     quickSwitcherOpen: false,
     paletteSeed: "",
     settingsOpen: false,
+    bulkAddOpen: false,
     cheatsheetOpen: false,
     infoOpen: false,
     sidebarCollapsed: initialDisplaySettings.sidebarCollapsed,
@@ -319,6 +324,27 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             activeSheetId: sheet.id,
         });
         return sheet.id;
+    },
+
+    addSheets(inputs) {
+        const { round } = get();
+        if (!round || inputs.length === 0) return [];
+        let maxOrder = round.sheets.length ? Math.max(...round.sheets.map((s) => s.order)) : -1;
+        // Continue per-side numbering from the current flow-sheet count, like addSheet.
+        const counts: Record<"aff" | "neg", number> = {
+            aff: round.sheets.filter((s) => s.kind === "flow" && s.group === "aff").length,
+            neg: round.sheets.filter((s) => s.kind === "flow" && s.group === "neg").length,
+        };
+        const created = inputs.map((input) => {
+            counts[input.group] += 1;
+            const title = input.title ?? `${counts[input.group]}.`;
+            return makeFlowSheet({ ...input, title, order: ++maxOrder });
+        });
+        set({
+            round: touch({ ...round, sheets: [...round.sheets, ...created] }),
+            activeSheetId: created[0].id,
+        });
+        return created.map((s) => s.id);
     },
 
     renameSheet(sheetId, title) {
@@ -519,6 +545,9 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     },
     setSettingsOpen(open) {
         set({ settingsOpen: open });
+    },
+    setBulkAddOpen(open) {
+        set({ bulkAddOpen: open });
     },
     setCheatsheetOpen(open) {
         set({ cheatsheetOpen: open });

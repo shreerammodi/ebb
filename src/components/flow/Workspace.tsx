@@ -11,6 +11,7 @@ import { useDesktopMenu } from "@/lib/keymap/useDesktopMenu";
 import { useKeymap } from "@/lib/keymap/useKeymap";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
+import BulkAddSheetsDialog from "./BulkAddSheetsDialog";
 import InfoPanel from "./InfoPanel";
 import PrintView from "./PrintView";
 import RfdDrawer from "./RfdDrawer";
@@ -100,6 +101,7 @@ export default function Workspace() {
             <SearchPalette />
             <SettingsPanel />
             <InfoPanel />
+            <BulkAddSheetsDialog />
             <KeybindingsCheatsheet />
             <PrintView />
             <UpdateChip />

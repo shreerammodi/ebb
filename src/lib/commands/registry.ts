@@ -22,6 +22,7 @@ export type CommandId =
     | "sheet.prev"
     | "sheet.newAff"
     | "sheet.newNeg"
+    | "sheet.bulkAdd"
     | "sheet.rename"
     | "sheet.quickSwitch"
     | "sheet.jump1"
@@ -69,6 +70,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "sheet.prev": { id: "sheet.prev", label: "Previous sheet" },
     "sheet.newAff": { id: "sheet.newAff", label: "New aff sheet" },
     "sheet.newNeg": { id: "sheet.newNeg", label: "New neg sheet" },
+    "sheet.bulkAdd": { id: "sheet.bulkAdd", label: "Bulk add sheets" },
     "sheet.rename": { id: "sheet.rename", label: "Rename active sheet" },
     "sheet.quickSwitch": {
         id: "sheet.quickSwitch",

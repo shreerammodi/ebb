@@ -79,6 +79,17 @@ export default function RoundHeader() {
                     data-testid="import-file-input"
                 />
                 <SpeechSwitcher />
+                <Tip label="Bulk add sheets" command="sheet.bulkAdd">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => useFlowStore.getState().setBulkAddOpen(true)}
+                        aria-label="Bulk add sheets"
+                        data-testid="bulk-add-btn"
+                    >
+                        Bulk add
+                    </Button>
+                </Tip>
                 <Tip label="Keyboard shortcuts" command="help.open">
                     <Button
                         variant="ghost"

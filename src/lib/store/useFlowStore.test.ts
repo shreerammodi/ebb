@@ -91,6 +91,35 @@ describe("sheet operations", () => {
         expect(state.round!.id).toBe(round.id);
     });
 
+    it("addSheets appends all in one update, numbering per side and activating the first", () => {
+        loadFresh("aff"); // starts with CX + one aff flow sheet
+        const state = () => useFlowStore.getState();
+        const before = state().round!.updatedAt;
+        const beforeCount = state().round!.sheets.length;
+
+        const ids = state().addSheets([{ group: "aff" }, { group: "aff" }, { group: "neg" }]);
+
+        const sheets = state().round!.sheets;
+        expect(ids).toHaveLength(3);
+        expect(sheets).toHaveLength(beforeCount + 3);
+        const created = ids.map((id) => sheets.find((s) => s.id === id)!);
+        // Existing aff sheet is "1.", so the batch continues per side.
+        expect(created.map((s) => s.title)).toEqual(["2.", "3.", "1."]);
+        expect(created.map((s) => s.group)).toEqual(["aff", "aff", "neg"]);
+        // Appended contiguously after existing sheets, first batch sheet active.
+        expect(created.map((s) => s.order)).toEqual([1, 2, 3]);
+        expect(state().activeSheetId).toBe(ids[0]);
+        expect(state().round!.updatedAt).toBeGreaterThanOrEqual(before);
+    });
+
+    it("addSheets is a no-op on empty input", () => {
+        loadFresh();
+        const state = () => useFlowStore.getState();
+        const before = state().round;
+        expect(state().addSheets([])).toEqual([]);
+        expect(state().round).toBe(before);
+    });
+
     it("renameSheet renames; removeSheet refuses CX and restores cleanly", () => {
         loadFresh();
         const state = () => useFlowStore.getState();
