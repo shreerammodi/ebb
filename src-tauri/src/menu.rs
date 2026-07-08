@@ -31,9 +31,11 @@ use tauri::{AppHandle, Runtime};
 /// Menu item id for the single deliberate-exit path.
 pub const QUIT_ID: &str = "quit";
 
-/// Left edge of the display-only chord column, in 1/1000 em. Past the widest
-/// chord-bearing label so every chord starts at the same x across all menus.
-const CHORD_COLUMN: u32 = 9000;
+/// Right edge of the display-only chord column, in 1/1000 em. Every padded
+/// `label + chord` is stretched to end here, so the chords right-align against a
+/// shared column the way macOS aligns real key-equivalents. Past the widest
+/// `label + chord` across all menus.
+const CHORD_END: u32 = 10000;
 
 /// Rough advance width of a menu-font glyph in 1/1000 em. macOS draws menus in
 /// a proportional font, so padding by character count (all labels to N chars)
@@ -52,15 +54,16 @@ fn char_width(c: char) -> u32 {
     }
 }
 
-/// Pads a label with spaces so its display-only chord hint starts at
-/// `CHORD_COLUMN`. Only the label is measured; the chord's Unicode glyphs never
-/// affect the padding.
+/// Pads a label with spaces so its display-only chord hint ends at `CHORD_END`,
+/// right-aligning the chords into a shared column. Both the label and the
+/// chord's glyphs are measured so wider chords (e.g. Shift+Meta+Z) shift left to
+/// keep their trailing edge on the column.
 fn pad(label: &str, chord: &str) -> String {
     if chord.is_empty() {
         return label.to_string();
     }
-    let width: u32 = label.chars().map(char_width).sum();
-    let spaces = ((CHORD_COLUMN.saturating_sub(width) + 140) / 280).max(2) as usize;
+    let width: u32 = label.chars().chain(chord.chars()).map(char_width).sum();
+    let spaces = ((CHORD_END.saturating_sub(width) + 140) / 280).max(2) as usize;
     format!("{label}{}{chord}", " ".repeat(spaces))
 }
 
@@ -163,16 +166,15 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
 mod tests {
     use super::pad;
 
-    fn chord_start(padded: &str) -> u32 {
-        let label: String = padded.chars().take_while(|c| *c != '\u{2318}').collect();
-        label.chars().map(super::char_width).sum()
+    fn chord_end(padded: &str) -> u32 {
+        padded.chars().map(super::char_width).sum()
     }
 
     #[test]
     fn short_and_wide_labels_align_within_a_space() {
         let a = pad("Undo", "\u{2318}Z");
         let b = pad("Keyboard Shortcuts", "\u{2318}A");
-        let diff = chord_start(&a).abs_diff(chord_start(&b));
+        let diff = chord_end(&a).abs_diff(chord_end(&b));
         assert!(diff <= 280, "chords misaligned by {diff}/1000 em");
     }
 }
