@@ -11,7 +11,7 @@
 </div>
 
 **ebb** is a modern, keyboard-first app for flowing competitive debate rounds.
-All data lives on your machine, ebb is ebb is [free software, as in
+All data lives on your machine, ebb is [free software, as in
 freedom](https://www.gnu.org/licenses/gpl-3.0.html).
 
 ## Getting started
