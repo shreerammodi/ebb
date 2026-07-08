@@ -73,7 +73,7 @@ function InfoPanelInner() {
                     <DialogTitle className="text-foreground text-[13px] font-semibold tracking-wide">
                         Round Info
                     </DialogTitle>
-                    <Tip label="Close">
+                    <Tip label="Close" hoverOnly>
                         <DialogClose
                             aria-label="Close info"
                             data-testid="info-close"

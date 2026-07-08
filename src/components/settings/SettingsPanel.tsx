@@ -153,7 +153,7 @@ export default function SettingsPanel() {
                 {/* Header */}
                 <div className="border-border flex items-center justify-between border-b px-4 py-3">
                     <span className="text-foreground text-[15px] font-semibold">Settings</span>
-                    <Tip label="Close">
+                    <Tip label="Close" hoverOnly>
                         <DialogClose
                             data-testid="settings-close"
                             aria-label="Close settings"

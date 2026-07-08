@@ -56,14 +56,26 @@ interface TipProps {
     label: React.ReactNode;
     command?: CommandId;
     side?: React.ComponentProps<typeof TooltipPrimitive.Content>["side"];
+    /**
+     * Show only on hover, never on focus. Radix composes the trigger's onFocus
+     * before its own open handler, so preventing the focus default skips the
+     * open. Set this on a trigger a dialog auto-focuses on open (e.g. a Close
+     * button) so the tip does not pop up unprompted every time the dialog opens.
+     */
+    hoverOnly?: boolean;
     children: React.ReactNode;
 }
 
-function Tip({ label, command, side, children }: TipProps) {
+function Tip({ label, command, side, hoverOnly, children }: TipProps) {
     const hint = command ? keyHintFor(command) : null;
     return (
         <Tooltip>
-            <TooltipTrigger asChild>{children}</TooltipTrigger>
+            <TooltipTrigger
+                asChild
+                onFocus={hoverOnly ? (e) => e.preventDefault() : undefined}
+            >
+                {children}
+            </TooltipTrigger>
             <TooltipContent side={side}>
                 <span>{label}</span>
                 {hint && (
