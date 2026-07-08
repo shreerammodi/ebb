@@ -4,7 +4,7 @@ Guidance for AI agents working in this repository.
 
 ## Project
 
-**Debate Flow** is a local-first, privacy-centric, keyboard-first web app for
+**ebb** is a local-first, privacy-centric, keyboard-first web app for
 flowing competitive debate rounds. All data lives in the browser (IndexedDB via
 Dexie); there is no backend. The app is built as a static export.
 
@@ -120,10 +120,11 @@ edge case; otherwise leave the code bare.
 ## Notes for agents
 
 - There is no server; `npm run build` produces a static site in `./out`.
-- **Keep the in-app guide current.** When a change adds, removes, or reshapes a
+- **Keep the guide current.** When a change adds, removes, or reshapes a
   component or anything a user sees or does, update the guide in the same change
-  so it never drifts: shortcut tables and the Basics copy live in
-  `src/components/palette/KeybindingsCheatsheet.tsx` (the `?` dialog).
+  so it never drifts. The `?` dialog
+  (`src/components/palette/KeybindingsCheatsheet.tsx`) is a keyboard-shortcut
+  reference only; conceptual/workflow copy lives in `docs/ebb.md`.
 - When adding a UI primitive, follow the existing `components/ui` (shadcn-style)
   patterns; `components.json` configures the generator.
 - **Binding a printable key (no Ctrl/Meta) to a command is a trap.** With the

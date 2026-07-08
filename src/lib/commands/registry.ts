@@ -86,7 +86,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "settings.open": { id: "settings.open", label: "Open settings" },
     "info.open": { id: "info.open", label: "Open round info" },
     "rfd.toggle": { id: "rfd.toggle", label: "Toggle RFD" },
-    "help.open": { id: "help.open", label: "Open guide" },
+    "help.open": { id: "help.open", label: "Keyboard shortcuts" },
     "sidebar.toggle": { id: "sidebar.toggle", label: "Toggle sidebar" },
     "split.toggle": { id: "split.toggle", label: "Toggle split view" },
     "split.focusLeft": { id: "split.focusLeft", label: "Focus left pane" },

@@ -79,15 +79,15 @@ export default function RoundHeader() {
                     data-testid="import-file-input"
                 />
                 <SpeechSwitcher />
-                <Tip label="Guide" command="help.open">
+                <Tip label="Keyboard shortcuts" command="help.open">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
-                        aria-label="Guide"
+                        aria-label="Keyboard shortcuts"
                         data-testid="guide-btn"
                     >
-                        Guide
+                        Shortcuts
                     </Button>
                 </Tip>
                 <Tip label="Round info" command="info.open">

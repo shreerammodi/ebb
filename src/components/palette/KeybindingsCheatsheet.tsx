@@ -7,44 +7,8 @@ import { prettyChord, buildChordMap } from "@/lib/keymap/displayChord";
 import { isMacPlatform } from "@/lib/platform";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
-const BASICS: { heading: string; body: string }[] = [
-    {
-        heading: "Flowing",
-        body: "Each column is a speech. Type an argument in a cell; Enter commits and drops down so responses stack beneath it, Tab commits and moves right to answer across into the next speech.",
-    },
-    {
-        heading: "Sheets and sides",
-        body: "A sheet is one flow. Aff sheets read blue, neg red, recolor either side under Settings > Display. Add them with the shortcuts below, reorder them in the sidebar, and jump straight to one by its number. Switch speeches from the header to drop your cursor on any speech's top row across every sheet.",
-    },
-    {
-        heading: "Split view",
-        body: "Toggle split view to lay two sheets side by side, like reading a DA next to case on paper. Move focus between the panes with the focus-left and focus-right shortcuts; picking a sheet in the sidebar or palette retargets the focused pane.",
-    },
-    {
-        heading: "Marking cells",
-        body: "Bold a claim, highlight what matters, or tag a cell as a card (evidence). Select a run of cells and group them to bracket a cluster of responses under one argument. These combine freely and surface in search.",
-    },
-    {
-        heading: "Find anything",
-        body: "Search cells to jump to any argument across every sheet. The command palette runs every action by name when a shortcut slips your mind.",
-    },
-    {
-        heading: "Round info",
-        body: "Open round info to record the teams, judge, and decision for scouting later. Paste a Tabroom pairing into the box at the top to autofill the sheet; if it already has details, it asks before replacing them.",
-    },
-    {
-        heading: "Writing an RFD",
-        body: "Open the RFD drawer to write your decision while scanning the flow. On a > blockquote line, start typing and pick a suggestion to drop the exact wording of any cell straight into your reasoning. Toggle Preview in the drawer header to see it rendered, and turn on vim keybindings for the editor in Settings > Display.",
-    },
-    {
-        heading: "Your data",
-        body: "Everything lives in this browser and autosaves as you type. Nothing is sent anywhere, and undo reaches back through your whole history.",
-    },
-    {
-        heading: "Config file",
-        body: "On the desktop app your settings mirror to a plain-text config.toml (in $XDG_CONFIG_HOME/ebb, else ~/.config/ebb, or %APPDATA%\\ebb on Windows). Edit it in any editor and changes apply live; changes you make in the app write back to it, and comments you add are kept.",
-    },
-];
+// Points at the GitHub-rendered guide today; swap for the docs site once it exists.
+const GUIDE_URL = "https://github.com/shreerammodi/ebb/blob/main/docs/ebb.md";
 
 /** Grid-native gestures owned by Handsontable; fixed, not rebindable. */
 const FIXED_GROUPS: { label: string; rows: { chord: string; label: string }[] }[] = [
@@ -150,24 +114,11 @@ export default function KeybindingsCheatsheet() {
             >
                 <DialogHeader className="border-border shrink-0 border-b px-[18px] pt-[14px] pb-2.5">
                     <DialogTitle className="text-foreground text-sm font-semibold">
-                        Guide
+                        Keyboard shortcuts
                     </DialogTitle>
                 </DialogHeader>
 
                 <div className="overflow-y-auto">
-                    <div className="border-border flex flex-col gap-2.5 border-b px-[18px] py-3">
-                        {BASICS.map((item) => (
-                            <div key={item.heading} className="flex flex-col gap-0.5">
-                                <div className="text-muted-foreground font-mono text-[9px] font-bold tracking-widest uppercase">
-                                    {item.heading}
-                                </div>
-                                <p className="text-foreground text-[12px] leading-snug">
-                                    {item.body}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-
                     <div
                         className="grid gap-4 px-[18px] py-3"
                         style={{ gridTemplateColumns: "1fr 1fr" }}
@@ -229,8 +180,17 @@ export default function KeybindingsCheatsheet() {
                     </div>
                 </div>
 
-                <div className="border-border text-muted-foreground shrink-0 border-t px-[18px] py-2 text-[11px]">
-                    Every action here also lives in the command palette. Press ? to close.
+                <div className="border-border text-muted-foreground flex shrink-0 items-center justify-between gap-2 border-t px-[18px] py-2 text-[11px]">
+                    <span>Every action here also lives in the command palette. Press ? to close.</span>
+                    <a
+                        href={GUIDE_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-foreground shrink-0 underline underline-offset-2"
+                        data-testid="cheatsheet-guide-link"
+                    >
+                        User guide
+                    </a>
                 </div>
             </DialogContent>
         </Dialog>

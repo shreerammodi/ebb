@@ -113,11 +113,11 @@ export default function Dashboard() {
                 <Button
                     variant="ghost"
                     size="sm"
-                    aria-label="Guide"
+                    aria-label="Keyboard shortcuts"
                     data-testid="dashboard-guide"
                     onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
                 >
-                    Guide
+                    Shortcuts
                 </Button>
                 <NewFlowButton />
             </div>

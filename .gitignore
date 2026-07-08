@@ -23,5 +23,6 @@ docs/*
 !docs/DESIGN.md
 !docs/PRODUCT.md
 !docs/RELEASE.md
+!docs/ebb.md
 
 TODO.md
