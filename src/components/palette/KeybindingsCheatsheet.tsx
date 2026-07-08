@@ -1,6 +1,7 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Kbd } from "@/components/ui/kbd";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { prettyChord, buildChordMap } from "@/lib/keymap/displayChord";
 import { useFlowStore } from "@/lib/store/useFlowStore";
@@ -37,6 +38,10 @@ const BASICS: { heading: string; body: string }[] = [
     {
         heading: "Your data",
         body: "Everything lives in this browser and autosaves as you type. Nothing is sent anywhere, and undo reaches back through your whole history.",
+    },
+    {
+        heading: "Config file",
+        body: "On the desktop app your settings mirror to a plain-text config.toml (in $XDG_CONFIG_HOME/ebb, else ~/.config/ebb, or %APPDATA%\\ebb on Windows). Edit it in any editor and changes apply live; changes you make in the app write back to it, and comments you add are kept.",
     },
 ];
 
@@ -170,9 +175,9 @@ export default function KeybindingsCheatsheet() {
                                 <div className="flex flex-col gap-0.5">
                                     {group.rows.map((row) => (
                                         <div key={row.label} className="flex items-center gap-2">
-                                            <kbd className="text-foreground border-border bg-muted inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 px-1.5 py-px font-mono text-[12px] whitespace-nowrap">
+                                            <Kbd className="min-w-[26px] shrink-0 px-1.5 text-[12px]">
                                                 {row.chord}
-                                            </kbd>
+                                            </Kbd>
                                             <span className="text-foreground text-[12px]">
                                                 {row.label}
                                             </span>
@@ -204,9 +209,9 @@ export default function KeybindingsCheatsheet() {
                                                 key={commandId}
                                                 className="flex items-center gap-2"
                                             >
-                                                <kbd className="text-foreground border-border bg-muted inline-flex min-w-[26px] shrink-0 items-center justify-center rounded border border-b-2 px-1.5 py-px font-mono text-[12px] whitespace-nowrap">
+                                                <Kbd className="min-w-[26px] shrink-0 px-1.5 text-[12px]">
                                                     {displayChord}
-                                                </kbd>
+                                                </Kbd>
                                                 <span className="text-foreground text-[12px]">
                                                     {label}
                                                 </span>

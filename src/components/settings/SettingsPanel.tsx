@@ -13,6 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Tip } from "@/components/ui/tooltip";
 import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { FONTS, DEFAULT_FONT_ID, type FontId } from "@/lib/fonts/registry";
@@ -348,17 +349,16 @@ export default function SettingsPanel() {
                                     <span className="text-foreground text-[13px] font-medium">
                                         RFD editor
                                     </span>
-                                    <label className="flex w-fit cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5">
-                                        <input
-                                            type="checkbox"
-                                            checked={rfdVim}
-                                            onChange={(e) => setRfdVim(e.target.checked)}
-                                            data-testid="rfd-vim-toggle"
-                                            className="accent-sel"
-                                        />
+                                    <label className="flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5">
                                         <span className="text-foreground text-[14px]">
                                             Vim keybindings
                                         </span>
+                                        <Switch
+                                            checked={rfdVim}
+                                            onCheckedChange={setRfdVim}
+                                            data-testid="rfd-vim-toggle"
+                                            aria-label="Vim keybindings"
+                                        />
                                     </label>
                                 </div>
                             </div>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Kbd } from "@/components/ui/kbd";
 import { executeCommand } from "@/lib/commands/commands";
 import { keyHintFor } from "@/lib/keymap/displayChord";
 import { searchCells } from "@/lib/search/cellSearch";
@@ -240,9 +241,9 @@ function SearchPaletteInner() {
                                                     />
                                                 </span>
                                                 {row.hint && (
-                                                    <kbd className="shrink-0 text-[11px]">
+                                                    <Kbd className="shrink-0">
                                                         {row.hint}
-                                                    </kbd>
+                                                    </Kbd>
                                                 )}
                                             </span>
                                         ) : (
