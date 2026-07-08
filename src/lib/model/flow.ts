@@ -93,10 +93,7 @@ export function makeFlowRound(role: Role): FlowRound {
         deletedAt: null,
         role,
         scouting: emptyScouting(),
-        sheets: [
-            makeCxFlowSheet(),
-            makeFlowSheet({ title: "1.", group: side, order: 0 }),
-        ],
+        sheets: [makeCxFlowSheet(), makeFlowSheet({ title: "1.", group: side, order: 0 })],
     };
 }
 

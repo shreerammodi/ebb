@@ -163,7 +163,10 @@ export default function Dashboard() {
                                 onClick={() => createFlow("judge")}
                                 className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
                             >
-                                <span className="bg-muted-foreground size-2 rounded-full" aria-hidden />
+                                <span
+                                    className="bg-muted-foreground size-2 rounded-full"
+                                    aria-hidden
+                                />
                                 Judge
                             </button>
                         </div>
