@@ -50,7 +50,7 @@ const FIXED_GROUPS: { label: string; rows: { chord: string; label: string }[] }[
     {
         label: "Editing (fixed)",
         rows: [
-            { chord: "Enter", label: "Commit and move down" },
+            { chord: "Enter", label: "Next row / commit edit" },
             { chord: "Alt+Enter", label: "New line in cell" },
             { chord: "Tab", label: "Commit and move right" },
             { chord: "Esc", label: "Cancel edit" },
