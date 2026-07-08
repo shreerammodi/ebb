@@ -2,6 +2,7 @@
     "name": "debate-flow",
     "version": "0.1.0",
     "private": true,
+    "license": "MPL-2.0",
     "scripts": {
         "dev": "next dev",
         "build": "next build",
