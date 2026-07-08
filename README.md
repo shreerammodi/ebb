@@ -4,8 +4,6 @@
 
 # ebb
 
-**A modern, keyboard-first app for flowing competitive debate rounds.**
-
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-7c3aed.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 </div>
