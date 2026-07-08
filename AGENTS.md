@@ -120,11 +120,9 @@ edge case; otherwise leave the code bare.
 ## Notes for agents
 
 - There is no server; `npm run build` produces a static site in `./out`.
-- **Keep the guide current.** When a change adds, removes, or reshapes a
-  component or anything a user sees or does, update the guide in the same change
-  so it never drifts. The `?` dialog
-  (`src/components/palette/KeybindingsCheatsheet.tsx`) is a keyboard-shortcut
-  reference only; conceptual/workflow copy lives in `docs/ebb.md`.
+- The `?` dialog (`src/components/palette/KeybindingsCheatsheet.tsx`) is a
+  keyboard-shortcut reference only; conceptual/workflow docs live on the
+  external site at https://ebb.smodi.net (outside this repo).
 - When adding a UI primitive, follow the existing `components/ui` (shadcn-style)
   patterns; `components.json` configures the generator.
 - **Binding a printable key (no Ctrl/Meta) to a command is a trap.** With the

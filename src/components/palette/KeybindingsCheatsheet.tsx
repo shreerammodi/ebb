@@ -7,8 +7,7 @@ import { prettyChord, buildChordMap } from "@/lib/keymap/displayChord";
 import { isMacPlatform } from "@/lib/platform";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
-// Points at the GitHub-rendered guide today; swap for the docs site once it exists.
-const GUIDE_URL = "https://github.com/shreerammodi/ebb/blob/main/docs/ebb.md";
+const GUIDE_URL = "https://ebb.smodi.net";
 
 /** Grid-native gestures owned by Handsontable; fixed, not rebindable. */
 const FIXED_GROUPS: { label: string; rows: { chord: string; label: string }[] }[] = [
