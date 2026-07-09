@@ -70,3 +70,17 @@ export async function getCurrentVersion(): Promise<string> {
         return "0.0.0";
     }
 }
+
+/**
+ * `[os, arch]` of the running desktop binary, e.g. `["macos", "aarch64"]`.
+ * Null on web or if the runtime can't be reached.
+ */
+export async function getSystemInfo(): Promise<[string, string] | null> {
+    if (!isDesktop()) return null;
+    try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        return await invoke<[string, string]>("system_info");
+    } catch {
+        return null;
+    }
+}

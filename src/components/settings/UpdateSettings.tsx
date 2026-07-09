@@ -1,10 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+import { getCurrentVersion, getSystemInfo } from "@/lib/update/adapter";
 
 import { useUpdate } from "../update/UpdateProvider";
+
+/** Rust's `std::env::consts` names, spelled the way people say them. */
+const OS_LABELS: Record<string, string> = {
+    macos: "macOS",
+    windows: "Windows",
+    linux: "Linux",
+};
+const ARCH_LABELS: Record<string, string> = {
+    aarch64: "arm64",
+    x86_64: "x86-64",
+};
 
 function statusLine(status: string, version?: string): string | null {
     switch (status) {
@@ -32,6 +46,24 @@ export default function UpdateSettings() {
     const config = useFlowStore((s) => s.updateConfig);
     const setUpdateConfig = useFlowStore((s) => s.setUpdateConfig);
     const { state, checkNow } = useUpdate();
+    const [install, setInstall] = useState<{ version: string; platform: string } | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        void Promise.all([getCurrentVersion(), getSystemInfo()]).then(([version, system]) => {
+            if (cancelled) return;
+            const [os, arch] = system ?? [];
+            setInstall({
+                version,
+                platform: os
+                    ? `${OS_LABELS[os] ?? os} (${arch ? (ARCH_LABELS[arch] ?? arch) : "unknown"})`
+                    : "Unknown",
+            });
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const busy = state.status === "checking" || state.status === "downloading";
     const message = statusLine(
@@ -97,6 +129,20 @@ export default function UpdateSettings() {
                     aria-label="Tournament Mode"
                 />
             </label>
+
+            {/* This install */}
+            {install && (
+                <dl className="border-border border-t pt-3 text-[12px]" data-testid="install-info">
+                    <div className="flex items-center justify-between py-0.5">
+                        <dt className="text-muted-foreground">Version</dt>
+                        <dd className="text-foreground tabular-nums">{install.version}</dd>
+                    </div>
+                    <div className="flex items-center justify-between py-0.5">
+                        <dt className="text-muted-foreground">Platform</dt>
+                        <dd className="text-foreground">{install.platform}</dd>
+                    </div>
+                </dl>
+            )}
         </div>
     );
 }

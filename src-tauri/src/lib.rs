@@ -9,6 +9,14 @@ mod menu;
 
 use tauri::{Emitter, WindowEvent};
 
+/// `[os, arch]` of the running binary, e.g. `["macos", "aarch64"]`. The webview
+/// user agent can't be trusted for either (macOS reports "Intel" on Apple
+/// Silicon), so the values come from the compiled target.
+#[tauri::command]
+fn system_info() -> [&'static str; 2] {
+    [std::env::consts::OS, std::env::consts::ARCH]
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -37,7 +45,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             config::read_config,
-            config::write_config
+            config::write_config,
+            system_info
         ])
         // Quit is the single deliberate exit; it routes here and exits directly,
         // bypassing the close guard below. Every other menu item carries a JS
