@@ -31,6 +31,7 @@ const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
         [`${mod}+j`]: "rfd.toggle",
         [`${mod}+Backspace`]: "row.delete",
         [`${mod}+o`]: "cell.insert",
+        [`${mod}+Alt+o`]: "cell.insertBelow",
         // Default pushes the current row down; rebind to row.insertBelow in
         // Settings to insert underneath instead.
         [`${mod}+O`]: "row.insertAbove",

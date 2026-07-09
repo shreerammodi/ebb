@@ -71,16 +71,19 @@ function alterRow(action: "insert_row_above" | "insert_row_below" | "remove_row"
 }
 
 /**
- * Insert a blank cell at the selection, shifting that column's cells (text and
- * decoration meta) below it down by one. Unlike a row insert, adjacent speech
- * columns keep their rows; the last row's value falls off the bottom.
+ * Insert a blank cell at or just below the selection, shifting that column's
+ * cells (text and decoration meta) below it down by one. Unlike a row insert,
+ * adjacent speech columns keep their rows; the last row's value falls off the
+ * bottom.
  */
-function insertCell(): void {
+function insertCell(where: "at" | "below"): void {
     const hot = getActiveHot();
     const sel = hot?.getSelectedLast();
     if (!hot || !sel) return;
-    const [row, col] = sel;
+    const col = sel[1];
     const last = hot.countRows() - 1;
+    const row = where === "below" ? sel[0] + 1 : sel[0];
+    if (row > last) return;
 
     // Bottom-up so each read of (r-1) sees the pre-shift value/meta.
     const values: [number, number, string | null][] = [];
@@ -136,7 +139,10 @@ export function executeCommand(id: CommandId): void {
             alterRow("remove_row");
             return;
         case "cell.insert":
-            insertCell();
+            insertCell("at");
+            return;
+        case "cell.insertBelow":
+            insertCell("below");
             return;
 
         // --- Sheets ----------------------------------------------------------
