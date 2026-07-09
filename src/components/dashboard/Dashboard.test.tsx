@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
+import SettingsPanel from "@/components/settings/SettingsPanel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { emptyScouting, makeFlowRound, type FlowRound } from "@/lib/model/flow";
 import { flowDb } from "@/lib/persistence/flowDb";
@@ -14,10 +15,12 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import Dashboard from "./Dashboard";
 
+// The real app mounts <SettingsPanel> in the root layout, not in <Dashboard>.
 function renderDashboard() {
     return render(
         <TooltipProvider>
             <Dashboard />
+            <SettingsPanel />
         </TooltipProvider>,
     );
 }

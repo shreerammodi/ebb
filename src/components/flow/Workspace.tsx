@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
 import SearchPalette from "@/components/palette/SearchPalette";
-import SettingsPanel from "@/components/settings/SettingsPanel";
 import CriticalUpdateModal from "@/components/update/CriticalUpdateModal";
 import UpdateChip from "@/components/update/UpdateChip";
 import { useDesktopMenu } from "@/lib/keymap/useDesktopMenu";
@@ -99,7 +98,6 @@ export default function Workspace() {
             </div>
             {rfdOpen && roundId && <RfdDrawer key={roundId} />}
             <SearchPalette />
-            <SettingsPanel />
             <InfoPanel />
             <BulkAddSheetsDialog />
             <KeybindingsCheatsheet />

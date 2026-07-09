@@ -19,6 +19,7 @@ import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { FONTS, DEFAULT_FONT_ID, type FontId } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { eventToChord } from "@/lib/keymap/resolve";
+import { useSettingsShortcut } from "@/lib/keymap/useSettingsShortcut";
 import type { Side } from "@/lib/model/types";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 import { DEFAULT_SIDE_COLORS } from "@/lib/theme/applySideColors";
@@ -62,6 +63,9 @@ function chordForCommand(bindings: Record<string, CommandId>): Record<string, st
 }
 
 export default function SettingsPanel() {
+    // The panel owns the chord that opens it, so it works on every screen.
+    useSettingsShortcut();
+
     const open = useFlowStore((s) => s.settingsOpen);
     const keymapOverrides = useFlowStore((s) => s.keymapOverrides);
     const setKeymapOverride = useFlowStore((s) => s.setKeymapOverride);

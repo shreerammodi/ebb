@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 
 import ConfigFileSync from "@/components/ConfigFileSync";
 import DesktopSelectAll from "@/components/DesktopSelectAll";
+import SettingsPanel from "@/components/settings/SettingsPanel";
 import ThemeSync from "@/components/ThemeSync";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UpdateProvider } from "@/components/update/UpdateProvider";
@@ -302,6 +303,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <ConfigFileSync />
                 <TooltipProvider>
                     <UpdateProvider>{children}</UpdateProvider>
+                    {/* Mounted here, not per screen: the settings chord works
+                        on the dashboard and trash as well as in a flow. */}
+                    <SettingsPanel />
                 </TooltipProvider>
                 <Toaster position="bottom-center" />
             </body>

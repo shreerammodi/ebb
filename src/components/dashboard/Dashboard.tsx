@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
-import SettingsPanel from "@/components/settings/SettingsPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
@@ -247,7 +246,6 @@ export default function Dashboard() {
                 )}
             </div>
 
-            <SettingsPanel />
             <KeybindingsCheatsheet />
             <FlowDetailDrawer id={detailId} onClose={() => setDetailId(null)} onChanged={refresh} />
         </div>
