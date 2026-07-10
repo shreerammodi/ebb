@@ -10,7 +10,12 @@ vi.mock("sonner", () => ({
 
 import { emptyScouting, makeFlowRound, type FlowRound } from "@/lib/model/flow";
 import { flowDb } from "@/lib/persistence/flowDb";
-import { listFlows, persistFlow, softDeleteFlow } from "@/lib/persistence/flowPersistence";
+import {
+    invalidateFlowSummaries,
+    listFlows,
+    persistFlow,
+    softDeleteFlow,
+} from "@/lib/persistence/flowPersistence";
 
 import TrashView from "./TrashView";
 
@@ -26,6 +31,7 @@ function mk(id: string): FlowRound {
 
 beforeEach(async () => {
     await flowDb.flows.clear();
+    invalidateFlowSummaries();
 });
 
 describe("TrashView", () => {

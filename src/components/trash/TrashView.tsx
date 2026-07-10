@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import FlowCard from "@/components/dashboard/FlowCard";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { flowDb } from "@/lib/persistence/flowDb";
 import {
     deleteFlowForever,
@@ -52,7 +53,21 @@ export default function TrashView() {
         else void emptyTrash();
     }
 
-    if (items === null) return null;
+    if (items === null) {
+        // Held frame, not a blank screen, matching the dashboard's load.
+        return (
+            <div className="bg-background min-h-screen">
+                <div className="border-border bg-card flex items-center gap-3 border-b px-5 py-4">
+                    <Skeleton className="h-5 w-24" />
+                </div>
+                <div className="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-[168px] rounded-lg" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-background min-h-screen">

@@ -132,6 +132,11 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     const hotRef = useRef<HotTableRef>(null);
     const currentSheetIdRef = useRef<string | null>(null);
     const viewCache = useRef(new Map<string, { row: number; col: number }>());
+    // afterRenderer and afterGetColHeader run once per cell per render cycle, so
+    // they index this instead of re-deriving the column list per cell. A sheet's
+    // columns depend only on kind/group/startSpeechId, none of which change after
+    // creation, so the sheet-switch effect is the only writer.
+    const colsRef = useRef<SpeechCol[]>([]);
 
     const snapshot = useCallback(() => {
         const hot = hotRef.current?.hotInstance;
@@ -195,6 +200,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         currentSheetIdRef.current = sheet.id;
 
         const cols = columnsForFlowSheet(sheet);
+        colsRef.current = cols;
         // Coalesce the data/header swap and the per-cell meta loop into one
         // render instead of updateSettings' render plus an explicit one.
         hot.batch(() => {
@@ -257,21 +263,13 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     }, [speechTarget, isFocused]);
 
     const afterGetColHeader = useCallback((col: number, TH: HTMLTableCellElement) => {
-        const round = useFlowStore.getState().round;
-        const sid = currentSheetIdRef.current;
-        const sheet = round?.sheets.find((s) => s.id === sid);
-        if (!sheet || col < 0) return;
-        const side = columnsForFlowSheet(sheet)[col]?.side;
+        const side = col < 0 ? undefined : colsRef.current[col]?.side;
         if (side) TH.classList.add(side === "aff" ? "hd-aff" : "hd-neg");
     }, []);
 
     // Cells inherit their column header's side color: blue for aff, red for neg.
     const afterRenderer = useCallback((TD: HTMLTableCellElement, _r: number, col: number) => {
-        const round = useFlowStore.getState().round;
-        const sid = currentSheetIdRef.current;
-        const sheet = round?.sheets.find((s) => s.id === sid);
-        if (!sheet) return;
-        const side = columnsForFlowSheet(sheet)[col]?.side;
+        const side = colsRef.current[col]?.side;
         if (side) TD.classList.add(side === "aff" ? "cell-aff" : "cell-neg");
     }, []);
 

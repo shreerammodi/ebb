@@ -13,6 +13,7 @@ export type { RoundSummary };
 
 export async function persistFlow(round: FlowRound): Promise<void> {
     await flowDb.flows.put(normalizeFlow(round));
+    invalidateFlowSummaries();
 }
 
 export async function loadFlow(id: string): Promise<FlowRound | undefined> {
@@ -20,31 +21,67 @@ export async function loadFlow(id: string): Promise<FlowRound | undefined> {
     return r ? normalizeFlow(r) : undefined;
 }
 
+// --- Summary cache -----------------------------------------------------------
+
+/**
+ * IndexedDB hands back whole rounds - every sheet, every cell - and the two
+ * list views need only the scouting header off each. One memoized scan serves
+ * both, so returning to the dashboard, or refreshing it after a rename, never
+ * re-deserializes the library. Caching the promise rather than its value also
+ * coalesces concurrent callers into a single read.
+ *
+ * ponytail: warm path only; the first scan of a session still reads every
+ * round whole. Denormalize summaries into their own table if a large library
+ * opens slowly.
+ */
+let scan: Promise<{ summary: RoundSummary; deleted: boolean }[]> | null = null;
+
+function scanSummaries() {
+    scan ??= flowDb.flows
+        .orderBy("updatedAt")
+        .reverse()
+        .toArray()
+        .then((rounds) =>
+            rounds.map((r) => ({ summary: buildSummary(r), deleted: r.deletedAt != null })),
+        )
+        .catch((err) => {
+            scan = null;
+            throw err;
+        });
+    return scan;
+}
+
+/** Every write to the flows table must call this or the lists serve stale cards. */
+export function invalidateFlowSummaries(): void {
+    scan = null;
+}
+
 /** Live (non-trashed) round summaries, most-recently-updated first. */
 export async function listFlows(): Promise<RoundSummary[]> {
-    const rounds = await flowDb.flows.orderBy("updatedAt").reverse().toArray();
-    return rounds.filter((r) => r.deletedAt == null).map(buildSummary);
+    return (await scanSummaries()).filter((r) => !r.deleted).map((r) => r.summary);
 }
 
 /** Trashed round summaries, most-recently-updated first. */
 export async function listFlowTrash(): Promise<RoundSummary[]> {
-    const rounds = await flowDb.flows.orderBy("updatedAt").reverse().toArray();
-    return rounds.filter((r) => r.deletedAt != null).map(buildSummary);
+    return (await scanSummaries()).filter((r) => r.deleted).map((r) => r.summary);
 }
 
 /** Move a round to Trash (soft delete). */
 export async function softDeleteFlow(id: string): Promise<void> {
     await flowDb.flows.update(id, { deletedAt: Date.now() });
+    invalidateFlowSummaries();
 }
 
 /** Restore a trashed round. */
 export async function restoreFlow(id: string): Promise<void> {
     await flowDb.flows.update(id, { deletedAt: null });
+    invalidateFlowSummaries();
 }
 
 /** Permanently delete a round. */
 export async function deleteFlowForever(id: string): Promise<void> {
     await flowDb.flows.delete(id);
+    invalidateFlowSummaries();
 }
 
 // --- Autosave ----------------------------------------------------------------

@@ -10,7 +10,7 @@ import SettingsPanel from "@/components/settings/SettingsPanel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { emptyScouting, makeFlowRound, type FlowRound } from "@/lib/model/flow";
 import { flowDb } from "@/lib/persistence/flowDb";
-import { persistFlow } from "@/lib/persistence/flowPersistence";
+import { invalidateFlowSummaries, persistFlow } from "@/lib/persistence/flowPersistence";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import Dashboard from "./Dashboard";
@@ -53,6 +53,7 @@ afterEach(() => {
 
 beforeEach(async () => {
     await flowDb.flows.clear();
+    invalidateFlowSummaries();
     push.mockReset();
     localStorage.clear();
     useFlowStore.getState().setSettingsOpen(false);
