@@ -17,9 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   selected cells along their column and the cells they pass over flow around
   them; Meta/Ctrl with them lands the block against the next filled cell. Enter
   commits the whole move as one undo step, Esc puts everything back.
+- Show the installed version and platform in Settings > Updates.
 
 ### Changed
 
+- Open Settings with its chord from any screen, not just the dashboard and a
+  flow.
 - Read the flow library once per session instead of on every dashboard visit,
   so returning from a flow, or refreshing after a rename or delete, no longer
   reloads every round.
