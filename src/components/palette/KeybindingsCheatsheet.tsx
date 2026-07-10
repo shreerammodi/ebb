@@ -33,6 +33,18 @@ const FIXED_GROUPS: { label: string; rows: { chord: string; label: string }[] }[
             },
         ],
     },
+    {
+        label: "Move mode (fixed)",
+        rows: [
+            { chord: "Up / Down", label: "Nudge cells one row" },
+            {
+                chord: isMacPlatform() ? "Cmd+Up / Down" : "Ctrl+Up / Down",
+                label: "Nudge to next filled cell",
+            },
+            { chord: "Enter", label: "Commit move" },
+            { chord: "Esc", label: "Cancel move" },
+        ],
+    },
 ];
 
 const GROUPS = [
@@ -52,6 +64,7 @@ const GROUPS = [
             { commandId: "edit.redo" as CommandId },
             { commandId: "cell.insert" as CommandId },
             { commandId: "cell.insertBelow" as CommandId },
+            { commandId: "cell.move" as CommandId },
             { commandId: "row.insertAbove" as CommandId },
             { commandId: "row.delete" as CommandId },
         ],

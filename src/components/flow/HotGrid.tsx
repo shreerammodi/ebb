@@ -23,6 +23,14 @@ import {
     snapshotClasses,
     type ClassEntry,
 } from "@/lib/grid/metaUndo";
+import {
+    cellIsMoving,
+    commitMove,
+    isMovingIn,
+    movingBlock,
+    nudge,
+    revertMove,
+} from "@/lib/grid/moveSession";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { resolveCommand } from "@/lib/keymap/resolve";
 import type { CellMeta, FlowSheet } from "@/lib/model/flow";
@@ -207,6 +215,10 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         const sheet = round.sheets.find((s) => s.id === sheetId);
         if (!sheet) return;
 
+        // A sheet swap would leave the preview mutations written into a sheet the
+        // session never snapshotted, so unwind it against the sheet it belongs to.
+        if (isMovingIn(hot)) revertMove();
+
         const prev = currentSheetIdRef.current;
         if (prev && prev !== sheet.id) {
             hot.getActiveEditor()?.finishEditing(true);
@@ -284,9 +296,14 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     }, []);
 
     // Cells inherit their column header's side color: blue for aff, red for neg.
-    const afterRenderer = useCallback((TD: HTMLTableCellElement, _r: number, col: number) => {
+    // The move tint is a class on the TD alone, never cellMeta, so it cannot
+    // leak into a saved sheet through collectMeta.
+    const afterRenderer = useCallback((TD: HTMLTableCellElement, row: number, col: number) => {
         const side = colsRef.current[col]?.side;
         if (side) TD.classList.add(side === "aff" ? "cell-aff" : "cell-neg");
+        if (cellIsMoving(hotRef.current?.hotInstance ?? null, row, col)) {
+            TD.classList.add("cell-moving");
+        }
     }, []);
 
     // changes is null on loadData/updateSettings passes; snapshotting those
@@ -345,6 +362,14 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         snapshot();
     }, [snapshot]);
 
+    // Returning false is Handsontable's documented way to cancel an undo push.
+    // The session's live preview mutations never reach the stack; its commit,
+    // fired after the session closes, is the one action recorded.
+    const beforeUndoStackChange = useCallback(
+        () => (isMovingIn(hotRef.current?.hotInstance ?? null) ? false : undefined),
+        [],
+    );
+
     // Handsontable's undo stack carries text but not decorations; metaUndo
     // reunites them against the action it recorded.
     const afterUndo = useCallback(() => {
@@ -361,53 +386,98 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         snapshot();
     }, [snapshot]);
 
-    const beforeKeyDown = useCallback(function (this: unknown, e: KeyboardEvent) {
-        const hot = hotRef.current?.hotInstance;
-        if (hot?.getActiveEditor()?.isOpened()) return;
-        // A chord bound to an app command must run as a command, not type into
-        // the grid. With no Ctrl/Meta modifier Handsontable "fast edits" the
-        // selected cell - opening an empty editor whose later commit wipes the
-        // cell (e.g. Alt+\ split-toggle, or the bare [ ] ? sheet keys). Run the
-        // command here and stop the grid touching the cell; stopImmediate keeps
-        // useKeymap from firing it a second time. Ctrl/Meta chords never
-        // fast-edit, so the window keymap owns them.
-        if (!e.metaKey && !e.ctrlKey) {
-            const commandId = resolveCommand(
-                effectiveKeymap(useFlowStore.getState().keymapOverrides),
-                {
-                    key: e.key,
-                    code: e.code,
-                    metaKey: false,
-                    ctrlKey: false,
-                    altKey: e.altKey,
-                    shiftKey: e.shiftKey,
-                },
-            );
-            if (commandId) {
+    const beforeKeyDown = useCallback(
+        function (this: unknown, e: KeyboardEvent) {
+            const hot = hotRef.current?.hotInstance;
+            if (hot?.getActiveEditor()?.isOpened()) return;
+
+            // Move mode is modal: Up and Down nudge the block, Meta/Ctrl with them
+            // lands it against the next filled cell, Enter commits, Esc reverts, and
+            // every other key is swallowed so nothing edits the grid mid-move.
+            // stopImmediate is what swallows them: it keeps the chord from reaching
+            // useKeymap's window listener, where an undo would unwind an edit made
+            // before the session while its live preview sat on top of the grid.
+            if (hot && isMovingIn(hot)) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
-                executeCommand(commandId);
-                return;
+                if (e.key === "Escape") {
+                    revertMove();
+                    hot.render();
+                } else if (e.key === "Enter") {
+                    hot.batch(() => commitMove());
+                    hot.render();
+                    snapshot();
+                } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                    const dr = e.key === "ArrowDown" ? 1 : -1;
+                    const block = movingBlock()!;
+                    let delta = dr;
+                    if (e.metaKey || e.ctrlKey) {
+                        // The leading edge is the row that meets the next filled cell.
+                        const lead =
+                            dr > 0 ? block.blockStart + block.height - 1 : block.blockStart;
+                        delta = smartJump(hot, lead, block.cols[0], { dr, dc: 0 }).row - lead;
+                    }
+                    nudge(delta);
+                    const moved = movingBlock()!;
+                    hot.selectCells([
+                        [
+                            moved.blockStart,
+                            moved.cols[0],
+                            moved.blockStart + moved.height - 1,
+                            moved.cols[moved.cols.length - 1],
+                        ],
+                    ]);
+                    hot.render();
+                }
+                return false;
             }
-        }
-        const dir = ARROW_DELTAS[e.key];
-        if (hot && (e.metaKey || e.ctrlKey) && dir) {
-            e.preventDefault();
-            const cur = hot.getSelectedRangeLast();
-            // Shift-extend jumps from the range's moving edge so repeated presses
-            // walk outward; a plain jump starts from the active cell.
-            const origin = e.shiftKey ? cur?.to : cur?.highlight;
-            if (!origin || origin.row == null || origin.col == null) return false;
-            const { row, col } = smartJump(hot, origin.row, origin.col, dir);
-            if (e.shiftKey) hot.selection.setRangeEnd(hot._createCellCoords(row, col));
-            else hot.selectCell(row, col);
-            // Returning false is Handsontable's contract for suppressing its own
-            // key handling; native stopImmediatePropagation does not, since the
-            // shortcut recorder checks its private isImmediatePropagationEnabled
-            // flag rather than the DOM event's state.
-            return false;
-        }
-    }, []);
+
+            // A chord bound to an app command must run as a command, not type into
+            // the grid. With no Ctrl/Meta modifier Handsontable "fast edits" the
+            // selected cell - opening an empty editor whose later commit wipes the
+            // cell (e.g. Alt+\ split-toggle, or the bare [ ] ? sheet keys). Run the
+            // command here and stop the grid touching the cell; stopImmediate keeps
+            // useKeymap from firing it a second time. Ctrl/Meta chords never
+            // fast-edit, so the window keymap owns them.
+            if (!e.metaKey && !e.ctrlKey) {
+                const commandId = resolveCommand(
+                    effectiveKeymap(useFlowStore.getState().keymapOverrides),
+                    {
+                        key: e.key,
+                        code: e.code,
+                        metaKey: false,
+                        ctrlKey: false,
+                        altKey: e.altKey,
+                        shiftKey: e.shiftKey,
+                    },
+                );
+                if (commandId) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    executeCommand(commandId);
+                    return;
+                }
+            }
+            const dir = ARROW_DELTAS[e.key];
+            if (hot && (e.metaKey || e.ctrlKey) && dir) {
+                e.preventDefault();
+                const cur = hot.getSelectedRangeLast();
+                // Shift-extend jumps from the range's moving edge so repeated presses
+                // walk outward; a plain jump starts from the active cell.
+                const origin = e.shiftKey ? cur?.to : cur?.highlight;
+                if (!origin || origin.row == null || origin.col == null) return false;
+                const { row, col } = smartJump(hot, origin.row, origin.col, dir);
+                if (e.shiftKey) hot.selection.setRangeEnd(hot._createCellCoords(row, col));
+                else hot.selectCell(row, col);
+                // Returning false is Handsontable's contract for suppressing its own
+                // key handling; native stopImmediatePropagation does not, since the
+                // shortcut recorder checks its private isImmediatePropagationEnabled
+                // flag rather than the DOM event's state.
+                return false;
+            }
+        },
+        [snapshot],
+    );
 
     return (
         // ht-blurred hides this pane's cell-selection marker while its cursor
@@ -435,6 +505,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 afterChange={afterChange}
                 beforePaste={beforePaste}
                 afterPaste={afterPaste}
+                beforeUndoStackChange={beforeUndoStackChange}
                 afterUndoStackChange={onUndoStackChange}
                 afterRedoStackChange={onRedoStackChange}
                 afterUndo={afterUndo}

@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An "Insert paste" setting under Editor > Paste. With it on, pasting pushes the
   text already in the target columns down instead of writing over it;
   neighboring speeches keep their rows.
+- Move cells with Meta+Shift+m (Ctrl+Shift+m elsewhere). Up and Down nudge the
+  selected cells along their column and the cells they pass over flow around
+  them; Meta/Ctrl with them lands the block against the next filled cell. Enter
+  commits the whole move as one undo step, Esc puts everything back.
 
 ### Changed
 
@@ -22,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scroll and edit the grid without rebuilding each column's styling for every
   visible cell on every frame.
 - Show placeholder cards while Trash loads instead of a blank screen.
+
+### Fixed
+
+- Undo a cell insert and its decorations come back with its text, instead of
+  the bold or highlight staying a row down from the cell it belongs to.
 
 ## [0.2.2] - 2026-07-08
 

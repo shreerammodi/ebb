@@ -273,6 +273,13 @@ html .ht-theme-main {
         inset 3px 0 0 var(--muted-foreground);
 }
 
+/* Move mode: the travelling block, tinted for the life of the session. Painted
+   from the move session by afterRenderer, never from cellMeta, so it never
+   reaches a saved sheet. */
+.handsontable tbody tr td.cell-moving {
+    background: rgba(37, 99, 235, 0.16);
+}
+
 /* Hidden on screen; visible only during print */
 .print-only {
     display: none;
