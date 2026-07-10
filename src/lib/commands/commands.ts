@@ -16,6 +16,7 @@ import {
     toggleClassToken,
 } from "@/lib/grid/codec";
 import { getActiveHot, notifyGridMutated } from "@/lib/grid/hotInstance";
+import { attachMetaUndo, snapshotClasses } from "@/lib/grid/metaUndo";
 import { sortedSheets } from "@/lib/model/flow";
 import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -85,7 +86,9 @@ function runInsertCell(where: "at" | "below"): void {
     const row = where === "below" ? sel[0] + 1 : sel[0];
     if (row > hot.countRows() - 1) return;
 
+    const before = snapshotClasses(hot, [col]);
     hot.setDataAtCell(insertCellChanges(hot, row, col));
+    attachMetaUndo({ cols: [col], before, after: snapshotClasses(hot, [col]) });
     hot.render();
     notifyGridMutated();
 }

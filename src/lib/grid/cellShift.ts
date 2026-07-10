@@ -27,10 +27,14 @@ export interface PasteShift {
 export interface CellGrid {
     countRows(): number;
     countCols(): number;
-    getDataAtCell(row: number, col: number): string | null;
+    /** Handsontable types this `unknown`; a flow sheet only ever holds text. */
+    getDataAtCell(row: number, col: number): unknown;
     getCellMeta(row: number, col: number): { className?: unknown };
     setCellMeta(row: number, col: number, key: "className", value: string): void;
 }
+
+const dataAt = (grid: CellGrid, row: number, col: number) =>
+    grid.getDataAtCell(row, col) as string | null;
 
 const classAt = (grid: CellGrid, row: number, col: number) =>
     (grid.getCellMeta(row, col).className ?? "") as string;
@@ -62,7 +66,7 @@ export function shiftSpan(
     for (let r = delta > 0 ? to - 1 : from; r >= from && r < to; r += step) {
         const target = r + delta;
         if (target < 0 || target >= rows) continue;
-        if (!opts?.metaOnly) changes.push([target, col, grid.getDataAtCell(r, col)]);
+        if (!opts?.metaOnly) changes.push([target, col, dataAt(grid, r, col)]);
         grid.setCellMeta(target, col, "className", classAt(grid, r, col));
     }
     return changes;
@@ -117,7 +121,7 @@ export function moveBlock(
     const block: CellChange[] = [];
     const classes: string[] = [];
     for (let i = 0; i < height; i++) {
-        block.push([blockStart + delta + i, col, grid.getDataAtCell(blockStart + i, col)]);
+        block.push([blockStart + delta + i, col, dataAt(grid, blockStart + i, col)]);
         classes.push(classAt(grid, blockStart + i, col));
     }
 

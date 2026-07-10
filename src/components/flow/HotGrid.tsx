@@ -14,6 +14,15 @@ import { shiftMetaDown, type PasteShift } from "@/lib/grid/cellShift";
 import { classNameToMeta, metaToClassName, padGrid, trimGrid } from "@/lib/grid/codec";
 import { columnsForFlowSheet, type SpeechCol } from "@/lib/grid/flowColumns";
 import { getActiveHot, setActiveHot } from "@/lib/grid/hotInstance";
+import {
+    attachMetaUndo,
+    onRedoStackChange,
+    onUndoStackChange,
+    restoreMetaRedo,
+    restoreMetaUndo,
+    snapshotClasses,
+    type ClassEntry,
+} from "@/lib/grid/metaUndo";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { resolveCommand } from "@/lib/keymap/resolve";
 import type { CellMeta, FlowSheet } from "@/lib/model/flow";
@@ -69,6 +78,12 @@ function smartJump(
         }
     }
     return { row: r, col: c };
+}
+
+/** The visual columns a paste lands in, clamped to the grid. */
+function pasteCols(hot: Handsontable, { col, width }: PasteShift): number[] {
+    const last = Math.min(col + width, hot.countCols());
+    return Array.from({ length: Math.max(last - col, 0) }, (_, i) => col + i);
 }
 
 function collectMeta(hot: Handsontable): Record<string, CellMeta> {
@@ -289,6 +304,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     // target comes from the selection - the same place Handsontable reads it.
     const insertPaste = useFlowStore((s) => s.insertPaste);
     const pasteShift = useRef<PasteShift | null>(null);
+    const pasteClasses = useRef<ClassEntry[]>([]);
 
     const beforePaste = useCallback(
         (data: string[][]) => {
@@ -300,12 +316,14 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             const br = sel.getBottomRightCorner();
             if (tl.row == null || tl.col == null || br.row == null || br.col == null) return;
             // A selection wider or taller than the clipboard block repeats it.
-            pasteShift.current = {
+            const shift = {
                 row: tl.row,
                 col: tl.col,
                 width: Math.max(data[0].length, br.col - tl.col + 1),
                 height: Math.max(data.length, br.row - tl.row + 1),
             };
+            pasteShift.current = shift;
+            pasteClasses.current = snapshotClasses(hot, pasteCols(hot, shift));
         },
         [insertPaste],
     );
@@ -316,8 +334,30 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         const hot = hotRef.current?.hotInstance;
         if (!hot || !shift) return;
         shiftMetaDown(hot, shift);
+        const cols = pasteCols(hot, shift);
+        attachMetaUndo({
+            cols,
+            before: pasteClasses.current,
+            after: snapshotClasses(hot, cols),
+        });
         hot.render();
         // afterChange already snapshotted the shifted text with the old meta.
+        snapshot();
+    }, [snapshot]);
+
+    // Handsontable's undo stack carries text but not decorations; metaUndo
+    // reunites them against the action it recorded.
+    const afterUndo = useCallback(() => {
+        const hot = hotRef.current?.hotInstance;
+        if (!hot || !restoreMetaUndo(hot)) return;
+        hot.render();
+        snapshot();
+    }, [snapshot]);
+
+    const afterRedo = useCallback(() => {
+        const hot = hotRef.current?.hotInstance;
+        if (!hot || !restoreMetaRedo(hot)) return;
+        hot.render();
         snapshot();
     }, [snapshot]);
 
@@ -395,6 +435,10 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 afterChange={afterChange}
                 beforePaste={beforePaste}
                 afterPaste={afterPaste}
+                afterUndoStackChange={onUndoStackChange}
+                afterRedoStackChange={onRedoStackChange}
+                afterUndo={afterUndo}
+                afterRedo={afterRedo}
                 afterCreateRow={snapshot}
                 afterRemoveRow={snapshot}
                 afterSelectionEnd={afterSelectionEnd}
