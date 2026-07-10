@@ -65,6 +65,8 @@ export interface FlowState {
     rfdOpen: boolean;
     /** Vim keybindings in the RFD editor; persisted like sidebarCollapsed. */
     rfdVim: boolean;
+    /** Paste pushes the target columns' existing cells down instead of overwriting them. */
+    insertPaste: boolean;
     renamingSheetId: string | null;
 }
 
@@ -102,6 +104,7 @@ export interface FlowActions {
     clearKeymapOverride(commandId: CommandId): void;
     setFlowFont(id: FontId): void;
     setRfdVim(on: boolean): void;
+    setInsertPaste(on: boolean): void;
     setTheme(mode: ThemeMode): void;
     /** Sets one side's custom ink; null resets it to the theme default. */
     setSideColor(side: Side, color: string | null): void;
@@ -136,6 +139,7 @@ export interface AppConfig {
     sidebarCollapsed: boolean;
     rfdOpen: boolean;
     rfdVim: boolean;
+    insertPaste: boolean;
     theme: ThemeMode;
     affColor: string | null;
     negColor: string | null;
@@ -174,6 +178,7 @@ interface DisplaySettings {
     sidebarCollapsed: boolean;
     rfdOpen: boolean;
     rfdVim: boolean;
+    insertPaste: boolean;
     theme: ThemeMode;
     affColor: string | null;
     negColor: string | null;
@@ -190,6 +195,7 @@ function loadDisplaySettings(): DisplaySettings {
         sidebarCollapsed: false,
         rfdOpen: false,
         rfdVim: false,
+        insertPaste: false,
         theme: "system",
         affColor: null,
         negColor: null,
@@ -204,6 +210,7 @@ function loadDisplaySettings(): DisplaySettings {
             sidebarCollapsed: typeof p.sidebarCollapsed === "boolean" ? p.sidebarCollapsed : false,
             rfdOpen: typeof p.rfdOpen === "boolean" ? p.rfdOpen : false,
             rfdVim: typeof p.rfdVim === "boolean" ? p.rfdVim : false,
+            insertPaste: typeof p.insertPaste === "boolean" ? p.insertPaste : false,
             theme: resolveThemeMode(p.theme),
             affColor: resolveColor(p.affColor),
             negColor: resolveColor(p.negColor),
@@ -229,6 +236,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
         sidebarCollapsed: s.sidebarCollapsed,
         rfdOpen: s.rfdOpen,
         rfdVim: s.rfdVim,
+        insertPaste: s.insertPaste,
         theme: s.theme,
         affColor: s.affColor,
         negColor: s.negColor,
@@ -291,6 +299,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     sidebarCollapsed: initialDisplaySettings.sidebarCollapsed,
     rfdOpen: initialDisplaySettings.rfdOpen,
     rfdVim: initialDisplaySettings.rfdVim,
+    insertPaste: initialDisplaySettings.insertPaste,
     renamingSheetId: null,
 
     loadRound(round, opts) {
@@ -513,6 +522,11 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setRfdVim(on) {
         saveDisplaySettings({ ...displaySettingsOf(get()), rfdVim: on });
         set({ rfdVim: on });
+    },
+
+    setInsertPaste(on) {
+        saveDisplaySettings({ ...displaySettingsOf(get()), insertPaste: on });
+        set({ insertPaste: on });
     },
 
     setTheme(mode) {

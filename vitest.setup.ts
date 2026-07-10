@@ -47,6 +47,16 @@ if (typeof window !== "undefined" && !window.ResizeObserver) {
     } as unknown as typeof window.ResizeObserver;
 }
 
+// Handsontable watches its root for visibility changes. jsdom doesn't implement
+// IntersectionObserver; provide a minimal polyfill.
+if (typeof window !== "undefined" && !window.IntersectionObserver) {
+    window.IntersectionObserver = class IntersectionObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    } as unknown as typeof window.IntersectionObserver;
+}
+
 // Radix UI Select calls these during pointer interaction and keyboard
 // navigation; jsdom implements neither.
 if (typeof window !== "undefined") {

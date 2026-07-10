@@ -13,6 +13,7 @@ import { executeCommand } from "@/lib/commands/commands";
 import { classNameToMeta, metaToClassName, padGrid, trimGrid } from "@/lib/grid/codec";
 import { columnsForFlowSheet, type SpeechCol } from "@/lib/grid/flowColumns";
 import { getActiveHot, setActiveHot } from "@/lib/grid/hotInstance";
+import { shiftMetaDown, type PasteShift } from "@/lib/grid/insertPaste";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { resolveCommand } from "@/lib/keymap/resolve";
 import type { CellMeta, FlowSheet } from "@/lib/model/flow";
@@ -282,6 +283,44 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         [snapshot],
     );
 
+    // Insert-paste: the shift_down populate moves text but not decorations, so
+    // the displaced classes are re-laid once the grid has grown. The hook's own
+    // `coords` argument describes the COPY range, not the paste target, so the
+    // target comes from the selection - the same place Handsontable reads it.
+    const insertPaste = useFlowStore((s) => s.insertPaste);
+    const pasteShift = useRef<PasteShift | null>(null);
+
+    const beforePaste = useCallback(
+        (data: string[][]) => {
+            pasteShift.current = null;
+            const hot = hotRef.current?.hotInstance;
+            const sel = hot?.getSelectedRangeLast();
+            if (!insertPaste || !hot || !sel || data.length === 0) return;
+            const tl = sel.getTopLeftCorner();
+            const br = sel.getBottomRightCorner();
+            if (tl.row == null || tl.col == null || br.row == null || br.col == null) return;
+            // A selection wider or taller than the clipboard block repeats it.
+            pasteShift.current = {
+                row: tl.row,
+                col: tl.col,
+                width: Math.max(data[0].length, br.col - tl.col + 1),
+                height: Math.max(data.length, br.row - tl.row + 1),
+            };
+        },
+        [insertPaste],
+    );
+
+    const afterPaste = useCallback(() => {
+        const shift = pasteShift.current;
+        pasteShift.current = null;
+        const hot = hotRef.current?.hotInstance;
+        if (!hot || !shift) return;
+        shiftMetaDown(hot, shift);
+        hot.render();
+        // afterChange already snapshotted the shifted text with the old meta.
+        snapshot();
+    }, [snapshot]);
+
     const beforeKeyDown = useCallback(function (this: unknown, e: KeyboardEvent) {
         const hot = hotRef.current?.hotInstance;
         if (hot?.getActiveEditor()?.isOpened()) return;
@@ -350,9 +389,12 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 undo={true}
                 outsideClickDeselects={false}
                 contextMenu={CONTEXT_MENU as unknown as string[]}
+                copyPaste={{ pasteMode: insertPaste ? "shift_down" : "overwrite" }}
                 afterGetColHeader={afterGetColHeader}
                 afterRenderer={afterRenderer}
                 afterChange={afterChange}
+                beforePaste={beforePaste}
+                afterPaste={afterPaste}
                 afterCreateRow={snapshot}
                 afterRemoveRow={snapshot}
                 afterSelectionEnd={afterSelectionEnd}

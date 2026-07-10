@@ -56,6 +56,13 @@ describe("loadRound", () => {
         expect(useFlowStore.getState().rfdVim).toBe(true);
         expect(window.localStorage.getItem("ebb-display-settings")).toContain('"rfdVim":true');
     });
+
+    it("persists insertPaste through setInsertPaste", () => {
+        expect(useFlowStore.getState().insertPaste).toBe(false);
+        useFlowStore.getState().setInsertPaste(true);
+        expect(useFlowStore.getState().insertPaste).toBe(true);
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain('"insertPaste":true');
+    });
 });
 
 describe("switchSpeech", () => {

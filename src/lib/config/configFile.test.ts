@@ -13,6 +13,7 @@ const sample: AppConfig = {
     sidebarCollapsed: true,
     rfdOpen: false,
     rfdVim: true,
+    insertPaste: true,
     theme: "dark",
     affColor: "#1d4ed8",
     negColor: null,

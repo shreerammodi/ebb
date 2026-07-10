@@ -42,10 +42,11 @@ const SIDE_OPTIONS: { id: Side; label: string }[] = [
 
 const COMMAND_LIST = Object.values(COMMANDS);
 
-type Category = "display" | "keyboard" | "updates";
+type Category = "display" | "editor" | "keyboard" | "updates";
 
 const BASE_CATEGORIES: { id: Category; label: string }[] = [
     { id: "display", label: "Display" },
+    { id: "editor", label: "Editor" },
     { id: "keyboard", label: "Keyboard" },
 ];
 
@@ -80,6 +81,8 @@ export default function SettingsPanel() {
     const setSideColor = useFlowStore((s) => s.setSideColor);
     const rfdVim = useFlowStore((s) => s.rfdVim);
     const setRfdVim = useFlowStore((s) => s.setRfdVim);
+    const insertPaste = useFlowStore((s) => s.insertPaste);
+    const setInsertPaste = useFlowStore((s) => s.setInsertPaste);
 
     const [recording, setRecording] = useState<CommandId | null>(null);
     const [category, setCategory] = useState<Category>("display");
@@ -367,6 +370,31 @@ export default function SettingsPanel() {
                                             onCheckedChange={setRfdVim}
                                             data-testid="rfd-vim-toggle"
                                             aria-label="Vim keybindings"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+                        )}
+                        {category === "editor" && (
+                            <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-foreground text-[13px] font-medium">
+                                        Paste
+                                    </span>
+                                    <p className="text-muted-foreground mb-1 text-[12px]">
+                                        With insert paste on, pasted cells push the text already in
+                                        those columns down instead of writing over it. Neighboring
+                                        speeches keep their rows.
+                                    </p>
+                                    <label className="flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5">
+                                        <span className="text-foreground text-[14px]">
+                                            Insert paste
+                                        </span>
+                                        <Switch
+                                            checked={insertPaste}
+                                            onCheckedChange={setInsertPaste}
+                                            data-testid="insert-paste-toggle"
+                                            aria-label="Insert paste"
                                         />
                                     </label>
                                 </div>

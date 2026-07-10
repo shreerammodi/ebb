@@ -27,6 +27,7 @@ export interface ConfigFileShape {
     sidebar_collapsed: boolean;
     rfd_open: boolean;
     rfd_vim: boolean;
+    insert_paste: boolean;
     /** null means "reset to theme default"; Rust removes the key from the file. */
     aff_color: string | null;
     neg_color: string | null;
@@ -98,6 +99,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         sidebar_collapsed: s.sidebarCollapsed,
         rfd_open: s.rfdOpen,
         rfd_vim: s.rfdVim,
+        insert_paste: s.insertPaste,
         aff_color: s.affColor,
         neg_color: s.negColor,
         keymap: nestByNamespace(byCommand(effectiveKeymap(s.keymapOverrides).bindings)),
@@ -135,6 +137,7 @@ export function toAppConfig(raw: unknown): AppConfig {
         sidebarCollapsed: bool(o.sidebar_collapsed, false),
         rfdOpen: bool(o.rfd_open, false),
         rfdVim: bool(o.rfd_vim, false),
+        insertPaste: bool(o.insert_paste, false),
         theme: resolveThemeMode(o.theme),
         affColor: resolveColor(o.aff_color),
         negColor: resolveColor(o.neg_color),

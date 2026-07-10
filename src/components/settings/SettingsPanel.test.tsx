@@ -233,6 +233,18 @@ describe("SettingsPanel", () => {
         expect(toggle).toBeChecked();
     });
 
+    it("toggles the insert paste setting from the Editor category", async () => {
+        const user = userEvent.setup();
+        renderSettingsPanel();
+        await user.click(screen.getByTestId("settings-nav-editor"));
+
+        const toggle = screen.getByTestId("insert-paste-toggle");
+        expect(toggle).not.toBeChecked();
+        await user.click(toggle);
+        expect(useFlowStore.getState().insertPaste).toBe(true);
+        expect(toggle).toBeChecked();
+    });
+
     it("persists overrides to localStorage and effectiveKeymap uses them", async () => {
         const user = userEvent.setup();
         renderSettingsPanel();

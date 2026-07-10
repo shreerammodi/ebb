@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Insert a cell below the selection with Meta+Alt+o (Ctrl+Alt+o elsewhere).
+- An "Insert paste" setting under Editor > Paste. With it on, pasting pushes the
+  text already in the target columns down instead of writing over it;
+  neighboring speeches keep their rows.
 
 ### Changed
 
