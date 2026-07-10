@@ -32,6 +32,10 @@ const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
         [`${mod}+Backspace`]: "row.delete",
         [`${mod}+o`]: "cell.insert",
         [`${mod}+Alt+o`]: "cell.insertBelow",
+        // Bare Meta+m is the Tauri window's native minimize chord, so the move
+        // mode takes the shifted one. eventToChord encodes shift in the letter's
+        // case, which makes Meta+Shift+m the string "Meta+M".
+        [`${mod}+M`]: "cell.move",
         // Default pushes the current row down; rebind to row.insertBelow in
         // Settings to insert underneath instead.
         [`${mod}+O`]: "row.insertAbove",

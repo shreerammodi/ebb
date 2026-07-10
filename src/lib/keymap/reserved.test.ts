@@ -26,6 +26,7 @@ describe("reservedChords", () => {
         expect(chords.has("Meta+Z")).toBe(true);
         expect(chords.has("Meta+1")).toBe(true);
         expect(chords.has("Meta+Backspace")).toBe(true);
+        expect(chords.has("Meta+M")).toBe(true);
         // The bare Cmd+X is left unreserved so it stays a native cut.
         expect(chords.has("Meta+x")).toBe(false);
         // Ctrl variants should NOT be present on Mac.
@@ -41,6 +42,7 @@ describe("reservedChords", () => {
         expect(chords.has("Ctrl+Z")).toBe(true);
         expect(chords.has("Ctrl+1")).toBe(true);
         expect(chords.has("Ctrl+Backspace")).toBe(true);
+        expect(chords.has("Ctrl+M")).toBe(true);
         // Meta variants should NOT be present on Windows.
         expect(chords.has("Meta+n")).toBe(false);
     });

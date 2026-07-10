@@ -40,6 +40,7 @@ const RESERVED_KEYS = [
     "Backspace", // row delete
     "o", // insert cell (suppresses browser open-file)
     "O", // insert row (Shift encoded in uppercase key)
+    "M", // move cells (suppresses the browser profile switcher)
     // -- Sheet jumps -----------------------------------------------------------
     "1",
     "2",

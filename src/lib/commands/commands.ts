@@ -17,6 +17,7 @@ import {
 } from "@/lib/grid/codec";
 import { getActiveHot, notifyGridMutated } from "@/lib/grid/hotInstance";
 import { attachMetaUndo, snapshotClasses } from "@/lib/grid/metaUndo";
+import { beginMove } from "@/lib/grid/moveSession";
 import { sortedSheets } from "@/lib/model/flow";
 import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -93,6 +94,22 @@ function runInsertCell(where: "at" | "below"): void {
     notifyGridMutated();
 }
 
+/**
+ * Opens the modal move session over the selection's bounding rectangle. From
+ * here `HotGrid`'s beforeKeyDown owns Up, Down, Enter, and Esc until the
+ * session closes.
+ */
+function startMove(): void {
+    const hot = getActiveHot();
+    const sel = hot?.getSelectedRangeLast();
+    if (!hot || !sel) return;
+    const tl = sel.getTopLeftCorner();
+    const br = sel.getBottomRightCorner();
+    if (tl.row == null || tl.col == null || br.row == null || br.col == null) return;
+    beginMove(hot, { startRow: tl.row, endRow: br.row, startCol: tl.col, endCol: br.col });
+    hot.render();
+}
+
 export function executeCommand(id: CommandId): void {
     const state = useFlowStore.getState();
     const { round } = state;
@@ -133,6 +150,9 @@ export function executeCommand(id: CommandId): void {
             return;
         case "cell.insertBelow":
             runInsertCell("below");
+            return;
+        case "cell.move":
+            startMove();
             return;
 
         // --- Sheets ----------------------------------------------------------

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BOLD_CLASS, GROUP_CLASS } from "@/lib/grid/codec";
 import { setActiveHot } from "@/lib/grid/hotInstance";
+import { isMovingIn, movingBlock, revertMove } from "@/lib/grid/moveSession";
 import { makeFlowRound } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -315,5 +316,41 @@ describe("grid commands", () => {
 
         executeCommand("cell.insertBelow");
         expect(fakeHot.setDataAtCell).not.toHaveBeenCalled();
+    });
+
+    it("cell.move opens a session over the selection", () => {
+        const data = [["a"], ["b"], ["c"]];
+        const fakeHot = {
+            getSelectedRangeLast: () => ({
+                getTopLeftCorner: () => ({ row: 1, col: 0 }),
+                getBottomRightCorner: () => ({ row: 2, col: 0 }),
+            }),
+            countRows: () => data.length,
+            countCols: () => 1,
+            getDataAtCell: (r: number, c: number) => data[r][c],
+            setDataAtCell: vi.fn(),
+            getCellMeta: () => ({}),
+            setCellMeta: vi.fn(),
+            render: vi.fn(),
+        };
+        setActiveHot(fakeHot as never, vi.fn());
+
+        executeCommand("cell.move");
+
+        expect(isMovingIn(fakeHot as never)).toBe(true);
+        expect(movingBlock()).toEqual({ cols: [0], blockStart: 1, height: 2 });
+        revertMove();
+    });
+
+    it("cell.move without a selection is a no-op", () => {
+        const fakeHot = {
+            getSelectedRangeLast: () => undefined,
+            render: vi.fn(),
+        };
+        setActiveHot(fakeHot as never, vi.fn());
+
+        executeCommand("cell.move");
+
+        expect(movingBlock()).toBeNull();
     });
 });
