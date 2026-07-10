@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Insert a cell below the selection with Meta+Alt+o (Ctrl+Alt+o elsewhere).
 
+### Changed
+
+- Read the flow library once per session instead of on every dashboard visit,
+  so returning from a flow, or refreshing after a rename or delete, no longer
+  reloads every round.
+- Scroll and edit the grid without rebuilding each column's styling for every
+  visible cell on every frame.
+- Show placeholder cards while Trash loads instead of a blank screen.
+
 ## [0.2.2] - 2026-07-08
 
 ### Added
