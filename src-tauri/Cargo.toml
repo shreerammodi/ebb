@@ -1,6 +1,6 @@
 [package]
 name = "ebb"
-version = "0.2.2"
+version = "0.3.0"
 description = "Ebb - keyboard-first debate flow"
 authors = ["Shreeram Modi <smodi@smodi.net>"]
 license = "MPL-2.0"
