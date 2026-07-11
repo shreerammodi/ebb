@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-10
+
 ### Added
 
 - Insert a cell below the selection with Meta+Alt+o (Ctrl+Alt+o elsewhere).
@@ -92,7 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/shreerammodi/ebb/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/shreerammodi/ebb/compare/v0.2.1...v0.2.2
 [0.2.0]: https://github.com/shreerammodi/ebb/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/shreerammodi/ebb/compare/v0.1.0...v0.1.1
