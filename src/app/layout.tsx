@@ -302,10 +302,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <ThemeSync />
                 <ConfigFileSync />
                 <TooltipProvider>
-                    <UpdateProvider>{children}</UpdateProvider>
-                    {/* Mounted here, not per screen: the settings chord works
-                        on the dashboard and trash as well as in a flow. */}
-                    <SettingsPanel />
+                    <UpdateProvider>
+                        {children}
+                        {/* Inside UpdateProvider so the Updates settings pane can
+                            read the update context, and mounted here (not per
+                            screen) so the settings chord works on the dashboard
+                            and trash as well as in a flow. */}
+                        <SettingsPanel />
+                    </UpdateProvider>
                 </TooltipProvider>
                 <Toaster position="bottom-center" />
             </body>

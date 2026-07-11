@@ -11,13 +11,22 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act } from "react";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { UpdateProvider } from "@/components/update/UpdateProvider";
 import { COMMANDS } from "@/lib/commands/registry";
 import { FONTS, DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+
+// Force desktop so the Updates category is present. Only the exported isDesktop
+// is overridden; the adapter's own I/O helpers keep their real (web) behavior,
+// so mounting the update hook triggers no Tauri calls.
+vi.mock("@/lib/update/adapter", async (importActual) => ({
+    ...(await importActual<typeof import("@/lib/update/adapter")>()),
+    isDesktop: () => true,
+}));
 
 import SettingsPanel from "./SettingsPanel";
 
@@ -243,6 +252,22 @@ describe("SettingsPanel", () => {
         await user.click(toggle);
         expect(useFlowStore.getState().insertPaste).toBe(true);
         expect(toggle).toBeChecked();
+    });
+
+    // The Updates pane calls useUpdate(), which throws unless a UpdateProvider is
+    // an ancestor. The root layout must keep SettingsPanel inside that provider.
+    it("renders the Updates pane when wrapped in UpdateProvider", async () => {
+        const user = userEvent.setup();
+        render(
+            <TooltipProvider>
+                <UpdateProvider>
+                    <SettingsPanel />
+                </UpdateProvider>
+            </TooltipProvider>,
+        );
+
+        await user.click(screen.getByTestId("settings-nav-updates"));
+        expect(screen.getByTestId("check-updates")).toBeTruthy();
     });
 
     it("persists overrides to localStorage and effectiveKeymap uses them", async () => {
