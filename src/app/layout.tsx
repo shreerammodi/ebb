@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import { Toaster } from "sonner";
 
 import ConfigFileSync from "@/components/ConfigFileSync";
-import DesktopSelectAll from "@/components/DesktopSelectAll";
+import { DesktopMenu } from "@/components/DesktopMenu";
 import SettingsPanel from "@/components/settings/SettingsPanel";
 import ThemeSync from "@/components/ThemeSync";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -298,7 +298,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
             </head>
             <body className="font-sans antialiased">
-                <DesktopSelectAll />
+                <DesktopMenu />
                 <ThemeSync />
                 <ConfigFileSync />
                 <TooltipProvider>

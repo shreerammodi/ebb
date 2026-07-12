@@ -2,16 +2,16 @@
 
 import { useEffect } from "react";
 
-import { executeCommand } from "@/lib/commands/commands";
-import { COMMANDS, type CommandId } from "@/lib/commands/registry";
 import { isDesktop } from "@/lib/update/adapter";
+
+import { dispatchMenuCommand } from "./menuDispatch";
 
 /**
  * Bridges the native menu to the command layer. Menu items carry a CommandId
- * as their id and emit "menu:command" on click (see `src-tauri/src/menu.rs`);
- * here we run the matching command. Clicking is the menu's only action path -
- * its chords are display-only text, never real accelerators, because those
- * chords belong to the JS keymap.
+ * (or the special "selectAll" id) as their menu id and emit "menu:command"
+ * on click and via their real accelerators (see src-tauri/src/menu.rs).
+ * dispatchMenuCommand re-creates native text editing for the focus-dependent
+ * chords and runs the app command otherwise.
  */
 export function useDesktopMenu(): void {
     useEffect(() => {
@@ -22,7 +22,7 @@ export function useDesktopMenu(): void {
 
         import("@tauri-apps/api/event").then(({ listen }) =>
             listen<string>("menu:command", (e) => {
-                if (e.payload in COMMANDS) executeCommand(e.payload as CommandId);
+                dispatchMenuCommand(e.payload);
             }).then((un) => {
                 if (active) unlisten = un;
                 else un();
