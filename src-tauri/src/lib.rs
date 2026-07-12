@@ -39,13 +39,14 @@ pub fn run() {
 
             // Install the native menu (display-only; see `menu.rs`).
             let handle = app.handle();
-            let app_menu = menu::build(handle)?;
+            let app_menu = menu::build(handle, &std::collections::HashMap::new())?;
             app.set_menu(app_menu)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             config::read_config,
             config::write_config,
+            menu::rebuild_menu,
             system_info
         ])
         // Quit is the single deliberate exit; it routes here and exits directly,

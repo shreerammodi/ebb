@@ -25,6 +25,7 @@
 //! same accelerator treatment; its JS handler selects the focused field's
 //! contents and no-ops in grid focus.
 
+use std::collections::HashMap;
 use tauri::menu::{AboutMetadata, Menu, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Runtime};
 
@@ -34,11 +35,17 @@ pub const QUIT_ID: &str = "quit";
 /// Menu item id for Select All; handled in JS (not a CommandId).
 pub const SELECT_ALL_ID: &str = "selectAll";
 
-/// Builds the application menu.
-pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
+/// Builds the application menu. `accels` maps a CommandId to its current
+/// accelerator (empty string = click-only); each item's preset accelerator
+/// applies until the frontend syncs the effective keymap via rebuild_menu.
+pub fn build<R: Runtime>(
+    app: &AppHandle<R>,
+    accels: &HashMap<String, String>,
+) -> tauri::Result<Menu<R>> {
     // A clickable command item: its id is a JS CommandId, emitted on click
     // and via the real accelerator. An empty accel means click-only.
-    let cmd = |id: &str, label: &str, accel: &str| -> tauri::Result<_> {
+    let cmd = |id: &str, label: &str, default: &str| -> tauri::Result<_> {
+        let accel = accels.get(id).map(String::as_str).unwrap_or(default);
         let mut item = MenuItemBuilder::new(label).id(id);
         if !accel.is_empty() {
             item = item.accelerator(accel);
@@ -83,7 +90,7 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&cmd("sheet.rename", "Rename Sheet", "CmdOrCtrl+R")?)
         .separator()
         .item(&cmd("info.open", "Round Info", "")?)
-        .item(&cmd("settings.open", "Settings", "")?)
+        .item(&MenuItemBuilder::new("Settings").id("settings.open").build(app)?)
         .build()?;
 
     // Edit: Undo/Redo/Delete Row are focus-dependent and re-dispatched in JS
@@ -127,4 +134,25 @@ pub fn build<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let mut builder = tauri::menu::MenuBuilder::new(app);
     builder = builder.items(&[&app_menu, &file_menu, &edit_menu, &view_menu, &help_menu]);
     builder.build()
+}
+
+/// Rebuilds the menu with the frontend's effective-keymap accelerators.
+/// Menu mutation must happen on the main thread on macOS; failures are
+/// logged rather than surfaced because a stale menu is cosmetic, not fatal.
+#[tauri::command]
+pub fn rebuild_menu<R: Runtime>(app: AppHandle<R>, accels: HashMap<String, String>) {
+    let handle = app.clone();
+    let result = app.run_on_main_thread(move || {
+        match build(&handle, &accels) {
+            Ok(menu) => {
+                if let Err(e) = handle.set_menu(menu) {
+                    eprintln!("rebuild_menu: set_menu failed: {e}");
+                }
+            }
+            Err(e) => eprintln!("rebuild_menu: build failed: {e}"),
+        }
+    });
+    if let Err(e) = result {
+        eprintln!("rebuild_menu: main-thread dispatch failed: {e}");
+    }
 }
