@@ -1,14 +1,22 @@
 import { render } from "@testing-library/react";
+import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 const listeners = new Map<string, (e: { payload: string }) => void>();
 const unlisten = vi.fn();
+const invoke = vi.fn(() => Promise.resolve());
 
 vi.mock("@tauri-apps/api/event", () => ({
     listen: vi.fn((event: string, handler: (e: { payload: string }) => void) => {
         listeners.set(event, handler);
         return Promise.resolve(unlisten);
     }),
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({
+    invoke: (...args: unknown[]) => invoke(...args),
 }));
 
 vi.mock("./menuDispatch", () => ({ dispatchMenuCommand: vi.fn() }));
@@ -34,6 +42,7 @@ beforeEach(() => {
     disableDesktop();
     listeners.clear();
     vi.clearAllMocks();
+    useFlowStore.setState({ keymapOverrides: {} });
 });
 
 afterEach(disableDesktop);
@@ -59,5 +68,50 @@ describe("useDesktopMenu", () => {
         await vi.waitFor(() => expect(listeners.has("menu:command")).toBe(true));
         unmount();
         expect(unlisten).toHaveBeenCalled();
+    });
+});
+
+describe("accelerator sync", () => {
+    it("pushes the effective accelerators to rebuild_menu on mount", async () => {
+        enableDesktop();
+        render(<Harness />);
+        await vi.waitFor(() => expect(invoke).toHaveBeenCalled());
+        const [command, payload] = invoke.mock.calls[0]! as [
+            string,
+            { accels: Record<string, string> },
+        ];
+        expect(command).toBe("rebuild_menu");
+        expect(payload.accels["edit.undo"]).toBeTruthy();
+        expect(payload.accels["sheet.next"]).toBe(""); // bare "]" cannot be one
+    });
+
+    it("re-syncs when keymap overrides change", async () => {
+        enableDesktop();
+        render(<Harness />);
+        await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+        act(() => {
+            useFlowStore.setState({ keymapOverrides: { "sheet.rename": "F1" } });
+        });
+        await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+        const [, payload] = invoke.mock.calls[1]! as [string, { accels: Record<string, string> }];
+        expect(payload.accels["sheet.rename"]).toBe("F1");
+    });
+
+    it("skips redundant rebuilds when accelerators are unchanged", async () => {
+        enableDesktop();
+        render(<Harness />);
+        await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+        act(() => {
+            // A new-but-equal overrides object must not trigger a rebuild.
+            useFlowStore.setState({ keymapOverrides: {} });
+        });
+        await Promise.resolve();
+        expect(invoke).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not invoke in the web build", async () => {
+        render(<Harness />);
+        await Promise.resolve();
+        expect(invoke).not.toHaveBeenCalled();
     });
 });
