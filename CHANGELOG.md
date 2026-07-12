@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Desktop menu shortcuts are real native accelerators: they right-align in
+  the macOS shortcut column, and they follow custom keybindings set in
+  Settings.
+
 ## [0.3.2] - 2026-07-10
 
 ### Fixed
