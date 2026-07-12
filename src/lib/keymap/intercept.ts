@@ -25,9 +25,10 @@ import { eventToChord } from "./resolve";
  *
  * On macOS these are Meta+; on Windows/Linux they are Ctrl+.
  *
- * In the Tauri desktop shell, copy/paste/cut reach the field only via their
- * Edit-menu accelerators (see menu.rs). Select-all's accelerator is withheld
- * (Meta+A is `sheet.newAff`), so `useDesktopSelectAll` restores it in JS instead.
+ * In the Tauri desktop shell every native editing chord reaches the field
+ * via an Edit-menu accelerator (see menu.rs): Cut/Copy/Paste route natively
+ * through their PredefinedMenuItems, and Select All / Undo / Redo /
+ * Delete Row are re-dispatched by dispatchMenuCommand.
  */
 const NATIVE_EDITING_KEYS = [
     "a", // select all
@@ -97,23 +98,12 @@ export function isTextEntryFocus(target: EventTarget | null): boolean {
 }
 
 /**
- * The select-all chord (Meta+A on Mac, Ctrl+A elsewhere), with no other modifier.
- * Narrower than `isNativeEditingChord`, which also matches copy/paste/cut/undo.
- */
-export function isSelectAllChord(e: KeyboardEvent): boolean {
-    const primary = isMacPlatform() ? e.metaKey : e.ctrlKey;
-    const secondary = isMacPlatform() ? e.ctrlKey : e.metaKey;
-    return primary && !secondary && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "a";
-}
-
-/**
  * Selects all text in a text-entry element and reports whether it did.
  *
- * Restores Meta+A in Tauri desktop text fields: WKWebView only wires an editing
- * chord to the focused field when a menu item carries that accelerator, and we
- * deliberately withhold Meta+A's accelerator because it is `sheet.newAff` (see
- * menu.rs). Returns false when there is nothing selectable, so the caller can
- * leave the event's default alone.
+ * Serves the Edit menu's Select All item via dispatchMenuCommand: on macOS
+ * the item's real Meta+A accelerator is consumed before the webview's
+ * keydown, so the selection is re-created here in JS. Returns false when
+ * there is nothing selectable.
  */
 export function selectAllInElement(element: HTMLElement | null): boolean {
     if (!element) return false;
