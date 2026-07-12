@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { isMacPlatform } from "@/lib/platform";
+import { useFlowStore } from "@/lib/store/useFlowStore";
+
 import { dispatchMenuCommand } from "./menuDispatch";
 
 vi.mock("@/lib/commands/commands", () => ({ executeCommand: vi.fn() }));
 import { executeCommand } from "@/lib/commands/commands";
+
+const MOD = isMacPlatform() ? "Meta" : "Ctrl";
 
 let execCommand: ReturnType<typeof vi.fn>;
 
@@ -11,6 +16,7 @@ beforeEach(() => {
     // jsdom does not implement execCommand; stub it as the assertion probe.
     execCommand = vi.fn();
     document.execCommand = execCommand as unknown as typeof document.execCommand;
+    useFlowStore.setState({ keymapOverrides: {} });
 });
 
 afterEach(() => {
@@ -105,6 +111,36 @@ describe("dispatchMenuCommand", () => {
 
     it("unknown ids are ignored", () => {
         dispatchMenuCommand("bogus");
+        expect(executeCommand).not.toHaveBeenCalled();
+    });
+});
+
+describe("dispatchMenuCommand with keymap overrides", () => {
+    it("stops re-dispatching a command rebound off a native editing chord", () => {
+        useFlowStore.setState({ keymapOverrides: { "edit.undo": `${MOD}+u` } });
+        focusInput("typed");
+        dispatchMenuCommand("edit.undo");
+        expect(executeCommand).toHaveBeenCalledWith("edit.undo");
+        expect(execCommand).not.toHaveBeenCalled();
+    });
+
+    it("re-dispatches a command rebound onto a native editing chord", () => {
+        useFlowStore.setState({
+            keymapOverrides: { "format.toggleBold": `${MOD}+Backspace` },
+        });
+        const area = focusTextarea("line1\nline2", 9);
+        dispatchMenuCommand("format.toggleBold");
+        expect(area.selectionStart).toBe(6);
+        expect(execCommand).toHaveBeenCalledWith("delete");
+        expect(executeCommand).not.toHaveBeenCalled();
+    });
+
+    it("re-dispatches select-all for a command rebound onto the select-all chord", () => {
+        useFlowStore.setState({ keymapOverrides: { "sheet.rename": `${MOD}+a` } });
+        const input = focusInput("hello");
+        const select = vi.spyOn(input, "select");
+        dispatchMenuCommand("sheet.rename");
+        expect(select).toHaveBeenCalledTimes(1);
         expect(executeCommand).not.toHaveBeenCalled();
     });
 });
