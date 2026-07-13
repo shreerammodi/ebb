@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-07-13
+
+### Fixed
+
+- Auto-update and the manual "Check for updates" button work again on the
+  desktop app. The update check read the release manifest with a webview fetch,
+  but GitHub's release CDN sends no CORS headers, so the cross-origin read was
+  blocked and every check failed silently. The manifest now loads through the
+  updater plugin, which fetches it outside the webview. Existing 0.3.3 and
+  earlier installs cannot self-update to this fix; install 0.3.4 manually once
+  and automatic updates resume from there.
+
 ## [0.3.3] - 2026-07-13
 
 ### Changed
@@ -123,7 +135,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/shreerammodi/ebb/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/shreerammodi/ebb/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/shreerammodi/ebb/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/shreerammodi/ebb/compare/v0.3.0...v0.3.1
