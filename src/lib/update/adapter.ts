@@ -1,10 +1,6 @@
 import { parseManifest } from "./policy";
 import type { UpdateManifest } from "./types";
 
-/** Static GitHub Releases manifest the updater reads. Matches tauri.conf.json. */
-export const MANIFEST_URL =
-    "https://github.com/shreerammodi/ebb/releases/latest/download/latest.json";
-
 /** True when running inside the Tauri desktop shell (vs. the web build). */
 export function isDesktop(): boolean {
     if (typeof window === "undefined") return false;
@@ -13,14 +9,21 @@ export function isDesktop(): boolean {
 
 /**
  * Fetches and parses the release manifest so the pure policy layer can decide
- * whether to act. Returns null on any failure (network error, bad status,
- * malformed manifest) — updates fail silently, never with error UI.
+ * whether to act. Goes through the updater plugin (`check()` runs the fetch on
+ * the Rust side) rather than a webview `fetch`: the GitHub release CDN sends no
+ * CORS headers, so a cross-origin `fetch` from the `tauri://` origin is blocked
+ * and every check silently fails. `check()` returns null when no newer release
+ * exists; we also return null on any error — updates fail silently, never with
+ * error UI. Tournament Mode gating stays in `decideUpdateAction`; `check()` only
+ * compares versions, so a held update still yields a manifest here.
  */
 export async function fetchManifest(): Promise<UpdateManifest | null> {
+    if (!isDesktop()) return null;
     try {
-        const res = await fetch(MANIFEST_URL, { cache: "no-store" });
-        if (!res.ok) return null;
-        return parseManifest(await res.json());
+        const { check } = await import("@tauri-apps/plugin-updater");
+        const update = await check();
+        if (!update) return null;
+        return parseManifest(update.rawJson);
     } catch {
         return null;
     }
@@ -36,6 +39,9 @@ export async function downloadAndInstall(
 ): Promise<void> {
     if (!isDesktop()) return;
     const { check } = await import("@tauri-apps/plugin-updater");
+    // ponytail: re-checks rather than threading the Update handle down from
+    // fetchManifest; it's one small JSON fetch, and the handle is a Resource
+    // whose lifecycle isn't worth managing across the React layer.
     const update = await check();
     if (!update) return;
     let downloaded = 0;
