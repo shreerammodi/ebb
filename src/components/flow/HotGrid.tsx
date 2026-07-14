@@ -38,7 +38,11 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 
 registerAllModules();
 
-const MIN_ROWS = 1000;
+// Empty rows a sheet shows up front, so the cursor can arrow down into blank
+// space to align an argument with the speech it answers. minSpareRows grows
+// the grid further as cells past this fill, so it is headroom, not a cap; kept
+// modest because every sheet switch re-renders and re-measures the full pad.
+const MIN_ROWS = 250;
 const CONTEXT_MENU = ["row_above", "row_below", "remove_row"] as const;
 
 const ARROW_DELTAS: Record<string, { dr: number; dc: number }> = {
@@ -105,12 +109,32 @@ function collectMeta(hot: Handsontable): Record<string, CellMeta> {
     return meta;
 }
 
-/** Clears stale decoration classes, then injects the sheet's stored meta. */
-function applyMeta(hot: Handsontable, meta: Record<string, CellMeta>): void {
-    for (let r = 0; r < hot.countRows(); r++) {
-        for (let c = 0; c < hot.countCols(); c++) {
-            const cls = (hot.getCellMeta(r, c).className ?? "") as string;
-            if (cls && classNameToMeta(cls)) hot.setCellMeta(r, c, "className", "");
+/**
+ * Clears the outgoing sheet's decoration cells, then injects the incoming
+ * sheet's stored meta. `prevMeta` is the sheet being left; since every
+ * className change is snapshotted back into a sheet's stored meta, its keys
+ * are exactly the decorations live on the grid, so the clear touches only
+ * those instead of every cell in the padded grid. `prevMeta` is null only
+ * when the outgoing sheet is gone from the store (it was just deleted), where
+ * the full grid must be scanned to catch its orphaned decorations.
+ */
+function applyMeta(
+    hot: Handsontable,
+    meta: Record<string, CellMeta>,
+    prevMeta: Record<string, CellMeta> | null,
+): void {
+    if (prevMeta) {
+        for (const key of Object.keys(prevMeta)) {
+            if (key in meta) continue;
+            const [r, c] = key.split(",").map(Number);
+            hot.setCellMeta(r, c, "className", "");
+        }
+    } else {
+        for (let r = 0; r < hot.countRows(); r++) {
+            for (let c = 0; c < hot.countCols(); c++) {
+                const cls = (hot.getCellMeta(r, c).className ?? "") as string;
+                if (cls && classNameToMeta(cls)) hot.setCellMeta(r, c, "className", "");
+            }
         }
     }
     for (const [key, m] of Object.entries(meta)) {
@@ -220,6 +244,13 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         if (isMovingIn(hot)) revertMove();
 
         const prev = currentSheetIdRef.current;
+        // The decorations live on the grid belong to the sheet being left; clear
+        // exactly those. null when that sheet is gone (just deleted) or on the
+        // first swap, cueing applyMeta to scan or skip.
+        const prevMeta =
+            prev && prev !== sheet.id
+                ? (round.sheets.find((s) => s.id === prev)?.meta ?? null)
+                : {};
         if (prev && prev !== sheet.id) {
             hot.getActiveEditor()?.finishEditing(true);
             const sel = hot.getSelectedLast();
@@ -236,7 +267,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 data: padGrid(sheet.data, cols.length, MIN_ROWS),
                 ...headerSettings(sheet, cols),
             });
-            applyMeta(hot, sheet.meta);
+            applyMeta(hot, sheet.meta, prevMeta);
         });
         const v = viewCache.current.get(sheet.id) ?? { row: 0, col: 0 };
         hot.selectCell(v.row, v.col);
