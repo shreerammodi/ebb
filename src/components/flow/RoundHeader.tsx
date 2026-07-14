@@ -50,17 +50,6 @@ export default function RoundHeader() {
 
             <div className="no-print flex items-center gap-2">
                 <SpeechSwitcher />
-                <Tip label="Bulk add sheets" command="sheet.bulkAdd">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => useFlowStore.getState().setBulkAddOpen(true)}
-                        aria-label="Bulk add sheets"
-                        data-testid="bulk-add-btn"
-                    >
-                        Bulk add
-                    </Button>
-                </Tip>
                 <Tip label="Round info" command="info.open">
                     <Button
                         variant="ghost"

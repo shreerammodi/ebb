@@ -9,7 +9,6 @@ import UpdateChip from "@/components/update/UpdateChip";
 import { useKeymap } from "@/lib/keymap/useKeymap";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
-import BulkAddSheetsDialog from "./BulkAddSheetsDialog";
 import InfoPanel from "./InfoPanel";
 import PrintView from "./PrintView";
 import RfdDrawer from "./RfdDrawer";
@@ -97,7 +96,6 @@ export default function Workspace() {
             {rfdOpen && roundId && <RfdDrawer key={roundId} />}
             <SearchPalette />
             <InfoPanel />
-            <BulkAddSheetsDialog />
             <KeybindingsCheatsheet />
             <PrintView />
             <UpdateChip />

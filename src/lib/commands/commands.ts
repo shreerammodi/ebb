@@ -178,11 +178,6 @@ export function executeCommand(id: CommandId): void {
             state.addSheet({ group: "neg" });
             return;
         }
-        case "sheet.bulkAdd": {
-            if (!round) return;
-            state.setBulkAddOpen(true);
-            return;
-        }
         case "sheet.rename": {
             const { activeSheetId } = state;
             if (!activeSheetId) return;

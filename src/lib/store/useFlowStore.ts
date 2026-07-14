@@ -57,7 +57,6 @@ export interface FlowState {
     /** Initial query the palette opens with; ">" seeds command mode. */
     paletteSeed: string;
     settingsOpen: boolean;
-    bulkAddOpen: boolean;
     cheatsheetOpen: boolean;
     infoOpen: boolean;
     sidebarCollapsed: boolean;
@@ -120,7 +119,6 @@ export interface FlowActions {
     /** Opens/closes the palette; `seed` sets the initial query (">" = command mode). */
     setQuickSwitcherOpen(open: boolean, seed?: string): void;
     setSettingsOpen(open: boolean): void;
-    setBulkAddOpen(open: boolean): void;
     setCheatsheetOpen(open: boolean): void;
     setInfoOpen(open: boolean): void;
     setSidebarCollapsed(collapsed: boolean): void;
@@ -293,7 +291,6 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     quickSwitcherOpen: false,
     paletteSeed: "",
     settingsOpen: false,
-    bulkAddOpen: false,
     cheatsheetOpen: false,
     infoOpen: false,
     sidebarCollapsed: initialDisplaySettings.sidebarCollapsed,
@@ -559,9 +556,6 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     },
     setSettingsOpen(open) {
         set({ settingsOpen: open });
-    },
-    setBulkAddOpen(open) {
-        set({ bulkAddOpen: open });
     },
     setCheatsheetOpen(open) {
         set({ cheatsheetOpen: open });

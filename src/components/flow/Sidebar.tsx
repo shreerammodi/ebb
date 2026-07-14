@@ -7,7 +7,6 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
-import { executeCommand } from "@/lib/commands/commands";
 import type { FlowSheet } from "@/lib/model/flow";
 import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
@@ -28,10 +27,19 @@ export default function Sidebar() {
     const sidebarCollapsed = useFlowStore((s) => s.sidebarCollapsed);
     const setSidebarCollapsed = useFlowStore((s) => s.setSidebarCollapsed);
     const reorderSheets = useFlowStore((s) => s.reorderSheets);
+    const addSheets = useFlowStore((s) => s.addSheets);
     const [dragId, setDragId] = useState<string | null>(null);
     const [dropIndex, setDropIndex] = useState<number | null>(null);
+    // Bulk count: empty (or junk) means one sheet, so the buttons stay single-add
+    // by default and only fan out when the user types a number.
+    const [bulkCount, setBulkCount] = useState("");
 
     if (sheets.length === 0) return null;
+
+    function addGroup(group: "aff" | "neg") {
+        const n = Math.max(1, Math.floor(Number(bulkCount)) || 1);
+        addSheets(Array.from({ length: n }, () => ({ group })));
+    }
 
     // Deleting a sheet wipes a whole column of a live round, so it must be
     // reversible at the point of action - not only via a keyboard Undo the user
@@ -98,26 +106,43 @@ export default function Sidebar() {
             data-testid="sidebar"
         >
             <div className="flex shrink-0 items-center gap-1 p-2">
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-aff text-aff dark:border-aff flex-1"
-                    onClick={() => executeCommand("sheet.newAff")}
-                    data-testid="add-aff"
-                >
-                    + Aff
-                </Button>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-neg text-neg dark:border-neg flex-1"
-                    onClick={() => executeCommand("sheet.newNeg")}
-                    data-testid="add-neg"
-                >
-                    + Neg
-                </Button>
+                <Tip label="Add sheet" command="sheet.newAff">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="border-aff text-aff dark:border-aff flex-1"
+                        onClick={() => addGroup("aff")}
+                        data-testid="add-aff"
+                    >
+                        + Aff
+                    </Button>
+                </Tip>
+                <Tip label="Bulk add sheets">
+                    <input
+                        type="number"
+                        min={1}
+                        inputMode="numeric"
+                        value={bulkCount}
+                        onChange={(e) => setBulkCount(e.target.value)}
+                        placeholder="1"
+                        aria-label="Bulk add sheets"
+                        data-testid="bulk-add-count"
+                        className="border-input text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-11 shrink-0 [appearance:textfield] rounded-md border bg-transparent px-1 text-center text-[13px] outline-none focus-visible:ring-[3px] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                </Tip>
+                <Tip label="Add sheet" command="sheet.newNeg">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="border-neg text-neg dark:border-neg flex-1"
+                        onClick={() => addGroup("neg")}
+                        data-testid="add-neg"
+                    >
+                        + Neg
+                    </Button>
+                </Tip>
                 <Tip label="Collapse sidebar" command="sidebar.toggle">
                     <button
                         type="button"
