@@ -178,6 +178,14 @@ body {
     outline: none;
 }
 
+/* Inline editing fields (sheet-title rename, small menu inputs) denote editing
+   with the native caret and text selection alone, so the value never jumps
+   inside a floating ring. Suppressing the loud violet keyboard outline above
+   needs a selector that outranks the bare :focus-visible rule. */
+[data-editing-field]:focus-visible {
+    outline: none;
+}
+
 /* Text selection. Background only: the tint is translucent so the text's
    own color stays readable on any surface, including light-locked paper
    (flow sheet, font sample) under the dark theme. Never set `color` here:

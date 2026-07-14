@@ -55,6 +55,7 @@ export default function Workspace() {
                                 className="flex min-w-0 flex-1 flex-col overflow-hidden"
                             >
                                 <SheetTitleBar
+                                    sheetId={activeSheetId}
                                     title={titleOf(activeSheetId)}
                                     side={sideOf(activeSheetId)}
                                     tabLabel={splitSheetId ? "Tab 1" : undefined}
@@ -72,6 +73,7 @@ export default function Workspace() {
                                         className="flex min-w-0 flex-1 flex-col overflow-hidden"
                                     >
                                         <SheetTitleBar
+                                            sheetId={splitSheetId}
                                             title={titleOf(splitSheetId)}
                                             side={sideOf(splitSheetId)}
                                             tabLabel="Tab 2"
