@@ -1,6 +1,6 @@
 "use client";
 
-import { House, Settings } from "lucide-react";
+import { CircleQuestionMark, House, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 import { toast } from "sonner";
@@ -98,7 +98,7 @@ export default function RoundHeader() {
                         aria-label="Keyboard shortcuts"
                         data-testid="guide-btn"
                     >
-                        Shortcuts
+                        <CircleQuestionMark className="size-4" />
                     </Button>
                 </Tip>
                 <Tip label="Round info" command="info.open">

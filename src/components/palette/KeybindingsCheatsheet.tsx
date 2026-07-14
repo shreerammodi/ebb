@@ -7,7 +7,7 @@ import { prettyChord, buildChordMap } from "@/lib/keymap/displayChord";
 import { isMacPlatform } from "@/lib/platform";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
-const GUIDE_URL = "https://ebb.smodi.net";
+const GUIDE_URL = "https://ebb.smodi.net/docs";
 
 /** Grid-native gestures owned by Handsontable; fixed, not rebindable. */
 const FIXED_GROUPS: { label: string; rows: { chord: string; label: string }[] }[] = [
@@ -204,7 +204,7 @@ export default function KeybindingsCheatsheet() {
                         className="text-foreground shrink-0 underline underline-offset-2"
                         data-testid="cheatsheet-guide-link"
                     >
-                        User guide
+                        Documentation
                     </a>
                 </div>
             </DialogContent>
