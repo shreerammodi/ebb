@@ -47,7 +47,7 @@ export default function SaveStatus() {
                 role="alert"
                 data-testid="save-status"
                 data-state="error"
-                className="text-warn flex items-center gap-1.5 text-xs font-medium"
+                className="text-warn flex flex-none items-center gap-1.5 text-xs font-medium"
             >
                 <TriangleAlert size={13} aria-hidden="true" />
                 Not saved
@@ -73,7 +73,7 @@ export default function SaveStatus() {
             data-testid="save-status"
             data-state={state}
             tabIndex={savedAt ? 0 : undefined}
-            className="text-muted-foreground flex items-center gap-1.5 text-xs select-none"
+            className="text-muted-foreground flex flex-none items-center gap-1.5 text-xs select-none"
         >
             {saving ? (
                 <LoaderCircle
@@ -83,7 +83,9 @@ export default function SaveStatus() {
             ) : (
                 <Check aria-hidden="true" className="text-good size-3.5" />
             )}
-            {saving ? "Saving…" : `Saved${savedAt ? ` ${relTime(savedAt, now)}` : ""}`}
+            <span className="hidden sm:inline">
+                {saving ? "Saving…" : `Saved${savedAt ? ` ${relTime(savedAt, now)}` : ""}`}
+            </span>
         </span>
     );
 
