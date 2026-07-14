@@ -48,9 +48,11 @@ export default function SheetTitleBar({
         <div
             data-testid="sheet-title-bar"
             data-focused={focused ? "true" : undefined}
+            onClick={editing ? undefined : () => setEditing(true)}
             className={cn(
                 "border-border bg-card flex h-8 shrink-0 items-center gap-2 border-b px-3",
                 focused && "border-b-foreground/40",
+                !editing && "cursor-text",
             )}
         >
             {tabLabel && (
@@ -83,9 +85,7 @@ export default function SheetTitleBar({
                 />
             ) : (
                 <span
-                    onClick={() => setEditing(true)}
                     className={cn(
-                        "cursor-text",
                         "truncate text-[13px] font-semibold",
                         side === "aff" ? "text-aff" : "text-neg",
                     )}
