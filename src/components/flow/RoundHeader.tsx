@@ -90,17 +90,6 @@ export default function RoundHeader() {
                         Bulk add
                     </Button>
                 </Tip>
-                <Tip label="Keyboard shortcuts" command="help.open">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
-                        aria-label="Keyboard shortcuts"
-                        data-testid="guide-btn"
-                    >
-                        <CircleQuestionMark className="size-4" />
-                    </Button>
-                </Tip>
                 <Tip label="Round info" command="info.open">
                     <Button
                         variant="ghost"
@@ -124,6 +113,17 @@ export default function RoundHeader() {
                         data-testid="rfd-btn"
                     >
                         RFD
+                    </Button>
+                </Tip>
+                <Tip label="Keyboard shortcuts" command="help.open">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
+                        aria-label="Keyboard shortcuts"
+                        data-testid="guide-btn"
+                    >
+                        <CircleQuestionMark className="size-4" />
                     </Button>
                 </Tip>
                 <Tip label="Settings" command="settings.open">
