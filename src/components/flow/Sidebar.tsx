@@ -129,7 +129,7 @@ export default function Sidebar() {
                         aria-label="Bulk add sheets"
                         data-testid="bulk-add-count"
                         data-editing-field
-                        className="border-input text-foreground h-8 w-11 shrink-0 [appearance:textfield] rounded-md border bg-transparent px-1 text-center text-[13px] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        className="border-input text-foreground h-8 w-11 shrink-0 [appearance:textfield] rounded-md border bg-transparent px-1 text-center text-[13px] outline-none focus:placeholder-transparent [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     />
                 </Tip>
                 <Tip label="Add sheet" command="sheet.newNeg">
