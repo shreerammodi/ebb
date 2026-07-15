@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-07-15
+
+### Added
+
+- The Updates settings pane has a single "Install latest update" button: greyed
+  with an "already on the latest version" tooltip until a newer version is
+  downloaded, then green and one click from installing and relaunching. You
+  reach that state by letting checks run automatically or by pressing "Check
+  for updates".
+
+### Fixed
+
+- The "update downloaded" chip now appears on every screen - the dashboard and
+  trash as well as an open flow - instead of only while a flow is open.
+
 ## [0.3.7] - 2026-07-15
 
 ### Fixed
@@ -196,7 +211,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.7...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.8...HEAD
+[0.3.8]: https://github.com/shreerammodi/ebb/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/shreerammodi/ebb/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/shreerammodi/ebb/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/shreerammodi/ebb/compare/v0.3.4...v0.3.5
