@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 import { getCurrentVersion, getSystemInfo } from "@/lib/update/adapter";
+import type { UpdateUiState } from "@/lib/update/useAutoUpdate";
 
 import { useUpdate } from "../update/UpdateProvider";
 import SettingRow from "./SettingRow";
@@ -21,18 +22,20 @@ const ARCH_LABELS: Record<string, string> = {
     x86_64: "x86-64",
 };
 
-function statusLine(status: string, version?: string): string | null {
-    switch (status) {
+function statusLine(state: UpdateUiState): string | null {
+    switch (state.status) {
         case "checking":
             return "Checking for updates…";
         case "downloading":
             return "Downloading update…";
         case "ready":
-            return "Update ready — restart from the chip to apply.";
+            return `Update ${state.manifest.version} downloaded. Install it from the chip when you're ready.`;
+        case "upToDate":
+            return "You're up to date.";
+        case "error":
+            return state.message;
         case "held":
-            return version
-                ? `Update ${version} available — held while Tournament Mode is on.`
-                : "Update available — held while Tournament Mode is on.";
+            return `Update ${state.manifest.version} available - held while Tournament Mode is on.`;
         default:
             return null;
     }
@@ -67,16 +70,13 @@ export default function UpdateSettings() {
     }, []);
 
     const busy = state.status === "checking" || state.status === "downloading";
-    const message = statusLine(
-        state.status,
-        state.status === "held" ? state.manifest.version : undefined,
-    );
+    const message = statusLine(state);
 
     return (
         <div className="flex flex-col">
             <SettingRow
                 title="Check for updates automatically"
-                description="Downloads happen silently and only apply when it's safe."
+                description="Downloads happen silently; installing always waits for your confirmation."
                 control={
                     <Switch
                         checked={config.autoCheckEnabled}

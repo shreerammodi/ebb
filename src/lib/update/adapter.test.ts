@@ -1,11 +1,14 @@
+import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { fetchManifest, isDesktop } from "./adapter";
+import { downloadUpdate, fetchManifest, installAndRelaunch, isDesktop } from "./adapter";
 
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: vi.fn() }));
+vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: vi.fn() }));
 
 const checkMock = vi.mocked(check);
+const relaunchMock = vi.mocked(relaunch);
 
 describe("isDesktop", () => {
     afterEach(() => {
@@ -50,19 +53,104 @@ describe("fetchManifest", () => {
         expect(await fetchManifest()).toBeNull();
     });
 
-    it("returns null when the check throws (silent failure)", async () => {
+    it("throws when the check fails, so callers can tell failure from up-to-date", async () => {
         checkMock.mockRejectedValue(new Error("offline"));
-        expect(await fetchManifest()).toBeNull();
+        await expect(fetchManifest()).rejects.toThrow();
     });
 
-    it("returns null on a malformed manifest", async () => {
+    it("throws on a malformed manifest", async () => {
         checkMock.mockResolvedValue({ rawJson: { nope: true } } as never);
-        expect(await fetchManifest()).toBeNull();
+        await expect(fetchManifest()).rejects.toThrow();
     });
 
     it("returns null off-desktop without hitting the updater", async () => {
         delete (window as Record<string, unknown>).__TAURI_INTERNALS__;
         expect(await fetchManifest()).toBeNull();
         expect(checkMock).not.toHaveBeenCalled();
+    });
+});
+
+function makeUpdate(version: string) {
+    return {
+        version,
+        download: vi.fn().mockResolvedValue(undefined),
+        install: vi.fn().mockResolvedValue(undefined),
+    };
+}
+
+describe("downloadUpdate", () => {
+    beforeEach(() => {
+        (window as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+    });
+    afterEach(() => {
+        delete (window as Record<string, unknown>).__TAURI_INTERNALS__;
+        vi.clearAllMocks();
+    });
+
+    it("downloads the update but never installs (no disk rewrite)", async () => {
+        const update = makeUpdate("0.3.5");
+        checkMock.mockResolvedValue(update as never);
+        const staged = await downloadUpdate();
+        expect(staged?.version).toBe("0.3.5");
+        expect(update.download).toHaveBeenCalledOnce();
+        expect(update.install).not.toHaveBeenCalled();
+    });
+
+    it("returns null when no update is available", async () => {
+        checkMock.mockResolvedValue(null);
+        expect(await downloadUpdate()).toBeNull();
+    });
+
+    it("propagates download failures to the caller", async () => {
+        const update = makeUpdate("0.3.5");
+        update.download.mockRejectedValue(new Error("disk full"));
+        checkMock.mockResolvedValue(update as never);
+        await expect(downloadUpdate()).rejects.toThrow();
+    });
+
+    it("returns null off-desktop without hitting the updater", async () => {
+        delete (window as Record<string, unknown>).__TAURI_INTERNALS__;
+        expect(await downloadUpdate()).toBeNull();
+        expect(checkMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("installAndRelaunch", () => {
+    beforeEach(() => {
+        (window as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+    });
+    afterEach(() => {
+        delete (window as Record<string, unknown>).__TAURI_INTERNALS__;
+        vi.clearAllMocks();
+    });
+
+    it("installs the staged update, then relaunches", async () => {
+        const order: string[] = [];
+        const staged = {
+            version: "0.3.5",
+            install: vi.fn().mockImplementation(async () => order.push("install")),
+        };
+        relaunchMock.mockImplementation(async () => {
+            order.push("relaunch");
+        });
+        await installAndRelaunch(staged);
+        expect(order).toEqual(["install", "relaunch"]);
+    });
+
+    it("does not relaunch when the install fails", async () => {
+        const staged = {
+            version: "0.3.5",
+            install: vi.fn().mockRejectedValue(new Error("swap failed")),
+        };
+        await expect(installAndRelaunch(staged)).rejects.toThrow();
+        expect(relaunchMock).not.toHaveBeenCalled();
+    });
+
+    it("is a no-op off-desktop", async () => {
+        delete (window as Record<string, unknown>).__TAURI_INTERNALS__;
+        const staged = { version: "0.3.5", install: vi.fn() };
+        await installAndRelaunch(staged);
+        expect(staged.install).not.toHaveBeenCalled();
+        expect(relaunchMock).not.toHaveBeenCalled();
     });
 });
