@@ -8,6 +8,7 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 import { getCurrentVersion, getSystemInfo } from "@/lib/update/adapter";
 
 import { useUpdate } from "../update/UpdateProvider";
+import SettingRow from "./SettingRow";
 
 /** Rust's `std::env::consts` names, spelled the way people say them. */
 const OS_LABELS: Record<string, string> = {
@@ -72,76 +73,73 @@ export default function UpdateSettings() {
     );
 
     return (
-        <div className="flex flex-col gap-4">
-            {/* Auto-check opt-in */}
-            <label className="text-foreground flex items-center justify-between py-1.5 text-[13px]">
-                <span>
-                    Check for updates automatically
-                    <span className="text-muted-foreground mt-0.5 block text-[12px]">
-                        Downloads happen silently and only apply when it&apos;s safe.
-                    </span>
-                </span>
-                <Switch
-                    checked={config.autoCheckEnabled}
-                    onCheckedChange={(v) => setUpdateConfig({ autoCheckEnabled: v })}
-                    data-testid="toggle-autoCheck"
-                    aria-label="Check for updates automatically"
-                />
-            </label>
+        <div className="flex flex-col">
+            <SettingRow
+                title="Check for updates automatically"
+                description="Downloads happen silently and only apply when it's safe."
+                control={
+                    <Switch
+                        checked={config.autoCheckEnabled}
+                        onCheckedChange={(v) => setUpdateConfig({ autoCheckEnabled: v })}
+                        data-testid="toggle-autoCheck"
+                        aria-label="Check for updates automatically"
+                    />
+                }
+            />
 
-            {/* Manual check */}
-            <div className="flex items-center justify-between gap-3">
-                <div className="text-foreground text-[13px]">
-                    Check now
-                    {message && (
-                        <span
-                            className="text-muted-foreground mt-0.5 block text-[12px]"
-                            data-testid="update-status"
-                        >
-                            {message}
-                        </span>
-                    )}
-                </div>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void checkNow()}
-                    disabled={busy}
-                    data-testid="check-updates"
-                >
-                    {busy ? "Checking…" : "Check for updates"}
-                </Button>
-            </div>
+            <SettingRow
+                title="Check now"
+                description={
+                    message ? (
+                        <span data-testid="update-status">{message}</span>
+                    ) : (
+                        "Look for a newer version right now."
+                    )
+                }
+                control={
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void checkNow()}
+                        disabled={busy}
+                        data-testid="check-updates"
+                    >
+                        {busy ? "Checking…" : "Check for updates"}
+                    </Button>
+                }
+            />
 
-            {/* Tournament Mode */}
-            <label className="text-foreground flex items-center justify-between py-1.5 text-[13px]">
-                <span>
-                    Tournament Mode
-                    <span className="text-muted-foreground mt-0.5 block text-[12px]">
-                        Pins the current version and disables automatic updates.
-                    </span>
-                </span>
-                <Switch
-                    checked={config.tournamentMode}
-                    onCheckedChange={(v) => setUpdateConfig({ tournamentMode: v })}
-                    data-testid="toggle-tournamentMode"
-                    aria-label="Tournament Mode"
-                />
-            </label>
+            <SettingRow
+                title="Tournament Mode"
+                description="Pins the current version and disables automatic updates."
+                control={
+                    <Switch
+                        checked={config.tournamentMode}
+                        onCheckedChange={(v) => setUpdateConfig({ tournamentMode: v })}
+                        data-testid="toggle-tournamentMode"
+                        aria-label="Tournament Mode"
+                    />
+                }
+            />
 
-            {/* This install */}
             {install && (
-                <dl className="border-border border-t pt-3 text-[12px]" data-testid="install-info">
-                    <div className="flex items-center justify-between py-0.5">
-                        <dt className="text-muted-foreground">Version</dt>
-                        <dd className="text-foreground tabular-nums">{install.version}</dd>
-                    </div>
-                    <div className="flex items-center justify-between py-0.5">
-                        <dt className="text-muted-foreground">Platform</dt>
-                        <dd className="text-foreground">{install.platform}</dd>
-                    </div>
-                </dl>
+                <div data-testid="install-info" className="flex flex-col">
+                    <SettingRow
+                        title="Version"
+                        control={
+                            <span className="text-foreground text-[13px] tabular-nums">
+                                {install.version}
+                            </span>
+                        }
+                    />
+                    <SettingRow
+                        title="Platform"
+                        control={
+                            <span className="text-foreground text-[13px]">{install.platform}</span>
+                        }
+                    />
+                </div>
             )}
         </div>
     );

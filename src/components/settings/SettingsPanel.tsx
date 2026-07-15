@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Keyboard, type LucideIcon, Palette, PenLine, RefreshCw, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import type { ThemeMode } from "@/lib/theme/mode";
 import { isDesktop } from "@/lib/update/adapter";
 import { cn } from "@/lib/utils";
 
+import SettingRow from "./SettingRow";
 import UpdateSettings from "./UpdateSettings";
 
 const THEME_OPTIONS: { id: ThemeMode; label: string }[] = [
@@ -57,15 +58,15 @@ function isReservedChord(chord: string): boolean {
 
 type Category = "display" | "editor" | "keyboard" | "updates";
 
-const BASE_CATEGORIES: { id: Category; label: string }[] = [
-    { id: "display", label: "Display" },
-    { id: "editor", label: "Editor" },
-    { id: "keyboard", label: "Keyboard" },
+const BASE_CATEGORIES: { id: Category; label: string; icon: LucideIcon }[] = [
+    { id: "display", label: "Display", icon: Palette },
+    { id: "editor", label: "Editor", icon: PenLine },
+    { id: "keyboard", label: "Keyboard", icon: Keyboard },
 ];
 
 // The Updates category is desktop-only; the web build never has an updater.
-const CATEGORIES: { id: Category; label: string }[] = isDesktop()
-    ? [...BASE_CATEGORIES, { id: "updates", label: "Updates" }]
+const CATEGORIES: { id: Category; label: string; icon: LucideIcon }[] = isDesktop()
+    ? [...BASE_CATEGORIES, { id: "updates", label: "Updates", icon: RefreshCw }]
     : BASE_CATEGORIES;
 
 function chordForCommand(bindings: Record<string, CommandId>): Record<string, string> {
@@ -199,11 +200,15 @@ export default function SettingsPanel() {
                 <div className="flex max-h-[70vh]">
                     {/* Left nav */}
                     <nav
-                        className="border-border flex w-[130px] shrink-0 flex-col gap-1 border-r p-2"
+                        className="border-border bg-muted/30 flex w-[180px] shrink-0 flex-col gap-0.5 border-r p-3"
                         aria-label="Settings categories"
                     >
+                        <span className="text-muted-foreground px-2 pb-1 text-[11px] font-semibold tracking-wide uppercase">
+                            Options
+                        </span>
                         {CATEGORIES.map((c) => {
                             const active = c.id === category;
+                            const Icon = c.icon;
                             return (
                                 <button
                                     key={c.id}
@@ -212,12 +217,13 @@ export default function SettingsPanel() {
                                     onClick={() => setCategory(c.id)}
                                     aria-current={active ? "page" : undefined}
                                     className={cn(
-                                        "rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors",
+                                        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] transition-colors",
                                         active
                                             ? "bg-accent font-medium text-accent-foreground"
-                                            : "text-muted-foreground hover:bg-accent/50",
+                                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                                     )}
                                 >
+                                    <Icon className="size-4 shrink-0 opacity-80" />
                                     {c.label}
                                 </button>
                             );
@@ -225,96 +231,94 @@ export default function SettingsPanel() {
                     </nav>
 
                     {/* Right content */}
-                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="flex-1 overflow-y-auto px-5 py-2">
                         {category === "updates" && <UpdateSettings />}
                         {category === "display" && (
-                            <div className="flex flex-col gap-4">
-                                <div
-                                    role="radiogroup"
-                                    aria-labelledby="theme-label"
-                                    className="flex flex-col gap-1"
-                                >
-                                    <span
-                                        id="theme-label"
-                                        className="text-foreground text-[13px] font-medium"
-                                    >
-                                        Theme
-                                    </span>
-                                    {THEME_OPTIONS.map((t) => {
-                                        const checked = t.id === theme;
-                                        return (
-                                            <label
-                                                key={t.id}
-                                                className={cn(
-                                                    "flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors",
-                                                    checked ? "bg-accent" : "hover:bg-accent/50",
-                                                )}
+                            <div className="flex flex-col">
+                                <SettingRow
+                                    title="Theme"
+                                    description="Base color scheme for the app."
+                                    control={
+                                        <div
+                                            role="radiogroup"
+                                            aria-label="Theme"
+                                            className="flex items-center gap-1"
+                                        >
+                                            {THEME_OPTIONS.map((t) => {
+                                                const checked = t.id === theme;
+                                                return (
+                                                    <label
+                                                        key={t.id}
+                                                        className={cn(
+                                                            "flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-[13px] transition-colors",
+                                                            checked
+                                                                ? "bg-accent text-foreground"
+                                                                : "text-muted-foreground hover:bg-accent/50",
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name="theme"
+                                                            value={t.id}
+                                                            checked={checked}
+                                                            onChange={() => setTheme(t.id)}
+                                                            data-testid={`theme-${t.id}`}
+                                                            className="accent-sel"
+                                                        />
+                                                        {t.label}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    }
+                                />
+                                <SettingRow
+                                    title="Flow font"
+                                    description="Font used for flowed argument text and the inline editor."
+                                    control={
+                                        <>
+                                            <Select
+                                                value={flowFont}
+                                                onValueChange={(value) =>
+                                                    setFlowFont(value as FontId)
+                                                }
                                             >
-                                                <input
-                                                    type="radio"
-                                                    name="theme"
-                                                    value={t.id}
-                                                    checked={checked}
-                                                    onChange={() => setTheme(t.id)}
-                                                    data-testid={`theme-${t.id}`}
-                                                    className="accent-sel"
-                                                />
-                                                <span className="text-foreground text-[14px]">
-                                                    {t.label}
-                                                </span>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center justify-between">
-                                        <span
-                                            id="flow-font-label"
-                                            className="text-foreground text-[13px] font-medium"
-                                        >
-                                            Flow font
-                                        </span>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setFlowFont(DEFAULT_FONT_ID)}
-                                            disabled={flowFont === DEFAULT_FONT_ID}
-                                            data-testid="flow-font-reset"
-                                            aria-label="Reset flow font to default"
-                                        >
-                                            Default
-                                        </Button>
-                                    </div>
-                                    <p className="text-muted-foreground mb-1 text-[12px]">
-                                        Font used for flowed argument text and the inline editor.
-                                    </p>
-                                    <Select
-                                        value={flowFont}
-                                        onValueChange={(value) => setFlowFont(value as FontId)}
-                                    >
-                                        <SelectTrigger
-                                            aria-labelledby="flow-font-label"
-                                            data-testid="flow-font-select"
-                                            className="w-full"
-                                        >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {FONTS.map((f) => (
-                                                <SelectItem
-                                                    key={f.id}
-                                                    value={f.id}
-                                                    data-testid={`flow-font-${f.id}`}
-                                                    style={{ fontFamily: f.cssVar }}
+                                                <SelectTrigger
+                                                    aria-label="Flow font"
+                                                    data-testid="flow-font-select"
+                                                    className="w-44"
                                                 >
-                                                    {f.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {FONTS.map((f) => (
+                                                        <SelectItem
+                                                            key={f.id}
+                                                            value={f.id}
+                                                            data-testid={`flow-font-${f.id}`}
+                                                            style={{ fontFamily: f.cssVar }}
+                                                        >
+                                                            {f.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setFlowFont(DEFAULT_FONT_ID)}
+                                                disabled={flowFont === DEFAULT_FONT_ID}
+                                                data-testid="flow-font-reset"
+                                                aria-label="Reset flow font to default"
+                                            >
+                                                Default
+                                            </Button>
+                                        </>
+                                    }
+                                >
                                     <p
-                                        className="mt-1 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-[13px] text-zinc-900"
+                                        className="rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-[13px] text-zinc-900"
                                         style={{
                                             fontFamily:
                                                 FONTS.find((f) => f.id === flowFont)?.cssVar ??
@@ -324,104 +328,80 @@ export default function SettingsPanel() {
                                     >
                                         Separation of powers outweighs
                                     </p>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-foreground text-[13px] font-medium">
-                                            Argument colors
-                                        </span>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                                setSideColor("aff", null);
-                                                setSideColor("neg", null);
-                                            }}
-                                            disabled={affColor === null && negColor === null}
-                                            data-testid="side-colors-reset"
-                                            aria-label="Reset argument colors to default"
-                                        >
-                                            Default
-                                        </Button>
-                                    </div>
-                                    <p className="text-muted-foreground mb-1 text-[12px]">
-                                        Ink used for aff and neg columns, headers, and labels.
-                                    </p>
-                                    <div className="flex flex-col gap-1.5">
-                                        {SIDE_OPTIONS.map((s) => {
-                                            const value =
-                                                (s.id === "aff" ? affColor : negColor) ??
-                                                DEFAULT_SIDE_COLORS[s.id];
-                                            return (
-                                                <label
-                                                    key={s.id}
-                                                    className="flex w-fit items-center gap-2.5 rounded-md px-2 py-1.5"
-                                                >
-                                                    <input
-                                                        type="color"
-                                                        value={value}
-                                                        onChange={(e) =>
-                                                            setSideColor(s.id, e.target.value)
-                                                        }
-                                                        data-testid={`side-color-${s.id}`}
-                                                        aria-label={`${s.label} color`}
-                                                        className="border-border h-5 w-9 cursor-pointer rounded border bg-transparent p-0"
-                                                    />
-                                                    <span className="text-foreground text-[14px]">
+                                </SettingRow>
+                                <SettingRow
+                                    title="Argument colors"
+                                    description="Ink used for aff and neg columns, headers, and labels."
+                                    control={
+                                        <>
+                                            {SIDE_OPTIONS.map((s) => {
+                                                const value =
+                                                    (s.id === "aff" ? affColor : negColor) ??
+                                                    DEFAULT_SIDE_COLORS[s.id];
+                                                return (
+                                                    <label
+                                                        key={s.id}
+                                                        className="text-muted-foreground flex items-center gap-1.5 text-[13px]"
+                                                    >
+                                                        <input
+                                                            type="color"
+                                                            value={value}
+                                                            onChange={(e) =>
+                                                                setSideColor(s.id, e.target.value)
+                                                            }
+                                                            data-testid={`side-color-${s.id}`}
+                                                            aria-label={`${s.label} color`}
+                                                            className="border-border h-5 w-8 cursor-pointer rounded border bg-transparent p-0"
+                                                        />
                                                         {s.label}
-                                                    </span>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-foreground text-[13px] font-medium">
-                                        RFD editor
-                                    </span>
-                                    <p className="text-muted-foreground mb-1 text-[12px]">
-                                        The RFD drawer is where you write your reason for decision
-                                        while reading the flow. Vim keybindings apply to that
-                                        editor.
-                                    </p>
-                                    <label className="flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5">
-                                        <span className="text-foreground text-[14px]">
-                                            Vim keybindings
-                                        </span>
+                                                    </label>
+                                                );
+                                            })}
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSideColor("aff", null);
+                                                    setSideColor("neg", null);
+                                                }}
+                                                disabled={affColor === null && negColor === null}
+                                                data-testid="side-colors-reset"
+                                                aria-label="Reset argument colors to default"
+                                            >
+                                                Default
+                                            </Button>
+                                        </>
+                                    }
+                                />
+                                <SettingRow
+                                    title="Vim keybindings"
+                                    description="The RFD drawer is where you write your reason for decision while reading the flow. Vim keybindings apply to that editor."
+                                    control={
                                         <Switch
                                             checked={rfdVim}
                                             onCheckedChange={setRfdVim}
                                             data-testid="rfd-vim-toggle"
                                             aria-label="Vim keybindings"
                                         />
-                                    </label>
-                                </div>
+                                    }
+                                />
                             </div>
                         )}
                         {category === "editor" && (
-                            <div className="flex flex-col gap-4">
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-foreground text-[13px] font-medium">
-                                        Paste
-                                    </span>
-                                    <p className="text-muted-foreground mb-1 text-[12px]">
-                                        With insert paste on, pasted cells push the text already in
-                                        those columns down instead of writing over it. Neighboring
-                                        speeches keep their rows.
-                                    </p>
-                                    <label className="flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5">
-                                        <span className="text-foreground text-[14px]">
-                                            Insert paste
-                                        </span>
+                            <div className="flex flex-col">
+                                <SettingRow
+                                    title="Insert paste"
+                                    description="With insert paste on, pasted cells push the text already in those columns down instead of writing over it. Neighboring speeches keep their rows."
+                                    control={
                                         <Switch
                                             checked={insertPaste}
                                             onCheckedChange={setInsertPaste}
                                             data-testid="insert-paste-toggle"
                                             aria-label="Insert paste"
                                         />
-                                    </label>
-                                </div>
+                                    }
+                                />
                             </div>
                         )}
                         {category === "keyboard" && (
