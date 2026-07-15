@@ -61,14 +61,17 @@ pub fn run() {
                 let _ = app.emit("menu:command", id.to_string());
             }
         })
-        // Window lifecycle guard: neutralize destructive closes of the primary
-        // window. `⌘W` and the red traffic-light button both raise
+        // Window lifecycle guard (macOS only): neutralize destructive closes of
+        // the primary window. `⌘W` and the red traffic-light button both raise
         // CloseRequested; we prevent it so a round can't be lost to an
-        // accidental close. Continuous autosave already makes a real quit
-        // (`⌘Q` → app.exit) non-destructive.
+        // accidental close, matching the platform norm that close != quit (the
+        // user quits with `⌘Q` → app.exit). On Windows/Linux the window's X
+        // button is the quit action, so preventing it would make the app
+        // unclosable; there, close falls through to a normal exit. Continuous
+        // autosave makes that exit non-destructive.
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
-                if window.label() == "main" {
+                if cfg!(target_os = "macos") && window.label() == "main" {
                     api.prevent_close();
                 }
             }

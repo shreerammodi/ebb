@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Rename a sheet straight from the pane title bar: click anywhere in the title
+  strip to edit its name in place, the same rename the sidebar offers.
+- A bulk-add field in the sidebar sets how many rows to add at once, matching
+  the Excel-template flow.
+
+### Changed
+
+- The keyboard-shortcuts button moves next to Settings in the round header and
+  shows a help icon to match it; the cheatsheet footer links to the docs site.
+- Add-sheet buttons are color-coded.
+- The round header drops its Import button. Importing a flow lives on the
+  dashboard, not inside an open round.
+- Switching sheets is faster.
+
+### Fixed
+
+- The round header stays readable when the window is narrow: the left and right
+  groups no longer overlap, and the autosave label collapses to just its icon
+  below the small breakpoint.
+- The bulk-add field keeps its rounded shape on focus and hides its placeholder,
+  so the caret no longer cuts through the digit.
+- On Windows and Linux, the window close button now quits the app. The close
+  guard that keeps a round from being lost to an accidental close is macOS-only,
+  matching that platform's close-is-not-quit norm.
+
 ## [0.3.4] - 2026-07-13
 
 ### Fixed
