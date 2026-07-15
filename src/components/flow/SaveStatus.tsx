@@ -1,8 +1,8 @@
 "use client";
 
 import { Check, LoaderCircle, TriangleAlert } from "lucide-react";
-import { useEffect, useState } from "react";
 import { AnimatePresence, m } from "motion/react";
+import { useEffect, useState } from "react";
 
 import { Tip } from "@/components/ui/tooltip";
 import { saveFlowNow } from "@/lib/persistence/flowPersistence";
@@ -14,9 +14,9 @@ function relTime(savedAt: number, now: number): string {
     const s = Math.max(0, Math.round((now - savedAt) / 1000));
     if (s < 5) return "just now";
     if (s < 60) return `${s}s ago`;
-    const m = Math.floor(s / 60);
-    if (m < 60) return `${m}m ago`;
-    const h = Math.floor(m / 60);
+    const min = Math.floor(s / 60);
+    if (min < 60) return `${min}m ago`;
+    const h = Math.floor(min / 60);
     return `${h}h ago`;
 }
 

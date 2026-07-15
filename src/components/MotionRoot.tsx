@@ -1,6 +1,6 @@
 "use client";
 
-import { domMax, LazyMotion, MotionConfig } from "motion/react";
+import { LazyMotion, MotionConfig } from "motion/react";
 
 /** Shared curve for every app animation; matches --ease-out-quart in globals.css. */
 export const MOTION_TRANSITION = {
@@ -8,15 +8,18 @@ export const MOTION_TRANSITION = {
     ease: [0.25, 1, 0.5, 1],
 } as const;
 
+/** Loads Motion's DOM feature set (incl. layout animations) as a separate chunk. */
+const loadFeatures = () => import("motion/react").then((mod) => mod.domMax);
+
 /**
- * Installs Motion once for the whole app: LazyMotion defers the feature bundle
- * (domMax, needed for layout animations) off the initial load, and MotionConfig
+ * Installs Motion once for the whole app: LazyMotion's async `features` loads
+ * the feature bundle as a separate chunk after first render, and MotionConfig
  * makes every animation honor prefers-reduced-motion and share one curve. strict
  * forces `m.*` usage so no eager `motion.*` import sneaks the full bundle back in.
  */
 export default function MotionRoot({ children }: { children: React.ReactNode }) {
     return (
-        <LazyMotion features={domMax} strict>
+        <LazyMotion features={loadFeatures} strict>
             <MotionConfig reducedMotion="user" transition={MOTION_TRANSITION}>
                 {children}
             </MotionConfig>
