@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The round header drops its Import button. Importing a flow lives on the
   dashboard, not inside an open round.
 - Switching sheets is faster.
+- The settings panel is laid out as divided rows with the control on the right,
+  and its sidebar gains an icon per category.
+- Focus rings on inputs, selects, buttons, and toggles are a single thin violet
+  border instead of a thick glowing halo.
 
 ### Fixed
 

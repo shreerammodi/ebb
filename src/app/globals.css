@@ -53,10 +53,10 @@
     --destructive: oklch(0.577 0.245 27.325);
     --border: oklch(0.898 0.005 286.3);
     --input: oklch(0.898 0.005 286.3);
-    /* Focus ring is the selection violet, matching the bare-element
-       :focus-visible outline so shadcn primitives and grid cells
-       share one focus language. */
-    --ring: var(--sel);
+    /* Focus ring for shadcn primitives: a lighter violet than the bare
+       :focus-visible outline (--sel), so a focused input reads as a soft
+       halo rather than a heavy border. */
+    --ring: #a78bfa;
     --radius: 0.625rem;
 
     /* Side + status colors. These appear on chrome (dashboard,
@@ -101,7 +101,7 @@
        carry elevation because shadows barely read on dark. */
     --border: oklch(1 0 0 / 12%);
     --input: oklch(1 0 0 / 16%);
-    --ring: var(--sel);
+    --ring: #c4b5fd;
 
     /* Brightened so they hold AA contrast on dark chrome. */
     --aff: #7da2ff;
@@ -166,10 +166,15 @@ body {
     overscroll-behavior: none;
 }
 
-/* Keyboard-first focus ring — violet, never browser default */
-:focus-visible {
-    outline: 2px solid var(--sel);
-    outline-offset: 2px;
+/* Keyboard-first focus ring for bare elements (grid cells, links) — violet,
+   never the browser default. In `base` so a component's own `outline-none`
+   utility outranks it: shadcn primitives (input, select, button, switch) opt
+   out here and draw their own thin focus border instead of stacking both. */
+@layer base {
+    :focus-visible {
+        outline: 2px solid var(--sel);
+        outline-offset: 2px;
+    }
 }
 
 /* Remove outline on mouse/touch focus */

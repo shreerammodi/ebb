@@ -142,7 +142,7 @@ export default function Dashboard() {
                                 type="button"
                                 data-testid="empty-start-aff"
                                 onClick={() => createFlow("aff")}
-                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
+                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none"
                             >
                                 <span className="bg-aff size-2 rounded-full" aria-hidden />
                                 Aff
@@ -151,7 +151,7 @@ export default function Dashboard() {
                                 type="button"
                                 data-testid="empty-start-neg"
                                 onClick={() => createFlow("neg")}
-                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
+                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none"
                             >
                                 <span className="bg-neg size-2 rounded-full" aria-hidden />
                                 Neg
@@ -160,7 +160,7 @@ export default function Dashboard() {
                                 type="button"
                                 data-testid="empty-start-judge"
                                 onClick={() => createFlow("judge")}
-                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring focus-visible:ring-ring/50 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none focus-visible:ring-[3px]"
+                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none"
                             >
                                 <span
                                     className="bg-muted-foreground size-2 rounded-full"
@@ -181,7 +181,7 @@ export default function Dashboard() {
                                     value={sort}
                                     onChange={(e) => setSort(e.target.value as SortKey)}
                                     data-testid="sort-select"
-                                    className="border-input bg-card text-foreground focus-visible:border-ring focus-visible:ring-ring/50 rounded-md border px-2 py-1 outline-none focus-visible:ring-[3px]"
+                                    className="border-input bg-card text-foreground focus-visible:border-ring rounded-md border px-2 py-1 outline-none"
                                 >
                                     <option value="updated">Last edited</option>
                                     <option value="date">Date</option>
