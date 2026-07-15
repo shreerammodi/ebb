@@ -7,7 +7,7 @@
 mod config;
 mod menu;
 
-use tauri::{Emitter, WindowEvent};
+use tauri::Emitter;
 
 /// `[os, arch]` of the running binary, e.g. `["macos", "aarch64"]`. The webview
 /// user agent can't be trusted for either (macOS reports "Intel" on Apple
@@ -59,21 +59,6 @@ pub fn run() {
                 app.exit(0);
             } else {
                 let _ = app.emit("menu:command", id.to_string());
-            }
-        })
-        // Window lifecycle guard (macOS only): neutralize destructive closes of
-        // the primary window. `⌘W` and the red traffic-light button both raise
-        // CloseRequested; we prevent it so a round can't be lost to an
-        // accidental close, matching the platform norm that close != quit (the
-        // user quits with `⌘Q` → app.exit). On Windows/Linux the window's X
-        // button is the quit action, so preventing it would make the app
-        // unclosable; there, close falls through to a normal exit. Continuous
-        // autosave makes that exit non-destructive.
-        .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                if cfg!(target_os = "macos") && window.label() == "main" {
-                    api.prevent_close();
-                }
             }
         })
         .run(tauri::generate_context!())
