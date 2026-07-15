@@ -4,8 +4,6 @@ import dynamic from "next/dynamic";
 
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
 import SearchPalette from "@/components/palette/SearchPalette";
-import CriticalUpdateModal from "@/components/update/CriticalUpdateModal";
-import UpdateChip from "@/components/update/UpdateChip";
 import { useKeymap } from "@/lib/keymap/useKeymap";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -100,8 +98,6 @@ export default function Workspace() {
             <InfoPanel />
             <KeybindingsCheatsheet />
             <PrintView />
-            <UpdateChip />
-            <CriticalUpdateModal />
         </div>
     );
 }

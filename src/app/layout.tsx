@@ -8,6 +8,8 @@ import MotionRoot from "@/components/MotionRoot";
 import SettingsPanel from "@/components/settings/SettingsPanel";
 import ThemeSync from "@/components/ThemeSync";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import CriticalUpdateModal from "@/components/update/CriticalUpdateModal";
+import UpdateChip from "@/components/update/UpdateChip";
 import { UpdateProvider } from "@/components/update/UpdateProvider";
 
 import "./globals.css";
@@ -304,7 +306,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <ConfigFileSync />
                 <TooltipProvider>
                     <UpdateProvider>
-                        <MotionRoot>{children}</MotionRoot>
+                        {/* The chip and critical modal live inside MotionRoot
+                            (LazyMotion strict requires `m.*` under it) and here,
+                            not per screen, so an update surfaces on the dashboard
+                            and trash as well as in a flow. */}
+                        <MotionRoot>
+                            {children}
+                            <UpdateChip />
+                            <CriticalUpdateModal />
+                        </MotionRoot>
                         {/* Inside UpdateProvider so the Updates settings pane can
                             read the update context, and mounted here (not per
                             screen) so the settings chord works on the dashboard
