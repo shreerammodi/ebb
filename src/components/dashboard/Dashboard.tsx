@@ -1,6 +1,7 @@
 "use client";
 
 import { Settings } from "lucide-react";
+import { AnimatePresence, LayoutGroup, m } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -200,48 +201,88 @@ export default function Dashboard() {
                             </label>
                         </div>
 
-                        {groups ? (
-                            groups.map((g) => (
-                                <section key={g.label} className="mb-6">
-                                    <h2 className="text-muted-foreground mb-2 text-[11px] font-bold tracking-widest uppercase">
-                                        {g.label}
-                                    </h2>
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                        {g.items.map((s) => (
-                                            <FlowCard
-                                                key={s.id}
-                                                summary={s}
-                                                onOpen={open}
-                                                menu={
-                                                    <FlowCardMenu
-                                                        id={s.id}
-                                                        onViewDetails={setDetailId}
-                                                        onChanged={refresh}
-                                                    />
-                                                }
-                                            />
+                        <LayoutGroup>
+                            <AnimatePresence mode="wait" initial={false}>
+                                {groups ? (
+                                    <m.div
+                                        key="grouped"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                    >
+                                        {groups.map((g) => (
+                                            <section key={g.label} className="mb-6">
+                                                <h2 className="text-muted-foreground mb-2 text-[11px] font-bold tracking-widest uppercase">
+                                                    {g.label}
+                                                </h2>
+                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                                    <AnimatePresence
+                                                        mode="popLayout"
+                                                        initial={false}
+                                                    >
+                                                        {g.items.map((s) => (
+                                                            <m.div
+                                                                layout
+                                                                key={s.id}
+                                                                initial={{ opacity: 0 }}
+                                                                animate={{ opacity: 1 }}
+                                                                exit={{ opacity: 0 }}
+                                                            >
+                                                                <FlowCard
+                                                                    summary={s}
+                                                                    onOpen={open}
+                                                                    menu={
+                                                                        <FlowCardMenu
+                                                                            id={s.id}
+                                                                            onViewDetails={
+                                                                                setDetailId
+                                                                            }
+                                                                            onChanged={refresh}
+                                                                        />
+                                                                    }
+                                                                />
+                                                            </m.div>
+                                                        ))}
+                                                    </AnimatePresence>
+                                                </div>
+                                            </section>
                                         ))}
-                                    </div>
-                                </section>
-                            ))
-                        ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {sorted.map((m) => (
-                                    <FlowCard
-                                        key={m.summary.id}
-                                        summary={m.summary}
-                                        onOpen={open}
-                                        menu={
-                                            <FlowCardMenu
-                                                id={m.summary.id}
-                                                onViewDetails={setDetailId}
-                                                onChanged={refresh}
-                                            />
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        )}
+                                    </m.div>
+                                ) : (
+                                    <m.div
+                                        key="flat"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                                    >
+                                        <AnimatePresence mode="popLayout" initial={false}>
+                                            {sorted.map((match) => (
+                                                <m.div
+                                                    layout
+                                                    key={match.summary.id}
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    exit={{ opacity: 0 }}
+                                                >
+                                                    <FlowCard
+                                                        summary={match.summary}
+                                                        onOpen={open}
+                                                        menu={
+                                                            <FlowCardMenu
+                                                                id={match.summary.id}
+                                                                onViewDetails={setDetailId}
+                                                                onChanged={refresh}
+                                                            />
+                                                        }
+                                                    />
+                                                </m.div>
+                                            ))}
+                                        </AnimatePresence>
+                                    </m.div>
+                                )}
+                            </AnimatePresence>
+                        </LayoutGroup>
                     </>
                 )}
             </div>
