@@ -252,10 +252,7 @@ describe("Sidebar", () => {
         // before the hovered row" - Disad lands at index 0.
         const source = screen.getByTestId(`sheet-${daId}`);
         const target = screen.getByTestId(`sheet-${caseId}`);
-        // A shared dataTransfer mirrors the browser: dragstart must set the
-        // payload or Chrome never fires drop (the copy-cursor no-op bug).
-        // jsdom has no DataTransfer, so stub the surface the handlers touch.
-        const dataTransfer = { effectAllowed: "", dropEffect: "", setData: () => {} };
+        const dataTransfer = makeDataTransfer();
         fireEvent.dragStart(source, { dataTransfer });
         fireEvent.dragOver(target, { dataTransfer });
         fireEvent.drop(target, { dataTransfer });
@@ -264,4 +261,37 @@ describe("Sidebar", () => {
         const order = (id: string) => sheets.find((s) => s.id === id)!.order;
         expect(order(daId)).toBeLessThan(order(caseId));
     });
+
+    it("reorders on a fast drop that skips the dragover state update", () => {
+        // A quick drag fires drop before React commits the dragstart/dragover
+        // setState, so the drop must resolve source and target from the event
+        // itself rather than from dragId/dropIndex state (which is still null).
+        const { caseId, daId } = setupRound();
+        renderSidebar();
+
+        const source = screen.getByTestId(`sheet-${daId}`);
+        const target = screen.getByTestId(`sheet-${caseId}`);
+        const dataTransfer = makeDataTransfer();
+        fireEvent.dragStart(source, { dataTransfer });
+        fireEvent.drop(target, { dataTransfer }); // no dragOver in between
+
+        const sheets = useFlowStore.getState().round!.sheets;
+        const order = (id: string) => sheets.find((s) => s.id === id)!.order;
+        expect(order(daId)).toBeLessThan(order(caseId));
+    });
 });
+
+// A shared dataTransfer mirrors the browser: dragstart writes the sheet id and
+// drop reads it back, so the reorder never depends on not-yet-flushed state.
+// jsdom has no DataTransfer, so stub the surface the handlers touch.
+function makeDataTransfer() {
+    const store: Record<string, string> = {};
+    return {
+        effectAllowed: "",
+        dropEffect: "",
+        setData: (type: string, value: string) => {
+            store[type] = value;
+        },
+        getData: (type: string) => store[type] ?? "",
+    };
+}

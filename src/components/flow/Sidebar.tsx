@@ -80,19 +80,17 @@ export default function Sidebar() {
 
     const flowSheets = sheets.filter((s) => s.kind !== "cx").sort((a, b) => a.order - b.order);
 
-    function commitDrop() {
-        if (dragId == null || dropIndex == null) {
-            setDragId(null);
-            setDropIndex(null);
-            return;
-        }
+    // Resolve source and target from the drop event, not from dragId/dropIndex
+    // state: a fast drag fires drop before React commits the dragstart/dragover
+    // setState, so reading that state here would see stale nulls and no-op.
+    function commitDrop(sourceId: string, targetIndex: number) {
         const ids = flowSheets.map((s) => s.id);
-        const from = ids.indexOf(dragId);
+        const from = ids.indexOf(sourceId);
         if (from !== -1) {
             ids.splice(from, 1);
             // Adjust the target index when removing an earlier element shifts it left.
-            const to = from < dropIndex ? dropIndex - 1 : dropIndex;
-            ids.splice(to, 0, dragId);
+            const to = from < targetIndex ? targetIndex - 1 : targetIndex;
+            ids.splice(to, 0, sourceId);
             reorderSheets(ids);
         }
         setDragId(null);
@@ -220,7 +218,15 @@ export default function Sidebar() {
                                     }}
                                     onDropRow={(e) => {
                                         e.preventDefault();
-                                        commitDrop();
+                                        const sourceId = e.dataTransfer.getData("text/plain");
+                                        if (!sourceId) {
+                                            setDragId(null);
+                                            setDropIndex(null);
+                                            return;
+                                        }
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        const after = e.clientY - rect.top > rect.height / 2;
+                                        commitDrop(sourceId, after ? i + 1 : i);
                                     }}
                                     onDragEndRow={() => {
                                         setDragId(null);
