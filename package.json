@@ -1,6 +1,6 @@
 {
     "name": "debate-flow",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "private": true,
     "license": "MPL-2.0",
     "scripts": {
