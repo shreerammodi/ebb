@@ -4,7 +4,7 @@
  * Uses the real Zustand store. Resets state between tests for isolation.
  */
 
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, createEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
@@ -247,15 +247,15 @@ describe("Sidebar", () => {
         const { caseId, daId } = setupRound(); // Case(aff) then Disad(neg), order 1,2
         renderSidebar();
 
-        // Drag the second sheet (Disad) and drop it onto the first (Case).
-        // jsdom getBoundingClientRect is zero, so dragover resolves to "insert
-        // before the hovered row" - Disad lands at index 0.
+        // Drag Disad and drop it in the top half of the Case row, so it inserts
+        // just before Case.
         const source = screen.getByTestId(`sheet-${daId}`);
-        const target = screen.getByTestId(`sheet-${caseId}`);
+        const caseRow = rowFor(caseId);
         const dataTransfer = makeDataTransfer();
         fireEvent.dragStart(source, { dataTransfer });
-        fireEvent.dragOver(target, { dataTransfer });
-        fireEvent.drop(target, { dataTransfer });
+        // Point just above the Case row's midpoint, so Disad inserts before it.
+        fireDnd("dragOver", caseRow, dataTransfer, midTopOf(caseRow));
+        fireDnd("drop", caseRow, dataTransfer, midTopOf(caseRow));
 
         const sheets = useFlowStore.getState().round!.sheets;
         const order = (id: string) => sheets.find((s) => s.id === id)!.order;
@@ -270,16 +270,59 @@ describe("Sidebar", () => {
         renderSidebar();
 
         const source = screen.getByTestId(`sheet-${daId}`);
-        const target = screen.getByTestId(`sheet-${caseId}`);
+        const caseRow = rowFor(caseId);
         const dataTransfer = makeDataTransfer();
         fireEvent.dragStart(source, { dataTransfer });
-        fireEvent.drop(target, { dataTransfer }); // no dragOver in between
+        fireDnd("drop", caseRow, dataTransfer, midTopOf(caseRow)); // no dragOver in between
 
         const sheets = useFlowStore.getState().round!.sheets;
         const order = (id: string) => sheets.find((s) => s.id === id)!.order;
         expect(order(daId)).toBeLessThan(order(caseId));
     });
 });
+
+// jsdom getBoundingClientRect is always zero, so stub stacked rects on the sheet
+// rows to make the container's pointer-to-index math meaningful. Returns the row
+// wrapping sheet `id`.
+function rowFor(id: string): HTMLElement {
+    const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-sheet-row]"));
+    rows.forEach((row, i) => {
+        row.getBoundingClientRect = () =>
+            ({
+                top: i * 20,
+                bottom: i * 20 + 20,
+                height: 20,
+                left: 0,
+                right: 0,
+                width: 0,
+                x: 0,
+                y: i * 20,
+            }) as DOMRect;
+    });
+    const target = rows.find((r) => r.querySelector(`[data-testid="sheet-${id}"]`));
+    if (!target) throw new Error(`no sheet row for ${id}`);
+    return target;
+}
+
+// A clientY just above the row's midpoint, so a drop resolves to "insert before
+// this row".
+function midTopOf(row: HTMLElement): number {
+    const rect = row.getBoundingClientRect();
+    return rect.top + rect.height / 2 - 1;
+}
+
+// jsdom lacks DragEvent, so fireEvent's init never sets clientY; build the event
+// and define clientY ourselves.
+function fireDnd(
+    type: "dragOver" | "drop",
+    el: HTMLElement,
+    dataTransfer: unknown,
+    clientY: number,
+) {
+    const ev = createEvent[type](el, { dataTransfer });
+    Object.defineProperty(ev, "clientY", { value: clientY });
+    fireEvent(el, ev);
+}
 
 // A shared dataTransfer mirrors the browser: dragstart writes the sheet id and
 // drop reads it back, so the reorder never depends on not-yet-flushed state.

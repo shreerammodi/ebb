@@ -97,6 +97,18 @@ export default function Sidebar() {
         setDropIndex(null);
     }
 
+    // Whole list is the drop surface, so releasing in a gap, on the label, or
+    // below the last row still lands. Insertion index = first row whose midpoint
+    // is below the pointer, else past the end.
+    function dropIndexFromY(container: HTMLElement, clientY: number) {
+        const rows = container.querySelectorAll<HTMLElement>("[data-sheet-row]");
+        for (let i = 0; i < rows.length; i++) {
+            const rect = rows[i].getBoundingClientRect();
+            if (clientY < rect.top + rect.height / 2) return i;
+        }
+        return rows.length;
+    }
+
     return (
         <nav
             className="no-print border-border bg-card flex h-full w-[220px] shrink-0 flex-col border-r"
@@ -181,7 +193,23 @@ export default function Sidebar() {
                         </button>
                     </div>
                 )}
-                <div>
+                <div
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                        setDropIndex(dropIndexFromY(e.currentTarget, e.clientY));
+                    }}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        const sourceId = e.dataTransfer.getData("text/plain");
+                        if (!sourceId) {
+                            setDragId(null);
+                            setDropIndex(null);
+                            return;
+                        }
+                        commitDrop(sourceId, dropIndexFromY(e.currentTarget, e.clientY));
+                    }}
+                >
                     <div
                         data-testid="sheets-section-label"
                         className="text-muted-foreground px-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase"
@@ -208,25 +236,6 @@ export default function Sidebar() {
                                         e.dataTransfer.effectAllowed = "move";
                                         e.dataTransfer.setData("text/plain", sheet.id);
                                         setDragId(sheet.id);
-                                    }}
-                                    onDragOverRow={(e) => {
-                                        e.preventDefault();
-                                        e.dataTransfer.dropEffect = "move";
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        const after = e.clientY - rect.top > rect.height / 2;
-                                        setDropIndex(after ? i + 1 : i);
-                                    }}
-                                    onDropRow={(e) => {
-                                        e.preventDefault();
-                                        const sourceId = e.dataTransfer.getData("text/plain");
-                                        if (!sourceId) {
-                                            setDragId(null);
-                                            setDropIndex(null);
-                                            return;
-                                        }
-                                        const rect = e.currentTarget.getBoundingClientRect();
-                                        const after = e.clientY - rect.top > rect.height / 2;
-                                        commitDrop(sourceId, after ? i + 1 : i);
                                     }}
                                     onDragEndRow={() => {
                                         setDragId(null);
@@ -258,8 +267,6 @@ interface SheetRowProps {
     onDelete: () => void;
     dragging: boolean;
     onDragStartRow: (e: React.DragEvent<HTMLDivElement>) => void;
-    onDragOverRow: (e: React.DragEvent<HTMLDivElement>) => void;
-    onDropRow: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragEndRow: () => void;
 }
 
@@ -272,8 +279,6 @@ function SheetRow({
     onDelete,
     dragging,
     onDragStartRow,
-    onDragOverRow,
-    onDropRow,
     onDragEndRow,
 }: SheetRowProps) {
     const renameSheet = useFlowStore((s) => s.renameSheet);
@@ -312,6 +317,7 @@ function SheetRow({
     if (isRenaming) {
         return (
             <div
+                data-sheet-row
                 className={cn(
                     "flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5",
                     active ? "border-border bg-accent font-semibold" : "border-transparent",
@@ -341,11 +347,10 @@ function SheetRow({
 
     return (
         <div
+            data-sheet-row
             className={cn("group flex items-center", dragging && "opacity-50")}
             draggable={!isRenaming}
             onDragStart={onDragStartRow}
-            onDragOver={onDragOverRow}
-            onDrop={onDropRow}
             onDragEnd={onDragEndRow}
         >
             <div
