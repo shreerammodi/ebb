@@ -2,6 +2,7 @@
 
 import { Check, LoaderCircle, TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AnimatePresence, m } from "motion/react";
 
 import { Tip } from "@/components/ui/tooltip";
 import { saveFlowNow } from "@/lib/persistence/flowPersistence";
@@ -75,17 +76,27 @@ export default function SaveStatus() {
             tabIndex={savedAt ? 0 : undefined}
             className="text-muted-foreground flex flex-none items-center gap-1.5 text-xs select-none"
         >
-            {saving ? (
-                <LoaderCircle
-                    aria-hidden="true"
-                    className="text-muted-foreground size-3.5 motion-safe:animate-spin"
-                />
-            ) : (
-                <Check aria-hidden="true" className="text-good size-3.5" />
-            )}
-            <span className="hidden sm:inline">
-                {saving ? "Saving…" : `Saved${savedAt ? ` ${relTime(savedAt, now)}` : ""}`}
-            </span>
+            <AnimatePresence mode="wait" initial={false}>
+                <m.span
+                    key={saving ? "saving" : "saved"}
+                    initial={{ opacity: 0, y: 2 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -2 }}
+                    className="flex items-center gap-1.5"
+                >
+                    {saving ? (
+                        <LoaderCircle
+                            aria-hidden="true"
+                            className="text-muted-foreground size-3.5 motion-safe:animate-spin"
+                        />
+                    ) : (
+                        <Check aria-hidden="true" className="text-good size-3.5" />
+                    )}
+                    <span className="hidden sm:inline">
+                        {saving ? "Saving…" : `Saved${savedAt ? ` ${relTime(savedAt, now)}` : ""}`}
+                    </span>
+                </m.span>
+            </AnimatePresence>
         </span>
     );
 
