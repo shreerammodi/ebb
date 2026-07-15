@@ -197,7 +197,7 @@ export default function SettingsPanel() {
                 </div>
 
                 {/* Two-pane body */}
-                <div className="flex max-h-[70vh]">
+                <div className="flex h-[70vh]">
                     {/* Left nav */}
                     <nav
                         className="border-border bg-muted/30 flex w-[180px] shrink-0 flex-col gap-0.5 border-r p-3"
