@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-07-15
+
+### Changed
+
+- Desktop updates ask before installing: a check downloads the new version but
+  only rewrites the install on disk when you confirm from the update chip (now
+  labelled "Update x.y.z - Install") or the critical-update modal. A repeat
+  check skips re-downloading a version already staged.
+- The manual "Check for updates" button reports its outcome (up to date, or a
+  check, download, or install failure) instead of going idle silently.
+
+### Fixed
+
+- A fast drag-and-drop of a sheet in the sidebar now reorders it. A quick drag
+  then drop no longer bails out reading stale drag state.
+- The settings panel keeps a stable size while navigating between its
+  categories.
+
 ## [0.3.5] - 2026-07-15
 
 ### Added
@@ -168,7 +186,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.6...HEAD
+[0.3.6]: https://github.com/shreerammodi/ebb/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/shreerammodi/ebb/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/shreerammodi/ebb/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/shreerammodi/ebb/compare/v0.3.2...v0.3.3
