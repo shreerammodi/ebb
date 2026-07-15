@@ -43,6 +43,7 @@
         "handsontable": "^18.0.0",
         "lucide-react": "^1.23.0",
         "marked": "^18.0.5",
+        "motion": "^12.42.2",
         "next": "^16.2.10",
         "radix-ui": "^1.6.2",
         "react": "^19.2.7",
