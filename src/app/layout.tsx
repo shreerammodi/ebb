@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 
 import ConfigFileSync from "@/components/ConfigFileSync";
 import { DesktopMenu } from "@/components/DesktopMenu";
+import MotionRoot from "@/components/MotionRoot";
 import SettingsPanel from "@/components/settings/SettingsPanel";
 import ThemeSync from "@/components/ThemeSync";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -303,7 +304,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <ConfigFileSync />
                 <TooltipProvider>
                     <UpdateProvider>
-                        {children}
+                        <MotionRoot>{children}</MotionRoot>
                         {/* Inside UpdateProvider so the Updates settings pane can
                             read the update context, and mounted here (not per
                             screen) so the settings chord works on the dashboard
