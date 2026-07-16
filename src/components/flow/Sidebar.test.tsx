@@ -4,7 +4,7 @@
  * Uses the real Zustand store. Resets state between tests for isolation.
  */
 
-import { render, screen, fireEvent, createEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
@@ -243,98 +243,15 @@ describe("Sidebar", () => {
         expect(srLabel!.textContent).toBe("Neg");
     });
 
-    it("reorders sheets via drag and drop", () => {
-        const { caseId, daId } = setupRound(); // Case(aff) then Disad(neg), order 1,2
-        renderSidebar();
-
-        // Drag Disad and drop it in the top half of the Case row, so it inserts
-        // just before Case.
-        const source = screen.getByTestId(`sheet-${daId}`);
-        const caseRow = rowFor(caseId);
-        const dataTransfer = makeDataTransfer();
-        fireEvent.dragStart(source, { dataTransfer });
-        // Point just above the Case row's midpoint, so Disad inserts before it.
-        fireDnd("dragOver", caseRow, dataTransfer, midTopOf(caseRow));
-        fireDnd("drop", caseRow, dataTransfer, midTopOf(caseRow));
-
-        const sheets = useFlowStore.getState().round!.sheets;
-        const order = (id: string) => sheets.find((s) => s.id === id)!.order;
-        expect(order(daId)).toBeLessThan(order(caseId));
-    });
-
-    it("reorders on a fast drop that skips the dragover state update", () => {
-        // A quick drag fires drop before React commits the dragstart/dragover
-        // setState, so the drop must resolve source and target from the event
-        // itself rather than from dragId/dropIndex state (which is still null).
+    // Drag-to-reorder is driven by Motion's Reorder pointer gestures, which need
+    // real layout measurement jsdom can't provide; the store's reorderSheets is
+    // covered directly in useFlowStore.test.ts.
+    it("renders flow sheets in order for reordering", () => {
         const { caseId, daId } = setupRound();
         renderSidebar();
-
-        const source = screen.getByTestId(`sheet-${daId}`);
-        const caseRow = rowFor(caseId);
-        const dataTransfer = makeDataTransfer();
-        fireEvent.dragStart(source, { dataTransfer });
-        fireDnd("drop", caseRow, dataTransfer, midTopOf(caseRow)); // no dragOver in between
-
-        const sheets = useFlowStore.getState().round!.sheets;
-        const order = (id: string) => sheets.find((s) => s.id === id)!.order;
-        expect(order(daId)).toBeLessThan(order(caseId));
+        const ids = screen
+            .getAllByTestId(/^sheet-(?!marker)/)
+            .map((r) => r.getAttribute("data-testid"));
+        expect(ids.indexOf(`sheet-${caseId}`)).toBeLessThan(ids.indexOf(`sheet-${daId}`));
     });
 });
-
-// jsdom getBoundingClientRect is always zero, so stub stacked rects on the sheet
-// rows to make the container's pointer-to-index math meaningful. Returns the row
-// wrapping sheet `id`.
-function rowFor(id: string): HTMLElement {
-    const rows = Array.from(document.querySelectorAll<HTMLElement>("[data-sheet-row]"));
-    rows.forEach((row, i) => {
-        row.getBoundingClientRect = () =>
-            ({
-                top: i * 20,
-                bottom: i * 20 + 20,
-                height: 20,
-                left: 0,
-                right: 0,
-                width: 0,
-                x: 0,
-                y: i * 20,
-            }) as DOMRect;
-    });
-    const target = rows.find((r) => r.querySelector(`[data-testid="sheet-${id}"]`));
-    if (!target) throw new Error(`no sheet row for ${id}`);
-    return target;
-}
-
-// A clientY just above the row's midpoint, so a drop resolves to "insert before
-// this row".
-function midTopOf(row: HTMLElement): number {
-    const rect = row.getBoundingClientRect();
-    return rect.top + rect.height / 2 - 1;
-}
-
-// jsdom lacks DragEvent, so fireEvent's init never sets clientY; build the event
-// and define clientY ourselves.
-function fireDnd(
-    type: "dragOver" | "drop",
-    el: HTMLElement,
-    dataTransfer: unknown,
-    clientY: number,
-) {
-    const ev = createEvent[type](el, { dataTransfer });
-    Object.defineProperty(ev, "clientY", { value: clientY });
-    fireEvent(el, ev);
-}
-
-// A shared dataTransfer mirrors the browser: dragstart writes the sheet id and
-// drop reads it back, so the reorder never depends on not-yet-flushed state.
-// jsdom has no DataTransfer, so stub the surface the handlers touch.
-function makeDataTransfer() {
-    const store: Record<string, string> = {};
-    return {
-        effectAllowed: "",
-        dropEffect: "",
-        setData: (type: string, value: string) => {
-            store[type] = value;
-        },
-        getData: (type: string) => store[type] ?? "",
-    };
-}

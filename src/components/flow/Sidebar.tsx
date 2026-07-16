@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type React from "react";
+import { Reorder } from "motion/react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -28,8 +28,6 @@ export default function Sidebar() {
     const setSidebarCollapsed = useFlowStore((s) => s.setSidebarCollapsed);
     const reorderSheets = useFlowStore((s) => s.reorderSheets);
     const addSheets = useFlowStore((s) => s.addSheets);
-    const [dragId, setDragId] = useState<string | null>(null);
-    const [dropIndex, setDropIndex] = useState<number | null>(null);
     // Bulk count: empty (or junk) means one sheet, so the buttons stay single-add
     // by default and only fan out when the user types a number.
     const [bulkCount, setBulkCount] = useState("");
@@ -79,35 +77,6 @@ export default function Sidebar() {
     }
 
     const flowSheets = sheets.filter((s) => s.kind !== "cx").sort((a, b) => a.order - b.order);
-
-    // Resolve source and target from the drop event, not from dragId/dropIndex
-    // state: a fast drag fires drop before React commits the dragstart/dragover
-    // setState, so reading that state here would see stale nulls and no-op.
-    function commitDrop(sourceId: string, targetIndex: number) {
-        const ids = flowSheets.map((s) => s.id);
-        const from = ids.indexOf(sourceId);
-        if (from !== -1) {
-            ids.splice(from, 1);
-            // Adjust the target index when removing an earlier element shifts it left.
-            const to = from < targetIndex ? targetIndex - 1 : targetIndex;
-            ids.splice(to, 0, sourceId);
-            reorderSheets(ids);
-        }
-        setDragId(null);
-        setDropIndex(null);
-    }
-
-    // Whole list is the drop surface, so releasing in a gap, on the label, or
-    // below the last row still lands. Insertion index = first row whose midpoint
-    // is below the pointer, else past the end.
-    function dropIndexFromY(container: HTMLElement, clientY: number) {
-        const rows = container.querySelectorAll<HTMLElement>("[data-sheet-row]");
-        for (let i = 0; i < rows.length; i++) {
-            const rect = rows[i].getBoundingClientRect();
-            if (clientY < rect.top + rect.height / 2) return i;
-        }
-        return rows.length;
-    }
 
     return (
         <nav
@@ -194,67 +163,35 @@ export default function Sidebar() {
                     </div>
                 )}
                 <div
-                    onDragOver={(e) => {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = "move";
-                        setDropIndex(dropIndexFromY(e.currentTarget, e.clientY));
-                    }}
-                    onDrop={(e) => {
-                        e.preventDefault();
-                        const sourceId = e.dataTransfer.getData("text/plain");
-                        if (!sourceId) {
-                            setDragId(null);
-                            setDropIndex(null);
-                            return;
-                        }
-                        commitDrop(sourceId, dropIndexFromY(e.currentTarget, e.clientY));
-                    }}
+                    data-testid="sheets-section-label"
+                    className="text-muted-foreground px-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase"
                 >
-                    <div
-                        data-testid="sheets-section-label"
-                        className="text-muted-foreground px-2 pb-1 font-mono text-[9px] font-bold tracking-widest uppercase"
-                    >
-                        Sheets
-                    </div>
-                    {flowSheets.length === 0 ? (
-                        <div className="text-muted-foreground px-2 py-1 text-xs">No sheets</div>
-                    ) : (
-                        flowSheets.map((sheet, i) => (
-                            <div key={sheet.id}>
-                                {dropIndex === i && <DropLine />}
-                                <SheetRow
-                                    sheet={sheet}
-                                    active={sheet.id === focusedId}
-                                    onSelect={() => setActiveSheet(sheet.id)}
-                                    isRenaming={sheet.id === renamingSheetId}
-                                    onStartRename={() => setRenamingSheet(sheet.id)}
-                                    onDelete={() => deleteSheet(sheet.id)}
-                                    dragging={dragId === sheet.id}
-                                    onDragStartRow={(e) => {
-                                        // Chrome only fires a drop when the drag carries data;
-                                        // without this the row drags but releasing does nothing.
-                                        e.dataTransfer.effectAllowed = "move";
-                                        e.dataTransfer.setData("text/plain", sheet.id);
-                                        setDragId(sheet.id);
-                                    }}
-                                    onDragEndRow={() => {
-                                        setDragId(null);
-                                        setDropIndex(null);
-                                    }}
-                                />
-                                {i === flowSheets.length - 1 && dropIndex === i + 1 && <DropLine />}
-                            </div>
-                        ))
-                    )}
+                    Sheets
                 </div>
+                {flowSheets.length === 0 ? (
+                    <div className="text-muted-foreground px-2 py-1 text-xs">No sheets</div>
+                ) : (
+                    <Reorder.Group
+                        as="div"
+                        axis="y"
+                        values={flowSheets.map((s) => s.id)}
+                        onReorder={reorderSheets}
+                    >
+                        {flowSheets.map((sheet) => (
+                            <SheetRow
+                                key={sheet.id}
+                                sheet={sheet}
+                                active={sheet.id === focusedId}
+                                onSelect={() => setActiveSheet(sheet.id)}
+                                isRenaming={sheet.id === renamingSheetId}
+                                onStartRename={() => setRenamingSheet(sheet.id)}
+                                onDelete={() => deleteSheet(sheet.id)}
+                            />
+                        ))}
+                    </Reorder.Group>
+                )}
             </div>
         </nav>
-    );
-}
-
-function DropLine() {
-    return (
-        <div className="bg-foreground/50 mx-2 my-0.5 h-0.5 rounded-full" data-testid="drop-line" />
     );
 }
 
@@ -265,22 +202,9 @@ interface SheetRowProps {
     isRenaming: boolean;
     onStartRename: () => void;
     onDelete: () => void;
-    dragging: boolean;
-    onDragStartRow: (e: React.DragEvent<HTMLDivElement>) => void;
-    onDragEndRow: () => void;
 }
 
-function SheetRow({
-    sheet,
-    active,
-    onSelect,
-    isRenaming,
-    onStartRename,
-    onDelete,
-    dragging,
-    onDragStartRow,
-    onDragEndRow,
-}: SheetRowProps) {
+function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete }: SheetRowProps) {
     const renameSheet = useFlowStore((s) => s.renameSheet);
     const setRenamingSheet = useFlowStore((s) => s.setRenamingSheet);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -315,9 +239,11 @@ function SheetRow({
     }
 
     if (isRenaming) {
+        // A plain row while renaming: keeping it a Reorder.Item wraps the input in
+        // a motion element that swallows the first keystroke. Dragging is moot mid-
+        // rename, so the one non-draggable row costs nothing.
         return (
             <div
-                data-sheet-row
                 className={cn(
                     "flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5",
                     active ? "border-border bg-accent font-semibold" : "border-transparent",
@@ -345,14 +271,9 @@ function SheetRow({
         );
     }
 
+    // relative so the dragged row's auto z-index lifts it above its neighbors.
     return (
-        <div
-            data-sheet-row
-            className={cn("group flex items-center", dragging && "opacity-50")}
-            draggable={!isRenaming}
-            onDragStart={onDragStartRow}
-            onDragEnd={onDragEndRow}
-        >
+        <Reorder.Item as="div" value={sheet.id} className="group relative flex items-center">
             <div
                 role="button"
                 tabIndex={0}
@@ -414,6 +335,6 @@ function SheetRow({
                     ×
                 </button>
             </Tip>
-        </div>
+        </Reorder.Item>
     );
 }
