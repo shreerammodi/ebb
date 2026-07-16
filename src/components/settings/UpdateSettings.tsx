@@ -128,13 +128,6 @@ export default function UpdateSettings() {
 
             <SettingRow
                 title="Software updates"
-                description={
-                    message ? (
-                        <span data-testid="update-status">{message}</span>
-                    ) : (
-                        "Install a new version as soon as one is available."
-                    )
-                }
                 control={
                     <>
                         <Button

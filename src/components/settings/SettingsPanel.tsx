@@ -259,7 +259,6 @@ export default function SettingsPanel() {
                             <div className="flex flex-col">
                                 <SettingRow
                                     title="Theme"
-                                    description="Base color scheme for the app."
                                     control={
                                         <div
                                             role="radiogroup"
@@ -296,7 +295,7 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Default zoom"
-                                    description="Zoom level the flow grid opens at. The zoom control in the round header adjusts the current view without changing this."
+                                    description="Zoom level the flow grid opens at."
                                     control={
                                         <div className="flex items-center gap-1">
                                             <Input
@@ -320,7 +319,7 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Flow font"
-                                    description="Font used for flowed argument text and the inline editor."
+                                    description="Used for the sheet editor."
                                     control={
                                         <>
                                             <Select
@@ -376,8 +375,7 @@ export default function SettingsPanel() {
                                     </p>
                                 </SettingRow>
                                 <SettingRow
-                                    title="Argument colors"
-                                    description="Ink used for aff and neg columns, headers, and labels."
+                                    title="Side colors"
                                     control={
                                         <>
                                             {SIDE_OPTIONS.map((s) => {
@@ -413,7 +411,7 @@ export default function SettingsPanel() {
                                                 }}
                                                 disabled={affColor === null && negColor === null}
                                                 data-testid="side-colors-reset"
-                                                aria-label="Reset argument colors to default"
+                                                aria-label="Reset side colors to default"
                                             >
                                                 Default
                                             </Button>
@@ -422,7 +420,7 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Vim keybindings"
-                                    description="The RFD drawer is where you write your reason for decision while reading the flow. Vim keybindings apply to that editor."
+                                    description="Applies only to the RFD editor."
                                     control={
                                         <Switch
                                             checked={rfdVim}
@@ -438,7 +436,7 @@ export default function SettingsPanel() {
                             <div className="flex flex-col">
                                 <SettingRow
                                     title="Insert paste"
-                                    description="With insert paste on, pasted cells push the text already in those columns down instead of writing over it. Neighboring speeches keep their rows."
+                                    description="With insert paste on, pasted cells push the text already in those columns down instead of writing over it."
                                     control={
                                         <Switch
                                             checked={insertPaste}
