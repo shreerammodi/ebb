@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-16
+
+### Added
+
+- Zoom the flow grid on its own, leaving the header, sidebar, and panels at
+  full size. Minus/plus buttons around a slider, a click-to-edit percentage
+  field, Mod+scroll over the grid, and "Zoom in"/"Zoom out" command-palette
+  commands all drive it in 10% steps. Settings gains a "Default zoom" that the
+  grid opens at, synced to the desktop config file alongside the font, theme,
+  and colors.
+- Move mode follows the mouse: the picked-up block tracks the hovered row and a
+  click drops it, mirroring the keyboard Up/Down/Enter path.
+
 ### Removed
 
 - Tournament Mode. Every update already waits for you to press "Install latest
@@ -217,7 +230,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.3.8...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/shreerammodi/ebb/compare/v0.3.8...v0.4.0
 [0.3.8]: https://github.com/shreerammodi/ebb/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/shreerammodi/ebb/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/shreerammodi/ebb/compare/v0.3.5...v0.3.6
