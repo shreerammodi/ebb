@@ -27,3 +27,9 @@ updates:
       ignore:
           - dependency-name: typescript
             update-types: ["version-update:semver-major"]
+          # eslint-config-next 16 and its bundled plugins (import, react,
+          # jsx-a11y) peer-support eslint 9 only; eslint 10 dropped the
+          # scopeManager.addGlobals API they call, breaking `next lint`.
+          # Stay on 9.x until eslint-config-next targets eslint 10.
+          - dependency-name: eslint
+            update-types: ["version-update:semver-major"]

@@ -63,7 +63,7 @@
         "@types/react": "^19.2.17",
         "@types/react-dom": "^19.1.5",
         "@vitejs/plugin-react": "^6.0.3",
-        "eslint": "^10.7.0",
+        "eslint": "^9.39.5",
         "eslint-config-next": "^16.2.10",
         "fake-indexeddb": "^6.2.5",
         "jsdom": "^29.1.1",
