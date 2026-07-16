@@ -37,8 +37,7 @@ Run `npm test` and `npm run lint` before considering a change complete.
 ```
 src/
   app/           Next.js App Router (layout, page, globals.css)
-  components/    React components (PascalCase.tsx, colocated *.test.tsx),
-                 grouped by domain:
+  components/    React components (PascalCase.tsx), grouped by domain:
     ui/          Radix-based shadcn-style primitives
     brand/       Logo and brand assets
     dashboard/   Flows dashboard components
@@ -60,14 +59,18 @@ src/
     search/      Fuzzy search (@leeoniya/ufuzzy)
     dashboard/   Dashboard filter/organize/summary logic
     format/      Debate format presets
+test/            Vitest suites, mirroring the src/ tree (X.test.ts(x) for
+                 src/.../X); import the code under test via the @/ alias
 ```
 
 `@/*` is aliased to `src/*` (see `tsconfig.json`).
 
 ## Conventions
 
-- **Tests are colocated** next to source as `*.test.ts(x)`. Most `lib/` modules
-  have a sibling test; keep new logic covered and test-driven where practical.
+- **Tests live under `test/`**, mirroring the `src/` tree: the suite for
+  `src/<path>/X.ts(x)` is `test/<path>/X.test.ts(x)` and imports it via the
+  `@/` alias. Most `lib/` modules have a test; keep new logic covered and
+  test-driven where practical.
 - **Pure logic goes in `src/lib`**, not in components. Keep `lib/`
   framework-agnostic and testable; components wire it to React.
 - **Local-first**: never add network calls, telemetry, or backend dependencies.
