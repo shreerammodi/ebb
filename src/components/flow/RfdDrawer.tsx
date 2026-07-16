@@ -7,9 +7,9 @@ import { Compartment, EditorState } from "@codemirror/state";
 import { drawSelection, EditorView, keymap } from "@codemirror/view";
 import { githubDark } from "@fsegurai/codemirror-theme-github-dark";
 import { githubLight } from "@fsegurai/codemirror-theme-github-light";
+import { X } from "@phosphor-icons/react";
 import { vim } from "@replit/codemirror-vim";
 import DOMPurify from "dompurify";
-import { X } from "@phosphor-icons/react";
 import { marked } from "marked";
 import { useEffect, useRef, useState } from "react";
 
