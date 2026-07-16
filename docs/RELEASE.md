@@ -26,23 +26,16 @@ short-circuits the whole update layer on web).
 
 ## 2. Versioning
 
-A release is one semver that must move in lockstep across four files:
+A release is one semver that must move in lockstep across four files, edited by
+hand:
 
 - `package.json` -> `version`
 - `src-tauri/tauri.conf.json` -> `version`
-- `src-tauri/Cargo.toml` -> `version` (and `Cargo.lock`)
+- `src-tauri/Cargo.toml` -> `version`
+- `src-tauri/Cargo.lock` -> refresh with `cargo update -p ebb --manifest-path src-tauri/Cargo.toml`
 
-`npm run release` (= `npm version patch`) automates all of it:
-
-1. `npm version` bumps `package.json` and creates the release commit.
-2. The `version` lifecycle hook runs `scripts/sync-version.mjs`, which
-   propagates the new version into the Tauri config, the Cargo crate, and
-   `Cargo.lock`, then stages them into the same commit.
-3. The `postversion` hook runs `git push --follow-tags`, pushing the commit and
-   the `vX.Y.Z` tag.
-
-Use `npm version minor` / `npm version major` for larger bumps; the same hooks
-fire. **The pushed tag is what triggers the desktop release** (section 5).
+Then commit all four, tag `vX.Y.Z`, and push with `git push --follow-tags`.
+**The pushed tag is what triggers the desktop release** (section 5).
 
 ## 3. Continuous integration (`.github/workflows/ci.yml`)
 
@@ -144,8 +137,11 @@ Ships fine for beta, worth doing after:
 ## 9. Cutting a release (quick reference)
 
 ```bash
-# From a clean main with CI green:
-npm run release            # bump + sync all version files + commit + tag + push
+# From a clean main with CI green, set VERSION=X.Y.Z, then by hand:
+# - edit `version` in package.json, src-tauri/tauri.conf.json, src-tauri/Cargo.toml
+cargo update -p ebb --manifest-path src-tauri/Cargo.toml   # refresh Cargo.lock
+git commit -am "$VERSION" && git tag "v$VERSION"
+git push --follow-tags
 # -> release.yml builds 4 installers into a DRAFT GitHub Release
 # Review the draft on GitHub, then click Publish.
 # -> the /latest/ redirect flips; desktop clients pick it up on next check.
