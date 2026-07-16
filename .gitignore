@@ -1,6 +1,7 @@
 # Core build/runtime artifacts
 node_modules/
 .next/
+next-env.d.ts
 out/
 dist/
 build/
