@@ -9,7 +9,7 @@ export const MOTION_TRANSITION = {
 } as const;
 
 /** Loads Motion's DOM feature set (incl. layout animations) as a separate chunk. */
-const loadFeatures = () => import("motion/react").then((mod) => mod.domMax);
+export const loadFeatures = () => import("motion/react").then((mod) => mod.domMax);
 
 /**
  * Installs Motion once for the whole app: LazyMotion's async `features` loads

@@ -1,10 +1,11 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Reorder } from "motion/react";
+import { LazyMotion, Reorder } from "motion/react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
+import { loadFeatures } from "@/components/MotionRoot";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
 import type { FlowSheet } from "@/lib/model/flow";
@@ -171,24 +172,29 @@ export default function Sidebar() {
                 {flowSheets.length === 0 ? (
                     <div className="text-muted-foreground px-2 py-1 text-xs">No sheets</div>
                 ) : (
-                    <Reorder.Group
-                        as="div"
-                        axis="y"
-                        values={flowSheets.map((s) => s.id)}
-                        onReorder={reorderSheets}
-                    >
-                        {flowSheets.map((sheet) => (
-                            <SheetRow
-                                key={sheet.id}
-                                sheet={sheet}
-                                active={sheet.id === focusedId}
-                                onSelect={() => setActiveSheet(sheet.id)}
-                                isRenaming={sheet.id === renamingSheetId}
-                                onStartRename={() => setRenamingSheet(sheet.id)}
-                                onDelete={() => deleteSheet(sheet.id)}
-                            />
-                        ))}
-                    </Reorder.Group>
+                    // Reorder is built on the full `motion` component; a nested,
+                    // non-strict LazyMotion silences the app-wide strict warning
+                    // while reusing the already-loaded feature chunk.
+                    <LazyMotion features={loadFeatures}>
+                        <Reorder.Group
+                            as="div"
+                            axis="y"
+                            values={flowSheets.map((s) => s.id)}
+                            onReorder={reorderSheets}
+                        >
+                            {flowSheets.map((sheet) => (
+                                <SheetRow
+                                    key={sheet.id}
+                                    sheet={sheet}
+                                    active={sheet.id === focusedId}
+                                    onSelect={() => setActiveSheet(sheet.id)}
+                                    isRenaming={sheet.id === renamingSheetId}
+                                    onStartRename={() => setRenamingSheet(sheet.id)}
+                                    onDelete={() => deleteSheet(sheet.id)}
+                                />
+                            ))}
+                        </Reorder.Group>
+                    </LazyMotion>
                 )}
             </div>
         </nav>
