@@ -195,12 +195,6 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     // columns depend only on kind/group/startSpeechId, none of which change after
     // creation, so the sheet-switch effect is the only writer.
     const colsRef = useRef<SpeechCol[]>([]);
-    // Move mode mouse tracking: the block follows the cursor row-for-row. The grab
-    // offset is the gap between the cursor and the block's top, fixed on the first
-    // hover so entering move mode never jumps the block to the pointer; later
-    // hovers hold that gap, and nudge's clamp resyncs the block when the cursor
-    // returns from a sheet edge. null whenever no move is open.
-    const moveGrabOffset = useRef<number | null>(null);
 
     const snapshot = useCallback(() => {
         const hot = hotRef.current?.hotInstance;
@@ -282,10 +276,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
 
         // A sheet swap would leave the preview mutations written into a sheet the
         // session never snapshotted, so unwind it against the sheet it belongs to.
-        if (isMovingIn(hot)) {
-            moveGrabOffset.current = null;
-            revertMove();
-        }
+        if (isMovingIn(hot)) revertMove();
 
         const prev = currentSheetIdRef.current;
         // The decorations live on the grid belong to the sheet being left; clear
@@ -323,37 +314,6 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         const { splitSheetId, focusedPane, focusPane } = useFlowStore.getState();
         if (splitSheetId != null && focusedPane !== pane) focusPane(pane);
     }, [pane, snapshot]);
-
-    // In move mode the block tracks the hovered row; a click commits it, like
-    // Enter. Both no-op unless a move is open in this pane, so ordinary hover and
-    // selection are untouched.
-    const afterOnCellMouseOver = useCallback(
-        (_e: MouseEvent, coords: { row: number; col: number }) => {
-            const hot = hotRef.current?.hotInstance;
-            if (!hot || !isMovingIn(hot) || coords.row < 0) return;
-            const block = movingBlock()!;
-            if (moveGrabOffset.current == null) {
-                moveGrabOffset.current = coords.row - block.blockStart;
-                return;
-            }
-            nudge(coords.row - moveGrabOffset.current - block.blockStart);
-            reselectMovingBlock(hot);
-        },
-        [],
-    );
-
-    const afterOnCellMouseDown = useCallback(
-        (e: MouseEvent) => {
-            const hot = hotRef.current?.hotInstance;
-            if (!hot || !isMovingIn(hot)) return;
-            e.preventDefault();
-            moveGrabOffset.current = null;
-            hot.batch(() => commitMove());
-            hot.render();
-            snapshot();
-        },
-        [snapshot],
-    );
 
     // Search palette jump: declared after the sheet-switch effect so that when
     // both fire in one commit (a cross-sheet jump) this selection wins. The rAF
@@ -507,11 +467,9 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 if (e.key === "Escape") {
-                    moveGrabOffset.current = null;
                     revertMove();
                     hot.render();
                 } else if (e.key === "Enter") {
-                    moveGrabOffset.current = null;
                     hot.batch(() => commitMove());
                     hot.render();
                     snapshot();
@@ -619,8 +577,6 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                     afterCreateRow={snapshot}
                     afterRemoveRow={snapshot}
                     afterSelectionEnd={afterSelectionEnd}
-                    afterOnCellMouseOver={afterOnCellMouseOver}
-                    afterOnCellMouseDown={afterOnCellMouseDown}
                     beforeKeyDown={beforeKeyDown}
                     licenseKey="non-commercial-and-evaluation"
                 />
