@@ -278,4 +278,14 @@ mod tests {
         assert_eq!(json["theme"], "dark");
         assert_eq!(json["update"]["auto_check_enabled"], true);
     }
+
+    #[test]
+    fn writes_and_reads_a_float_default_zoom() {
+        // default_zoom is the first numeric setting through this layer; confirm a
+        // non-integer factor survives a write and a parse back out.
+        let out = render_toml(None, &json!({ "default_zoom": 1.25 })).unwrap();
+        assert!(out.contains("default_zoom = 1.25"), "float written: {out}");
+        let json = parse_toml_to_json(&out).unwrap();
+        assert_eq!(json["default_zoom"], 1.25);
+    }
 }

@@ -144,6 +144,7 @@ export type FlowStore = FlowState & FlowActions;
  */
 export interface AppConfig {
     flowFont: FontId;
+    defaultGridZoom: number;
     sidebarCollapsed: boolean;
     rfdOpen: boolean;
     rfdVim: boolean;
@@ -159,9 +160,6 @@ export interface AppConfig {
 
 const KEYMAP_SETTINGS_KEY = "ebb-keymap-settings";
 const DISPLAY_SETTINGS_KEY = "ebb-display-settings";
-// Default zoom lives in its own localStorage bucket, kept out of the desktop
-// config-file sync: it is a per-machine view preference, not a synced setting.
-const DEFAULT_ZOOM_KEY = "ebb-default-zoom";
 export const ZOOM_MIN = 0.5;
 export const ZOOM_MAX = 3;
 /** One "zoom in/out" step: 10%. */
@@ -172,22 +170,13 @@ export function clampZoom(zoom: number): number {
     return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(zoom * 100) / 100));
 }
 
-function loadDefaultZoom(): number {
-    if (typeof window === "undefined") return 1;
-    const raw = Number(window.localStorage.getItem(DEFAULT_ZOOM_KEY));
-    return raw >= ZOOM_MIN && raw <= ZOOM_MAX ? raw : 1;
+/**
+ * A valid zoom factor from a hand-edited config value: a finite number clamped
+ * to the bounds (so 5 becomes the 3.0 max, not a reset), else 1 (100%).
+ */
+export function resolveZoom(value: unknown): number {
+    return typeof value === "number" && Number.isFinite(value) ? clampZoom(value) : 1;
 }
-
-function saveDefaultZoom(zoom: number): void {
-    if (typeof window === "undefined") return;
-    try {
-        window.localStorage.setItem(DEFAULT_ZOOM_KEY, String(zoom));
-    } catch {
-        // localStorage unavailable (private mode, quota) - ignore.
-    }
-}
-
-const initialDefaultZoom = loadDefaultZoom();
 
 function loadKeymapOverrides(): Record<string, string> {
     if (typeof window === "undefined") return {};
@@ -212,6 +201,7 @@ function saveKeymapOverrides(keymapOverrides: Record<string, string>): void {
 
 interface DisplaySettings {
     flowFont: FontId;
+    defaultGridZoom: number;
     sidebarCollapsed: boolean;
     rfdOpen: boolean;
     rfdVim: boolean;
@@ -229,6 +219,7 @@ function resolveColor(value: unknown): string | null {
 function loadDisplaySettings(): DisplaySettings {
     const fallback: DisplaySettings = {
         flowFont: DEFAULT_FONT_ID,
+        defaultGridZoom: 1,
         sidebarCollapsed: false,
         rfdOpen: false,
         rfdVim: false,
@@ -244,6 +235,7 @@ function loadDisplaySettings(): DisplaySettings {
         const p = JSON.parse(raw) as Partial<DisplaySettings>;
         return {
             flowFont: resolveFontId(p.flowFont),
+            defaultGridZoom: resolveZoom(p.defaultGridZoom),
             sidebarCollapsed: typeof p.sidebarCollapsed === "boolean" ? p.sidebarCollapsed : false,
             rfdOpen: typeof p.rfdOpen === "boolean" ? p.rfdOpen : false,
             rfdVim: typeof p.rfdVim === "boolean" ? p.rfdVim : false,
@@ -270,6 +262,7 @@ function saveDisplaySettings(s: DisplaySettings): void {
 function displaySettingsOf(s: FlowState): DisplaySettings {
     return {
         flowFont: s.flowFont,
+        defaultGridZoom: s.defaultGridZoom,
         sidebarCollapsed: s.sidebarCollapsed,
         rfdOpen: s.rfdOpen,
         rfdVim: s.rfdVim,
@@ -323,8 +316,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     speechTarget: null,
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
-    gridZoom: initialDefaultZoom,
-    defaultGridZoom: initialDefaultZoom,
+    gridZoom: initialDisplaySettings.defaultGridZoom,
+    defaultGridZoom: initialDisplaySettings.defaultGridZoom,
     theme: initialDisplaySettings.theme,
     affColor: initialDisplaySettings.affColor,
     negColor: initialDisplaySettings.negColor,
@@ -569,7 +562,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
 
     setDefaultGridZoom(zoom) {
         const z = clampZoom(zoom);
-        saveDefaultZoom(z);
+        saveDisplaySettings({ ...displaySettingsOf(get()), defaultGridZoom: z });
         set({ defaultGridZoom: z, gridZoom: z });
     },
 
@@ -605,7 +598,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         saveDisplaySettings(display);
         saveKeymapOverrides(keymapOverrides);
         saveUpdateConfig(updateConfig);
-        set({ ...display, keymapOverrides, updateConfig });
+        // The live grid follows the incoming default; on boot they already match.
+        set({ ...display, gridZoom: display.defaultGridZoom, keymapOverrides, updateConfig });
     },
 
     setQuickSwitcherOpen(open, seed = "") {

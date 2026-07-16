@@ -15,7 +15,7 @@ import { COMMANDS } from "@/lib/commands/registry";
 import { resolveFontId } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { getPresetKeymap } from "@/lib/keymap/presets";
-import { type AppConfig, useFlowStore } from "@/lib/store/useFlowStore";
+import { type AppConfig, resolveZoom, useFlowStore } from "@/lib/store/useFlowStore";
 import { resolveThemeMode } from "@/lib/theme/mode";
 import { isDesktop } from "@/lib/update/adapter";
 import { DEFAULT_UPDATE_CONFIG } from "@/lib/update/types";
@@ -24,6 +24,8 @@ import { DEFAULT_UPDATE_CONFIG } from "@/lib/update/types";
 export interface ConfigFileShape {
     theme: string;
     flow_font: string;
+    /** The grid zoom new sessions open at, as a factor (1 = 100%). */
+    default_zoom: number;
     sidebar_collapsed: boolean;
     rfd_open: boolean;
     rfd_vim: boolean;
@@ -96,6 +98,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
     return {
         theme: s.theme,
         flow_font: s.flowFont,
+        default_zoom: s.defaultGridZoom,
         sidebar_collapsed: s.sidebarCollapsed,
         rfd_open: s.rfdOpen,
         rfd_vim: s.rfdVim,
@@ -133,6 +136,7 @@ export function toAppConfig(raw: unknown): AppConfig {
 
     return {
         flowFont: resolveFontId(o.flow_font),
+        defaultGridZoom: resolveZoom(o.default_zoom),
         sidebarCollapsed: bool(o.sidebar_collapsed, false),
         rfdOpen: bool(o.rfd_open, false),
         rfdVim: bool(o.rfd_vim, false),

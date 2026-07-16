@@ -334,7 +334,6 @@ describe("split view", () => {
 describe("grid zoom", () => {
     beforeEach(() => {
         useFlowStore.setState({ gridZoom: 1, defaultGridZoom: 1 });
-        window.localStorage.removeItem("ebb-default-zoom");
     });
 
     it("steps and clamps the live zoom without touching the default", () => {
@@ -359,6 +358,9 @@ describe("grid zoom", () => {
         useFlowStore.getState().setDefaultGridZoom(1.25);
         expect(useFlowStore.getState().defaultGridZoom).toBe(1.25);
         expect(useFlowStore.getState().gridZoom).toBe(1.25);
-        expect(window.localStorage.getItem("ebb-default-zoom")).toBe("1.25");
+        // Persisted into the synced display-settings bucket, not a bucket of its own.
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain(
+            '"defaultGridZoom":1.25',
+        );
     });
 });

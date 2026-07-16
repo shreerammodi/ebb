@@ -10,6 +10,7 @@ const anotherCommandId = Object.keys(COMMANDS)[1];
 
 const sample: AppConfig = {
     flowFont: "plex-mono",
+    defaultGridZoom: 1.25,
     sidebarCollapsed: true,
     rfdOpen: false,
     rfdVim: true,
@@ -29,6 +30,7 @@ describe("configFromState -> toAppConfig round-trip", () => {
     it("emits snake_case keys and keeps a null color as null", () => {
         const file = configFromState(sample);
         expect(file.flow_font).toBe("plex-mono");
+        expect(file.default_zoom).toBe(1.25);
         expect(file.rfd_vim).toBe(true);
         expect(file.neg_color).toBeNull();
         expect(file.update.auto_check_enabled).toBe(true);
@@ -62,6 +64,13 @@ describe("toAppConfig validation", () => {
         expect(cfg.flowFont).toBe("dm-sans");
         expect(cfg.affColor).toBeNull();
         expect(cfg.sidebarCollapsed).toBe(false);
+    });
+
+    it("clamps an out-of-range default_zoom and defaults a non-number", () => {
+        expect(toAppConfig({ default_zoom: 9 }).defaultGridZoom).toBe(3);
+        expect(toAppConfig({ default_zoom: 0.1 }).defaultGridZoom).toBe(0.5);
+        expect(toAppConfig({ default_zoom: "big" }).defaultGridZoom).toBe(1);
+        expect(toAppConfig({}).defaultGridZoom).toBe(1);
     });
 
     it("drops keymap entries for unknown commands or non-string chords", () => {
