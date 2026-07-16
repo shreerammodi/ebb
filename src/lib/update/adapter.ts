@@ -25,9 +25,7 @@ export interface StagedUpdate {
  * CORS headers, so a cross-origin `fetch` from the `tauri://` origin is blocked
  * and every check silently fails. Returns null when no newer release exists
  * (and always on web); throws when the check itself fails, so callers can tell
- * "up to date" from "couldn't check". Tournament Mode gating stays in
- * `decideUpdateAction`; `check()` only compares versions, so a held update
- * still yields a manifest here.
+ * "up to date" from "couldn't check".
  */
 export async function fetchManifest(): Promise<UpdateManifest | null> {
     if (!isDesktop()) return null;

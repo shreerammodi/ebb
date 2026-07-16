@@ -8,9 +8,9 @@ const UpdateContext = createContext<AutoUpdate | null>(null);
 
 /**
  * Instantiates the single update lifecycle (one `useAutoUpdate` for the whole
- * app) and shares it. The chip, the critical modal, and the settings panel all
- * read from this one state machine so a manual check and the background poller
- * never diverge. Inert on web — the hook does nothing without the Tauri runtime.
+ * app) and shares it. The chip and the settings panel both read from this one
+ * state machine so a manual check and the background poller never diverge.
+ * Inert on web — the hook does nothing without the Tauri runtime.
  */
 export function UpdateProvider({ children }: { children: ReactNode }) {
     const update = useAutoUpdate();

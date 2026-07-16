@@ -9,10 +9,9 @@ import { useUpdate } from "./UpdateProvider";
 
 /**
  * The "Update x.y.z · Install" chip. Appears only when a verified update has
- * been downloaded and installing it is safe (Tournament Mode off). The download
- * never touches the install on disk; clicking the chip is the user's explicit
- * confirmation to rewrite it and relaunch. Renders nothing in every other
- * state, so it never nags mid-round.
+ * been downloaded. The download never touches the install on disk; clicking the
+ * chip is the user's explicit confirmation to rewrite it and relaunch. Renders
+ * nothing in every other state, so it never nags mid-round.
  */
 export default function UpdateChip() {
     const { state, installAndRestart } = useUpdate();

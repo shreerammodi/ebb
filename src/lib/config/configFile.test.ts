@@ -18,7 +18,7 @@ const sample: AppConfig = {
     affColor: "#1d4ed8",
     negColor: null,
     keymapOverrides: { [aCommandId]: "g g" },
-    updateConfig: { autoCheckEnabled: true, tournamentMode: false },
+    updateConfig: { autoCheckEnabled: true },
 };
 
 describe("configFromState -> toAppConfig round-trip", () => {
@@ -82,6 +82,6 @@ describe("toAppConfig validation", () => {
         const cfg = toAppConfig(null);
         expect(cfg.theme).toBe("system");
         expect(cfg.keymapOverrides).toEqual({});
-        expect(cfg.updateConfig).toEqual({ autoCheckEnabled: false, tournamentMode: false });
+        expect(cfg.updateConfig).toEqual({ autoCheckEnabled: false });
     });
 });

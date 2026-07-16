@@ -37,7 +37,7 @@ describe("useAutoUpdate", () => {
     beforeEach(() => {
         isDesktopMock.mockReturnValue(true);
         getCurrentVersionMock.mockResolvedValue("0.3.4");
-        useFlowStore.getState().setUpdateConfig({ autoCheckEnabled: false, tournamentMode: false });
+        useFlowStore.getState().setUpdateConfig({ autoCheckEnabled: false });
     });
     afterEach(() => {
         vi.clearAllMocks();
@@ -117,12 +117,4 @@ describe("useAutoUpdate", () => {
         });
     });
 
-    it("holds a newer release while Tournament Mode is on (manual check)", async () => {
-        useFlowStore.getState().setUpdateConfig({ tournamentMode: true });
-        fetchManifestMock.mockResolvedValue(newerManifest);
-        const { result } = renderHook(() => useAutoUpdate());
-        await act(() => result.current.checkNow());
-        expect(result.current.state).toEqual({ status: "held", manifest: newerManifest });
-        expect(downloadUpdateMock).not.toHaveBeenCalled();
-    });
 });

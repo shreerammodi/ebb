@@ -21,10 +21,10 @@ fn system_info() -> [&'static str; 2] {
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
-            // Signed updater + relaunch (desktop only). Policy (blackout,
-            // Tournament Mode, critical bypass) lives in the JS layer; these
-            // plugins just expose the verified check/download/install/relaunch
-            // primitives it drives.
+            // Signed updater + relaunch (desktop only). Policy (when to
+            // download, install only on user confirmation) lives in the JS
+            // layer; these plugins just expose the verified
+            // check/download/install/relaunch primitives it drives.
             #[cfg(desktop)]
             {
                 app.handle()

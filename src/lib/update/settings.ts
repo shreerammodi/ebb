@@ -11,7 +11,6 @@ export function loadUpdateConfig(): UpdateConfig {
         const parsed = JSON.parse(raw) as Partial<UpdateConfig>;
         return {
             autoCheckEnabled: parsed.autoCheckEnabled ?? DEFAULT_UPDATE_CONFIG.autoCheckEnabled,
-            tournamentMode: parsed.tournamentMode ?? DEFAULT_UPDATE_CONFIG.tournamentMode,
         };
     } catch {
         return { ...DEFAULT_UPDATE_CONFIG };

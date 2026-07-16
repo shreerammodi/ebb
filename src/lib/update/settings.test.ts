@@ -15,7 +15,6 @@ describe("update settings persistence", () => {
     it("round-trips a saved config", () => {
         const config: UpdateConfig = {
             autoCheckEnabled: true,
-            tournamentMode: true,
         };
         saveUpdateConfig(config);
         expect(loadUpdateConfig()).toEqual(config);

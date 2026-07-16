@@ -50,7 +50,7 @@ export interface FlowState {
     /** Custom aff/neg ink; null keeps the theme default. */
     affColor: string | null;
     negColor: string | null;
-    /** Desktop auto-update behavior (opt-in, Tournament Mode). */
+    /** Desktop auto-update behavior (background checks opt-in). */
     updateConfig: UpdateConfig;
     /** The unified command/search palette. */
     quickSwitcherOpen: boolean;

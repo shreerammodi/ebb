@@ -39,7 +39,7 @@ export interface ConfigFileShape {
      * Reading keeps only the leaves that differ from the preset as overrides.
      */
     keymap: KeymapTree;
-    update: { auto_check_enabled: boolean; tournament_mode: boolean };
+    update: { auto_check_enabled: boolean };
 }
 
 /** A leaf chord or a nested namespace of them. */
@@ -105,7 +105,6 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         keymap: nestByNamespace(byCommand(effectiveKeymap(s.keymapOverrides).bindings)),
         update: {
             auto_check_enabled: s.updateConfig.autoCheckEnabled,
-            tournament_mode: s.updateConfig.tournamentMode,
         },
     };
 }
@@ -147,7 +146,6 @@ export function toAppConfig(raw: unknown): AppConfig {
                 update.auto_check_enabled,
                 DEFAULT_UPDATE_CONFIG.autoCheckEnabled,
             ),
-            tournamentMode: bool(update.tournament_mode, DEFAULT_UPDATE_CONFIG.tournamentMode),
         },
     };
 }

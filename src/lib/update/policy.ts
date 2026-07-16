@@ -1,12 +1,4 @@
-import type { UpdateConfig, UpdateManifest, UpdatePlatformEntry } from "./types";
-
-/**
- * Returns true if a staged update may be applied right now: only when
- * Tournament Mode is off.
- */
-export function isUpdateEligible(config: UpdateConfig): boolean {
-    return !config.tournamentMode;
-}
+import type { UpdateManifest, UpdatePlatformEntry } from "./types";
 
 function isPlatformEntry(value: unknown): value is UpdatePlatformEntry {
     if (typeof value !== "object" || value === null) return false;
@@ -44,19 +36,8 @@ export function parseManifest(json: unknown): UpdateManifest {
     const manifest: UpdateManifest = { version: raw.version, platforms };
     if (typeof raw.pub_date === "string") manifest.pub_date = raw.pub_date;
     if (typeof raw.notes === "string") manifest.notes = raw.notes;
-    if (typeof raw.critical === "boolean") manifest.critical = raw.critical;
 
     return manifest;
-}
-
-/**
- * Returns true if a critical update should be surfaced via the explicit bypass
- * prompt. That is only the case when the update is critical AND would otherwise
- * be held (Tournament Mode on). When the update is already eligible, the normal
- * "Update ready" flow applies and no modal is needed.
- */
-export function shouldPromptCritical(manifest: UpdateManifest, config: UpdateConfig): boolean {
-    return manifest.critical === true && !isUpdateEligible(config);
 }
 
 /** Parses a dotted version (tolerating a leading `v` and prerelease suffix). */
@@ -82,32 +63,17 @@ export function isNewerVersion(candidate: string, current: string): boolean {
 export type UpdateAction =
     /** No newer version is available. */
     | { kind: "none" }
-    /** A newer, eligible version — download and stage it. */
-    | { kind: "download" }
-    /** A newer version held by Tournament Mode (no chip). */
-    | { kind: "hold" }
-    /** A newer critical version held by a guard — prompt for explicit consent. */
-    | { kind: "critical"; manifest: UpdateManifest };
+    /** A newer version — download and stage it. */
+    | { kind: "download" };
 
 /**
- * Pure decision for what to do given a fetched manifest, the running version,
- * and the current update config. This is the brain the `useAutoUpdate` hook
- * wires to side effects; keeping it pure makes the whole policy unit-testable
- * without Tauri or timers.
+ * Pure decision for what to do given a fetched manifest and the running
+ * version. This is the brain the `useAutoUpdate` hook wires to side effects;
+ * keeping it pure makes the whole policy unit-testable without Tauri or timers.
+ * The install itself never happens here: staging only, the user confirms.
  */
-export function decideUpdateAction(
-    manifest: UpdateManifest,
-    currentVersion: string,
-    config: UpdateConfig,
-): UpdateAction {
-    if (!isNewerVersion(manifest.version, currentVersion)) {
-        return { kind: "none" };
-    }
-    if (isUpdateEligible(config)) {
-        return { kind: "download" };
-    }
-    if (shouldPromptCritical(manifest, config)) {
-        return { kind: "critical", manifest };
-    }
-    return { kind: "hold" };
+export function decideUpdateAction(manifest: UpdateManifest, currentVersion: string): UpdateAction {
+    return isNewerVersion(manifest.version, currentVersion)
+        ? { kind: "download" }
+        : { kind: "none" };
 }

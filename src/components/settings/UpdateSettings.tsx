@@ -36,8 +36,6 @@ function statusLine(state: UpdateUiState): string | null {
             return `Update ${state.manifest.version} is ready. Installing restarts the app.`;
         case "error":
             return state.message;
-        case "held":
-            return `Update ${state.manifest.version} is held while Tournament Mode is on.`;
         default:
             return null;
     }
@@ -52,8 +50,6 @@ function idleTooltip(state: UpdateUiState): string {
             return "Downloading the update…";
         case "error":
             return "Couldn't check for updates.";
-        case "held":
-            return "Held while Tournament Mode is on.";
         default:
             return "Already on the latest version.";
     }
@@ -161,19 +157,6 @@ export default function UpdateSettings() {
                             <Tip label={idleTooltip(state)}>{installButton}</Tip>
                         )}
                     </>
-                }
-            />
-
-            <SettingRow
-                title="Tournament Mode"
-                description="Pins the current version and disables automatic updates."
-                control={
-                    <Switch
-                        checked={config.tournamentMode}
-                        onCheckedChange={(v) => setUpdateConfig({ tournamentMode: v })}
-                        data-testid="toggle-tournamentMode"
-                        aria-label="Tournament Mode"
-                    />
                 }
             />
 
