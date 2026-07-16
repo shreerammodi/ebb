@@ -46,6 +46,10 @@ export interface FlowState {
     /** CommandId -> custom chord, overriding the preset binding. */
     keymapOverrides: Record<string, string>;
     flowFont: FontId;
+    /** Live grid-only zoom (1 = 100%); scales the flow grid, not the chrome. Session-only, seeded from defaultGridZoom. */
+    gridZoom: number;
+    /** Persisted zoom the grid opens at; the header control adjusts gridZoom without disturbing this. */
+    defaultGridZoom: number;
     theme: ThemeMode;
     /** Custom aff/neg ink; null keeps the theme default. */
     affColor: string | null;
@@ -102,6 +106,12 @@ export interface FlowActions {
     setKeymapOverride(commandId: CommandId, chord: string): void;
     clearKeymapOverride(commandId: CommandId): void;
     setFlowFont(id: FontId): void;
+    /** Sets the live grid zoom to an absolute factor, clamped to the zoom bounds. */
+    setGridZoom(zoom: number): void;
+    /** Steps the live grid zoom by `delta`, clamped to the zoom bounds. */
+    zoomGrid(delta: number): void;
+    /** Sets the persisted default zoom, also applying it to the live grid. */
+    setDefaultGridZoom(zoom: number): void;
     setRfdVim(on: boolean): void;
     setInsertPaste(on: boolean): void;
     setTheme(mode: ThemeMode): void;
@@ -149,6 +159,35 @@ export interface AppConfig {
 
 const KEYMAP_SETTINGS_KEY = "ebb-keymap-settings";
 const DISPLAY_SETTINGS_KEY = "ebb-display-settings";
+// Default zoom lives in its own localStorage bucket, kept out of the desktop
+// config-file sync: it is a per-machine view preference, not a synced setting.
+const DEFAULT_ZOOM_KEY = "ebb-default-zoom";
+export const ZOOM_MIN = 0.5;
+export const ZOOM_MAX = 3;
+/** One "zoom in/out" step: 10%. */
+export const ZOOM_STEP = 0.1;
+
+/** Clamps to the zoom bounds and snaps to whole percents so steps never drift. */
+export function clampZoom(zoom: number): number {
+    return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(zoom * 100) / 100));
+}
+
+function loadDefaultZoom(): number {
+    if (typeof window === "undefined") return 1;
+    const raw = Number(window.localStorage.getItem(DEFAULT_ZOOM_KEY));
+    return raw >= ZOOM_MIN && raw <= ZOOM_MAX ? raw : 1;
+}
+
+function saveDefaultZoom(zoom: number): void {
+    if (typeof window === "undefined") return;
+    try {
+        window.localStorage.setItem(DEFAULT_ZOOM_KEY, String(zoom));
+    } catch {
+        // localStorage unavailable (private mode, quota) - ignore.
+    }
+}
+
+const initialDefaultZoom = loadDefaultZoom();
 
 function loadKeymapOverrides(): Record<string, string> {
     if (typeof window === "undefined") return {};
@@ -284,6 +323,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     speechTarget: null,
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
+    gridZoom: initialDefaultZoom,
+    defaultGridZoom: initialDefaultZoom,
     theme: initialDisplaySettings.theme,
     affColor: initialDisplaySettings.affColor,
     negColor: initialDisplaySettings.negColor,
@@ -514,6 +555,22 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setFlowFont(id) {
         saveDisplaySettings({ ...displaySettingsOf(get()), flowFont: id });
         set({ flowFont: id });
+    },
+
+    setGridZoom(zoom) {
+        const z = clampZoom(zoom);
+        if (z === get().gridZoom) return;
+        set({ gridZoom: z });
+    },
+
+    zoomGrid(delta) {
+        get().setGridZoom(get().gridZoom + delta);
+    },
+
+    setDefaultGridZoom(zoom) {
+        const z = clampZoom(zoom);
+        saveDefaultZoom(z);
+        set({ defaultGridZoom: z, gridZoom: z });
     },
 
     setRfdVim(on) {

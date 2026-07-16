@@ -34,7 +34,7 @@ import {
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { resolveCommand } from "@/lib/keymap/resolve";
 import type { CellMeta, FlowSheet } from "@/lib/model/flow";
-import { useFlowStore } from "@/lib/store/useFlowStore";
+import { useFlowStore, ZOOM_STEP } from "@/lib/store/useFlowStore";
 
 registerAllModules();
 
@@ -176,8 +176,10 @@ function headerSettings(sheet: FlowSheet, cols: SpeechCol[]) {
 export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane: 1 | 2 }) {
     const splitSheetId = useFlowStore((s) => s.splitSheetId);
     const focusedPane = useFlowStore((s) => s.focusedPane);
+    const gridZoom = useFlowStore((s) => s.gridZoom);
     const isFocused = splitSheetId == null || focusedPane === pane;
     const hotRef = useRef<HotTableRef>(null);
+    const wrapRef = useRef<HTMLDivElement>(null);
     const currentSheetIdRef = useRef<string | null>(null);
     const viewCache = useRef(new Map<string, { row: number; col: number }>());
     // afterRenderer and afterGetColHeader run once per cell per render cycle, so
@@ -207,6 +209,28 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         return () => {
             if (getActiveHot() === hot) setActiveHot(null, null);
         };
+    }, []);
+
+    // Zoom scales the grid via CSS on the wrapper; Handsontable measures its
+    // viewport once, so re-measure it against the new zoomed box or the last
+    // rows/cols stay clipped or leave a gap.
+    useEffect(() => {
+        hotRef.current?.hotInstance?.refreshDimensions();
+    }, [gridZoom]);
+
+    // Mod+scroll zooms only the grid. Native listener (not React onWheel) so the
+    // preventDefault sticks and the browser's own page zoom never fires. Trackpad
+    // pinch also arrives as ctrl+wheel, so both modifiers count.
+    useEffect(() => {
+        const el = wrapRef.current;
+        if (!el) return;
+        const onWheel = (e: WheelEvent) => {
+            if (!e.ctrlKey && !e.metaKey) return;
+            e.preventDefault();
+            useFlowStore.getState().zoomGrid(e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
+        };
+        el.addEventListener("wheel", onWheel, { passive: false });
+        return () => el.removeEventListener("wheel", onWheel);
     }, []);
 
     // The focused pane owns the singleton so commands (undo, bold, rows) hit it.
@@ -514,39 +538,47 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         // ht-blurred hides this pane's cell-selection marker while its cursor
         // stays in memory, so only the focused pane shows an active cell.
         <div
-            className={`ht-theme-main h-full min-h-0${isFocused ? "" : " ht-blurred"}`}
+            ref={wrapRef}
+            className={`ht-theme-main h-full min-h-0 overflow-hidden${isFocused ? "" : " ht-blurred"}`}
             data-testid="hot-grid"
         >
-            <HotTable
-                ref={hotRef}
-                rowHeaders={false}
-                colWidths={280}
-                wordWrap={true}
-                autoRowSize={true}
-                autoColumnSize={false}
-                height="100%"
-                minSpareRows={1}
-                enterBeginsEditing={false}
-                undo={true}
-                outsideClickDeselects={false}
-                contextMenu={CONTEXT_MENU as unknown as string[]}
-                copyPaste={{ pasteMode: insertPaste ? "shift_down" : "overwrite" }}
-                afterGetColHeader={afterGetColHeader}
-                afterRenderer={afterRenderer}
-                afterChange={afterChange}
-                beforePaste={beforePaste}
-                afterPaste={afterPaste}
-                beforeUndoStackChange={beforeUndoStackChange}
-                afterUndoStackChange={onUndoStackChange}
-                afterRedoStackChange={onRedoStackChange}
-                afterUndo={afterUndo}
-                afterRedo={afterRedo}
-                afterCreateRow={snapshot}
-                afterRemoveRow={snapshot}
-                afterSelectionEnd={afterSelectionEnd}
-                beforeKeyDown={beforeKeyDown}
-                licenseKey="non-commercial-and-evaluation"
-            />
+            {/* zoom scales the grid's content and layout uniformly. A zoomed
+                width/height:100% child still fills this pane exactly (CSS zoom
+                resolves the percentage against the pane), and Handsontable reads
+                its own clientHeight (pane / zoom) to fill the visible box, so its
+                scrollbars stay at the pane edges instead of overflowing. */}
+            <div style={{ zoom: gridZoom, width: "100%", height: "100%" }}>
+                <HotTable
+                    ref={hotRef}
+                    rowHeaders={false}
+                    colWidths={280}
+                    wordWrap={true}
+                    autoRowSize={true}
+                    autoColumnSize={false}
+                    height="100%"
+                    minSpareRows={1}
+                    enterBeginsEditing={false}
+                    undo={true}
+                    outsideClickDeselects={false}
+                    contextMenu={CONTEXT_MENU as unknown as string[]}
+                    copyPaste={{ pasteMode: insertPaste ? "shift_down" : "overwrite" }}
+                    afterGetColHeader={afterGetColHeader}
+                    afterRenderer={afterRenderer}
+                    afterChange={afterChange}
+                    beforePaste={beforePaste}
+                    afterPaste={afterPaste}
+                    beforeUndoStackChange={beforeUndoStackChange}
+                    afterUndoStackChange={onUndoStackChange}
+                    afterRedoStackChange={onRedoStackChange}
+                    afterUndo={afterUndo}
+                    afterRedo={afterRedo}
+                    afterCreateRow={snapshot}
+                    afterRemoveRow={snapshot}
+                    afterSelectionEnd={afterSelectionEnd}
+                    beforeKeyDown={beforeKeyDown}
+                    licenseKey="non-commercial-and-evaluation"
+                />
+            </div>
         </div>
     );
 });

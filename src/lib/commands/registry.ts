@@ -40,6 +40,8 @@ export type CommandId =
     | "rfd.toggle"
     | "help.open"
     | "sidebar.toggle"
+    | "view.zoomIn"
+    | "view.zoomOut"
     | "split.toggle"
     | "split.focusLeft"
     | "split.focusRight"
@@ -92,6 +94,8 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "rfd.toggle": { id: "rfd.toggle", label: "Toggle RFD" },
     "help.open": { id: "help.open", label: "Keyboard shortcuts" },
     "sidebar.toggle": { id: "sidebar.toggle", label: "Toggle sidebar" },
+    "view.zoomIn": { id: "view.zoomIn", label: "Zoom in" },
+    "view.zoomOut": { id: "view.zoomOut", label: "Zoom out" },
     "split.toggle": { id: "split.toggle", label: "Toggle split view" },
     "split.focusLeft": { id: "split.focusLeft", label: "Focus left pane" },
     "split.focusRight": { id: "split.focusRight", label: "Focus right pane" },

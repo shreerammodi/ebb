@@ -11,6 +11,7 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 import ExportMenu from "./ExportMenu";
 import SaveStatus from "./SaveStatus";
 import SpeechSwitcher from "./SpeechSwitcher";
+import ZoomControl from "./ZoomControl";
 
 export default function RoundHeader() {
     const role = useFlowStore((s) => s.round?.role);
@@ -52,6 +53,7 @@ export default function RoundHeader() {
 
             <div className="no-print flex flex-none items-center gap-2">
                 <SpeechSwitcher />
+                <ZoomControl />
                 <Tip label="Round info" command="info.open">
                     <Button
                         variant="ghost"

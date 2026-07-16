@@ -330,3 +330,35 @@ describe("split view", () => {
         expect(useFlowStore.getState().focusedPane).toBe(1);
     });
 });
+
+describe("grid zoom", () => {
+    beforeEach(() => {
+        useFlowStore.setState({ gridZoom: 1, defaultGridZoom: 1 });
+        window.localStorage.removeItem("ebb-default-zoom");
+    });
+
+    it("steps and clamps the live zoom without touching the default", () => {
+        useFlowStore.getState().zoomGrid(0.1);
+        expect(useFlowStore.getState().gridZoom).toBe(1.1);
+
+        // Clamps to the bounds (0.5 - 3) and never mutates defaultGridZoom.
+        useFlowStore.getState().setGridZoom(9);
+        expect(useFlowStore.getState().gridZoom).toBe(3);
+        useFlowStore.getState().setGridZoom(0.1);
+        expect(useFlowStore.getState().gridZoom).toBe(0.5);
+        expect(useFlowStore.getState().defaultGridZoom).toBe(1);
+    });
+
+    it("snaps steps to whole percents so they never drift", () => {
+        useFlowStore.getState().setGridZoom(0.5);
+        for (let i = 0; i < 3; i++) useFlowStore.getState().zoomGrid(0.1);
+        expect(useFlowStore.getState().gridZoom).toBe(0.8);
+    });
+
+    it("persists the default zoom and applies it to the live zoom", () => {
+        useFlowStore.getState().setDefaultGridZoom(1.25);
+        expect(useFlowStore.getState().defaultGridZoom).toBe(1.25);
+        expect(useFlowStore.getState().gridZoom).toBe(1.25);
+        expect(window.localStorage.getItem("ebb-default-zoom")).toBe("1.25");
+    });
+});
