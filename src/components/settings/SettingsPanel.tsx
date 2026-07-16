@@ -104,10 +104,25 @@ export default function SettingsPanel() {
     const setRfdVim = useFlowStore((s) => s.setRfdVim);
     const insertPaste = useFlowStore((s) => s.insertPaste);
     const setInsertPaste = useFlowStore((s) => s.setInsertPaste);
+    const defaultGridZoom = useFlowStore((s) => s.defaultGridZoom);
+    const setDefaultGridZoom = useFlowStore((s) => s.setDefaultGridZoom);
 
     const [recording, setRecording] = useState<CommandId | null>(null);
     const [category, setCategory] = useState<Category>("display");
     const [query, setQuery] = useState("");
+    const [zoomDraft, setZoomDraft] = useState("");
+
+    // Mirror the stored default zoom into the editable field on open and on
+    // external changes (e.g. the field commits a clamped value back).
+    useEffect(() => {
+        setZoomDraft(String(Math.round(defaultGridZoom * 100)));
+    }, [defaultGridZoom, open]);
+
+    function commitZoom() {
+        const n = parseInt(zoomDraft, 10);
+        if (!Number.isNaN(n)) setDefaultGridZoom(n / 100);
+        else setZoomDraft(String(Math.round(defaultGridZoom * 100)));
+    }
 
     // Reset transient UI state whenever the dialog closes.
     useEffect(() => {
@@ -276,6 +291,30 @@ export default function SettingsPanel() {
                                                     </label>
                                                 );
                                             })}
+                                        </div>
+                                    }
+                                />
+                                <SettingRow
+                                    title="Default zoom"
+                                    description="Zoom level the flow grid opens at. The zoom control in the round header adjusts the current view without changing this."
+                                    control={
+                                        <div className="flex items-center gap-1">
+                                            <Input
+                                                type="text"
+                                                inputMode="numeric"
+                                                value={zoomDraft}
+                                                onChange={(e) => setZoomDraft(e.target.value)}
+                                                onBlur={commitZoom}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") e.currentTarget.blur();
+                                                }}
+                                                aria-label="Default zoom percentage"
+                                                data-testid="default-zoom-input"
+                                                className="h-8 w-16 text-right tabular-nums"
+                                            />
+                                            <span className="text-muted-foreground text-[13px]">
+                                                %
+                                            </span>
                                         </div>
                                     }
                                 />

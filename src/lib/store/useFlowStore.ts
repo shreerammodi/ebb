@@ -46,6 +46,10 @@ export interface FlowState {
     /** CommandId -> custom chord, overriding the preset binding. */
     keymapOverrides: Record<string, string>;
     flowFont: FontId;
+    /** Live grid-only zoom (1 = 100%); scales the flow grid, not the chrome. Session-only, seeded from defaultGridZoom. */
+    gridZoom: number;
+    /** Persisted zoom the grid opens at; the header control adjusts gridZoom without disturbing this. */
+    defaultGridZoom: number;
     theme: ThemeMode;
     /** Custom aff/neg ink; null keeps the theme default. */
     affColor: string | null;
@@ -102,6 +106,12 @@ export interface FlowActions {
     setKeymapOverride(commandId: CommandId, chord: string): void;
     clearKeymapOverride(commandId: CommandId): void;
     setFlowFont(id: FontId): void;
+    /** Sets the live grid zoom to an absolute factor, clamped to the zoom bounds. */
+    setGridZoom(zoom: number): void;
+    /** Steps the live grid zoom by `delta`, clamped to the zoom bounds. */
+    zoomGrid(delta: number): void;
+    /** Sets the persisted default zoom, also applying it to the live grid. */
+    setDefaultGridZoom(zoom: number): void;
     setRfdVim(on: boolean): void;
     setInsertPaste(on: boolean): void;
     setTheme(mode: ThemeMode): void;
@@ -134,6 +144,7 @@ export type FlowStore = FlowState & FlowActions;
  */
 export interface AppConfig {
     flowFont: FontId;
+    defaultGridZoom: number;
     sidebarCollapsed: boolean;
     rfdOpen: boolean;
     rfdVim: boolean;
@@ -149,6 +160,23 @@ export interface AppConfig {
 
 const KEYMAP_SETTINGS_KEY = "ebb-keymap-settings";
 const DISPLAY_SETTINGS_KEY = "ebb-display-settings";
+export const ZOOM_MIN = 0.5;
+export const ZOOM_MAX = 3;
+/** One "zoom in/out" step: 10%. */
+export const ZOOM_STEP = 0.1;
+
+/** Clamps to the zoom bounds and snaps to whole percents so steps never drift. */
+export function clampZoom(zoom: number): number {
+    return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(zoom * 100) / 100));
+}
+
+/**
+ * A valid zoom factor from a hand-edited config value: a finite number clamped
+ * to the bounds (so 5 becomes the 3.0 max, not a reset), else 1 (100%).
+ */
+export function resolveZoom(value: unknown): number {
+    return typeof value === "number" && Number.isFinite(value) ? clampZoom(value) : 1;
+}
 
 function loadKeymapOverrides(): Record<string, string> {
     if (typeof window === "undefined") return {};
@@ -173,6 +201,7 @@ function saveKeymapOverrides(keymapOverrides: Record<string, string>): void {
 
 interface DisplaySettings {
     flowFont: FontId;
+    defaultGridZoom: number;
     sidebarCollapsed: boolean;
     rfdOpen: boolean;
     rfdVim: boolean;
@@ -190,6 +219,7 @@ function resolveColor(value: unknown): string | null {
 function loadDisplaySettings(): DisplaySettings {
     const fallback: DisplaySettings = {
         flowFont: DEFAULT_FONT_ID,
+        defaultGridZoom: 1,
         sidebarCollapsed: false,
         rfdOpen: false,
         rfdVim: false,
@@ -205,6 +235,7 @@ function loadDisplaySettings(): DisplaySettings {
         const p = JSON.parse(raw) as Partial<DisplaySettings>;
         return {
             flowFont: resolveFontId(p.flowFont),
+            defaultGridZoom: resolveZoom(p.defaultGridZoom),
             sidebarCollapsed: typeof p.sidebarCollapsed === "boolean" ? p.sidebarCollapsed : false,
             rfdOpen: typeof p.rfdOpen === "boolean" ? p.rfdOpen : false,
             rfdVim: typeof p.rfdVim === "boolean" ? p.rfdVim : false,
@@ -231,6 +262,7 @@ function saveDisplaySettings(s: DisplaySettings): void {
 function displaySettingsOf(s: FlowState): DisplaySettings {
     return {
         flowFont: s.flowFont,
+        defaultGridZoom: s.defaultGridZoom,
         sidebarCollapsed: s.sidebarCollapsed,
         rfdOpen: s.rfdOpen,
         rfdVim: s.rfdVim,
@@ -284,6 +316,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     speechTarget: null,
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
+    gridZoom: initialDisplaySettings.defaultGridZoom,
+    defaultGridZoom: initialDisplaySettings.defaultGridZoom,
     theme: initialDisplaySettings.theme,
     affColor: initialDisplaySettings.affColor,
     negColor: initialDisplaySettings.negColor,
@@ -516,6 +550,22 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         set({ flowFont: id });
     },
 
+    setGridZoom(zoom) {
+        const z = clampZoom(zoom);
+        if (z === get().gridZoom) return;
+        set({ gridZoom: z });
+    },
+
+    zoomGrid(delta) {
+        get().setGridZoom(get().gridZoom + delta);
+    },
+
+    setDefaultGridZoom(zoom) {
+        const z = clampZoom(zoom);
+        saveDisplaySettings({ ...displaySettingsOf(get()), defaultGridZoom: z });
+        set({ defaultGridZoom: z, gridZoom: z });
+    },
+
     setRfdVim(on) {
         saveDisplaySettings({ ...displaySettingsOf(get()), rfdVim: on });
         set({ rfdVim: on });
@@ -548,7 +598,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         saveDisplaySettings(display);
         saveKeymapOverrides(keymapOverrides);
         saveUpdateConfig(updateConfig);
-        set({ ...display, keymapOverrides, updateConfig });
+        // The live grid follows the incoming default; on boot they already match.
+        set({ ...display, gridZoom: display.defaultGridZoom, keymapOverrides, updateConfig });
     },
 
     setQuickSwitcherOpen(open, seed = "") {

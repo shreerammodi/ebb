@@ -19,7 +19,7 @@ import { getActiveHot, notifyGridMutated } from "@/lib/grid/hotInstance";
 import { attachMetaUndo, snapshotClasses } from "@/lib/grid/metaUndo";
 import { beginMove } from "@/lib/grid/moveSession";
 import { sortedSheets } from "@/lib/model/flow";
-import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
+import { focusedSheetId, useFlowStore, ZOOM_STEP } from "@/lib/store/useFlowStore";
 
 import type { CommandId } from "./registry";
 
@@ -219,6 +219,12 @@ export function executeCommand(id: CommandId): void {
             return;
         case "sidebar.toggle":
             state.setSidebarCollapsed(!state.sidebarCollapsed);
+            return;
+        case "view.zoomIn":
+            state.zoomGrid(ZOOM_STEP);
+            return;
+        case "view.zoomOut":
+            state.zoomGrid(-ZOOM_STEP);
             return;
         case "split.toggle":
             state.toggleSplit();

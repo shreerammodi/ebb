@@ -116,5 +116,4 @@ describe("useAutoUpdate", () => {
             message: "Couldn't download the update.",
         });
     });
-
 });
