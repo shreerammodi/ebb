@@ -240,7 +240,10 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         if (!el) return;
         const onWheel = (e: WheelEvent) => {
             if (!e.ctrlKey && !e.metaKey) return;
+            // Still swallow the gesture when zoom is off, so it goes inert rather
+            // than falling through to the browser's own page zoom.
             e.preventDefault();
+            if (!useFlowStore.getState().scrollZoom) return;
             useFlowStore.getState().zoomGrid(e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
         };
         el.addEventListener("wheel", onWheel, { passive: false });

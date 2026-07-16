@@ -104,6 +104,8 @@ export default function SettingsPanel() {
     const setRfdVim = useFlowStore((s) => s.setRfdVim);
     const insertPaste = useFlowStore((s) => s.insertPaste);
     const setInsertPaste = useFlowStore((s) => s.setInsertPaste);
+    const scrollZoom = useFlowStore((s) => s.scrollZoom);
+    const setScrollZoom = useFlowStore((s) => s.setScrollZoom);
     const defaultGridZoom = useFlowStore((s) => s.defaultGridZoom);
     const setDefaultGridZoom = useFlowStore((s) => s.setDefaultGridZoom);
 
@@ -315,6 +317,20 @@ export default function SettingsPanel() {
                                                 %
                                             </span>
                                         </div>
+                                    }
+                                />
+                                <SettingRow
+                                    title="Scroll to zoom"
+                                    description={`Zoom the flow grid by holding ${
+                                        isMacPlatform() ? "Cmd" : "Ctrl"
+                                    } and scrolling, or pinching on a trackpad. Turn off to leave the wheel alone.`}
+                                    control={
+                                        <Switch
+                                            checked={scrollZoom}
+                                            onCheckedChange={setScrollZoom}
+                                            data-testid="scroll-zoom-toggle"
+                                            aria-label="Scroll to zoom"
+                                        />
                                     }
                                 />
                                 <SettingRow

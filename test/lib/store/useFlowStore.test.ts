@@ -62,6 +62,13 @@ describe("loadRound", () => {
         expect(useFlowStore.getState().insertPaste).toBe(true);
         expect(window.localStorage.getItem("ebb-display-settings")).toContain('"insertPaste":true');
     });
+
+    it("persists scrollZoom through setScrollZoom, defaulting on", () => {
+        expect(useFlowStore.getState().scrollZoom).toBe(true);
+        useFlowStore.getState().setScrollZoom(false);
+        expect(useFlowStore.getState().scrollZoom).toBe(false);
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain('"scrollZoom":false');
+    });
 });
 
 describe("switchSpeech", () => {

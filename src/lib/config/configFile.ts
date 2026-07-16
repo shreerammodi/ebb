@@ -30,6 +30,7 @@ export interface ConfigFileShape {
     rfd_open: boolean;
     rfd_vim: boolean;
     insert_paste: boolean;
+    scroll_zoom: boolean;
     /** null means "reset to theme default"; Rust removes the key from the file. */
     aff_color: string | null;
     neg_color: string | null;
@@ -103,6 +104,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         rfd_open: s.rfdOpen,
         rfd_vim: s.rfdVim,
         insert_paste: s.insertPaste,
+        scroll_zoom: s.scrollZoom,
         aff_color: s.affColor,
         neg_color: s.negColor,
         keymap: nestByNamespace(byCommand(effectiveKeymap(s.keymapOverrides).bindings)),
@@ -141,6 +143,7 @@ export function toAppConfig(raw: unknown): AppConfig {
         rfdOpen: bool(o.rfd_open, false),
         rfdVim: bool(o.rfd_vim, false),
         insertPaste: bool(o.insert_paste, false),
+        scrollZoom: bool(o.scroll_zoom, true),
         theme: resolveThemeMode(o.theme),
         affColor: resolveColor(o.aff_color),
         negColor: resolveColor(o.neg_color),

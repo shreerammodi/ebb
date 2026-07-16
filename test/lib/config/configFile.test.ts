@@ -14,6 +14,7 @@ const sample: AppConfig = {
     rfdOpen: false,
     rfdVim: true,
     insertPaste: true,
+    scrollZoom: false,
     theme: "dark",
     affColor: "#1d4ed8",
     negColor: null,
