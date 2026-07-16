@@ -25,22 +25,6 @@ const ARCH_LABELS: Record<string, string> = {
     x86_64: "x86-64",
 };
 
-/** Sub-line under the install button; null when the button alone says enough. */
-function statusLine(state: UpdateUiState): string | null {
-    switch (state.status) {
-        case "checking":
-            return "Checking for updates…";
-        case "downloading":
-            return "Downloading the update…";
-        case "ready":
-            return `Update ${state.manifest.version} is ready. Installing restarts the app.`;
-        case "error":
-            return state.message;
-        default:
-            return null;
-    }
-}
-
 /** Why the install button is disabled, shown as its hover tooltip. */
 function idleTooltip(state: UpdateUiState): string {
     switch (state.status) {
@@ -88,7 +72,6 @@ export default function UpdateSettings() {
 
     const busy = state.status === "checking" || state.status === "downloading";
     const ready = state.status === "ready";
-    const message = statusLine(state);
 
     // Native `disabled` swallows pointer events, so Radix's tooltip never opens.
     // Keep the button interactive, mark it aria-disabled, and no-op the click.
