@@ -21,3 +21,9 @@ updates:
           npm:
               patterns:
                   - "*"
+      # TypeScript 7 is the native (Go) rewrite; its npm package drops the
+      # classic compiler API from the package root, which Next's build-time
+      # typecheck loads. Stay on 6.x until Next supports the new layout.
+      ignore:
+          - dependency-name: typescript
+            update-types: ["version-update:semver-major"]
