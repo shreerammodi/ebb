@@ -323,7 +323,19 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         if (!revealTarget || revealTarget.sheetId !== sheetId) return;
         const id = requestAnimationFrame(() => {
             const hot = hotRef.current?.hotInstance;
-            hot?.selectCell(revealTarget.row, revealTarget.col);
+            if (!hot) return;
+            hot.selectCell(revealTarget.row, revealTarget.col);
+            // A jump teleports the viewport, so the landing cell announces
+            // itself: a one-shot decay from the sheet's selection violet.
+            // WAAPI on the live TD self-cleans; a mid-flash re-render that
+            // swaps the TD just ends the flash early.
+            hot.getCell(revealTarget.row, revealTarget.col)?.animate(
+                [
+                    { backgroundColor: "rgba(124, 58, 237, 0.2)" },
+                    { backgroundColor: "transparent" },
+                ],
+                { duration: 600, easing: "cubic-bezier(0.25, 1, 0.5, 1)" },
+            );
         });
         return () => cancelAnimationFrame(id);
     }, [revealTarget, sheetId]);
