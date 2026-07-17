@@ -69,6 +69,9 @@
     --sel: #7c3aed;
     --warn: #b45309;
     --good: #047857;
+
+    /* Dimming layer behind modal surfaces (dialogs, drawers). */
+    --scrim: oklch(0 0 0 / 40%);
 }
 
 .dark {
@@ -137,6 +140,7 @@
     --color-sel: var(--sel);
     --color-warn: var(--warn);
     --color-good: var(--good);
+    --color-scrim: var(--scrim);
 }
 
 /* ------------------------------------------------------------
