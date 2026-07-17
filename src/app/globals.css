@@ -5,6 +5,8 @@
     --font-sans: var(--font-ibm-plex-sans);
     --font-mono: var(--font-commit-mono);
     --font-flow: var(--font-dm-sans);
+    /* The app's one motion curve; MOTION_TRANSITION in MotionRoot.tsx mirrors it. */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -67,10 +69,6 @@
     --sel: #7c3aed;
     --warn: #b45309;
     --good: #047857;
-
-    /* Motion: natural deceleration for state-conveying transitions
-       (drag, flash). */
-    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .dark {

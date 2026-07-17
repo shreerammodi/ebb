@@ -18,7 +18,7 @@ function SheetOverlay({
         <SheetPrimitive.Overlay
             data-slot="sheet-overlay"
             className={cn(
-                "fixed inset-0 z-50 bg-black/30 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+                "fixed inset-0 z-50 bg-black/30 ease-out-quart data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150",
                 className,
             )}
             {...props}
@@ -38,7 +38,7 @@ function SheetContent({
                 data-slot="sheet-content"
                 className={cn(
                     "fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col gap-0 overflow-y-auto border-l border-border bg-card p-0 shadow-lg",
-                    "transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=closed]:slide-out-to-right data-[state=open]:animate-in data-[state=open]:duration-500 data-[state=open]:slide-in-from-right",
+                    "ease-out-quart data-[state=open]:animate-in data-[state=open]:duration-250 motion-safe:data-[state=open]:slide-in-from-right motion-reduce:data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:duration-200 motion-safe:data-[state=closed]:slide-out-to-right motion-reduce:data-[state=closed]:fade-out-0",
                     className,
                 )}
                 {...props}
