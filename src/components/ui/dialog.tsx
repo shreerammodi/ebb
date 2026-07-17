@@ -26,13 +26,18 @@ function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.C
 
 function DialogOverlay({
     className,
+    animated = true,
     ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+}: React.ComponentProps<typeof DialogPrimitive.Overlay> & {
+    animated?: boolean;
+}) {
     return (
         <DialogPrimitive.Overlay
             data-slot="dialog-overlay"
             className={cn(
-                "fixed inset-0 z-50 bg-black/50 ease-out-quart data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150",
+                "fixed inset-0 z-50 bg-black/50",
+                animated &&
+                    "ease-out-quart data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150",
                 className,
             )}
             {...props}
@@ -44,13 +49,17 @@ function DialogContent({
     className,
     children,
     showCloseButton = true,
+    animated = true,
     ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
     showCloseButton?: boolean;
+    // Keyboard-summoned surfaces (search palette) opt out of enter/exit
+    // animation entirely: motion on a many-times-a-day path reads as latency.
+    animated?: boolean;
 }) {
     return (
         <DialogPortal data-slot="dialog-portal">
-            <DialogOverlay />
+            <DialogOverlay animated={animated} />
             <DialogPrimitive.Content
                 data-slot="dialog-content"
                 // Closing an overlay over the flow hands focus straight back to
@@ -60,7 +69,9 @@ function DialogContent({
                     if (focusActiveHot()) e.preventDefault();
                 }}
                 className={cn(
-                    "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-card p-6 shadow-lg outline-none ease-out-quart duration-200 data-[state=closed]:duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-safe:data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 motion-safe:data-[state=closed]:zoom-out-95 sm:max-w-lg",
+                    "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-card p-6 shadow-lg outline-none sm:max-w-lg",
+                    animated &&
+                        "ease-out-quart duration-200 data-[state=closed]:duration-150 data-[state=open]:animate-in data-[state=open]:fade-in-0 motion-safe:data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 motion-safe:data-[state=closed]:zoom-out-95",
                     className,
                 )}
                 {...props}

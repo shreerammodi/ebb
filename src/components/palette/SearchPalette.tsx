@@ -163,6 +163,7 @@ function SearchPaletteInner() {
                 top-anchored and chromeless to keep the command-palette feel. */}
             <DialogContent
                 showCloseButton={false}
+                animated={false}
                 aria-label={label}
                 data-testid="search-palette"
                 onKeyDown={onKeyDown}
