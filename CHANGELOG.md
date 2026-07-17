@@ -10,16 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - A Display setting to turn off tooltips. Hover hints show by default; the
-  toggle hides them everywhere, leaving the buttons and controls themselves
-  untouched.
+  toggle hides them everywhere.
 - Jumping to a search result now briefly flashes the landing cell in the
   selection violet, so the eye finds where the cursor landed after the
   viewport teleports.
 
 ### Changed
 
-- The search palette opens and closes instantly, with no animation, matching
-  its role as a keyboard-first surface.
+- The search palette opens and closes instantly with no animation.
 - Dialogs, menus, tooltips, and the flow detail drawer share one easing curve
   with quicker, consistent timings (exits slightly faster than entrances), and
   their movement now respects the system reduced-motion preference.
@@ -29,13 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - A Display setting to turn off scroll-to-zoom. Mod+scroll and trackpad pinch
-  zoom the flow grid by default; the toggle disables that gesture, and the grid
-  still swallows it so it never falls through to browser page zoom.
-
-### Changed
-
-- Settings copy: "Argument colors" is now "Side colors", and several row
-  descriptions are shorter.
+  zoom the flow grid by default; the toggle disables that gesture.
 
 ### Fixed
 
@@ -51,12 +43,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Zoom the flow grid on its own, leaving the header, sidebar, and panels at
-  full size. Minus/plus buttons around a slider, a click-to-edit percentage
-  field, Mod+scroll over the grid, and "Zoom in"/"Zoom out" command-palette
-  commands all drive it in 10% steps. Settings gains a "Default zoom" that the
-  grid opens at, synced to the desktop config file alongside the font, theme,
-  and colors.
+- Zoom the flow grid. Minus/plus buttons around a slider, a click-to-edit
+  percentage field, Mod+scroll over the grid, and "Zoom in"/"Zoom out"
+  command-palette commands all scroll in 10% steps. Settings gains a "Default
+  zoom" that the grid opens at, synced to the desktop config file.
 - Move mode follows the mouse: the picked-up block tracks the hovered row and a
   click drops it, mirroring the keyboard Up/Down/Enter path.
 
