@@ -30,7 +30,6 @@ export default function UpdateChip() {
                     initial={{ opacity: 0, y: 8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     className={cn(
                         "fixed right-4 bottom-4 z-50 flex items-center gap-1.5 rounded-full",
                         "border-border bg-card text-foreground border px-3 py-1.5 text-[12px] shadow-sm",
