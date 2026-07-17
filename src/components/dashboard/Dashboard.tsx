@@ -209,6 +209,7 @@ export default function Dashboard() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.1 }}
                                     >
                                         {groups.map((g) => (
                                             <section key={g.label} className="mb-6">
@@ -254,6 +255,7 @@ export default function Dashboard() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.1 }}
                                         className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
                                     >
                                         <AnimatePresence mode="popLayout" initial={false}>
