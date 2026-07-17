@@ -1,6 +1,6 @@
 # 005 - One scrim token for every overlay
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 6dc4cbdfaad9
 - **Severity**: LOW
 - **Category**: Cohesion & tokens

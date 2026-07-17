@@ -12,12 +12,12 @@ drifted, the executor must stop and report rather than improvise.
 
 | # | Title | Severity | Status |
 | --- | --- | --- | --- |
-| 001 | Retune the Radix surfaces (curve, budgets, asymmetric exits, reduced motion) | HIGH | TODO |
-| 002 | Open the search palette instantly | HIGH | TODO |
-| 003 | Critically damp the update chip entrance | LOW | TODO |
-| 004 | Tighten the dashboard grouped/flat view swap | LOW | TODO |
-| 005 | One scrim token for every overlay | LOW | TODO |
-| 006 | Flash the landing cell after a search-palette jump | MEDIUM | TODO |
+| 001 | Retune the Radix surfaces (curve, budgets, asymmetric exits, reduced motion) | HIGH | DONE |
+| 002 | Open the search palette instantly | HIGH | DONE |
+| 003 | Critically damp the update chip entrance | LOW | DONE |
+| 004 | Tighten the dashboard grouped/flat view swap | LOW | DONE |
+| 005 | One scrim token for every overlay | LOW | DONE |
+| 006 | Flash the landing cell after a search-palette jump | MEDIUM | DONE |
 
 ## Execution order and dependencies
 

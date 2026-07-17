@@ -1,6 +1,6 @@
 # 001 - Retune the Radix surfaces: one curve, tighter budgets, asymmetric exits, reduced-motion gating
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 6dc4cbdfaad9
 - **Severity**: HIGH
 - **Category**: Easing & duration / Cohesion & tokens / Physicality & origin / Accessibility

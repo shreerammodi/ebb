@@ -1,6 +1,6 @@
 # 006 - Flash the landing cell after a search-palette jump
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 6dc4cbdfaad9
 - **Severity**: MEDIUM (additive - missed opportunity)
 - **Category**: Missed opportunities

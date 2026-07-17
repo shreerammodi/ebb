@@ -1,6 +1,6 @@
 # 003 - Critically damp the update chip entrance
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 6dc4cbdfaad9
 - **Severity**: LOW
 - **Category**: Cohesion & tokens

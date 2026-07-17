@@ -1,6 +1,6 @@
 # 004 - Tighten the dashboard grouped/flat view swap
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 6dc4cbdfaad9
 - **Severity**: LOW
 - **Category**: Easing & duration

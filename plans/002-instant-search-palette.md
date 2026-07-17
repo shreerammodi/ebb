@@ -1,6 +1,6 @@
 # 002 - Open the search palette instantly (no animation on a keyboard surface)
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 6dc4cbdfaad9
 - **Severity**: HIGH
 - **Category**: Purpose & frequency

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Jumping to a search result now briefly flashes the landing cell in the
+  selection violet, so the eye finds where the cursor landed after the
+  viewport teleports.
+
+### Changed
+
+- The search palette opens and closes instantly, with no animation, matching
+  its role as a keyboard-first surface.
+- Dialogs, menus, tooltips, and the flow detail drawer share one easing curve
+  with quicker, consistent timings (exits slightly faster than entrances), and
+  their movement now respects the system reduced-motion preference.
+
 ## [0.4.1] - 2026-07-16
 
 ### Added
