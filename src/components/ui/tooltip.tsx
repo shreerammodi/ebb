@@ -5,6 +5,7 @@ import * as React from "react";
 
 import type { CommandId } from "@/lib/commands/registry";
 import { keyHintFor } from "@/lib/keymap/displayChord";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
 
 function TooltipProvider({
@@ -67,7 +68,9 @@ interface TipProps {
 }
 
 function Tip({ label, command, side, hoverOnly, children }: TipProps) {
+    const tooltips = useFlowStore((s) => s.tooltips);
     const hint = command ? keyHintFor(command) : null;
+    if (!tooltips) return children;
     return (
         <Tooltip>
             <TooltipTrigger asChild onFocus={hoverOnly ? (e) => e.preventDefault() : undefined}>

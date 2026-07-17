@@ -72,6 +72,8 @@ export interface FlowState {
     insertPaste: boolean;
     /** Mod+scroll (and trackpad pinch) zooms the grid; off leaves the wheel alone. */
     scrollZoom: boolean;
+    /** Hover tips on buttons and controls; off renders the trigger bare. */
+    tooltips: boolean;
     renamingSheetId: string | null;
 }
 
@@ -117,6 +119,7 @@ export interface FlowActions {
     setRfdVim(on: boolean): void;
     setInsertPaste(on: boolean): void;
     setScrollZoom(on: boolean): void;
+    setTooltips(on: boolean): void;
     setTheme(mode: ThemeMode): void;
     /** Sets one side's custom ink; null resets it to the theme default. */
     setSideColor(side: Side, color: string | null): void;
@@ -153,6 +156,7 @@ export interface AppConfig {
     rfdVim: boolean;
     insertPaste: boolean;
     scrollZoom: boolean;
+    tooltips: boolean;
     theme: ThemeMode;
     affColor: string | null;
     negColor: string | null;
@@ -211,6 +215,7 @@ interface DisplaySettings {
     rfdVim: boolean;
     insertPaste: boolean;
     scrollZoom: boolean;
+    tooltips: boolean;
     theme: ThemeMode;
     affColor: string | null;
     negColor: string | null;
@@ -230,6 +235,7 @@ function loadDisplaySettings(): DisplaySettings {
         rfdVim: false,
         insertPaste: false,
         scrollZoom: true,
+        tooltips: true,
         theme: "system",
         affColor: null,
         negColor: null,
@@ -247,6 +253,7 @@ function loadDisplaySettings(): DisplaySettings {
             rfdVim: typeof p.rfdVim === "boolean" ? p.rfdVim : false,
             insertPaste: typeof p.insertPaste === "boolean" ? p.insertPaste : false,
             scrollZoom: typeof p.scrollZoom === "boolean" ? p.scrollZoom : true,
+            tooltips: typeof p.tooltips === "boolean" ? p.tooltips : true,
             theme: resolveThemeMode(p.theme),
             affColor: resolveColor(p.affColor),
             negColor: resolveColor(p.negColor),
@@ -275,6 +282,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
         rfdVim: s.rfdVim,
         insertPaste: s.insertPaste,
         scrollZoom: s.scrollZoom,
+        tooltips: s.tooltips,
         theme: s.theme,
         affColor: s.affColor,
         negColor: s.negColor,
@@ -340,6 +348,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     rfdVim: initialDisplaySettings.rfdVim,
     insertPaste: initialDisplaySettings.insertPaste,
     scrollZoom: initialDisplaySettings.scrollZoom,
+    tooltips: initialDisplaySettings.tooltips,
     renamingSheetId: null,
 
     loadRound(round, opts) {
@@ -588,6 +597,11 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setScrollZoom(on) {
         saveDisplaySettings({ ...displaySettingsOf(get()), scrollZoom: on });
         set({ scrollZoom: on });
+    },
+
+    setTooltips(on) {
+        saveDisplaySettings({ ...displaySettingsOf(get()), tooltips: on });
+        set({ tooltips: on });
     },
 
     setTheme(mode) {

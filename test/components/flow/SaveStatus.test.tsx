@@ -20,8 +20,11 @@ vi.mock("@/lib/persistence/flowPersistence", () => ({
 }));
 
 // A round must exist for Retry to act on.
+const flowState = { round: { id: "r1" }, tooltips: true };
 vi.mock("@/lib/store/useFlowStore", () => ({
-    useFlowStore: { getState: () => ({ round: { id: "r1" } }) },
+    useFlowStore: Object.assign((selector: (s: unknown) => unknown) => selector(flowState), {
+        getState: () => flowState,
+    }),
 }));
 
 beforeEach(() => {

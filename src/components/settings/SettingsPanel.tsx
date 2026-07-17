@@ -106,6 +106,8 @@ export default function SettingsPanel() {
     const setInsertPaste = useFlowStore((s) => s.setInsertPaste);
     const scrollZoom = useFlowStore((s) => s.scrollZoom);
     const setScrollZoom = useFlowStore((s) => s.setScrollZoom);
+    const tooltips = useFlowStore((s) => s.tooltips);
+    const setTooltips = useFlowStore((s) => s.setTooltips);
     const defaultGridZoom = useFlowStore((s) => s.defaultGridZoom);
     const setDefaultGridZoom = useFlowStore((s) => s.setDefaultGridZoom);
 
@@ -330,6 +332,18 @@ export default function SettingsPanel() {
                                             onCheckedChange={setScrollZoom}
                                             data-testid="scroll-zoom-toggle"
                                             aria-label="Scroll to zoom"
+                                        />
+                                    }
+                                />
+                                <SettingRow
+                                    title="Tooltips"
+                                    description="Hover hints on buttons and controls. Turn off to hide them."
+                                    control={
+                                        <Switch
+                                            checked={tooltips}
+                                            onCheckedChange={setTooltips}
+                                            data-testid="tooltips-toggle"
+                                            aria-label="Tooltips"
                                         />
                                     }
                                 />

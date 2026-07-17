@@ -69,6 +69,13 @@ describe("loadRound", () => {
         expect(useFlowStore.getState().scrollZoom).toBe(false);
         expect(window.localStorage.getItem("ebb-display-settings")).toContain('"scrollZoom":false');
     });
+
+    it("persists tooltips through setTooltips, defaulting on", () => {
+        expect(useFlowStore.getState().tooltips).toBe(true);
+        useFlowStore.getState().setTooltips(false);
+        expect(useFlowStore.getState().tooltips).toBe(false);
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain('"tooltips":false');
+    });
 });
 
 describe("switchSpeech", () => {

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A Display setting to turn off tooltips. Hover hints show by default; the
+  toggle hides them everywhere, leaving the buttons and controls themselves
+  untouched.
 - Jumping to a search result now briefly flashes the landing cell in the
   selection violet, so the eye finds where the cursor landed after the
   viewport teleports.
