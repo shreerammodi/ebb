@@ -9,6 +9,7 @@
 export type FontId =
     | "commit-mono"
     | "plex-mono"
+    | "pretendard"
     | "dm-sans"
     | "plex-sans"
     | "cabin"
@@ -35,6 +36,12 @@ export const FONTS: FontOption[] = [
         label: "IBM Plex Mono",
         cssVar: "var(--font-ibm-plex-mono)",
         category: "mono",
+    },
+    {
+        id: "pretendard",
+        label: "Pretendard",
+        cssVar: "var(--font-pretendard)",
+        category: "sans",
     },
     {
         id: "dm-sans",
@@ -68,7 +75,7 @@ export const FONTS: FontOption[] = [
     },
 ];
 
-export const DEFAULT_FONT_ID: FontId = "dm-sans";
+export const DEFAULT_FONT_ID: FontId = "pretendard";
 
 const BY_ID: Record<FontId, FontOption> = Object.fromEntries(FONTS.map((f) => [f.id, f])) as Record<
     FontId,

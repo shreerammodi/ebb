@@ -62,7 +62,7 @@ describe("toAppConfig validation", () => {
             sidebar_collapsed: "yes",
         });
         expect(cfg.theme).toBe("system");
-        expect(cfg.flowFont).toBe("dm-sans");
+        expect(cfg.flowFont).toBe("pretendard");
         expect(cfg.affColor).toBeNull();
         expect(cfg.sidebarCollapsed).toBe(false);
     });

@@ -2,9 +2,9 @@
 @import "tw-animate-css";
 
 @theme {
-    --font-sans: var(--font-ibm-plex-sans);
+    --font-sans: var(--font-pretendard);
     --font-mono: var(--font-commit-mono);
-    --font-flow: var(--font-dm-sans);
+    --font-flow: var(--font-pretendard);
     /* The app's one motion curve; MOTION_TRANSITION in MotionRoot.tsx mirrors it. */
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }

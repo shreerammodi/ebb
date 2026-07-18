@@ -3,10 +3,11 @@ import { describe, it, expect } from "vitest";
 import { FONTS, DEFAULT_FONT_ID, isFontId, resolveFontId, fontCssVar } from "@/lib/fonts/registry";
 
 describe("font registry", () => {
-    it("lists exactly the seven curated fonts in order", () => {
+    it("lists exactly the eight curated fonts in order", () => {
         expect(FONTS.map((f) => f.id)).toEqual([
             "commit-mono",
             "plex-mono",
+            "pretendard",
             "dm-sans",
             "plex-sans",
             "cabin",
@@ -15,8 +16,8 @@ describe("font registry", () => {
         ]);
     });
 
-    it("defaults to dm-sans", () => {
-        expect(DEFAULT_FONT_ID).toBe("dm-sans");
+    it("defaults to pretendard", () => {
+        expect(DEFAULT_FONT_ID).toBe("pretendard");
     });
 
     it("maps each id to its next/font css variable", () => {
@@ -39,8 +40,8 @@ describe("font registry", () => {
 
     it("resolves unknown/absent values to the default", () => {
         expect(resolveFontId("plex-sans")).toBe("plex-sans");
-        expect(resolveFontId("nope")).toBe("dm-sans");
-        expect(resolveFontId(undefined)).toBe("dm-sans");
+        expect(resolveFontId("nope")).toBe("pretendard");
+        expect(resolveFontId(undefined)).toBe("pretendard");
     });
 
     it("categorizes mono vs sans", () => {

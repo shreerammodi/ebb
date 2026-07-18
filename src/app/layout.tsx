@@ -279,6 +279,33 @@ const openSans = localFont({
     display: "swap",
 });
 
+const pretendard = localFont({
+    src: [
+        {
+            path: "./fonts/pretendard/pretendard-latin-400-normal.woff2",
+            weight: "400",
+            style: "normal",
+        },
+        {
+            path: "./fonts/pretendard/pretendard-latin-500-normal.woff2",
+            weight: "500",
+            style: "normal",
+        },
+        {
+            path: "./fonts/pretendard/pretendard-latin-600-normal.woff2",
+            weight: "600",
+            style: "normal",
+        },
+        {
+            path: "./fonts/pretendard/pretendard-latin-700-normal.woff2",
+            weight: "700",
+            style: "normal",
+        },
+    ],
+    variable: "--font-pretendard",
+    display: "swap",
+});
+
 export const metadata: Metadata = {
     title: {
         default: "ebb",
@@ -293,7 +320,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html
             lang="en"
-            className={`${commitMono.variable} ${dmSans.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${cabin.variable} ${lato.variable} ${openSans.variable}`}
+            className={`${pretendard.variable} ${commitMono.variable} ${dmSans.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} ${cabin.variable} ${lato.variable} ${openSans.variable}`}
             suppressHydrationWarning
         >
             <head>
