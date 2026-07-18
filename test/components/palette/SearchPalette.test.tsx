@@ -50,12 +50,41 @@ describe("SearchPalette", () => {
         expect(screen.getByText("topicality shell")).toBeInTheDocument();
     });
 
-    it("fuzzy-filters cells by the query", async () => {
+    it("filters cells by the query", async () => {
         setupRound();
         render(<SearchPalette />);
         await userEvent.type(screen.getByTestId("search-palette-input"), "topic");
         expect(screen.getAllByRole("option")).toHaveLength(1);
         expect(screen.getByText(/shell/)).toBeInTheDocument();
+    });
+
+    it("matches query tokens in any order", async () => {
+        setupRound();
+        render(<SearchPalette />);
+        await userEvent.type(screen.getByTestId("search-palette-input"), "both perm");
+        expect(screen.getAllByRole("option")).toHaveLength(1);
+        expect(screen.getByText("perm do both")).toBeInTheDocument();
+    });
+
+    it("shows the column badge and sheet meta on cell rows", () => {
+        setupRound();
+        render(<SearchPalette />);
+        const row = screen.getByTestId("sp-row-0");
+        expect(row).toHaveTextContent("1AC");
+        expect(row).toHaveTextContent("Case");
+    });
+
+    it("paginates long result lists behind a show-more row", async () => {
+        const round = makeFlowRound("aff");
+        const sheet = round.sheets.find((s) => s.kind !== "cx")!;
+        sheet.data = Array.from({ length: 20 }, (_, i) => [`arg ${i}`]);
+        useFlowStore.getState().loadRound(round);
+        useFlowStore.getState().setQuickSwitcherOpen(true);
+        render(<SearchPalette />);
+        expect(screen.getAllByRole("option")).toHaveLength(12);
+        await userEvent.click(screen.getByTestId("sp-show-more"));
+        expect(screen.getAllByRole("option")).toHaveLength(20);
+        expect(screen.queryByTestId("sp-show-more")).not.toBeInTheDocument();
     });
 
     it("jumps the grid cursor to the cell on Enter and closes", async () => {
@@ -80,7 +109,7 @@ describe("SearchPalette", () => {
         setupRound();
         render(<SearchPalette />);
         await userEvent.type(screen.getByTestId("search-palette-input"), ">undo");
-        // The label is split across per-char highlight spans, so match on the row.
+        // "Undo" is an exact-tier hit, so it ranks first.
         expect(screen.getByTestId("sp-row-0")).toHaveTextContent("Undo");
         // No cells listed in command mode.
         expect(screen.queryByText("perm do both")).not.toBeInTheDocument();

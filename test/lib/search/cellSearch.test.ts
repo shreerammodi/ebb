@@ -48,10 +48,20 @@ describe("searchCells", () => {
         expect(searchCells(roundWithCells(), "").length).toBe(3);
     });
 
-    it("fuzzy-ranks a subsequence match with highlight positions", () => {
+    it("ranks a text match first", () => {
         const [top] = searchCells(roundWithCells(), "perm");
         expect(top.text).toBe("perm do both");
-        expect(top.positions).toEqual([0, 1, 2, 3]);
+    });
+
+    it("matches tokens in any order", () => {
+        const [top] = searchCells(roundWithCells(), "both perm");
+        expect(top.text).toBe("perm do both");
+    });
+
+    it("finds a cell by its column name (secondary field)", () => {
+        // "1NC" appears in no cell text; both hits come via the column header.
+        const hits = searchCells(roundWithCells(), "1nc");
+        expect(hits.map((c) => c.colName)).toEqual(["1NC", "1NC"]);
     });
 
     it("returns nothing when no cell matches", () => {

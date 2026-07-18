@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Palette search understands sheet and column context: "2ac warming" finds
+  warming answers in the 2AC column, ranked below direct text matches.
 - A Display setting to turn off tooltips. Hover hints show by default; the
   toggle hides them everywhere.
 - Jumping to a search result now briefly flashes the landing cell in the
@@ -17,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Palette matching is order-independent ("da warming" finds "Warming DA") and
+  ranks results by how directly they match: exact, then prefix, then
+  word-start, then substring anywhere.
+- Search palette redesign: single-line result rows with a column badge in
+  aff/neg ink and the sheet name on the right, a key-hint strip under the
+  results, long lists paged behind a "show more" row, and a brief violet
+  pulse as the bar opens. Matched-character bolding is gone in favor of
+  calmer plain-text rows.
 - The search palette opens and closes instantly with no animation.
 - Dialogs, menus, tooltips, and the flow detail drawer share one easing curve
   with quicker, consistent timings (exits slightly faster than entrances), and

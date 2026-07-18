@@ -25,7 +25,6 @@
         "@fsegurai/codemirror-theme-github-dark": "^6.2.5",
         "@fsegurai/codemirror-theme-github-light": "^6.2.5",
         "@handsontable/react-wrapper": "^18.0.0",
-        "@leeoniya/ufuzzy": "^1.0.19",
         "@phosphor-icons/react": "^2.1.10",
         "@replit/codemirror-vim": "^6.3.0",
         "@tailwindcss/postcss": "^4.3.2",

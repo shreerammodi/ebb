@@ -11,32 +11,16 @@ import { searchCommands } from "@/lib/search/commandSearch";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 /**
- * The command/search palette, VSCode-style: fuzzy-search every filled cell in
- * the flow, or prefix the query with ">" to fuzzy-search commands instead.
- * Enter jumps the grid cursor to a cell, or runs the selected command.
+ * The command/search palette: search every filled cell in the flow, or prefix
+ * the query with ">" to search commands instead. Matching is order-independent
+ * multi-token AND (see lib/search/match.ts); a cell is also findable by its
+ * sheet title or column name. Enter jumps the grid cursor to a cell, or runs
+ * the selected command.
  */
 export default function SearchPalette() {
     const open = useFlowStore((s) => s.quickSwitcherOpen);
     if (!open) return null;
     return <SearchPaletteInner />;
-}
-
-function Highlighted({ text, positions }: { text: string; positions: number[] }) {
-    if (positions.length === 0) return <>{text}</>;
-    const hit = new Set(positions);
-    return (
-        <>
-            {Array.from(text, (ch, i) =>
-                hit.has(i) ? (
-                    <span key={i} className="text-foreground font-semibold">
-                        {ch}
-                    </span>
-                ) : (
-                    ch
-                ),
-            )}
-        </>
-    );
 }
 
 /** A palette row, unified across the cell and command modes. */
@@ -45,19 +29,21 @@ type Row =
           kind: "cell";
           id: string;
           text: string;
-          positions: number[];
+          badge: string;
+          side: "aff" | "neg";
           meta: string;
-          card: boolean;
           run: () => void;
       }
     | {
           kind: "command";
           id: string;
           text: string;
-          positions: number[];
           hint: string | null;
           run: () => void;
       };
+
+/** Rows shown per page; "show more" extends the window by another page. */
+const PAGE_SIZE = 12;
 
 function SearchPaletteInner() {
     const open = useFlowStore((s) => s.quickSwitcherOpen);
@@ -68,6 +54,7 @@ function SearchPaletteInner() {
 
     const [query, setQuery] = useState(seed);
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Re-seed when the palette is reopened in a different mode without first
@@ -75,17 +62,17 @@ function SearchPaletteInner() {
     useEffect(() => {
         setQuery(seed);
         setSelectedIndex(0);
+        setVisibleCount(PAGE_SIZE);
     }, [seed]);
 
     const isCommandMode = query.startsWith(">");
 
-    const rows = useMemo<Row[]>(() => {
+    const allRows = useMemo<Row[]>(() => {
         if (isCommandMode) {
             return searchCommands(query.slice(1)).map((c) => ({
                 kind: "command",
                 id: c.id,
                 text: c.label,
-                positions: c.positions,
                 hint: keyHintFor(c.id),
                 run: () => executeCommand(c.id),
             }));
@@ -95,15 +82,18 @@ function SearchPaletteInner() {
             kind: "cell",
             id: `${hit.sheetId}-${hit.row}-${hit.col}`,
             text: hit.text,
-            positions: hit.positions,
-            meta: hit.colName ? `${hit.sheetTitle} ${hit.colName}` : hit.sheetTitle,
-            card: hit.card,
+            badge: hit.colName,
+            side: hit.side,
+            meta: hit.card ? `${hit.sheetTitle} · Card` : hit.sheetTitle,
             run: () => revealCell(hit.sheetId, hit.row, hit.col),
         }));
     }, [isCommandMode, query, round, revealCell]);
 
+    const rows = visibleCount < allRows.length ? allRows.slice(0, visibleCount) : allRows;
+
     useEffect(() => {
         setSelectedIndex(0);
+        setVisibleCount(PAGE_SIZE);
     }, [query]);
 
     // Keep the highlighted row visible when arrowing past the viewport edge.
@@ -175,45 +165,43 @@ function SearchPaletteInner() {
                     el?.focus();
                     el?.setSelectionRange(seed.length, seed.length);
                 }}
-                className="bg-popover top-[12vh] w-full max-w-[560px] translate-y-0 gap-0 overflow-hidden rounded-md border p-0 shadow-2xl"
+                className="bg-popover motion-safe:animate-palette-pulse top-[12vh] w-full max-w-[560px] translate-y-0 gap-0 overflow-hidden rounded-md border p-0 shadow-2xl"
             >
                 <DialogTitle className="sr-only">{label}</DialogTitle>
-                <div className="p-2">
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        // Suppress the browser's form-history dropdown: otherwise the
-                        // first Escape only dismisses that native suggestion popup,
-                        // and it takes a second Escape to close the palette itself.
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
-                        placeholder={
-                            isCommandMode ? "Run a command…" : "Search cells, or > for commands…"
-                        }
-                        // outline-none! wins over the global keyboard-first :focus-visible
-                        // ring (unlayered, so it outranks layered utilities); the caret and
-                        // focus border carry focus instead of a violet outline.
-                        className="border-border text-foreground focus:border-foreground/40 box-border w-full rounded-sm border bg-transparent px-2.5 py-1.5 text-[13px] outline-none!"
-                        data-testid="search-palette-input"
-                        aria-label={label}
-                        role="combobox"
-                        aria-expanded
-                        aria-controls="search-palette-list"
-                        aria-activedescendant={activeId}
-                    />
-                </div>
+                <input
+                    ref={inputRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    // Suppress the browser's form-history dropdown: otherwise the
+                    // first Escape only dismisses that native suggestion popup,
+                    // and it takes a second Escape to close the palette itself.
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    placeholder={
+                        isCommandMode ? "Run a command…" : "Search cells, or > for commands…"
+                    }
+                    // outline-none! wins over the global keyboard-first :focus-visible
+                    // ring (unlayered, so it outranks layered utilities); the caret
+                    // carries focus - the bar itself is the chrome.
+                    className="text-foreground placeholder:text-muted-foreground w-full border-none bg-transparent px-3 py-2.5 text-[13px] outline-none!"
+                    data-testid="search-palette-input"
+                    aria-label={label}
+                    role="combobox"
+                    aria-expanded
+                    aria-controls="search-palette-list"
+                    aria-activedescendant={activeId}
+                />
                 <div
                     id="search-palette-list"
                     role="listbox"
                     aria-label="Results"
-                    className="max-h-[55vh] overflow-y-auto p-0 pb-1"
+                    className="border-border max-h-[320px] overflow-y-auto border-t p-1"
                 >
                     {rows.length === 0 ? (
-                        <div className="text-muted-foreground px-3 py-2 text-[13px]">
+                        <div className="text-muted-foreground px-2 py-1.5 text-[13px]">
                             {isCommandMode ? "No commands" : "No results"}
                         </div>
                     ) : (
@@ -225,45 +213,64 @@ function SearchPaletteInner() {
                                         id={`sp-row-${i}`}
                                         role="option"
                                         aria-selected={i === selectedIndex}
-                                        className={`text-muted-foreground block w-full cursor-pointer rounded-none border-none px-3 py-2 text-left text-[13px] ${
-                                            i === selectedIndex
-                                                ? "bg-accent"
-                                                : "hover:bg-accent/50 bg-transparent"
+                                        className={`flex w-full cursor-pointer items-center gap-2 rounded-sm border-none px-2 py-1.5 text-left text-[13px] ${
+                                            i === selectedIndex ? "bg-accent" : "bg-transparent"
                                         }`}
                                         onClick={() => select(row)}
+                                        // Hover moves the real selection; mousemove (not
+                                        // mouseenter) so a keyboard scroll sliding rows
+                                        // under a resting pointer doesn't hijack it.
+                                        onMouseMove={() => {
+                                            if (i !== selectedIndex) setSelectedIndex(i);
+                                        }}
                                         data-testid={`sp-row-${i}`}
                                     >
-                                        {row.kind === "command" ? (
-                                            <span className="flex items-center justify-between gap-3">
-                                                <span className="text-foreground truncate">
-                                                    <Highlighted
-                                                        text={row.text}
-                                                        positions={row.positions}
-                                                    />
-                                                </span>
-                                                {row.hint && (
-                                                    <Kbd className="shrink-0">{row.hint}</Kbd>
-                                                )}
+                                        {row.kind === "cell" && row.badge && (
+                                            <span
+                                                className={`shrink-0 rounded-xs border border-current px-1 py-px text-[10px] font-semibold tracking-wide uppercase ${
+                                                    row.side === "aff" ? "text-aff" : "text-neg"
+                                                }`}
+                                            >
+                                                {row.badge}
+                                            </span>
+                                        )}
+                                        {row.kind === "command" && (
+                                            <span className="text-muted-foreground border-border shrink-0 rounded-xs border px-1 py-px text-[10px] font-semibold tracking-wide uppercase">
+                                                CMD
+                                            </span>
+                                        )}
+                                        <span className="text-foreground min-w-0 flex-1 truncate font-medium">
+                                            {row.text}
+                                        </span>
+                                        {row.kind === "cell" ? (
+                                            <span className="text-muted-foreground max-w-[45%] shrink-0 truncate text-[11px]">
+                                                {row.meta}
                                             </span>
                                         ) : (
-                                            <>
-                                                <span className="text-foreground line-clamp-2 block">
-                                                    <Highlighted
-                                                        text={row.text}
-                                                        positions={row.positions}
-                                                    />
-                                                </span>
-                                                <span className="mt-0.5 block text-[11px] opacity-70">
-                                                    {row.meta}
-                                                    {row.card && " · Card"}
-                                                </span>
-                                            </>
+                                            row.hint && <Kbd className="shrink-0">{row.hint}</Kbd>
                                         )}
                                     </button>
                                 </li>
                             ))}
                         </ul>
                     )}
+                    {allRows.length > rows.length && (
+                        // A div, not a button, so clicking it can't steal focus
+                        // from the input, which owns the keyboard.
+                        <div
+                            role="button"
+                            className="text-muted-foreground hover:text-foreground cursor-pointer px-2 py-1.5 text-center text-[12px] select-none"
+                            onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+                            data-testid="sp-show-more"
+                        >
+                            Showing {rows.length} of {allRows.length} - show more
+                        </div>
+                    )}
+                </div>
+                <div className="border-border text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 border-t px-3 py-1.5 text-[11px]">
+                    <span>Up/Down navigate</span>
+                    <span>Enter {isCommandMode ? "run" : "jump"}</span>
+                    <span>Esc close</span>
                 </div>
             </DialogContent>
         </Dialog>

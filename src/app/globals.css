@@ -7,6 +7,17 @@
     --font-flow: var(--font-pretendard);
     /* The app's one motion curve; MOTION_TRANSITION in MotionRoot.tsx mirrors it. */
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    /* One-shot violet ring on the search palette as it opens; fades to
+       nothing (apply with motion-safe: so reduced motion never sees it). */
+    --animate-palette-pulse: palette-pulse 520ms var(--ease-out-quart);
+    @keyframes palette-pulse {
+        from {
+            outline: 3px solid var(--ring);
+        }
+        to {
+            outline: 3px solid transparent;
+        }
+    }
 }
 
 @custom-variant dark (&:is(.dark *));
