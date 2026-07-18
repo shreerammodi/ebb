@@ -32,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with quicker, consistent timings (exits slightly faster than entrances), and
   their movement now respects the system reduced-motion preference.
 
+### Fixed
+
+- "Rename active sheet" no longer does nothing when the sidebar is collapsed:
+  the command opens the sidebar first so there is a row to edit.
+- "Rename active sheet" now renames the sheet in the focused pane. In split
+  view, running it while Tab 2 is focused renamed Tab 1's sheet.
+
 ## [0.4.1] - 2026-07-16
 
 ### Added

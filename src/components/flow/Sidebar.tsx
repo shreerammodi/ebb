@@ -226,13 +226,23 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
     }, [sheet.title]);
 
     useEffect(() => {
-        if (isRenaming) {
-            setValue(sheet.title);
-            requestAnimationFrame(() => {
+        if (!isRenaming) return;
+        setValue(sheet.title);
+        // Two frames, not one: the rename command may open a collapsed sidebar in
+        // the same tick, so the row is mounting while the command palette closes
+        // over the grid. Focusing on the second frame lets that mount and the
+        // palette's focus hand-off settle first, so the input isn't skipped.
+        let inner = 0;
+        const outer = requestAnimationFrame(() => {
+            inner = requestAnimationFrame(() => {
                 inputRef.current?.focus();
                 inputRef.current?.select();
             });
-        }
+        });
+        return () => {
+            cancelAnimationFrame(outer);
+            cancelAnimationFrame(inner);
+        };
     }, [isRenaming, sheet.title]);
 
     function commit() {

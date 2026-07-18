@@ -72,6 +72,24 @@ describe("sheet commands", () => {
         executeCommand("sheet.quickSwitch");
         expect(useFlowStore.getState().quickSwitcherOpen).toBe(true);
     });
+
+    it("rename targets the focused pane's sheet in split view", () => {
+        loadRound();
+        const first = useFlowStore.getState().activeSheetId!;
+        executeCommand("sheet.newAff");
+        const second = useFlowStore.getState().activeSheetId!;
+        useFlowStore.setState({ activeSheetId: first, splitSheetId: second, focusedPane: 2 });
+        executeCommand("sheet.rename");
+        expect(useFlowStore.getState().renamingSheetId).toBe(second);
+    });
+
+    it("rename opens a collapsed sidebar so its row can be focused", () => {
+        loadRound();
+        useFlowStore.setState({ sidebarCollapsed: true });
+        executeCommand("sheet.rename");
+        expect(useFlowStore.getState().sidebarCollapsed).toBe(false);
+        expect(useFlowStore.getState().renamingSheetId).toBe(useFlowStore.getState().activeSheetId);
+    });
 });
 
 describe("UI commands", () => {

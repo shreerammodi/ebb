@@ -179,9 +179,12 @@ export function executeCommand(id: CommandId): void {
             return;
         }
         case "sheet.rename": {
-            const { activeSheetId } = state;
-            if (!activeSheetId) return;
-            state.setRenamingSheet(activeSheetId);
+            const target = focusedSheetId(state);
+            if (!target) return;
+            // Rename edits the sheet's sidebar row; a collapsed sidebar renders no
+            // row to focus, so open it first (else the command silently no-ops).
+            if (state.sidebarCollapsed) state.setSidebarCollapsed(false);
+            state.setRenamingSheet(target);
             return;
         }
         case "sheet.quickSwitch":
