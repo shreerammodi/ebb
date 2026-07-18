@@ -249,12 +249,14 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
         // a motion element that swallows the first keystroke. Dragging is moot mid-
         // rename, so the one non-draggable row costs nothing.
         return (
-            <div
-                className={cn(
-                    "flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5",
-                    active ? "border-border bg-accent font-semibold" : "border-transparent",
-                )}
-            >
+            <div className="border-aff bg-accent flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5">
+                <span
+                    aria-hidden
+                    className={cn(
+                        "h-4 w-0.5 shrink-0 rounded-full",
+                        sheet.group === "aff" ? "bg-aff" : "bg-neg",
+                    )}
+                />
                 <input
                     ref={inputRef}
                     value={value}
@@ -270,7 +272,8 @@ function SheetRow({ sheet, active, onSelect, isRenaming, onStartRename, onDelete
                         }
                     }}
                     onBlur={commit}
-                    className="text-foreground outline-aff flex-1 rounded-md border-none bg-transparent px-0.5 font-[inherit] text-[13px] outline outline-1"
+                    data-editing-field
+                    className="text-foreground min-w-0 flex-1 border-none bg-transparent p-0 font-[inherit] text-[13px] outline-none"
                     data-testid={`rename-input-${sheet.id}`}
                 />
             </div>
