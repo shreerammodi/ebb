@@ -175,6 +175,9 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     // columns depend on kind/group/startSpeechId and the round's firstSide; the
     // sheet-switch effect re-fires on either and is the only writer.
     const colsRef = useRef<SpeechCol[]>([]);
+    // Cross-ex sheets render a period tier (headerLevel 0) above the leaf
+    // Aff/Neg headers (headerLevel 1); the period tier stays neutral and bold.
+    const hasGroupTierRef = useRef(false);
 
     const snapshot = useCallback(() => {
         const hot = hotRef.current?.hotInstance;
@@ -276,6 +279,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
 
         const cols = columnsForFlowSheet(round, sheet);
         colsRef.current = cols;
+        hasGroupTierRef.current = sheet.kind === "cx";
         // Stored data can be wider than the derived columns (a swap narrowed
         // the orientation after text was written); pad to the wider of the two
         // so overflow columns survive the load and the next save.
@@ -353,10 +357,19 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         return () => cancelAnimationFrame(id);
     }, [speechTarget, isFocused]);
 
-    const afterGetColHeader = useCallback((col: number, TH: HTMLTableCellElement) => {
-        const side = col < 0 ? undefined : colsRef.current[col]?.side;
-        if (side) TH.classList.add(side === "aff" ? "hd-aff" : "hd-neg");
-    }, []);
+    const afterGetColHeader = useCallback(
+        (col: number, TH: HTMLTableCellElement, headerLevel: number) => {
+            // The period tier sits above both sides' columns, so it wears neutral
+            // ink and bold rather than either side's color.
+            if (hasGroupTierRef.current && headerLevel === 0) {
+                TH.classList.add("hd-group");
+                return;
+            }
+            const side = col < 0 ? undefined : colsRef.current[col]?.side;
+            if (side) TH.classList.add(side === "aff" ? "hd-aff" : "hd-neg");
+        },
+        [],
+    );
 
     // Cells inherit their column header's side color: blue for aff, red for neg.
     // The move tint is a class on the TD alone, never cellMeta, so it cannot

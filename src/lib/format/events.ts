@@ -32,7 +32,9 @@ export interface EventDef {
     neg: SpeechDef[];
     /** The flip decides who speaks first (PF); false = always aff-first. */
     variableOrder: boolean;
-    crossEx: { title: string; periods: CrossExPeriod[] };
+    /** `shared`: both sides question each other (PF crossfire), so columns are
+     *  labelled by side rather than as questioner/responder. */
+    crossEx: { title: string; periods: CrossExPeriod[]; shared?: boolean };
 }
 
 const speech = (id: string, name: string, short: string, side: Side): SpeechDef => ({
@@ -86,6 +88,7 @@ export const EVENTS: Record<EventId, EventDef> = {
         variableOrder: true,
         crossEx: {
             title: "Cross-Examination",
+            shared: true,
             periods: [
                 { label: "First Cross", q: "first" },
                 { label: "Second Cross", q: "first" },

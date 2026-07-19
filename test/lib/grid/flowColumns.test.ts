@@ -71,6 +71,19 @@ describe("columnsForFlowSheet", () => {
         ]);
         expect(pfCols[0].side).toBe("neg");
     });
+
+    it("pf crossfire columns are labelled by side; policy stays Question/Response", () => {
+        const pf = makeFlowRound({ role: "aff", event: "pf", firstSide: "aff" });
+        const pfCols = columnsForFlowSheet(pf, makeCxFlowSheet("Cross-Examination"));
+        expect(pfCols.slice(0, 2)).toMatchObject([
+            { name: "Aff", short: "Aff", side: "aff" },
+            { name: "Neg", short: "Neg", side: "neg" },
+        ]);
+
+        const policy = makeFlowRound({ role: "aff" });
+        const policyCols = columnsForFlowSheet(policy, makeCxFlowSheet());
+        expect(policyCols[0]).toMatchObject({ name: "Question", side: "neg" });
+    });
 });
 
 describe("headerSettings", () => {

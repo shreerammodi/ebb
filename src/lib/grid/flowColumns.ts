@@ -17,20 +17,26 @@ export interface SpeechCol extends SpeechDef {
 }
 
 const other = (side: Side): Side => (side === "aff" ? "neg" : "aff");
+const sideLabel = (side: Side): string => (side === "aff" ? "Aff" : "Neg");
 
-/** Question/Response pair per cross-ex period; question side = the questioner. */
+/**
+ * A pair of columns per cross-ex period. Directional CX (Policy) labels them
+ * Question/Response, the question side being the questioner; shared crossfire
+ * (PF) labels each column by its side.
+ */
 export function crossExColumns(event: EventDef, firstSide: Side): SpeechCol[] {
     return event.crossEx.periods.flatMap((p, i) => {
         const qSide = p.q === "first" ? firstSide : other(firstSide);
+        const rSide = other(qSide);
+        if (event.crossEx.shared) {
+            return [
+                { id: `cx-${i}-q`, name: sideLabel(qSide), short: sideLabel(qSide), side: qSide, group: p.label },
+                { id: `cx-${i}-r`, name: sideLabel(rSide), short: sideLabel(rSide), side: rSide, group: p.label },
+            ];
+        }
         return [
             { id: `cx-${i}-q`, name: "Question", short: "Question", side: qSide, group: p.label },
-            {
-                id: `cx-${i}-r`,
-                name: "Response",
-                short: "Response",
-                side: other(qSide),
-                group: p.label,
-            },
+            { id: `cx-${i}-r`, name: "Response", short: "Response", side: rSide, group: p.label },
         ];
     });
 }

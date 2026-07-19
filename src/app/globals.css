@@ -246,6 +246,12 @@ html .ht-theme-main {
     color: var(--neg);
     font-weight: 700;
 }
+/* Cross-ex period tier: neutral ink, bold, above both sides' columns. */
+.handsontable th.hd-group,
+.handsontable th.hd-group:hover,
+.handsontable th.hd-group.ht__highlight {
+    font-weight: 700;
+}
 /* In split view the blurred pane keeps its cursor in memory but hides the
    active-cell markers, so only the focused pane shows an active cell. Both the
    selection border (.wtBorder) and the editor's own border (.handsontableInput,
