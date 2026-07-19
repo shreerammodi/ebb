@@ -1,6 +1,6 @@
 "use client";
 
-import { Gear, Info, Trash } from "@phosphor-icons/react";
+import { Gear, Question, Trash } from "@phosphor-icons/react";
 import { AnimatePresence, LayoutGroup, m } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -125,20 +125,20 @@ export default function Dashboard() {
                 <Button
                     variant="ghost"
                     size="sm"
+                    aria-label="Keyboard shortcuts"
+                    data-testid="dashboard-guide"
+                    onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
+                >
+                    <Question className="size-4.5" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
                     aria-label="Settings"
                     data-testid="dashboard-settings"
                     onClick={() => useFlowStore.getState().setSettingsOpen(true)}
                 >
                     <Gear className="size-4.5 rotate-[22.5deg]" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Keyboard shortcuts"
-                    data-testid="dashboard-guide"
-                    onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
-                >
-                    <Info className="size-4.5" />
                 </Button>
                 <NewFlowButton />
             </div>

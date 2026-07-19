@@ -1,6 +1,6 @@
 "use client";
 
-import { Gear, House, Info } from "@phosphor-icons/react";
+import { Gear, House, Question } from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -87,7 +87,7 @@ export default function RoundHeader() {
                         aria-label="Keyboard shortcuts"
                         data-testid="guide-btn"
                     >
-                        <Info className="size-4.5" />
+                        <Question className="size-4.5" />
                     </Button>
                 </Tip>
                 <Tip label="Settings" command="settings.open">
