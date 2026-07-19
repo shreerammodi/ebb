@@ -123,10 +123,12 @@ describe("swapSpeakingOrder", () => {
 
         // Swapping to neg-first narrows the aff sheet's derived columns to 7.
         useFlowStore.getState().swapSpeakingOrder();
-        expect(columnsForFlowSheet(
-            useFlowStore.getState().round!,
-            useFlowStore.getState().round!.sheets.find((s) => s.id === affSheet.id)!,
-        )).toHaveLength(7);
+        expect(
+            columnsForFlowSheet(
+                useFlowStore.getState().round!,
+                useFlowStore.getState().round!.sheets.find((s) => s.id === affSheet.id)!,
+            ),
+        ).toHaveLength(7);
         reloadSheetData(affSheet.id);
         const afterSwap = useFlowStore.getState().round!.sheets.find((s) => s.id === affSheet.id)!;
         expect(afterSwap.data[0][7]).toBe("warming");

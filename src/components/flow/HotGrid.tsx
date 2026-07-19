@@ -96,7 +96,9 @@ function smartJump(
 function reselectMovingBlock(hot: Handsontable): void {
     const b = movingBlock();
     if (!b) return;
-    hot.selectCells([[b.blockStart, b.cols[0], b.blockStart + b.height - 1, b.cols[b.cols.length - 1]]]);
+    hot.selectCells([
+        [b.blockStart, b.cols[0], b.blockStart + b.height - 1, b.cols[b.cols.length - 1]],
+    ]);
     hot.render();
 }
 

@@ -41,7 +41,10 @@ function SelectContent({
     children,
     ...props
 }: React.ComponentProps<typeof SelectPrimitive.Popup> &
-    Pick<React.ComponentProps<typeof SelectPrimitive.Positioner>, "side" | "align" | "sideOffset">) {
+    Pick<
+        React.ComponentProps<typeof SelectPrimitive.Positioner>,
+        "side" | "align" | "sideOffset"
+    >) {
     const { side, align, sideOffset = 4, ...popupProps } = props;
     return (
         <SelectPrimitive.Portal>

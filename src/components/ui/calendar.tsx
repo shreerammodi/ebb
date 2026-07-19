@@ -1,11 +1,11 @@
 "use client";
 
 import { CaretDown, CaretLeft, CaretRight } from "@phosphor-icons/react";
-import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 import * as React from "react";
+import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 
-import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function Calendar({
     className,

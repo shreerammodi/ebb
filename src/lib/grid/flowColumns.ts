@@ -30,8 +30,20 @@ export function crossExColumns(event: EventDef, firstSide: Side): SpeechCol[] {
         const rSide = other(qSide);
         if (event.crossEx.shared) {
             return [
-                { id: `cx-${i}-q`, name: sideLabel(qSide), short: sideLabel(qSide), side: qSide, group: p.label },
-                { id: `cx-${i}-r`, name: sideLabel(rSide), short: sideLabel(rSide), side: rSide, group: p.label },
+                {
+                    id: `cx-${i}-q`,
+                    name: sideLabel(qSide),
+                    short: sideLabel(qSide),
+                    side: qSide,
+                    group: p.label,
+                },
+                {
+                    id: `cx-${i}-r`,
+                    name: sideLabel(rSide),
+                    short: sideLabel(rSide),
+                    side: rSide,
+                    group: p.label,
+                },
             ];
         }
         return [
@@ -74,10 +86,7 @@ export function headerSettings(sheet: FlowSheet, cols: SpeechCol[], width = cols
         if (width > cols.length) groups.push({ label: "", colspan: width - cols.length });
         return {
             colHeaders: true,
-            nestedHeaders: [
-                groups,
-                Array.from({ length: width }, (_, i) => cols[i]?.name ?? ""),
-            ],
+            nestedHeaders: [groups, Array.from({ length: width }, (_, i) => cols[i]?.name ?? "")],
         } satisfies Partial<Handsontable.GridSettings>;
     }
     return {

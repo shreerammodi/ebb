@@ -240,7 +240,7 @@ function InfoPanelInner() {
                                     aria-label="Date"
                                     data-testid="scout-date"
                                     data-empty={!scoutDate}
-                                    className="w-full justify-start font-normal data-[empty=true]:text-muted-foreground"
+                                    className="data-[empty=true]:text-muted-foreground w-full justify-start font-normal"
                                 >
                                     <CalendarBlank />
                                     {scoutDate

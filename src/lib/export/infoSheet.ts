@@ -5,8 +5,8 @@
 
 import type ExcelJS from "exceljs";
 
-import type { Debater } from "@/lib/model/types";
 import type { FlowRound } from "@/lib/model/flow";
+import type { Debater } from "@/lib/model/types";
 
 import { isoDate } from "./download";
 
@@ -25,7 +25,12 @@ export function applyInfoWorksheet(workbook: ExcelJS.Workbook, round: FlowRound)
     ws.getColumn(2).width = 36;
     const sc = round.scouting;
     labeled(ws, 2, "Tournament", sc.tournament);
-    labeled(ws, 3, "Round", [sc.round, sc.flight && `Flight ${sc.flight}`].filter(Boolean).join(" "));
+    labeled(
+        ws,
+        3,
+        "Round",
+        [sc.round, sc.flight && `Flight ${sc.flight}`].filter(Boolean).join(" "),
+    );
     labeled(ws, 4, "Date", sc.date || isoDate(round.createdAt));
     labeled(ws, 5, "Judge", sc.judge);
     labeled(ws, 7, "Aff School", sc.affSchool);

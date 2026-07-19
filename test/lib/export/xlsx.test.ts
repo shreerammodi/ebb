@@ -24,12 +24,7 @@ describe("fillWorkbook", () => {
     it("orders worksheets Info, RFD, cross-ex, then flow sheets by ebb order", () => {
         const wb = new ExcelJS.Workbook();
         fillWorkbook(wb, judgedRound());
-        expect(wb.worksheets.map((ws) => ws.name)).toEqual([
-            "Info",
-            "RFD",
-            "CX",
-            "1. Topicality",
-        ]);
+        expect(wb.worksheets.map((ws) => ws.name)).toEqual(["Info", "RFD", "CX", "1. Topicality"]);
     });
 
     it("freezes the header row, hides gridlines, and widens columns", () => {

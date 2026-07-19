@@ -10,8 +10,8 @@
 import { create } from "zustand";
 
 import type { CommandId } from "@/lib/commands/registry";
-import { getEvent } from "@/lib/format/events";
 import { type FontId, DEFAULT_FONT_ID, resolveFontId } from "@/lib/fonts/registry";
+import { getEvent } from "@/lib/format/events";
 import {
     firstFlowSheetId,
     makeFlowSheet,
