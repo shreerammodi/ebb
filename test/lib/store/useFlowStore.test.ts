@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { padGrid, trimGrid, widestRow } from "@/lib/grid/codec";
+import { gridWidth, padGrid, trimGrid } from "@/lib/grid/codec";
 import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import { makeFlowRound, makeFlowSheet } from "@/lib/model/flow";
 import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
@@ -105,8 +105,7 @@ describe("swapSpeakingOrder", () => {
         const round = useFlowStore.getState().round!;
         const sheet = round.sheets.find((s) => s.id === sheetId)!;
         const cols = columnsForFlowSheet(round, sheet);
-        const width = Math.max(cols.length, widestRow(sheet.data));
-        const loaded = padGrid(sheet.data, width, 1);
+        const loaded = padGrid(sheet.data, gridWidth(cols, sheet.data), 1);
         useFlowStore.getState().updateSheetData(sheetId, trimGrid(loaded), {});
     };
 

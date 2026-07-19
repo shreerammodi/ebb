@@ -11,7 +11,7 @@ import "handsontable/styles/ht-theme-main.min.css";
 
 import { executeCommand } from "@/lib/commands/commands";
 import { shiftMetaDown, type PasteShift } from "@/lib/grid/cellShift";
-import { classNameToMeta, metaToClassName, padGrid, trimGrid, widestRow } from "@/lib/grid/codec";
+import { classNameToMeta, gridWidth, metaToClassName, padGrid, trimGrid } from "@/lib/grid/codec";
 import { columnsForFlowSheet, headerSettings, type SpeechCol } from "@/lib/grid/flowColumns";
 import { getActiveHot, setActiveHot } from "@/lib/grid/hotInstance";
 import {
@@ -279,7 +279,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         // Stored data can be wider than the derived columns (a swap narrowed
         // the orientation after text was written); pad to the wider of the two
         // so overflow columns survive the load and the next save.
-        const width = Math.max(cols.length, widestRow(sheet.data));
+        const width = gridWidth(cols, sheet.data);
         // Coalesce the data/header swap and the per-cell meta loop into one
         // render instead of updateSettings' render plus an explicit one.
         hot.batch(() => {

@@ -9,7 +9,7 @@
  * workspace hides via .no-print, this shows via .print-only.
  */
 
-import { trimGrid, widestRow } from "@/lib/grid/codec";
+import { gridWidth, trimGrid } from "@/lib/grid/codec";
 import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import { sortedSheets } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
@@ -27,7 +27,7 @@ export default function PrintView() {
                 // Stored data can outrun the derived columns after a
                 // speaking-order swap; render the wider count with blank
                 // headers so overflow text still prints.
-                const width = Math.max(cols.length, widestRow(rows));
+                const width = gridWidth(cols, rows);
                 const columns = Array.from({ length: width }, (_, i) => cols[i]);
                 return (
                     <section key={sheet.id} className="print-sheet">

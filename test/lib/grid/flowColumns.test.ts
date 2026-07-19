@@ -90,6 +90,15 @@ describe("headerSettings", () => {
         ]);
     });
 
+    it("pads overflow columns past the derived set with blank labels", () => {
+        const round = makeFlowRound({ role: "aff", event: "pf" });
+        const sheet = flowSheet("aff");
+        const cols = columnsForFlowSheet(round, sheet);
+        const headers = headerSettings(sheet, cols, cols.length + 2).colHeaders as string[];
+        expect(headers).toHaveLength(cols.length + 2);
+        expect(headers.slice(cols.length)).toEqual(["", ""]);
+    });
+
     it("cx sheets get a period tier above Question/Response", () => {
         const round = makeFlowRound({ role: "aff" });
         const sheet = makeCxFlowSheet();

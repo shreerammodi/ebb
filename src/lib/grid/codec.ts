@@ -65,6 +65,15 @@ export function widestRow(data: (string | null)[][]): number {
     return data.reduce((w, row) => Math.max(w, row.length), 0);
 }
 
+/**
+ * The grid's actual column count: the wider of the derived columns and the
+ * stored data, so overflow columns from a narrowed orientation survive a
+ * speaking-order swap instead of being truncated on load.
+ */
+export function gridWidth(cols: unknown[], data: (string | null)[][]): number {
+    return Math.max(cols.length, widestRow(data));
+}
+
 /** Fresh arrays sized rows x cols for loading into the grid. */
 export function padGrid(
     data: (string | null)[][],
