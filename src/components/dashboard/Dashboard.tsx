@@ -1,6 +1,6 @@
 "use client";
 
-import { Gear } from "@phosphor-icons/react";
+import { Gear, Info } from "@phosphor-icons/react";
 import { AnimatePresence, LayoutGroup, m } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -136,7 +136,7 @@ export default function Dashboard() {
                     data-testid="dashboard-guide"
                     onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
                 >
-                    Shortcuts
+                    <Info className="size-4.5" />
                 </Button>
                 <NewFlowButton />
             </div>
