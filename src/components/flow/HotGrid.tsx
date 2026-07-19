@@ -4,7 +4,7 @@ import { HotTable } from "@handsontable/react-wrapper";
 import type { HotTableRef } from "@handsontable/react-wrapper";
 import type Handsontable from "handsontable";
 import { registerAllModules } from "handsontable/registry";
-import { memo, useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import "handsontable/styles/handsontable.min.css";
 import "handsontable/styles/ht-theme-main.min.css";
@@ -168,6 +168,11 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     const isFocused = splitSheetId == null || focusedPane === pane;
     const hotRef = useRef<HotTableRef>(null);
     const wrapRef = useRef<HTMLDivElement>(null);
+    // The grid mounts empty and is populated imperatively a commit later, so it
+    // stays transparent (revealing the pane background, not the theme's dark
+    // grid) until the first data load lands. opacity keeps it in layout, so
+    // autoRowSize still measures while hidden.
+    const [ready, setReady] = useState(false);
     const currentSheetIdRef = useRef<string | null>(null);
     const viewCache = useRef(new Map<string, { row: number; col: number }>());
     // afterRenderer and afterGetColHeader run once per cell per render cycle, so
@@ -295,6 +300,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         });
         const v = viewCache.current.get(sheet.id) ?? { row: 0, col: 0 };
         hot.selectCell(v.row, v.col);
+        setReady(true);
     }, [sheetId, firstSide]);
 
     // Clicking or arrowing into a pane focuses it (so keystrokes route here).
@@ -563,6 +569,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         <div
             ref={wrapRef}
             className={`ht-theme-main h-full min-h-0 overflow-hidden${isFocused ? "" : " ht-blurred"}`}
+            style={{ opacity: ready ? 1 : 0 }}
             data-testid="hot-grid"
         >
             {/* zoom scales the grid's content and layout uniformly. A zoomed

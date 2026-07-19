@@ -43,6 +43,25 @@ export default function Dashboard() {
         void refresh();
     }, [refresh]);
 
+    // Warm the flow route while the dashboard sits idle: prefetch its chunk and
+    // execute HotGrid's module (Handsontable + registerAllModules), so the first
+    // open resolves from cache instead of fetching and parsing the grid on the
+    // critical path. Warms only code loading; the per-open grid render is not
+    // warmable (a throwaway instance donates nothing to the real one).
+    // ponytail: requestIdleCallback is absent in WKWebView (Tauri); fall back to a timer.
+    useEffect(() => {
+        const warm = () => {
+            router.prefetch("/flow");
+            void import("@/components/flow/HotGrid");
+        };
+        const hasIdle = typeof window.requestIdleCallback === "function";
+        const handle = hasIdle ? window.requestIdleCallback(warm) : window.setTimeout(warm, 200);
+        return () => {
+            if (hasIdle) window.cancelIdleCallback(handle);
+            else window.clearTimeout(handle);
+        };
+    }, [router]);
+
     const open = useCallback((id: string) => router.push(`/flow?id=${id}`), [router]);
 
     const matches = useMemo(() => filterFlows(summaries ?? [], query), [summaries, query]);

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Opening a flow no longer flashes an empty black grid before the cells
+  appear: the grid stays hidden until its first data load lands, then
+  reveals fully drawn.
+
+### Changed
+
+- The dashboard warms the flow editor while idle, so the first flow you open
+  loads its grid from cache instead of fetching and parsing it on open.
+
 ## [0.5.0] - 2026-07-18
 
 ### Added
