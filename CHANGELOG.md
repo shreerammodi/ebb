@@ -7,16 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+## [0.5.1] - 2026-07-19
 
-- Opening a flow no longer flashes an empty black grid before the cells
-  appear: the grid stays hidden until its first data load lands, then
-  reveals fully drawn.
+### Added
+
+- Record a flight alongside the round. The flight shows in the flow's info
+  panel and next to the round on its dashboard card.
+- The round date is now a calendar picker instead of a plain text field.
 
 ### Changed
 
 - The dashboard warms the flow editor while idle, so the first flow you open
   loads its grid from cache instead of fetching and parsing it on open.
+- The dashboard menu bar collapses its buttons to icons on narrow windows, and
+  the brand logo drops out, so the controls stay reachable without overlapping.
+- The dashboard's Settings and Info buttons swap order, and the
+  keyboard-shortcuts button uses a question icon to match its help role.
+
+### Fixed
+
+- Opening a flow no longer flashes an empty black grid before the cells
+  appear: the grid stays hidden until its first data load lands, then
+  reveals fully drawn.
 
 ## [0.5.0] - 2026-07-18
 
@@ -296,7 +308,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/shreerammodi/ebb/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/shreerammodi/ebb/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/shreerammodi/ebb/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/shreerammodi/ebb/compare/v0.3.8...v0.4.0
 [0.3.8]: https://github.com/shreerammodi/ebb/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/shreerammodi/ebb/compare/v0.3.6...v0.3.7
