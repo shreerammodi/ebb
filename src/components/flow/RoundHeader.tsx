@@ -98,7 +98,7 @@ export default function RoundHeader() {
                         aria-label="Settings"
                         data-testid="settings-btn"
                     >
-                        <Gear className="size-4.5" />
+                        <Gear className="size-4.5 rotate-[22.5deg]" />
                     </Button>
                 </Tip>
                 <ExportMenu />
