@@ -8,62 +8,8 @@ Guidance for AI agents working in this repository.
 flowing competitive debate rounds. All data lives in the browser (IndexedDB via
 Dexie); there is no backend. The app is built as a static export.
 
-## Tech stack
-
-- **Next.js 15** (App Router, `output: "export"` — static site, no server)
-- **React 19** + **TypeScript** (strict mode)
-- **Tailwind CSS v4** (config-less; theme lives in `src/app/globals.css`)
-- **Zustand** for state (`src/lib/store`)
-- **Dexie** (IndexedDB) for persistence
-- **Base UI** (`@base-ui/react`) + **@phosphor-icons/react** for UI primitives and icons
-- **Vitest** + **Testing Library** (jsdom, `fake-indexeddb`) for tests
-
-## Commands
-
-```bash
-npm run dev          # start dev server
-npm run build        # static production build (next build → ./out)
-npm test             # run the full Vitest suite once
-npm run test:watch   # watch mode
-npm run lint         # next lint (eslint)
-npm run format       # oxfmt .
-npm run format:check # oxfmt --check .
-```
-
 Run `npm test` and `npm run lint` before considering a change complete.
-
-## Layout
-
-```
-src/
-  app/           Next.js App Router (layout, page, globals.css)
-  components/    React components (PascalCase.tsx), grouped by domain:
-    ui/          Base UI-based shadcn-style primitives
-    brand/       Logo and brand assets
-    dashboard/   Flows dashboard components
-    flow/        Flow screen: AppRoot, Workspace, FlowGrid, cells, header,
-                 sidebar, info panel, print/export
-    history/     Undo tree panel
-    palette/     Command/search palettes, keybindings cheatsheet (the `?` guide)
-    settings/    Settings panel
-    trash/       Trash view
-    update/      Update provider, chip, critical-update modal
-  lib/           Framework-agnostic logic, grouped by domain:
-    model/       Round/flow data model, types, normalization, numbering
-    store/       Zustand store (useRoundStore)
-    persistence/ Dexie DB, autosave, backup, import/export IO
-    grid/        Grid columns, layout, navigation
-    keymap/      Keybinding resolution + useKeymap hook
-    commands/    Command registry
-    export/      Export to xlsx/csv
-    search/      Fuzzy search (@leeoniya/ufuzzy)
-    dashboard/   Dashboard filter/organize/summary logic
-    format/      Debate format presets
-test/            Vitest suites, mirroring the src/ tree (X.test.ts(x) for
-                 src/.../X); import the code under test via the @/ alias
-```
-
-`@/*` is aliased to `src/*` (see `tsconfig.json`).
+Formatting is `oxfmt` (via `npm run format` / `format:check`), not Prettier.
 
 ## Conventions
 
