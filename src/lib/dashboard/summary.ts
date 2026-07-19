@@ -13,6 +13,7 @@ export interface RoundSummary {
     negTeam: string;
     tournament?: string;
     round?: string;
+    flight?: string;
     date?: string;
     judge?: string;
     decision?: Decision;
@@ -39,6 +40,7 @@ export function buildSummary(round: SummarySource): RoundSummary {
         negTeam: teamCode(sc.negSchool ?? "", sc.neg.first, sc.neg.second),
         tournament: sc.tournament,
         round: sc.round,
+        flight: sc.flight,
         date: sc.date,
         judge: sc.judge,
         decision: sc.decision,

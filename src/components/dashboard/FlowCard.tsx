@@ -96,8 +96,16 @@ export default function FlowCard({
                     {summary.tournament ?? "—"}
                 </span>
                 <span className="text-muted-foreground">Round</span>
-                <span className={summary.round ? "" : "text-muted-foreground"}>
-                    {summary.round ?? "—"}
+                <span className="flex items-center gap-2">
+                    <span className={summary.round ? "" : "text-muted-foreground"}>
+                        {summary.round ?? "—"}
+                    </span>
+                    {summary.flight && (
+                        <>
+                            <span className="bg-border/60 h-3 w-px" aria-hidden />
+                            <span className="text-muted-foreground">Flight {summary.flight}</span>
+                        </>
+                    )}
                 </span>
                 <span className="text-muted-foreground">Judge</span>
                 <span className={summary.judge ? "" : "text-muted-foreground"}>
