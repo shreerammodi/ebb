@@ -13,7 +13,7 @@ vi.mock("@/lib/export/xlsx", () => ({
 }));
 
 beforeEach(() => {
-    useFlowStore.getState().loadRound(makeFlowRound("aff"));
+    useFlowStore.getState().loadRound(makeFlowRound({ role: "aff" }));
 });
 
 describe("ExportMenu", () => {

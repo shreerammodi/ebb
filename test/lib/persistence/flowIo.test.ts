@@ -10,7 +10,7 @@ import {
 
 describe("flowIo", () => {
     it("round-trips a round with a fresh identity", () => {
-        const r = makeFlowRound("aff");
+        const r = makeFlowRound({ role: "aff" });
         const flow = r.sheets.find((s) => s.kind !== "cx")!;
         flow.data = [["hello", null]];
         flow.meta = { "0,0": { bold: true } };
@@ -42,8 +42,8 @@ describe("flowIo", () => {
     });
 
     it("parses both single and backup envelopes with fresh ids", () => {
-        const a = makeFlowRound("aff");
-        const b = makeFlowRound("neg");
+        const a = makeFlowRound({ role: "aff" });
+        const b = makeFlowRound({ role: "neg" });
         const fromBackup = parseFlowImportFile(exportFlowBackupJSON([a, b]));
         expect(fromBackup).toHaveLength(2);
         expect(fromBackup.map((r) => r.id)).not.toContain(a.id);

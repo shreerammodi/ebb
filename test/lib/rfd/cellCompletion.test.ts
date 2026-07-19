@@ -11,7 +11,7 @@ import {
 
 /** Aff round whose first flow sheet has a filled 1AC and 1NC cell. */
 function roundWithCells(): FlowRound {
-    const round = makeFlowRound("aff");
+    const round = makeFlowRound({ role: "aff" });
     const sheet = round.sheets.find((s) => s.kind !== "cx")!;
     // col 0 renders under "1AC", col 1 under "1NC" for an aff sheet.
     sheet.data = [["prolif good", "topicality"]];
@@ -33,7 +33,7 @@ describe("cellCompletions", () => {
     });
 
     it("returns nothing when the round has no filled cells", () => {
-        const round = makeFlowRound("aff");
+        const round = makeFlowRound({ role: "aff" });
         expect(cellCompletions(round)).toEqual([]);
     });
 });

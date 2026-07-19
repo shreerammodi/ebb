@@ -5,7 +5,7 @@ import { collectCells, searchCells } from "@/lib/search/cellSearch";
 
 /** Round whose first flow sheet carries a couple of filled cells. */
 function roundWithCells(): FlowRound {
-    const round = makeFlowRound("aff");
+    const round = makeFlowRound({ role: "aff" });
     const sheet = round.sheets.find((s) => s.kind !== "cx")!;
     // col 0 = "1AC", col 1 = "1NC" per POLICY_COLUMNS.
     sheet.data = [

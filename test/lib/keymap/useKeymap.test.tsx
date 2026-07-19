@@ -24,7 +24,7 @@ function dispatchKey(key: string, init: Partial<KeyboardEventInit> = {}, target?
 }
 
 function freshRound() {
-    const round = makeFlowRound("aff");
+    const round = makeFlowRound({ role: "aff" });
     useFlowStore.getState().loadRound(round);
     useFlowStore.getState().addSheet({ title: "DA", group: "neg" });
 }

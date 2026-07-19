@@ -12,7 +12,7 @@ import { persistFlow } from "@/lib/persistence/flowPersistence";
 
 function mk(id: string): FlowRound {
     return {
-        ...makeFlowRound("aff"),
+        ...makeFlowRound({ role: "aff" }),
         id,
         createdAt: 1,
         updatedAt: 1,

@@ -5,7 +5,7 @@ import { emptyScouting, makeFlowRound, type FlowRound } from "@/lib/model/flow";
 
 function baseRound(overrides: Partial<FlowRound> = {}): FlowRound {
     return {
-        ...makeFlowRound("aff"),
+        ...makeFlowRound({ role: "aff" }),
         id: "r1",
         createdAt: 10,
         updatedAt: 20,

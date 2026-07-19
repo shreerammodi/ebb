@@ -48,7 +48,7 @@ function resetStore() {
 /** Bootstraps a round with a Case sheet and one off-case sheet. */
 function setupRound() {
     const store = useFlowStore.getState();
-    store.loadRound(makeFlowRound("aff"));
+    store.loadRound(makeFlowRound({ role: "aff" }));
     const caseId = store.addSheet({ title: "Case", group: "aff" });
     const daId = store.addSheet({ title: "Disad", group: "neg" });
     return { caseId, daId };

@@ -35,7 +35,7 @@ import AppRoot from "@/components/flow/AppRoot";
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 function makeRound(overrides: Partial<FlowRound> = {}): FlowRound {
-    return { ...makeFlowRound("aff"), ...overrides };
+    return { ...makeFlowRound({ role: "aff" }), ...overrides };
 }
 
 // ─── Setup ────────────────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@ import { downloadXlsx } from "@/lib/export/xlsx";
 import { makeFlowRound } from "@/lib/model/flow";
 import { downloadFlowFile } from "@/lib/persistence/flowIo";
 
-const round = makeFlowRound("aff");
+const round = makeFlowRound({ role: "aff" });
 
 describe("runExport", () => {
     it("routes json to downloadFlowFile", async () => {

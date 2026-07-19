@@ -4,7 +4,7 @@ import { cxPeriods, CX_PERIODS } from "@/lib/export/cx";
 import { makeFlowRound } from "@/lib/model/flow";
 
 function round() {
-    const r = makeFlowRound("aff");
+    const r = makeFlowRound({ role: "aff" });
     const cx = r.sheets.find((s) => s.kind === "cx")!;
     cx.data = [
         ["Q1", "A1", null, null, null, null, null, null],

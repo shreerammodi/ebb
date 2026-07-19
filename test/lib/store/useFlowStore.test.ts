@@ -4,7 +4,7 @@ import { makeFlowRound, makeFlowSheet } from "@/lib/model/flow";
 import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
 
 function loadFresh(role: "aff" | "neg" = "aff") {
-    const round = makeFlowRound(role);
+    const round = makeFlowRound({ role });
     useFlowStore.getState().loadRound(round);
     return round;
 }
@@ -32,7 +32,7 @@ describe("loadRound", () => {
     });
 
     it("honors an explicit activeSheetId option", () => {
-        const round = makeFlowRound("aff");
+        const round = makeFlowRound({ role: "aff" });
         const cx = round.sheets.find((s) => s.kind === "cx")!;
         useFlowStore.getState().loadRound(round, { activeSheetId: cx.id });
         expect(useFlowStore.getState().activeSheetId).toBe(cx.id);
@@ -41,12 +41,12 @@ describe("loadRound", () => {
     it("forces the RFD drawer closed for a new flow but restores the preference otherwise", () => {
         useFlowStore.getState().setRfdOpen(true);
 
-        useFlowStore.getState().loadRound(makeFlowRound("aff"), { newFlow: true });
+        useFlowStore.getState().loadRound(makeFlowRound({ role: "aff" }), { newFlow: true });
         expect(useFlowStore.getState().rfdOpen).toBe(false);
         // Forcing it closed stays transient: the persisted preference is intact.
         expect(window.localStorage.getItem("ebb-display-settings")).toContain('"rfdOpen":true');
 
-        useFlowStore.getState().loadRound(makeFlowRound("aff"));
+        useFlowStore.getState().loadRound(makeFlowRound({ role: "aff" }));
         expect(useFlowStore.getState().rfdOpen).toBe(true);
     });
 
@@ -105,7 +105,7 @@ describe("sheet operations", () => {
         const state = useFlowStore.getState();
         const sheet = state.round!.sheets.find((s) => s.id === id)!;
         expect(sheet.order).toBe(1);
-        expect(sheet.startSpeechId).toBe("1nc");
+        expect(sheet.startSpeechId).toBeUndefined();
         expect(state.activeSheetId).toBe(id);
         expect(state.round!.updatedAt).toBeGreaterThanOrEqual(before);
         expect(state.round!.id).toBe(round.id);
@@ -216,7 +216,7 @@ describe("setScouting", () => {
 
 function threeFlowSheets() {
     // Fresh aff round has CX + one flow sheet ("1.", order 0). Add two more.
-    const round = makeFlowRound("aff");
+    const round = makeFlowRound({ role: "aff" });
     useFlowStore.getState().loadRound(round);
     const a = round.sheets.find((s) => s.kind !== "cx")!.id;
     const b = useFlowStore.getState().addSheet({ title: "DA", group: "neg" });

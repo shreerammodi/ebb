@@ -23,7 +23,7 @@ function resetStore() {
 
 /** Round whose first flow sheet holds two filled cells; palette opened. */
 function setupRound() {
-    const round = makeFlowRound("aff");
+    const round = makeFlowRound({ role: "aff" });
     const sheet = round.sheets.find((s) => s.kind !== "cx")!;
     sheet.title = "Case";
     // col 0 = "1AC", col 1 = "1NC".
@@ -75,7 +75,7 @@ describe("SearchPalette", () => {
     });
 
     it("paginates long result lists behind a show-more row", async () => {
-        const round = makeFlowRound("aff");
+        const round = makeFlowRound({ role: "aff" });
         const sheet = round.sheets.find((s) => s.kind !== "cx")!;
         sheet.data = Array.from({ length: 20 }, (_, i) => [`arg ${i}`]);
         useFlowStore.getState().loadRound(round);

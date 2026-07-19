@@ -13,7 +13,7 @@ import { flowDb } from "@/lib/persistence/flowDb";
 import { listFlows } from "@/lib/persistence/flowPersistence";
 
 function mk(id: string): FlowRound {
-    return { ...makeFlowRound("aff"), id, createdAt: 1, updatedAt: 1 };
+    return { ...makeFlowRound({ role: "aff" }), id, createdAt: 1, updatedAt: 1 };
 }
 
 beforeEach(async () => {

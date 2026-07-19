@@ -20,7 +20,7 @@ function renderDrawer() {
 
 describe("RfdDrawer", () => {
     beforeEach(() => {
-        const round = makeFlowRound("judge");
+        const round = makeFlowRound({ role: "judge" });
         round.scouting.decision = { rfd: "aff on T" };
         useFlowStore.getState().loadRound(round);
         useFlowStore.getState().setRfdOpen(true);
@@ -54,7 +54,7 @@ describe("RfdDrawer", () => {
     });
 
     it("renders the RFD as markdown in preview mode", async () => {
-        const round = makeFlowRound("judge");
+        const round = makeFlowRound({ role: "judge" });
         round.scouting.decision = { rfd: "## Voter\n\n- aff on T" };
         useFlowStore.getState().loadRound(round);
         useFlowStore.getState().setRfdOpen(true);

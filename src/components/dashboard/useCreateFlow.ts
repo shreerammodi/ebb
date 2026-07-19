@@ -10,16 +10,17 @@ import { persistFlow } from "@/lib/persistence/flowPersistence";
 /**
  * useCreateFlow - single source of truth for spawning a new round.
  *
- * Creates a Policy round for the given side (CX sheet + first flow sheet),
- * persists it, and navigates into the editor. Shared by the dashboard's
- * New-flow menu and its first-run empty state so both stay in lockstep.
+ * Creates a round for the given role (cross-examination sheet + first flow
+ * sheet), persists it, and navigates into the editor. Shared by the
+ * dashboard's New-flow menu and its first-run empty state so both stay in
+ * lockstep.
  */
 export function useCreateFlow() {
     const router = useRouter();
 
     return useCallback(
         (role: Role) => {
-            const round = makeFlowRound(role);
+            const round = makeFlowRound({ role });
             void persistFlow(round).then(() => router.push(`/flow?id=${round.id}&new=1`));
         },
         [router],

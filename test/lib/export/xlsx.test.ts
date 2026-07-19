@@ -11,7 +11,7 @@ const template = new Uint8Array(readFileSync(resolve(process.cwd(), "public/temp
 
 /** An aff round whose flow sheet is titled "Politics DA" with one 1AC cell. */
 function round(): FlowRound {
-    const r = makeFlowRound("aff");
+    const r = makeFlowRound({ role: "aff" });
     r.createdAt = Date.UTC(2026, 5, 2);
     r.scouting = { ...emptyScouting(), tournament: "States", round: "R3" };
     const flow = r.sheets.find((s) => s.kind !== "cx")!;

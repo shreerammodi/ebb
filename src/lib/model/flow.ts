@@ -4,8 +4,9 @@
  * derive from the Policy column list and the sheet's startSpeechId).
  */
 
+import { getEvent, type EventId } from "@/lib/format/events";
 import { uid } from "@/lib/model/ids";
-import type { Role, Scouting } from "@/lib/model/types";
+import type { Role, Scouting, Side } from "@/lib/model/types";
 
 export interface CellMeta {
     bold?: boolean;
@@ -25,7 +26,7 @@ export interface FlowSheet {
     order: number;
     /** Absent / "flow" = argument grid. "cx" = the cross-ex sheet. */
     kind?: "flow" | "cx";
-    /** Leftmost speech column shown (absent = derive from group). */
+    /** Leftmost speech column shown (absent = the side's first speech in the round's event). */
     startSpeechId?: string;
     /** rows x speech-columns cell text, Handsontable-native. */
     data: (string | null)[][];
@@ -40,6 +41,10 @@ export interface FlowRound {
     /** ms timestamp when soft-deleted (moved to Trash); absent/null = live. */
     deletedAt?: number | null;
     role: Role;
+    /** Debate event; absent (legacy rounds) = "policy". */
+    event?: EventId;
+    /** First-speaking side; meaningful only for variable-order events (PF). */
+    firstSide?: Side;
     scouting: Scouting;
     sheets: FlowSheet[];
 }
@@ -64,17 +69,16 @@ export function makeFlowSheet(input: {
         group: input.group,
         order: input.order,
         kind: "flow",
-        startSpeechId: input.group === "neg" ? "1nc" : "1ac",
         data: [],
         meta: {},
     };
 }
 
-/** The pinned CX sheet. order = -1 so it sorts above flow sheets. */
-export function makeCxFlowSheet(): FlowSheet {
+/** The pinned cross-examination sheet. order = -1 so it sorts above flow sheets. */
+export function makeCxFlowSheet(title = "CX"): FlowSheet {
     return {
         id: uid("sheet"),
-        title: "CX",
+        title,
         group: "aff",
         order: -1,
         kind: "cx",
@@ -83,17 +87,23 @@ export function makeCxFlowSheet(): FlowSheet {
     };
 }
 
-export function makeFlowRound(role: Role): FlowRound {
+export function makeFlowRound(input: { role: Role; event?: EventId; firstSide?: Side }): FlowRound {
     const now = Date.now();
-    const side = role === "judge" ? "aff" : role;
+    const event = input.event ?? "policy";
+    const side = input.role === "judge" ? "aff" : input.role;
     return {
         id: uid("round"),
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
-        role,
+        role: input.role,
+        event,
+        firstSide: input.firstSide ?? "aff",
         scouting: emptyScouting(),
-        sheets: [makeCxFlowSheet(), makeFlowSheet({ title: "1.", group: side, order: 0 })],
+        sheets: [
+            makeCxFlowSheet(getEvent(event).crossEx.title),
+            makeFlowSheet({ title: "1.", group: side, order: 0 }),
+        ],
     };
 }
 
@@ -101,6 +111,8 @@ export function makeFlowRound(role: Role): FlowRound {
 export function normalizeFlow(raw: FlowRound): FlowRound {
     const r: FlowRound = {
         ...raw,
+        event: raw.event ?? "policy",
+        firstSide: raw.firstSide ?? "aff",
         scouting: raw.scouting ? { ...raw.scouting } : emptyScouting(),
         sheets: (raw.sheets ?? []).map((s) => ({
             ...s,

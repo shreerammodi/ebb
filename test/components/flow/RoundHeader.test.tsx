@@ -36,7 +36,7 @@ vi.mock("@/lib/export/xlsx", () => ({
 }));
 
 function setupRound(role: Role) {
-    useFlowStore.getState().loadRound(makeFlowRound(role));
+    useFlowStore.getState().loadRound(makeFlowRound({ role }));
 }
 
 function renderRoundHeader() {

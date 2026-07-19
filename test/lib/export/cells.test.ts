@@ -4,7 +4,7 @@ import { buildExportSheets } from "@/lib/export/cells";
 import { makeCxFlowSheet, makeFlowRound } from "@/lib/model/flow";
 
 function round() {
-    const r = makeFlowRound("aff");
+    const r = makeFlowRound({ role: "aff" });
     const flow = r.sheets.find((s) => s.kind !== "cx")!;
     flow.title = "T";
     flow.data = [
@@ -42,7 +42,7 @@ describe("buildExportSheets", () => {
     });
 
     it("ignores cells beyond the visible column count", () => {
-        const r = makeFlowRound("aff");
+        const r = makeFlowRound({ role: "aff" });
         const cx = r.sheets.find((s) => s.kind === "cx")!;
         r.sheets = [{ ...makeCxFlowSheet(), id: cx.id }];
         r.sheets[0].data = [Array.from({ length: 10 }, (_, i) => (i === 9 ? "spill" : null))];
