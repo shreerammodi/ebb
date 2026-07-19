@@ -58,10 +58,9 @@ export function Monogram({ "aria-label": ariaLabel = "ebb", ...props }: SVGProps
 
 /**
  * Responsive Logo component.
- * Shows Wordmark on larger screens, Monogram on narrow windows. Both render;
- * a CSS breakpoint hides one, so no JS resize tracking is needed. The
- * Monogram uses h-6 to maintain visual weight when the full wordmark would
- * look cramped in a narrow window.
+ * Shows the Wordmark on larger screens; below the breakpoint it hides
+ * entirely rather than collapsing to a monogram, since a narrow header has no
+ * room to spare. A CSS breakpoint does the hiding, so no JS resize tracking.
  */
 export function Logo({
     "aria-label": ariaLabel = "ebb",
@@ -69,18 +68,11 @@ export function Logo({
     ...props
 }: SVGProps<SVGSVGElement>) {
     return (
-        <>
-            <Monogram
-                aria-label={ariaLabel}
-                className={cn(className, "h-6 shrink-0 min-[900px]:hidden")}
-                {...props}
-            />
-            <Wordmark
-                aria-label={ariaLabel}
-                className={cn(className, "shrink-0 max-[899.98px]:hidden")}
-                {...props}
-            />
-        </>
+        <Wordmark
+            aria-label={ariaLabel}
+            className={cn(className, "shrink-0 max-[899.98px]:hidden")}
+            {...props}
+        />
     );
 }
 
