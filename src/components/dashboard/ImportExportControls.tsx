@@ -70,20 +70,22 @@ export default function ImportExportControls({ onChanged }: ImportExportControls
             <Button
                 variant="ghost"
                 size="sm"
+                aria-label="Import"
                 data-testid="import-btn"
                 onClick={() => inputRef.current?.click()}
             >
                 <UploadSimple className="size-4.5" />
-                Import
+                <span className="max-[899.98px]:hidden">Import</span>
             </Button>
             <Button
                 variant="ghost"
                 size="sm"
+                aria-label="Export all"
                 data-testid="export-all-btn"
                 onClick={() => void exportAll()}
             >
                 <DownloadSimple className="size-4.5" />
-                Export all
+                <span className="max-[899.98px]:hidden">Export all</span>
             </Button>
         </>
     );

@@ -108,15 +108,18 @@ export default function Dashboard() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search flows…"
-                    className="h-9 max-w-[360px]"
+                    className="h-9 min-w-0 flex-1 min-[900px]:max-w-[360px]"
                     data-testid="dashboard-search"
                 />
-                <div className="flex-1" />
+                {/* On wide screens this fills the gap and pushes the controls
+                    right; below 900px it collapses so the search claims the
+                    space the icon-only buttons free up. */}
+                <div className="flex-1 max-[899.98px]:hidden" />
                 <ImportExportControls onChanged={refresh} />
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="ghost" size="sm" asChild aria-label="Trash">
                     <Link href="/trash" data-testid="dashboard-trash-link">
                         <Trash className="size-4.5" />
-                        Trash
+                        <span className="max-[899.98px]:hidden">Trash</span>
                     </Link>
                 </Button>
                 <Button
