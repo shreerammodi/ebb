@@ -200,12 +200,20 @@ function InfoPanelInner() {
                             value={sc.tournament ?? ""}
                             onChange={(e) => setScouting({ tournament: e.target.value })}
                         />
-                        <Input
-                            data-testid="scout-round"
-                            placeholder="Round"
-                            value={sc.round ?? ""}
-                            onChange={(e) => setScouting({ round: e.target.value })}
-                        />
+                        <div className="flex gap-3">
+                            <Input
+                                data-testid="scout-round"
+                                placeholder="Round"
+                                value={sc.round ?? ""}
+                                onChange={(e) => setScouting({ round: e.target.value })}
+                            />
+                            <Input
+                                data-testid="scout-flight"
+                                placeholder="Flight"
+                                value={sc.flight ?? ""}
+                                onChange={(e) => setScouting({ flight: e.target.value })}
+                            />
+                        </div>
                         <Input
                             data-testid="scout-date"
                             placeholder="Date"

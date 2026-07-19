@@ -26,6 +26,8 @@ export interface Scouting {
     neg: { first: Debater; second: Debater };
     tournament?: string;
     round?: string;
+    /** Flight within the round (e.g. "1"/"2"), for events that split a round into flights. */
+    flight?: string;
     date?: string;
     judge?: string;
     decision?: Decision;
