@@ -1,13 +1,13 @@
 "use client";
 
+import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { CaretDown, Check } from "@phosphor-icons/react";
-import { Select as SelectPrimitive } from "radix-ui";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
 function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-    return <SelectPrimitive.Root data-slot="select" {...props} />;
+    return <SelectPrimitive.Root {...props} />;
 }
 
 function SelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
@@ -31,9 +31,7 @@ function SelectTrigger({
             {...props}
         >
             {children}
-            <SelectPrimitive.Icon asChild>
-                <CaretDown className="size-4 opacity-50" />
-            </SelectPrimitive.Icon>
+            <SelectPrimitive.Icon render={<CaretDown className="size-4 opacity-50" />} />
         </SelectPrimitive.Trigger>
     );
 }
@@ -41,32 +39,30 @@ function SelectTrigger({
 function SelectContent({
     className,
     children,
-    position = "popper",
     ...props
-}: React.ComponentProps<typeof SelectPrimitive.Content>) {
+}: React.ComponentProps<typeof SelectPrimitive.Popup> &
+    Pick<React.ComponentProps<typeof SelectPrimitive.Positioner>, "side" | "align" | "sideOffset">) {
+    const { side, align, sideOffset = 4, ...popupProps } = props;
     return (
         <SelectPrimitive.Portal>
-            <SelectPrimitive.Content
-                data-slot="select-content"
-                className={cn(
-                    "bg-popover text-popover-foreground ease-out-quart data-[state=closed]:duration-100 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 motion-safe:data-[state=closed]:zoom-out-95 motion-safe:data-[state=open]:zoom-in-95 motion-safe:data-[side=bottom]:slide-in-from-top-2 motion-safe:data-[side=left]:slide-in-from-right-2 motion-safe:data-[side=right]:slide-in-from-left-2 motion-safe:data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
-                    position === "popper" &&
-                        "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-                    className,
-                )}
-                position={position}
-                {...props}
+            <SelectPrimitive.Positioner
+                side={side}
+                align={align}
+                sideOffset={sideOffset}
+                alignItemWithTrigger={false}
+                className="z-50"
             >
-                <SelectPrimitive.Viewport
+                <SelectPrimitive.Popup
+                    data-slot="select-content"
                     className={cn(
-                        "p-1",
-                        position === "popper" &&
-                            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1",
+                        "bg-popover text-popover-foreground ease-out-quart data-[closed]:duration-100 data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 motion-safe:data-[closed]:zoom-out-95 motion-safe:data-[open]:zoom-in-95 motion-safe:data-[side=bottom]:slide-in-from-top-2 motion-safe:data-[side=left]:slide-in-from-right-2 motion-safe:data-[side=right]:slide-in-from-left-2 motion-safe:data-[side=top]:slide-in-from-bottom-2 relative max-h-(--available-height) min-w-[8rem] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
+                        className,
                     )}
+                    {...popupProps}
                 >
                     {children}
-                </SelectPrimitive.Viewport>
-            </SelectPrimitive.Content>
+                </SelectPrimitive.Popup>
+            </SelectPrimitive.Positioner>
         </SelectPrimitive.Portal>
     );
 }
@@ -80,7 +76,7 @@ function SelectItem({
         <SelectPrimitive.Item
             data-slot="select-item"
             className={cn(
-                "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+                "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
                 className,
             )}
             {...props}

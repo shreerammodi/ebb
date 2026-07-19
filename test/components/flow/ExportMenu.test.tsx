@@ -25,7 +25,7 @@ describe("ExportMenu", () => {
             </TooltipProvider>,
         );
         await user.click(screen.getByTestId("export-btn"));
-        expect(screen.getByTestId("export-json")).toBeInTheDocument();
+        expect(await screen.findByTestId("export-json")).toBeInTheDocument();
         expect(screen.getByTestId("export-excel")).toBeInTheDocument();
     });
 
@@ -38,7 +38,7 @@ describe("ExportMenu", () => {
             </TooltipProvider>,
         );
         await user.click(screen.getByTestId("export-btn"));
-        await user.click(screen.getByTestId("export-json"));
+        await user.click(await screen.findByTestId("export-json"));
         expect(downloadFlowFile).toHaveBeenCalled();
     });
 
@@ -51,7 +51,7 @@ describe("ExportMenu", () => {
             </TooltipProvider>,
         );
         await user.click(screen.getByTestId("export-btn"));
-        await user.click(screen.getByTestId("export-excel"));
+        await user.click(await screen.findByTestId("export-excel"));
         expect(downloadXlsx).toHaveBeenCalled();
     });
 });

@@ -1,5 +1,5 @@
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Slot } from "radix-ui";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -41,22 +41,26 @@ function Button({
     variant = "default",
     size = "default",
     asChild = false,
+    children,
     ...props
 }: React.ComponentProps<"button"> &
     VariantProps<typeof buttonVariants> & {
         asChild?: boolean;
     }) {
-    const Comp = asChild ? Slot.Root : "button";
-
-    return (
-        <Comp
-            data-slot="button"
-            data-variant={variant}
-            data-size={size}
-            className={cn(buttonVariants({ variant, size, className }))}
-            {...props}
-        />
-    );
+    return useRender({
+        defaultTagName: "button",
+        // asChild composes the button onto the child element (a link, another
+        // control); otherwise render a plain <button>.
+        render: asChild ? (children as React.ReactElement) : undefined,
+        props: {
+            "data-slot": "button",
+            "data-variant": variant,
+            "data-size": size,
+            className: cn(buttonVariants({ variant, size, className })),
+            ...(asChild ? {} : { children }),
+            ...props,
+        },
+    });
 }
 
 export { Button, buttonVariants };

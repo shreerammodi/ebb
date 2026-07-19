@@ -164,13 +164,13 @@ function SearchPaletteInner() {
                 aria-label={label}
                 data-testid="search-palette"
                 onKeyDown={onKeyDown}
-                onOpenAutoFocus={(e) => {
+                initialFocus={() => {
                     // Own focus so the caret lands past the ">" seed instead of
-                    // selecting it (Radix's default autofocus selects the input).
-                    e.preventDefault();
+                    // selecting it (the default autofocus selects the input).
                     const el = inputRef.current;
                     el?.focus();
                     el?.setSelectionRange(seed.length, seed.length);
+                    return false;
                 }}
                 className="bg-popover motion-safe:animate-palette-pulse top-[12vh] w-full max-w-[560px] translate-y-0 gap-0 overflow-hidden rounded-md border p-0 shadow-2xl"
             >

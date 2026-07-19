@@ -312,7 +312,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
 
     // Search palette jump: declared after the sheet-switch effect so that when
     // both fire in one commit (a cross-sheet jump) this selection wins. The rAF
-    // defers past Radix's focus restore so the grid keeps keyboard focus.
+    // defers past the dialog's focus restore so the grid keeps keyboard focus.
     const revealTarget = useFlowStore((s) => s.revealTarget);
     useEffect(() => {
         if (!revealTarget || revealTarget.sheetId !== sheetId) return;

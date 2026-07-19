@@ -16,6 +16,7 @@
         "desktop:build": "tauri build"
     },
     "dependencies": {
+        "@base-ui/react": "^1.6.0",
         "@codemirror/autocomplete": "^6.20.3",
         "@codemirror/commands": "^6.10.4",
         "@codemirror/lang-markdown": "^6.5.1",
@@ -41,7 +42,6 @@
         "marked": "^18.0.6",
         "motion": "^12.42.2",
         "next": "^16.2.10",
-        "radix-ui": "^1.6.2",
         "react": "^19.2.7",
         "react-day-picker": "^10.0.1",
         "react-dom": "^19.2.7",

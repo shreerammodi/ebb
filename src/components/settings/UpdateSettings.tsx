@@ -73,7 +73,7 @@ export default function UpdateSettings() {
     const busy = state.status === "checking" || state.status === "downloading";
     const ready = state.status === "ready";
 
-    // Native `disabled` swallows pointer events, so Radix's tooltip never opens.
+    // Native `disabled` swallows pointer events, so the tooltip never opens.
     // Keep the button interactive, mark it aria-disabled, and no-op the click.
     const installButton = (
         <Button

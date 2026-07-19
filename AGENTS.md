@@ -15,7 +15,7 @@ Dexie); there is no backend. The app is built as a static export.
 - **Tailwind CSS v4** (config-less; theme lives in `src/app/globals.css`)
 - **Zustand** for state (`src/lib/store`)
 - **Dexie** (IndexedDB) for persistence
-- **Radix UI** + **lucide-react** for UI primitives and icons
+- **Base UI** (`@base-ui/react`) + **@phosphor-icons/react** for UI primitives and icons
 - **Vitest** + **Testing Library** (jsdom, `fake-indexeddb`) for tests
 
 ## Commands
@@ -38,7 +38,7 @@ Run `npm test` and `npm run lint` before considering a change complete.
 src/
   app/           Next.js App Router (layout, page, globals.css)
   components/    React components (PascalCase.tsx), grouped by domain:
-    ui/          Radix-based shadcn-style primitives
+    ui/          Base UI-based shadcn-style primitives
     brand/       Logo and brand assets
     dashboard/   Flows dashboard components
     flow/        Flow screen: AppRoot, Workspace, FlowGrid, cells, header,

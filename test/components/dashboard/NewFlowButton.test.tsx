@@ -18,7 +18,7 @@ describe("NewFlowButton", () => {
     it("creates a flow with the chosen role and navigates to it", async () => {
         render(<NewFlowButton />);
         await userEvent.click(screen.getByTestId("new-flow"));
-        await userEvent.click(screen.getByTestId("new-flow-role-neg"));
+        await userEvent.click(await screen.findByTestId("new-flow-role-neg"));
         await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
         const arg = push.mock.calls[0][0] as string;
         expect(arg).toMatch(/^\/flow\?id=round_/);
@@ -30,7 +30,7 @@ describe("NewFlowButton", () => {
     it("creates a pf round with the chosen speaking order", async () => {
         render(<NewFlowButton />);
         await userEvent.click(screen.getByTestId("new-flow"));
-        await userEvent.click(screen.getByTestId("new-flow-pf-aff"));
+        await userEvent.click(await screen.findByTestId("new-flow-pf-aff"));
         await userEvent.click(await screen.findByTestId("new-flow-pf-aff-neg"));
         await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
         const rounds = await flowDb.flows.toArray();

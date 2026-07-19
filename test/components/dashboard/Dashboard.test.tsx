@@ -41,13 +41,6 @@ function mk(id: string, over: Partial<FlowRound> = {}): FlowRound {
 
 afterEach(() => {
     cleanup();
-    // react-remove-scroll adds `block-interactivity-{n}` classes to <body>
-    // while a Radix Dialog is open, applying `pointer-events: none` via an
-    // injected stylesheet. Clean these up so they don't bleed across tests.
-    Array.from(document.body.classList)
-        .filter((c) => c.startsWith("block-interactivity-"))
-        .forEach((c) => document.body.classList.remove(c));
-    document.body.style.pointerEvents = "";
 });
 
 beforeEach(async () => {

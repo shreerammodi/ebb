@@ -276,7 +276,7 @@ describe("SettingsPanel", () => {
 
             await userEvent.click(screen.getByTestId("flow-font-select"));
             for (const f of FONTS) {
-                expect(screen.getByTestId(`flow-font-${f.id}`)).toBeInTheDocument();
+                expect(await screen.findByTestId(`flow-font-${f.id}`)).toBeInTheDocument();
             }
         });
 
@@ -284,7 +284,7 @@ describe("SettingsPanel", () => {
             useFlowStore.getState().setFlowFont("commit-mono");
             renderSettingsPanel();
             await userEvent.click(screen.getByTestId("flow-font-select"));
-            await userEvent.click(screen.getByTestId("flow-font-plex-sans"));
+            await userEvent.click(await screen.findByTestId("flow-font-plex-sans"));
             expect(useFlowStore.getState().flowFont).toBe("plex-sans");
         });
 

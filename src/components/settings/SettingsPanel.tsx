@@ -354,6 +354,12 @@ export default function SettingsPanel() {
                                         <>
                                             <Select
                                                 value={flowFont}
+                                                // Base UI Select renders the raw value unless given a
+                                                // value->label map to resolve the trigger display.
+                                                items={FONTS.map((f) => ({
+                                                    value: f.id,
+                                                    label: f.label,
+                                                }))}
                                                 onValueChange={(value) =>
                                                     setFlowFont(value as FontId)
                                                 }

@@ -17,7 +17,7 @@ function renderTip(
         | { label: string; command: Parameters<typeof keyHintFor>[0] },
 ) {
     return render(
-        <TooltipProvider delayDuration={0}>
+        <TooltipProvider delay={0}>
             <Tip {...props}>
                 <button>trigger</button>
             </Tip>

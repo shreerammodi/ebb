@@ -30,14 +30,23 @@ if (typeof window !== "undefined" && window.localStorage == null) {
     });
 }
 
-// Radix UI components (DropdownMenu, Dialog) dispatch PointerEvents.
-// jsdom doesn't implement PointerEvent; alias it to MouseEvent so Radix
-// event handlers fire correctly under test.
+// Base UI components (Menu, Dialog, Select) dispatch PointerEvents and branch
+// on `pointerType`. jsdom doesn't implement PointerEvent; provide a MouseEvent
+// subclass that carries pointerType so interactions open on click under test.
 if (typeof window !== "undefined") {
-    (window as unknown as Record<string, unknown>).PointerEvent = window.MouseEvent;
+    class PointerEventPolyfill extends window.MouseEvent {
+        pointerId: number;
+        pointerType: string;
+        constructor(type: string, params: PointerEventInit = {}) {
+            super(type, params);
+            this.pointerId = params.pointerId ?? 1;
+            this.pointerType = params.pointerType ?? "mouse";
+        }
+    }
+    window.PointerEvent = PointerEventPolyfill as unknown as typeof window.PointerEvent;
 }
 
-// Radix UI components (Tooltip) use ResizeObserver. jsdom doesn't implement it;
+// Base UI components (Tooltip) use ResizeObserver. jsdom doesn't implement it;
 // provide a minimal polyfill.
 if (typeof window !== "undefined" && !window.ResizeObserver) {
     window.ResizeObserver = class ResizeObserver {
@@ -57,7 +66,7 @@ if (typeof window !== "undefined" && !window.IntersectionObserver) {
     } as unknown as typeof window.IntersectionObserver;
 }
 
-// Radix UI Select calls these during pointer interaction and keyboard
+// Base UI Select calls these during pointer interaction and keyboard
 // navigation; jsdom implements neither.
 if (typeof window !== "undefined") {
     if (!Element.prototype.hasPointerCapture) {

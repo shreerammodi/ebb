@@ -1,54 +1,61 @@
 "use client";
 
-import { Tooltip as TooltipPrimitive } from "radix-ui";
+import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import * as React from "react";
 
+import { asChildProps } from "@/components/ui/as-child";
 import type { CommandId } from "@/lib/commands/registry";
 import { keyHintFor } from "@/lib/keymap/displayChord";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
 
 function TooltipProvider({
-    delayDuration = 500,
+    delay = 500,
     ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+    return <TooltipPrimitive.Provider delay={delay} {...props} />;
+}
+
+function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+    return <TooltipPrimitive.Root {...props} />;
+}
+
+function TooltipTrigger({
+    asChild,
+    children,
+    ...props
+}: React.ComponentProps<typeof TooltipPrimitive.Trigger> & { asChild?: boolean }) {
     return (
-        <TooltipPrimitive.Provider
-            data-slot="tooltip-provider"
-            delayDuration={delayDuration}
+        <TooltipPrimitive.Trigger
+            data-slot="tooltip-trigger"
             {...props}
+            {...asChildProps(asChild, children)}
         />
     );
 }
 
-function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-    return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
-}
-
-function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-    return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
-}
-
 function TooltipContent({
     className,
+    side,
     sideOffset = 4,
     children,
     ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: React.ComponentProps<typeof TooltipPrimitive.Popup> &
+    Pick<React.ComponentProps<typeof TooltipPrimitive.Positioner>, "side" | "sideOffset">) {
     return (
         <TooltipPrimitive.Portal>
-            <TooltipPrimitive.Content
-                data-slot="tooltip-content"
-                sideOffset={sideOffset}
-                className={cn(
-                    "bg-foreground text-background z-50 flex items-center gap-2 rounded-md px-2 py-1 text-xs shadow-md select-none origin-(--radix-tooltip-content-transform-origin) ease-out-quart animate-in fade-in-0 motion-safe:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 motion-safe:data-[state=closed]:zoom-out-95 data-[state=closed]:duration-100",
-                    className,
-                )}
-                {...props}
-            >
-                {children}
-                <TooltipPrimitive.Arrow className="fill-foreground" />
-            </TooltipPrimitive.Content>
+            <TooltipPrimitive.Positioner side={side} sideOffset={sideOffset}>
+                <TooltipPrimitive.Popup
+                    data-slot="tooltip-content"
+                    className={cn(
+                        "bg-foreground text-background z-50 flex items-center gap-2 rounded-md px-2 py-1 text-xs shadow-md select-none origin-(--transform-origin) ease-out-quart animate-in fade-in-0 motion-safe:zoom-in-95 data-[closed]:animate-out data-[closed]:fade-out-0 motion-safe:data-[closed]:zoom-out-95 data-[closed]:duration-100",
+                        className,
+                    )}
+                    {...props}
+                >
+                    {children}
+                </TooltipPrimitive.Popup>
+            </TooltipPrimitive.Positioner>
         </TooltipPrimitive.Portal>
     );
 }
@@ -56,26 +63,25 @@ function TooltipContent({
 interface TipProps {
     label: React.ReactNode;
     command?: CommandId;
-    side?: React.ComponentProps<typeof TooltipPrimitive.Content>["side"];
+    side?: React.ComponentProps<typeof TooltipPrimitive.Positioner>["side"];
     /**
-     * Show only on hover, never on focus. Radix composes the trigger's onFocus
-     * before its own open handler, so preventing the focus default skips the
-     * open. Set this on a trigger a dialog auto-focuses on open (e.g. a Close
-     * button) so the tip does not pop up unprompted every time the dialog opens.
+     * Show only on hover, never on focus. Set this on a trigger a dialog
+     * auto-focuses on open (e.g. a Close button) so the tip does not pop up
+     * unprompted. Base UI opens tooltips on focus-visible only, so programmatic
+     * focus-on-open already does not trigger them; the prop is kept to mark
+     * that intent at the call site.
      */
     hoverOnly?: boolean;
     children: React.ReactNode;
 }
 
-function Tip({ label, command, side, hoverOnly, children }: TipProps) {
+function Tip({ label, command, side, children }: TipProps) {
     const tooltips = useFlowStore((s) => s.tooltips);
     const hint = command ? keyHintFor(command) : null;
     if (!tooltips) return children;
     return (
         <Tooltip>
-            <TooltipTrigger asChild onFocus={hoverOnly ? (e) => e.preventDefault() : undefined}>
-                {children}
-            </TooltipTrigger>
+            <TooltipTrigger asChild>{children}</TooltipTrigger>
             <TooltipContent side={side}>
                 <span>{label}</span>
                 {hint && (

@@ -4,7 +4,7 @@
  * Uses the real Zustand store. Resets state between tests for isolation.
  */
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
@@ -144,6 +144,9 @@ describe("Sidebar", () => {
         await user.dblClick(screen.getByTestId(`sheet-${caseId}`));
 
         const input = screen.getByTestId(`rename-input-${caseId}`);
+        // The row focuses + selects the input on a deferred frame; wait for that
+        // so the auto-select doesn't fire mid-type and clobber the first chars.
+        await waitFor(() => expect(input).toHaveFocus());
         await user.clear(input);
         await user.type(input, "New Name{Enter}");
 

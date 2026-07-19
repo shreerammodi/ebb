@@ -42,7 +42,7 @@ export default function ZoomControl() {
                 min={ZOOM_MIN}
                 max={ZOOM_MAX}
                 step={0.05}
-                onValueChange={([v]) => setGridZoom(v)}
+                onValueChange={(v) => setGridZoom(Array.isArray(v) ? v[0] : v)}
                 aria-label="Zoom"
                 data-testid="zoom-slider"
                 className="w-24"
