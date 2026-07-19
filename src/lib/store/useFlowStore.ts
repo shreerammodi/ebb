@@ -10,6 +10,7 @@
 import { create } from "zustand";
 
 import type { CommandId } from "@/lib/commands/registry";
+import { getEvent } from "@/lib/format/events";
 import { type FontId, DEFAULT_FONT_ID, resolveFontId } from "@/lib/fonts/registry";
 import {
     firstFlowSheetId,
@@ -96,6 +97,8 @@ export interface FlowActions {
      * speech target for the focused pane without changing which sheets show.
      */
     switchSpeech(speechId: string): void;
+    /** Flips which side speaks first; no-op unless the event's order varies (PF). */
+    swapSpeakingOrder(): void;
     /** Opens a second pane on the next sheet, or collapses back to the focused pane's sheet. */
     toggleSplit(): void;
     /** Focuses the given pane; no-op outside split. */
@@ -412,6 +415,17 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             round: touch({
                 ...round,
                 sheets: round.sheets.map((s) => (s.id === sheetId ? { ...s, title } : s)),
+            }),
+        });
+    },
+
+    swapSpeakingOrder() {
+        const { round } = get();
+        if (!round || !getEvent(round.event).variableOrder) return;
+        set({
+            round: touch({
+                ...round,
+                firstSide: (round.firstSide ?? "aff") === "aff" ? "neg" : "aff",
             }),
         });
     },

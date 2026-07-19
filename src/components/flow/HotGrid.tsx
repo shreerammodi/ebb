@@ -172,8 +172,8 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     const viewCache = useRef(new Map<string, { row: number; col: number }>());
     // afterRenderer and afterGetColHeader run once per cell per render cycle, so
     // they index this instead of re-deriving the column list per cell. A sheet's
-    // columns depend only on kind/group/startSpeechId, none of which change after
-    // creation, so the sheet-switch effect is the only writer.
+    // columns depend on kind/group/startSpeechId and the round's firstSide; the
+    // sheet-switch effect re-fires on either and is the only writer.
     const colsRef = useRef<SpeechCol[]>([]);
 
     const snapshot = useCallback(() => {
@@ -247,6 +247,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     }, [isFocused, snapshot]);
 
     // Sheet switching swaps data/columns on this pane's instance.
+    const firstSide = useFlowStore((s) => s.round?.firstSide);
     useEffect(() => {
         const hot = hotRef.current?.hotInstance;
         const round = useFlowStore.getState().round;
@@ -286,7 +287,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         });
         const v = viewCache.current.get(sheet.id) ?? { row: 0, col: 0 };
         hot.selectCell(v.row, v.col);
-    }, [sheetId]);
+    }, [sheetId, firstSide]);
 
     // Clicking or arrowing into a pane focuses it (so keystrokes route here).
     const afterSelectionEnd = useCallback(() => {

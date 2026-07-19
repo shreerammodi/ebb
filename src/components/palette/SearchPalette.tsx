@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
 import { executeCommand } from "@/lib/commands/commands";
+import { getEvent } from "@/lib/format/events";
 import { keyHintFor } from "@/lib/keymap/displayChord";
 import { searchCells } from "@/lib/search/cellSearch";
 import { searchCommands } from "@/lib/search/commandSearch";
@@ -69,13 +70,19 @@ function SearchPaletteInner() {
 
     const allRows = useMemo<Row[]>(() => {
         if (isCommandMode) {
-            return searchCommands(query.slice(1)).map((c) => ({
-                kind: "command",
-                id: c.id,
-                text: c.label,
-                hint: keyHintFor(c.id),
-                run: () => executeCommand(c.id),
-            }));
+            return searchCommands(query.slice(1))
+                .filter(
+                    (c) =>
+                        c.id !== "round.swapOrder" ||
+                        (round != null && getEvent(round.event).variableOrder),
+                )
+                .map((c) => ({
+                    kind: "command",
+                    id: c.id,
+                    text: c.label,
+                    hint: keyHintFor(c.id),
+                    run: () => executeCommand(c.id),
+                }));
         }
         if (!round) return [];
         return searchCells(round, query).map((hit) => ({

@@ -26,6 +26,7 @@ export type CommandId =
     | "sheet.newNeg"
     | "sheet.rename"
     | "sheet.quickSwitch"
+    | "round.swapOrder"
     | "sheet.jump1"
     | "sheet.jump2"
     | "sheet.jump3"
@@ -80,6 +81,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
         id: "sheet.quickSwitch",
         label: "Search cells",
     },
+    "round.swapOrder": { id: "round.swapOrder", label: "Swap speaking order" },
     "sheet.jump1": { id: "sheet.jump1", label: "Jump to sheet 1" },
     "sheet.jump2": { id: "sheet.jump2", label: "Jump to sheet 2" },
     "sheet.jump3": { id: "sheet.jump3", label: "Jump to sheet 3" },

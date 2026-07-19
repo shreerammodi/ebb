@@ -190,6 +190,9 @@ export function executeCommand(id: CommandId): void {
         case "sheet.quickSwitch":
             state.setQuickSwitcherOpen(true);
             return;
+        case "round.swapOrder":
+            useFlowStore.getState().swapSpeakingOrder();
+            return;
         case "palette.open":
             // Same palette, seeded with ">" so it opens in command mode.
             state.setQuickSwitcherOpen(true, ">");

@@ -78,6 +78,25 @@ describe("loadRound", () => {
     });
 });
 
+describe("swapSpeakingOrder", () => {
+    it("flips firstSide on a pf round", () => {
+        useFlowStore
+            .getState()
+            .loadRound(makeFlowRound({ role: "aff", event: "pf", firstSide: "aff" }));
+        useFlowStore.getState().swapSpeakingOrder();
+        expect(useFlowStore.getState().round?.firstSide).toBe("neg");
+        useFlowStore.getState().swapSpeakingOrder();
+        expect(useFlowStore.getState().round?.firstSide).toBe("aff");
+    });
+
+    it("no-ops on a policy round", () => {
+        useFlowStore.getState().loadRound(makeFlowRound({ role: "aff" }));
+        const before = useFlowStore.getState().round;
+        useFlowStore.getState().swapSpeakingOrder();
+        expect(useFlowStore.getState().round).toBe(before);
+    });
+});
+
 describe("switchSpeech", () => {
     it("focuses the topmost flow sheet and records the speech target", () => {
         const round = loadFresh();
