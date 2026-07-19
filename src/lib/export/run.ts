@@ -9,8 +9,8 @@ export async function runExport(round: FlowRound, fmt: ExportFormat): Promise<vo
         await downloadFlowFile(round);
         return;
     }
-    // Dynamic so Handsontable (pulled in by the xlsx exporter) stays out of the
-    // dashboard's eager bundle and only loads when an Excel export runs.
+    // Dynamic so ExcelJS stays out of the dashboard's eager bundle and only
+    // loads when an Excel export runs.
     const { downloadXlsx } = await import("./xlsx");
     await downloadXlsx(round);
 }

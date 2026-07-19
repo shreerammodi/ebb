@@ -20,7 +20,7 @@ function labeled(ws: ExcelJS.Worksheet, row: number, label: string, value?: stri
 }
 
 export function applyInfoWorksheet(workbook: ExcelJS.Workbook, round: FlowRound): void {
-    const ws = workbook.addWorksheet("Info");
+    const ws = workbook.addWorksheet("Info", { views: [{ showGridLines: false }] });
     ws.getColumn(1).width = 16;
     ws.getColumn(2).width = 36;
     const sc = round.scouting;
@@ -42,13 +42,13 @@ export function maybeAddRfdWorksheet(workbook: ExcelJS.Workbook, round: FlowRoun
     const decision = round.scouting.decision;
     const rfd = decision?.rfd?.trim() ?? "";
     if (!decision?.vote && !rfd) return;
-    const ws = workbook.addWorksheet("RFD");
+    const ws = workbook.addWorksheet("RFD", { views: [{ showGridLines: false }] });
     ws.getColumn(1).width = 100;
     ws.getCell("A1").value = "Decision";
     ws.getCell("A1").font = { bold: true };
     if (decision?.vote) ws.getCell("B1").value = decision.vote.toUpperCase();
     if (rfd) {
-        ws.getCell("A3").value = rfd;
-        ws.getCell("A3").alignment = { wrapText: true, vertical: "top" };
+        ws.getCell("A2").value = rfd;
+        ws.getCell("A2").alignment = { wrapText: true, vertical: "top" };
     }
 }

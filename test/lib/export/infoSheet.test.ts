@@ -39,7 +39,7 @@ describe("maybeAddRfdWorksheet", () => {
         maybeAddRfdWorksheet(wb, round);
         const ws = wb.getWorksheet("RFD")!;
         expect(ws.getCell("B1").value).toBe("NEG");
-        expect(ws.getCell("A3").value).toBe("Dropped the disad.");
+        expect(ws.getCell("A2").value).toBe("Dropped the disad.");
     });
 
     it("skips the worksheet when there is no vote and no rfd", () => {
