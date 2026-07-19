@@ -1,6 +1,6 @@
 "use client";
 
-import { Gear, Info } from "@phosphor-icons/react";
+import { Gear, Info, Trash } from "@phosphor-icons/react";
 import { AnimatePresence, LayoutGroup, m } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -113,13 +113,12 @@ export default function Dashboard() {
                 />
                 <div className="flex-1" />
                 <ImportExportControls onChanged={refresh} />
-                <Link
-                    href="/trash"
-                    className="text-muted-foreground hover:text-foreground text-[13px]"
-                    data-testid="dashboard-trash-link"
-                >
-                    Trash
-                </Link>
+                <Button variant="ghost" size="sm" asChild>
+                    <Link href="/trash" data-testid="dashboard-trash-link">
+                        <Trash className="size-4.5" />
+                        Trash
+                    </Link>
+                </Button>
                 <Button
                     variant="ghost"
                     size="sm"
@@ -127,7 +126,7 @@ export default function Dashboard() {
                     data-testid="dashboard-settings"
                     onClick={() => useFlowStore.getState().setSettingsOpen(true)}
                 >
-                    <Gear className="size-4.5" />
+                    <Gear className="size-4.5 rotate-[22.5deg]" />
                 </Button>
                 <Button
                     variant="ghost"

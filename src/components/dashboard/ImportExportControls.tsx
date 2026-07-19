@@ -1,5 +1,6 @@
 "use client";
 
+import { DownloadSimple, UploadSimple } from "@phosphor-icons/react";
 import { useRef } from "react";
 import { toast } from "sonner";
 
@@ -67,11 +68,12 @@ export default function ImportExportControls({ onChanged }: ImportExportControls
                 onChange={onFile}
             />
             <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 data-testid="import-btn"
                 onClick={() => inputRef.current?.click()}
             >
+                <UploadSimple className="size-4.5" />
                 Import
             </Button>
             <Button
@@ -80,6 +82,7 @@ export default function ImportExportControls({ onChanged }: ImportExportControls
                 data-testid="export-all-btn"
                 onClick={() => void exportAll()}
             >
+                <DownloadSimple className="size-4.5" />
                 Export all
             </Button>
         </>
