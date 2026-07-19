@@ -15,8 +15,10 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 
 export default function SpeechSwitcher() {
     const switchSpeech = useFlowStore((s) => s.switchSpeech);
-    const round = useFlowStore((s) => s.round);
-    const cols = round ? speechOrder(getEvent(round.event), round.firstSide ?? "aff") : [];
+    const event = useFlowStore((s) => s.round?.event);
+    const firstSide = useFlowStore((s) => s.round?.firstSide);
+    const hasRound = useFlowStore((s) => s.round != null);
+    const cols = hasRound ? speechOrder(getEvent(event), firstSide ?? "aff") : [];
 
     return (
         <DropdownMenu>

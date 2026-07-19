@@ -1,7 +1,7 @@
 /**
  * Handsontable-native round model. Each sheet stores its grid as a 2D array of
  * cell text plus sparse per-cell metadata; columns are never stored (they
- * derive from the Policy column list and the sheet's startSpeechId).
+ * derive from the round's event definition and the sheet's startSpeechId slice).
  */
 
 import { getEvent, type EventId } from "@/lib/format/events";

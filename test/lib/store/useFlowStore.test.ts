@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { padGrid, trimGrid, widestRow } from "@/lib/grid/codec";
+import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import { makeFlowRound, makeFlowSheet } from "@/lib/model/flow";
 import { focusedSheetId, useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -94,6 +96,48 @@ describe("swapSpeakingOrder", () => {
         const before = useFlowStore.getState().round;
         useFlowStore.getState().swapSpeakingOrder();
         expect(useFlowStore.getState().round).toBe(before);
+    });
+
+    // Reloads a sheet the way HotGrid's sheet-switch effect does: derive the
+    // columns, pad to the wider of the derived count and the stored data, then
+    // snapshot the padded grid back the way a subsequent edit does.
+    const reloadSheetData = (sheetId: string) => {
+        const round = useFlowStore.getState().round!;
+        const sheet = round.sheets.find((s) => s.id === sheetId)!;
+        const cols = columnsForFlowSheet(round, sheet);
+        const width = Math.max(cols.length, widestRow(sheet.data));
+        const loaded = padGrid(sheet.data, width, 1);
+        useFlowStore.getState().updateSheetData(sheetId, trimGrid(loaded), {});
+    };
+
+    it("preserves an overflow column's text across a swap round-trip", () => {
+        useFlowStore
+            .getState()
+            .loadRound(makeFlowRound({ role: "aff", event: "pf", firstSide: "aff" }));
+        const affSheet = useFlowStore
+            .getState()
+            .round!.sheets.find((s) => s.kind !== "cx" && s.group === "aff")!;
+        // Aff-first PF shows the aff sheet 8 columns; write into the last one.
+        const row = Array(8).fill(null);
+        row[7] = "warming";
+        useFlowStore.getState().updateSheetData(affSheet.id, [row], {});
+
+        // Swapping to neg-first narrows the aff sheet's derived columns to 7.
+        useFlowStore.getState().swapSpeakingOrder();
+        expect(columnsForFlowSheet(
+            useFlowStore.getState().round!,
+            useFlowStore.getState().round!.sheets.find((s) => s.id === affSheet.id)!,
+        )).toHaveLength(7);
+        reloadSheetData(affSheet.id);
+        const afterSwap = useFlowStore.getState().round!.sheets.find((s) => s.id === affSheet.id)!;
+        expect(afterSwap.data[0][7]).toBe("warming");
+
+        // Swapping back restores the 8th column and the text sits in place.
+        useFlowStore.getState().swapSpeakingOrder();
+        reloadSheetData(affSheet.id);
+        const restored = useFlowStore.getState().round!.sheets.find((s) => s.id === affSheet.id)!;
+        expect(columnsForFlowSheet(useFlowStore.getState().round!, restored)).toHaveLength(8);
+        expect(restored.data[0][7]).toBe("warming");
     });
 });
 

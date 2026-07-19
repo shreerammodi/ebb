@@ -50,8 +50,14 @@ export function columnsForFlowSheet(round: FlowRound, sheet: FlowSheet): SpeechC
     return idx === -1 ? order : order.slice(idx);
 }
 
-/** Header settings per sheet: cross-ex gets a period tier above Question/Response. */
-export function headerSettings(sheet: FlowSheet, cols: SpeechCol[]) {
+/**
+ * Header settings per sheet: cross-ex gets a period tier above
+ * Question/Response. `width` is the grid's actual column count, which can
+ * exceed the derived columns when a sheet stores overflow columns from a
+ * wider orientation; those extra columns render unlabeled so their text
+ * stays visible instead of being dropped.
+ */
+export function headerSettings(sheet: FlowSheet, cols: SpeechCol[], width = cols.length) {
     if (sheet.kind === "cx") {
         const groups: { label: string; colspan: number }[] = [];
         for (const col of cols) {
@@ -59,13 +65,17 @@ export function headerSettings(sheet: FlowSheet, cols: SpeechCol[]) {
             if (last && last.label === col.group) last.colspan++;
             else groups.push({ label: col.group ?? "", colspan: 1 });
         }
+        if (width > cols.length) groups.push({ label: "", colspan: width - cols.length });
         return {
             colHeaders: true,
-            nestedHeaders: [groups, cols.map((c) => c.name)],
+            nestedHeaders: [
+                groups,
+                Array.from({ length: width }, (_, i) => cols[i]?.name ?? ""),
+            ],
         } satisfies Partial<Handsontable.GridSettings>;
     }
     return {
-        colHeaders: cols.map((c) => c.short),
+        colHeaders: Array.from({ length: width }, (_, i) => cols[i]?.short ?? ""),
         nestedHeaders: undefined,
     } satisfies Partial<Handsontable.GridSettings>;
 }

@@ -10,7 +10,7 @@
 import Handsontable from "handsontable";
 import { registerAllModules } from "handsontable/registry";
 
-import { metaToClassName, padGrid } from "@/lib/grid/codec";
+import { metaToClassName, padGrid, widestRow } from "@/lib/grid/codec";
 import { columnsForFlowSheet, headerSettings } from "@/lib/grid/flowColumns";
 import { sortedSheets, type FlowRound } from "@/lib/model/flow";
 
@@ -37,9 +37,12 @@ export async function downloadXlsx(round: FlowRound): Promise<void> {
             const cols = columnsForFlowSheet(round, sheet);
             const el = document.createElement("div");
             container.appendChild(el);
+            // Pad to the wider of the derived columns and the stored data so
+            // overflow columns from a narrowed orientation still export.
+            const width = Math.max(cols.length, widestRow(sheet.data));
             const hot = new Handsontable(el, {
-                data: padGrid(sheet.data, cols.length, 1),
-                ...headerSettings(sheet, cols),
+                data: padGrid(sheet.data, width, 1),
+                ...headerSettings(sheet, cols, width),
                 readOnly: true,
                 renderAllRows: true,
                 height: "auto",

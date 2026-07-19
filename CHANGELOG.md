@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Public Forum rounds. Choose which side speaks first when you create one,
+  flow its cross-examination on a dedicated sheet, and swap the speaking
+  order at any time with the "Swap speaking order" palette command.
 - Palette search understands sheet and column context: "2ac warming" finds
   warming answers in the 2AC column, ranked below direct text matches.
 - A Display setting to turn off tooltips. Hover hints show by default; the
@@ -19,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Excel export rebuilt: every sheet exports with its cell styling intact,
+  alongside Info and RFD worksheets, and the app no longer ships a bundled
+  spreadsheet template.
 - Palette matching is order-independent ("da warming" finds "Warming DA") and
   ranks results by how directly they match: exact, then prefix, then
   word-start, then substring anywhere.
