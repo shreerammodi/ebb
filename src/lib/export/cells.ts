@@ -38,7 +38,7 @@ export interface ExportSheet {
 
 export function buildExportSheets(round: FlowRound): ExportSheet[] {
     return sortedSheets(round).map((sheet) => {
-        const columns = columnsForFlowSheet(sheet);
+        const columns = columnsForFlowSheet(round, sheet);
         const cells: ExportCell[] = [];
         sheet.data.forEach((row, r) => {
             row.forEach((text, c) => {

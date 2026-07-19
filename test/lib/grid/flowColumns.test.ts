@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { columnsForFlowSheet, CX_FLOW_COLUMNS, POLICY_COLUMNS } from "@/lib/grid/flowColumns";
-import { makeCxFlowSheet, makeFlowSheet } from "@/lib/model/flow";
+import { EVENTS } from "@/lib/format/events";
+import { columnsForFlowSheet, crossExColumns, headerSettings } from "@/lib/grid/flowColumns";
+import { makeCxFlowSheet, makeFlowRound, makeFlowSheet } from "@/lib/model/flow";
+
+const flowSheet = (group: "aff" | "neg") => makeFlowSheet({ title: "1.", group, order: 0 });
 
 describe("columnsForFlowSheet", () => {
-    it("aff sheets show all seven speeches", () => {
-        const sheet = makeFlowSheet({ title: "Aff", group: "aff", order: 0 });
-        expect(columnsForFlowSheet(sheet).map((c) => c.name)).toEqual([
+    it("policy aff sheets show all seven speeches", () => {
+        const round = makeFlowRound({ role: "aff" });
+        expect(columnsForFlowSheet(round, flowSheet("aff")).map((c) => c.name)).toEqual([
             "1AC",
             "1NC",
             "2AC",
@@ -17,29 +20,87 @@ describe("columnsForFlowSheet", () => {
         ]);
     });
 
-    it("neg sheets start at the 1NC", () => {
-        const sheet = makeFlowSheet({ title: "Neg", group: "neg", order: 0 });
-        expect(columnsForFlowSheet(sheet)[0].id).toBe("1nc");
-        expect(columnsForFlowSheet(sheet)).toHaveLength(6);
+    it("policy neg sheets start at the 1NC", () => {
+        const round = makeFlowRound({ role: "neg" });
+        const cols = columnsForFlowSheet(round, flowSheet("neg"));
+        expect(cols[0].id).toBe("1nc");
+        expect(cols).toHaveLength(6);
     });
 
-    it("an explicit startSpeechId wins; unknown ids fall back to the full list", () => {
-        const sheet = {
-            ...makeFlowSheet({ title: "X", group: "aff", order: 0 }),
-            startSpeechId: "2ac",
-        };
-        expect(columnsForFlowSheet(sheet)[0].id).toBe("2ac");
+    it("pf gives the first-speaking side 8 columns and the other side 7", () => {
+        const affFirst = makeFlowRound({ role: "aff", event: "pf", firstSide: "aff" });
+        expect(columnsForFlowSheet(affFirst, flowSheet("aff"))).toHaveLength(8);
+        expect(columnsForFlowSheet(affFirst, flowSheet("neg"))).toHaveLength(7);
+
+        const negFirst = makeFlowRound({ role: "aff", event: "pf", firstSide: "neg" });
+        expect(columnsForFlowSheet(negFirst, flowSheet("neg"))).toHaveLength(8);
+        expect(columnsForFlowSheet(negFirst, flowSheet("aff"))).toHaveLength(7);
+        expect(columnsForFlowSheet(negFirst, flowSheet("neg"))[0].short).toBe("NC");
+    });
+
+    it("an explicit startSpeechId wins; unknown ids fall back to the full order", () => {
+        const round = makeFlowRound({ role: "aff" });
+        const sheet = { ...flowSheet("aff"), startSpeechId: "2ac" };
+        expect(columnsForFlowSheet(round, sheet)[0].id).toBe("2ac");
         const bogus = { ...sheet, startSpeechId: "nope" };
-        expect(columnsForFlowSheet(bogus)).toEqual(POLICY_COLUMNS);
+        expect(columnsForFlowSheet(round, bogus)).toHaveLength(7);
     });
 
-    it("cx sheets use the fixed CX column set", () => {
-        expect(columnsForFlowSheet(makeCxFlowSheet())).toBe(CX_FLOW_COLUMNS);
-        expect(CX_FLOW_COLUMNS).toHaveLength(8);
-        expect(CX_FLOW_COLUMNS[0]).toMatchObject({
-            id: "cx-1ac-q",
-            name: "Question",
-            group: "1AC CX",
-        });
+    it("legacy policy startSpeechId values still resolve", () => {
+        const round = makeFlowRound({ role: "neg" });
+        const sheet = { ...flowSheet("neg"), startSpeechId: "1nc" };
+        expect(columnsForFlowSheet(round, sheet)[0].id).toBe("1nc");
+    });
+
+    it("cx sheets derive periods from the event", () => {
+        const policy = makeFlowRound({ role: "aff" });
+        const policyCols = columnsForFlowSheet(policy, makeCxFlowSheet());
+        expect(policyCols).toHaveLength(8);
+        expect(policyCols[0]).toMatchObject({ name: "Question", side: "neg", group: "1AC CX" });
+
+        const pf = makeFlowRound({ role: "aff", event: "pf", firstSide: "neg" });
+        const pfCols = columnsForFlowSheet(pf, makeCxFlowSheet("Cross-Examination"));
+        expect(pfCols).toHaveLength(6);
+        expect(pfCols.map((c) => c.group)).toEqual([
+            "First Cross",
+            "First Cross",
+            "Second Cross",
+            "Second Cross",
+            "Grand Cross",
+            "Grand Cross",
+        ]);
+        expect(pfCols[0].side).toBe("neg");
+    });
+});
+
+describe("headerSettings", () => {
+    it("flow sheets use short header labels", () => {
+        const round = makeFlowRound({ role: "aff", event: "pf" });
+        const sheet = flowSheet("aff");
+        const cols = columnsForFlowSheet(round, sheet);
+        expect(headerSettings(sheet, cols).colHeaders).toEqual([
+            "AC",
+            "NC",
+            "AR",
+            "NR",
+            "AS",
+            "NS",
+            "AF",
+            "NF",
+        ]);
+    });
+
+    it("cx sheets get a period tier above Question/Response", () => {
+        const round = makeFlowRound({ role: "aff" });
+        const sheet = makeCxFlowSheet();
+        const cols = columnsForFlowSheet(round, sheet);
+        const settings = headerSettings(sheet, cols);
+        expect(settings.colHeaders).toBe(true);
+        expect(settings.nestedHeaders?.[0]).toEqual([
+            { label: "1AC CX", colspan: 2 },
+            { label: "1NC CX", colspan: 2 },
+            { label: "2AC CX", colspan: 2 },
+            { label: "2NC CX", colspan: 2 },
+        ]);
     });
 });

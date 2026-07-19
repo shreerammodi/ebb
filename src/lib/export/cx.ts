@@ -1,8 +1,7 @@
 /**
  * Shared cross-examination pairing. The CX sheet stores its grid with one
- * Question/Response column pair per period (see CX_FLOW_COLUMNS); period i
- * reads columns 2i and 2i+1. Both the Excel CX worksheet and any print
- * layout consume this.
+ * Question/Response column pair per period; period i reads columns 2i and
+ * 2i+1. Both the Excel CX worksheet and any print layout consume this.
  */
 import type { FlowRound } from "@/lib/model/flow";
 

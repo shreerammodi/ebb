@@ -110,7 +110,7 @@ describe("buildFlowSheetXml", () => {
 
     const es: ExportSheet = {
         sheet: { id: "sh", title: "K", group: "aff", order: 0, data: [], meta: {} },
-        columns: [{ id: "1ac", name: "1AC", side: "aff" }],
+        columns: [{ id: "1ac", name: "1AC", short: "1AC", side: "aff" }],
         cells: [
             {
                 col: 0,

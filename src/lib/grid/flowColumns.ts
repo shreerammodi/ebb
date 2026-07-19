@@ -1,49 +1,71 @@
 /**
  * Speech columns with stable ids. Columns are never stored on a round; a
- * sheet's visible columns derive from this module plus its startSpeechId.
- * Names match the Flow.xlsx template columns exactly (see lib/export/columns).
+ * sheet's visible columns derive from the round's event definition plus the
+ * sheet's startSpeechId, and the cross-examination sheet's columns derive
+ * from the event's period list.
  */
 
-import type { FlowSheet } from "@/lib/model/flow";
+import type Handsontable from "handsontable";
+
+import { getEvent, speechOrder, type EventDef, type SpeechDef } from "@/lib/format/events";
+import type { FlowRound, FlowSheet } from "@/lib/model/flow";
 import type { Side } from "@/lib/model/types";
 
-export interface SpeechCol {
-    id: string;
-    name: string;
-    side: Side;
-    /** CX period label; groups render as a second header tier. */
+export interface SpeechCol extends SpeechDef {
+    /** Cross-ex period label; groups render as a second header tier. */
     group?: string;
 }
 
-export const POLICY_COLUMNS: SpeechCol[] = [
-    { id: "1ac", name: "1AC", side: "aff" },
-    { id: "1nc", name: "1NC", side: "neg" },
-    { id: "2ac", name: "2AC", side: "aff" },
-    { id: "block", name: "Block", side: "neg" },
-    { id: "1ar", name: "1AR", side: "aff" },
-    { id: "2nr", name: "2NR", side: "neg" },
-    { id: "2ar", name: "2AR", side: "aff" },
-];
+const other = (side: Side): Side => (side === "aff" ? "neg" : "aff");
 
-/** Question/Response pair per CX period; question side = the questioner. */
-export const CX_FLOW_COLUMNS: SpeechCol[] = [
-    { id: "cx-1ac-q", name: "Question", side: "neg", group: "1AC CX" },
-    { id: "cx-1ac-r", name: "Response", side: "aff", group: "1AC CX" },
-    { id: "cx-1nc-q", name: "Question", side: "aff", group: "1NC CX" },
-    { id: "cx-1nc-r", name: "Response", side: "neg", group: "1NC CX" },
-    { id: "cx-2ac-q", name: "Question", side: "neg", group: "2AC CX" },
-    { id: "cx-2ac-r", name: "Response", side: "aff", group: "2AC CX" },
-    { id: "cx-2nc-q", name: "Question", side: "aff", group: "2NC CX" },
-    { id: "cx-2nc-r", name: "Response", side: "neg", group: "2NC CX" },
-];
+/** Question/Response pair per cross-ex period; question side = the questioner. */
+export function crossExColumns(event: EventDef, firstSide: Side): SpeechCol[] {
+    return event.crossEx.periods.flatMap((p, i) => {
+        const qSide = p.q === "first" ? firstSide : other(firstSide);
+        return [
+            { id: `cx-${i}-q`, name: "Question", short: "Question", side: qSide, group: p.label },
+            {
+                id: `cx-${i}-r`,
+                name: "Response",
+                short: "Response",
+                side: other(qSide),
+                group: p.label,
+            },
+        ];
+    });
+}
 
 /**
- * The columns a sheet shows: CX sheets use the fixed set; flow sheets show
- * from their leftmost speech (startSpeechId, else derived from side) onward.
+ * The columns a sheet shows: cross-ex sheets pair Question/Response per
+ * event period; flow sheets show from their leftmost speech (startSpeechId,
+ * else the side's first speech in the round's event) onward.
  */
-export function columnsForFlowSheet(sheet: FlowSheet): SpeechCol[] {
-    if (sheet.kind === "cx") return CX_FLOW_COLUMNS;
-    const startId = sheet.startSpeechId ?? (sheet.group === "neg" ? "1nc" : "1ac");
-    const idx = POLICY_COLUMNS.findIndex((c) => c.id === startId);
-    return idx === -1 ? POLICY_COLUMNS : POLICY_COLUMNS.slice(idx);
+export function columnsForFlowSheet(round: FlowRound, sheet: FlowSheet): SpeechCol[] {
+    const event = getEvent(round.event);
+    const firstSide = round.firstSide ?? "aff";
+    if (sheet.kind === "cx") return crossExColumns(event, firstSide);
+    const order = speechOrder(event, firstSide);
+    const startId = sheet.startSpeechId ?? event[sheet.group][0].id;
+    const idx = order.findIndex((c) => c.id === startId);
+    return idx === -1 ? order : order.slice(idx);
+}
+
+/** Header settings per sheet: cross-ex gets a period tier above Question/Response. */
+export function headerSettings(sheet: FlowSheet, cols: SpeechCol[]) {
+    if (sheet.kind === "cx") {
+        const groups: { label: string; colspan: number }[] = [];
+        for (const col of cols) {
+            const last = groups[groups.length - 1];
+            if (last && last.label === col.group) last.colspan++;
+            else groups.push({ label: col.group ?? "", colspan: 1 });
+        }
+        return {
+            colHeaders: true,
+            nestedHeaders: [groups, cols.map((c) => c.name)],
+        } satisfies Partial<Handsontable.GridSettings>;
+    }
+    return {
+        colHeaders: cols.map((c) => c.short),
+        nestedHeaders: undefined,
+    } satisfies Partial<Handsontable.GridSettings>;
 }

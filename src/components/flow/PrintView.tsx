@@ -22,7 +22,7 @@ export default function PrintView() {
     return (
         <div className="print-only print-flow" data-testid="print-view">
             {sortedSheets(round).map((sheet) => {
-                const cols = columnsForFlowSheet(sheet);
+                const cols = columnsForFlowSheet(round, sheet);
                 const rows = trimGrid(sheet.data);
                 return (
                     <section key={sheet.id} className="print-sheet">

@@ -10,11 +10,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tip } from "@/components/ui/tooltip";
-import { POLICY_COLUMNS } from "@/lib/grid/flowColumns";
+import { getEvent, speechOrder } from "@/lib/format/events";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 export default function SpeechSwitcher() {
     const switchSpeech = useFlowStore((s) => s.switchSpeech);
+    const round = useFlowStore((s) => s.round);
+    const cols = round ? speechOrder(getEvent(round.event), round.firstSide ?? "aff") : [];
 
     return (
         <DropdownMenu>
@@ -27,7 +29,7 @@ export default function SpeechSwitcher() {
                 </DropdownMenuTrigger>
             </Tip>
             <DropdownMenuContent align="end">
-                {POLICY_COLUMNS.map((col) => (
+                {cols.map((col) => (
                     <DropdownMenuItem
                         key={col.id}
                         data-testid={`speech-${col.id}`}

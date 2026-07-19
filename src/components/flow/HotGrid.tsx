@@ -12,7 +12,7 @@ import "handsontable/styles/ht-theme-main.min.css";
 import { executeCommand } from "@/lib/commands/commands";
 import { shiftMetaDown, type PasteShift } from "@/lib/grid/cellShift";
 import { classNameToMeta, metaToClassName, padGrid, trimGrid } from "@/lib/grid/codec";
-import { columnsForFlowSheet, type SpeechCol } from "@/lib/grid/flowColumns";
+import { columnsForFlowSheet, headerSettings, type SpeechCol } from "@/lib/grid/flowColumns";
 import { getActiveHot, setActiveHot } from "@/lib/grid/hotInstance";
 import {
     attachMetaUndo,
@@ -151,26 +151,6 @@ function applyMeta(
     }
 }
 
-/** Header settings per sheet: CX gets a period tier above Question/Response. */
-function headerSettings(sheet: FlowSheet, cols: SpeechCol[]) {
-    if (sheet.kind === "cx") {
-        const groups: { label: string; colspan: number }[] = [];
-        for (const col of cols) {
-            const last = groups[groups.length - 1];
-            if (last && last.label === col.group) last.colspan++;
-            else groups.push({ label: col.group ?? "", colspan: 1 });
-        }
-        return {
-            colHeaders: true,
-            nestedHeaders: [groups, cols.map((c) => c.name)],
-        } satisfies Partial<Handsontable.GridSettings>;
-    }
-    return {
-        colHeaders: cols.map((c) => c.name),
-        nestedHeaders: undefined,
-    } satisfies Partial<Handsontable.GridSettings>;
-}
-
 /**
  * One grid instance for one pane. In split mode two instances coexist, one
  * per pane; the focused pane owns the shared active-grid singleton so
@@ -293,7 +273,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         }
         currentSheetIdRef.current = sheet.id;
 
-        const cols = columnsForFlowSheet(sheet);
+        const cols = columnsForFlowSheet(round, sheet);
         colsRef.current = cols;
         // Coalesce the data/header swap and the per-cell meta loop into one
         // render instead of updateSettings' render plus an explicit one.
@@ -352,7 +332,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         if (!round) return;
         const { speechId } = speechTarget;
         for (const sheet of round.sheets) {
-            const col = columnsForFlowSheet(sheet).findIndex((c) => c.id === speechId);
+            const col = columnsForFlowSheet(round, sheet).findIndex((c) => c.id === speechId);
             if (col >= 0) viewCache.current.set(sheet.id, { row: 0, col });
         }
         if (!isFocused) return;
@@ -362,7 +342,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             const hot = hotRef.current?.hotInstance;
             const sheet = round.sheets.find((s) => s.id === currentSheetIdRef.current);
             if (!hot || !sheet) return;
-            const col = columnsForFlowSheet(sheet).findIndex((c) => c.id === speechId);
+            const col = columnsForFlowSheet(round, sheet).findIndex((c) => c.id === speechId);
             hot.selectCell(0, col >= 0 ? col : 0);
         });
         return () => cancelAnimationFrame(id);

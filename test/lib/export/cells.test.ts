@@ -38,7 +38,7 @@ describe("buildExportSheets", () => {
     it("includes the CX sheet with CX columns and sorts sheets by order", () => {
         const sheets = buildExportSheets(round());
         expect(sheets[0].sheet.kind).toBe("cx");
-        expect(sheets[0].columns[0].id).toBe("cx-1ac-q");
+        expect(sheets[0].columns[0].id).toBe("cx-0-q");
     });
 
     it("ignores cells beyond the visible column count", () => {

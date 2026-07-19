@@ -30,7 +30,7 @@ export interface CellHit {
 export function collectCells(round: FlowRound): CellHit[] {
     const cells: CellHit[] = [];
     for (const sheet of sortedSheets(round)) {
-        const cols = columnsForFlowSheet(sheet);
+        const cols = columnsForFlowSheet(round, sheet);
         sheet.data.forEach((rowData, row) => {
             rowData.forEach((value, col) => {
                 const text = value?.trim();

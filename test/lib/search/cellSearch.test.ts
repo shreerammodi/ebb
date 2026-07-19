@@ -7,7 +7,7 @@ import { collectCells, searchCells } from "@/lib/search/cellSearch";
 function roundWithCells(): FlowRound {
     const round = makeFlowRound({ role: "aff" });
     const sheet = round.sheets.find((s) => s.kind !== "cx")!;
-    // col 0 = "1AC", col 1 = "1NC" per POLICY_COLUMNS.
+    // col 0 = "1AC", col 1 = "1NC" per the policy event's speech order.
     sheet.data = [
         ["perm do both", "topicality"],
         ["", "  spaced value  "],
