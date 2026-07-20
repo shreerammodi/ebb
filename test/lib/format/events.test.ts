@@ -48,6 +48,16 @@ describe("speechOrder", () => {
         ]);
     });
 
+    it("ld aff-first interleaves down to the 2AR", () => {
+        expect(speechOrder(EVENTS.ld, "aff").map((s) => s.short)).toEqual([
+            "1AC",
+            "1NC",
+            "1AR",
+            "2NR",
+            "2AR",
+        ]);
+    });
+
     it("pf speeches carry descriptive names and sides", () => {
         const ac = EVENTS.pf.aff[0];
         expect(ac).toMatchObject({
@@ -69,5 +79,9 @@ describe("speechOrder", () => {
             "Grand Cross",
         ]);
         expect(EVENTS.pf.crossEx.periods.every((p) => p.q === "first")).toBe(true);
+        expect(EVENTS.ld.crossEx.periods).toEqual([
+            { label: "1AC CX", q: "second" },
+            { label: "1NC CX", q: "first" },
+        ]);
     });
 });

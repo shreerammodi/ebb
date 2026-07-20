@@ -72,6 +72,18 @@ describe("columnsForFlowSheet", () => {
         expect(pfCols[0].side).toBe("neg");
     });
 
+    it("ld cx alternates the questioning side per period", () => {
+        const ld = makeFlowRound({ role: "aff", event: "ld" });
+        const cols = columnsForFlowSheet(ld, makeCxFlowSheet());
+        expect(cols).toHaveLength(4);
+        expect(cols).toMatchObject([
+            { name: "Question", side: "neg", group: "1AC CX" },
+            { name: "Response", side: "aff", group: "1AC CX" },
+            { name: "Question", side: "aff", group: "1NC CX" },
+            { name: "Response", side: "neg", group: "1NC CX" },
+        ]);
+    });
+
     it("pf crossfire columns are labelled by side; policy stays Question/Response", () => {
         const pf = makeFlowRound({ role: "aff", event: "pf", firstSide: "aff" });
         const pfCols = columnsForFlowSheet(pf, makeCxFlowSheet("Cross-Examination"));

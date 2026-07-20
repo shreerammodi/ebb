@@ -39,4 +39,16 @@ describe("NewFlowButton", () => {
         expect(rounds[0].event).toBe("pf");
         expect(rounds[0].firstSide).toBe("neg");
     });
+
+    it("creates an ld round with the chosen role and aff-first order", async () => {
+        render(<NewFlowButton />);
+        await userEvent.click(screen.getByTestId("new-flow"));
+        await userEvent.click(await screen.findByTestId("new-flow-ld-neg"));
+        await waitFor(() => expect(push).toHaveBeenCalledTimes(1));
+        const rounds = await flowDb.flows.toArray();
+        expect(rounds).toHaveLength(1);
+        expect(rounds[0].role).toBe("neg");
+        expect(rounds[0].event).toBe("ld");
+        expect(rounds[0].firstSide).toBe("aff");
+    });
 });

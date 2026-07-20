@@ -193,7 +193,7 @@ export default function Dashboard() {
                         </div>
 
                         <p className="text-muted-foreground text-[12.5px]">
-                            Flowing Public Forum? Use + New flow.
+                            Flowing Public Forum or LD? Use + New flow.
                         </p>
                     </div>
                 ) : (

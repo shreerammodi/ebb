@@ -8,7 +8,7 @@
 
 import type { Side } from "@/lib/model/types";
 
-export type EventId = "policy" | "pf";
+export type EventId = "policy" | "pf" | "ld";
 
 export interface SpeechDef {
     id: string;
@@ -93,6 +93,24 @@ export const EVENTS: Record<EventId, EventDef> = {
                 { label: "First Cross", q: "first" },
                 { label: "Second Cross", q: "first" },
                 { label: "Grand Cross", q: "first" },
+            ],
+        },
+    },
+    ld: {
+        id: "ld",
+        name: "Lincoln-Douglas",
+        aff: [
+            speech("1ac", "1AC", "1AC", "aff"),
+            speech("1ar", "1AR", "1AR", "aff"),
+            speech("2ar", "2AR", "2AR", "aff"),
+        ],
+        neg: [speech("1nc", "1NC", "1NC", "neg"), speech("2nr", "2NR", "2NR", "neg")],
+        variableOrder: false,
+        crossEx: {
+            title: "CX",
+            periods: [
+                { label: "1AC CX", q: "second" },
+                { label: "1NC CX", q: "first" },
             ],
         },
     },

@@ -68,6 +68,17 @@ export default function NewFlowButton() {
                         </DropdownMenuSubContent>
                     </DropdownMenuSub>
                 ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Lincoln-Douglas</DropdownMenuLabel>
+                {ROLES.map(({ role, label }) => (
+                    <DropdownMenuItem
+                        key={role}
+                        data-testid={`new-flow-ld-${role}`}
+                        onSelect={() => create(role, "ld")}
+                    >
+                        {label}
+                    </DropdownMenuItem>
+                ))}
             </DropdownMenuContent>
         </DropdownMenu>
     );
