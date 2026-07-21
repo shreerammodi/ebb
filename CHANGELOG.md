@@ -7,6 +7,18 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-07-20
+
+### Added
+
+- A Lincoln-Douglas flow template. Create an aff, neg, or judge flow with the
+  1AC, 1NC, 1AR, 2NR, and 2AR speeches and their cross-examination periods.
+
+### Fixed
+
+- The desktop window no longer enforces a minimum width, so it can shrink to
+  match the narrow-window dashboard layout.
+
 ## [0.5.1] - 2026-07-19
 
 ### Added
@@ -309,7 +321,8 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/shreerammodi/ebb/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/shreerammodi/ebb/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/shreerammodi/ebb/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/shreerammodi/ebb/compare/v0.4.0...v0.4.1
