@@ -7,6 +7,12 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Fixed
+
+- Renaming a sheet, whether from the rename command or by clicking its title in
+  the sidebar, returns keyboard focus to the grid on commit, so the next
+  keystroke edits the flow instead of falling on the page body.
+
 ## [0.5.2] - 2026-07-20
 
 ### Added
