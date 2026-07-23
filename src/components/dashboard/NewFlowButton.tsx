@@ -41,6 +41,10 @@ const LD: FlowChoice[] = [
     { role: "neg", label: "Neg", tip: "new.ldNeg" },
     { role: "judge", label: "Judge", tip: "new.ldJudge" },
 ];
+/** Event headings are non-interactive, so they read as labels, not as picks. */
+const EVENT_LABEL =
+    "text-muted-foreground font-mono text-[9px] font-bold tracking-widest uppercase";
+
 const PF_ORDERS: { firstSide: Side; label: string; tip: KeytipId }[] = [
     { firstSide: "aff", label: "Aff speaks first", tip: "new.pfFirstAff" },
     { firstSide: "neg", label: "Neg speaks first", tip: "new.pfFirstNeg" },
@@ -61,7 +65,7 @@ export default function NewFlowButton() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Policy</DropdownMenuLabel>
+                <DropdownMenuLabel className={EVENT_LABEL}>Policy</DropdownMenuLabel>
                 {POLICY.map(({ role, label, tip }) => (
                     <DropdownMenuItem
                         key={role}
@@ -74,7 +78,7 @@ export default function NewFlowButton() {
                     </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel>Public Forum</DropdownMenuLabel>
+                <DropdownMenuLabel className={EVENT_LABEL}>Public Forum</DropdownMenuLabel>
                 {PF.map(({ role, label, tip }) => (
                     <DropdownMenuSub key={role}>
                         <DropdownMenuSubTrigger
@@ -102,7 +106,7 @@ export default function NewFlowButton() {
                     </DropdownMenuSub>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel>Lincoln-Douglas</DropdownMenuLabel>
+                <DropdownMenuLabel className={EVENT_LABEL}>Lincoln-Douglas</DropdownMenuLabel>
                 {LD.map(({ role, label, tip }) => (
                     <DropdownMenuItem
                         key={role}
