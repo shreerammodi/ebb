@@ -108,7 +108,7 @@ function InfoPanelInner() {
                             data-testid="scout-paste"
                             placeholder="Paste a Tabroom pairing to autofill"
                             rows={2}
-                            className="border-input placeholder:text-muted-foreground w-full resize-y rounded-md border bg-transparent px-3 py-2 text-[13px] focus-visible:outline-2"
+                            className="border-input placeholder:text-muted-foreground w-full resize-y rounded-md border bg-transparent px-3 py-2 text-[13px] outline-none transition-[color,box-shadow] focus-visible:border-ring"
                             onPaste={(e) => {
                                 const patch = parsePairing(e.clipboardData.getData("text"));
                                 if (Object.keys(patch).length === 0) return;
