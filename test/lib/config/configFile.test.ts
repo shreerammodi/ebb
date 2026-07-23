@@ -31,7 +31,7 @@ describe("configFromState -> toAppConfig round-trip", () => {
 
     it("emits snake_case keys and keeps a null color as null", () => {
         const file = configFromState(sample);
-        expect(file.flow_font).toBe("plex-mono");
+        expect(file.flow_font).toBe("IBM Plex Mono");
         expect(file.default_zoom).toBe(1.25);
         expect(file.rfd_vim).toBe(true);
         expect(file.neg_color).toBeNull();
@@ -79,6 +79,12 @@ describe("toAppConfig validation", () => {
         expect(cfg.flowFont).toBe("pretendard");
         expect(cfg.affColor).toBeNull();
         expect(cfg.sidebarCollapsed).toBe(false);
+    });
+
+    it("accepts a human font name and the legacy id, case-insensitively", () => {
+        expect(toAppConfig({ flow_font: "DM Sans" }).flowFont).toBe("dm-sans");
+        expect(toAppConfig({ flow_font: "ibm plex sans" }).flowFont).toBe("plex-sans");
+        expect(toAppConfig({ flow_font: "plex-mono" }).flowFont).toBe("plex-mono");
     });
 
     it("clamps an out-of-range default_zoom and defaults a non-number", () => {

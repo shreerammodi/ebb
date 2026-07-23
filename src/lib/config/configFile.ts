@@ -13,7 +13,7 @@
 
 import { COMMANDS } from "@/lib/commands/registry";
 import { DEFAULT_KEYTIPS, effectiveKeytips } from "@/lib/dashboard/keytips";
-import { resolveFontId } from "@/lib/fonts/registry";
+import { fontLabel, resolveFontName } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { getPresetKeymap } from "@/lib/keymap/presets";
 import { type AppConfig, resolveZoom, useFlowStore } from "@/lib/store/useFlowStore";
@@ -106,7 +106,7 @@ function flattenNamespaces(node: unknown, prefix: string, out: Record<string, st
 export function configFromState(s: AppConfig): ConfigFileShape {
     return {
         theme: s.theme,
-        flow_font: s.flowFont,
+        flow_font: fontLabel(s.flowFont),
         default_zoom: s.defaultGridZoom,
         sidebar_collapsed: s.sidebarCollapsed,
         rfd_open: s.rfdOpen,
@@ -158,7 +158,7 @@ export function toAppConfig(raw: unknown): AppConfig {
         o.update && typeof o.update === "object" ? (o.update as Record<string, unknown>) : {};
 
     return {
-        flowFont: resolveFontId(o.flow_font),
+        flowFont: resolveFontName(o.flow_font),
         defaultGridZoom: resolveZoom(o.default_zoom),
         sidebarCollapsed: bool(o.sidebar_collapsed, false),
         rfdOpen: bool(o.rfd_open, false),

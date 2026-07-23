@@ -18,6 +18,12 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   Escape steps back one level. Every key is configurable in `config.toml` under
   the `[keytips]` table.
 
+### Changed
+
+- Write the flow font in `config.toml` as its real name ("DM Sans", "IBM Plex
+  Sans") instead of Ebb's internal id. Hand-edited names are matched
+  case-insensitively, and older files that stored the id still load.
+
 ### Fixed
 
 - Renaming a sheet, whether from the rename command or by clicking its title in

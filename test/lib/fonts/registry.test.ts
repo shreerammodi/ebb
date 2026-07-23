@@ -1,6 +1,14 @@
 import { describe, it, expect } from "vitest";
 
-import { FONTS, DEFAULT_FONT_ID, isFontId, resolveFontId, fontCssVar } from "@/lib/fonts/registry";
+import {
+    FONTS,
+    DEFAULT_FONT_ID,
+    isFontId,
+    resolveFontId,
+    resolveFontName,
+    fontCssVar,
+    fontLabel,
+} from "@/lib/fonts/registry";
 
 describe("font registry", () => {
     it("lists exactly the eight curated fonts in order", () => {
@@ -42,6 +50,19 @@ describe("font registry", () => {
         expect(resolveFontId("plex-sans")).toBe("plex-sans");
         expect(resolveFontId("nope")).toBe("pretendard");
         expect(resolveFontId(undefined)).toBe("pretendard");
+    });
+
+    it("maps ids to human labels", () => {
+        expect(fontLabel("dm-sans")).toBe("DM Sans");
+        expect(fontLabel("plex-sans")).toBe("IBM Plex Sans");
+    });
+
+    it("resolves a human font name, a legacy id, or falls back to the default", () => {
+        expect(resolveFontName("DM Sans")).toBe("dm-sans");
+        expect(resolveFontName("ibm plex sans")).toBe("plex-sans");
+        expect(resolveFontName("plex-mono")).toBe("plex-mono");
+        expect(resolveFontName("nope")).toBe("pretendard");
+        expect(resolveFontName(undefined)).toBe("pretendard");
     });
 
     it("categorizes mono vs sans", () => {

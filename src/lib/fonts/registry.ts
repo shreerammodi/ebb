@@ -93,3 +93,25 @@ export function resolveFontId(value: unknown): FontId {
 export function fontCssVar(id: FontId): string {
     return BY_ID[id].cssVar;
 }
+
+export function fontLabel(id: FontId): string {
+    return BY_ID[id].label;
+}
+
+const BY_LABEL: Record<string, FontId> = Object.fromEntries(
+    FONTS.map((f) => [f.label.toLowerCase(), f.id]),
+);
+
+/**
+ * Resolves a config-file font value to a FontId. Accepts the human font name
+ * ("DM Sans", case-insensitive) that config.toml exposes, and falls back to a
+ * bare FontId for older files that stored the internal id.
+ */
+export function resolveFontName(value: unknown): FontId {
+    if (typeof value === "string") {
+        const byLabel = BY_LABEL[value.trim().toLowerCase()];
+        if (byLabel) return byLabel;
+        if (isFontId(value)) return value;
+    }
+    return DEFAULT_FONT_ID;
+}
