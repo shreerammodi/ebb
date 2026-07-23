@@ -7,6 +7,15 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Added
+
+- Excel-style KeyTips on the dashboard. Press `g` to paint the key for every
+  control, then a key to fire it: `n` new flow, `i` import, `e` export, `t`
+  trash, `,` settings, `?` shortcuts. `f` focuses the flow list for arrow-key
+  navigation and Enter to open, and reveals `s` (sort) and `t` (group by
+  tournament). Entering the new-flow menu paints keys for every flow type,
+  including the Public Forum first-speaker submenu. Escape steps back a level.
+
 ### Fixed
 
 - Renaming a sheet, whether from the rename command or by clicking its title in

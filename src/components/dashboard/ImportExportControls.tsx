@@ -10,6 +10,8 @@ import { flowDb } from "@/lib/persistence/flowDb";
 import { exportFlowBackupJSON, parseFlowImportFile } from "@/lib/persistence/flowIo";
 import { persistFlow } from "@/lib/persistence/flowPersistence";
 
+import { KeyTip } from "./keytips/KeyTip";
+
 export interface ImportExportControlsProps {
     onChanged: () => void;
 }
@@ -67,26 +69,30 @@ export default function ImportExportControls({ onChanged }: ImportExportControls
                 data-testid="import-input"
                 onChange={onFile}
             />
-            <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Import"
-                data-testid="import-btn"
-                onClick={() => inputRef.current?.click()}
-            >
-                <UploadSimple className="size-4.5" />
-                <span className="max-[899.98px]:hidden">Import</span>
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Export all"
-                data-testid="export-all-btn"
-                onClick={() => void exportAll()}
-            >
-                <DownloadSimple className="size-4.5" />
-                <span className="max-[899.98px]:hidden">Export all</span>
-            </Button>
+            <KeyTip chord="i" group="root" run={() => inputRef.current?.click()}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Import"
+                    data-testid="import-btn"
+                    onClick={() => inputRef.current?.click()}
+                >
+                    <UploadSimple className="size-4.5" />
+                    <span className="max-[899.98px]:hidden">Import</span>
+                </Button>
+            </KeyTip>
+            <KeyTip chord="e" group="root" run={() => void exportAll()}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Export all"
+                    data-testid="export-all-btn"
+                    onClick={() => void exportAll()}
+                >
+                    <DownloadSimple className="size-4.5" />
+                    <span className="max-[899.98px]:hidden">Export all</span>
+                </Button>
+            </KeyTip>
         </>
     );
 }

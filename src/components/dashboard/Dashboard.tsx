@@ -4,7 +4,7 @@ import { Gear, Question, Trash } from "@phosphor-icons/react";
 import { AnimatePresence, LayoutGroup, m } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
@@ -22,6 +22,8 @@ import FlowCard from "./FlowCard";
 import FlowCardMenu from "./FlowCardMenu";
 import FlowDetailDrawer from "./FlowDetailDrawer";
 import ImportExportControls from "./ImportExportControls";
+import { KeyTip } from "./keytips/KeyTip";
+import { KeyTipsProvider } from "./keytips/KeyTipsProvider";
 import NewFlowButton from "./NewFlowButton";
 import { useCreateFlow } from "./useCreateFlow";
 
@@ -32,6 +34,7 @@ export default function Dashboard() {
     const [sort, setSort] = useState<SortKey>("updated");
     const [grouped, setGrouped] = useState(false);
     const [detailId, setDetailId] = useState<string | null>(null);
+    const sortRef = useRef<HTMLSelectElement>(null);
 
     const createFlow = useCreateFlow();
 
@@ -101,221 +104,266 @@ export default function Dashboard() {
     const empty = summaries.length === 0;
 
     return (
-        <div className="bg-background min-h-screen">
-            <div className="border-border bg-card flex items-center gap-3 border-b px-5 py-4">
-                <Logo className="text-foreground h-5 w-auto" />
-                <Input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search flows…"
-                    className="h-9 min-w-0 flex-1 min-[900px]:max-w-[360px]"
-                    data-testid="dashboard-search"
-                />
-                {/* On wide screens this fills the gap and pushes the controls
+        <KeyTipsProvider>
+            <div className="bg-background min-h-screen">
+                <div className="border-border bg-card flex items-center gap-3 border-b px-5 py-4">
+                    <Logo className="text-foreground h-5 w-auto" />
+                    <Input
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search flows…"
+                        className="h-9 min-w-0 flex-1 min-[900px]:max-w-[360px]"
+                        data-testid="dashboard-search"
+                    />
+                    {/* On wide screens this fills the gap and pushes the controls
                     right; below 900px it collapses so the search claims the
                     space the icon-only buttons free up. */}
-                <div className="flex-1 max-[899.98px]:hidden" />
-                <ImportExportControls onChanged={refresh} />
-                <Button variant="ghost" size="sm" asChild aria-label="Trash">
-                    <Link href="/trash" data-testid="dashboard-trash-link">
-                        <Trash className="size-4.5" />
-                        <span className="max-[899.98px]:hidden">Trash</span>
-                    </Link>
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Keyboard shortcuts"
-                    data-testid="dashboard-guide"
-                    onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
-                >
-                    <Question className="size-4.5" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Settings"
-                    data-testid="dashboard-settings"
-                    onClick={() => useFlowStore.getState().setSettingsOpen(true)}
-                >
-                    <Gear className="size-4.5 rotate-[22.5deg]" />
-                </Button>
-                <NewFlowButton />
-            </div>
-
-            <div className="px-5 py-5">
-                {empty ? (
-                    <div
-                        data-testid="dashboard-empty"
-                        className="mx-auto mt-24 flex max-w-md flex-col items-center gap-6 text-center"
+                    <div className="flex-1 max-[899.98px]:hidden" />
+                    <ImportExportControls onChanged={refresh} />
+                    <KeyTip chord="t" group="root" run={() => router.push("/trash")}>
+                        <Button variant="ghost" size="sm" asChild aria-label="Trash">
+                            <Link href="/trash" data-testid="dashboard-trash-link">
+                                <Trash className="size-4.5" />
+                                <span className="max-[899.98px]:hidden">Trash</span>
+                            </Link>
+                        </Button>
+                    </KeyTip>
+                    <KeyTip
+                        chord="?"
+                        group="root"
+                        run={() => useFlowStore.getState().setCheatsheetOpen(true)}
                     >
-                        <div className="space-y-1.5">
-                            <h1 className="text-foreground text-lg font-semibold tracking-tight text-balance">
-                                Flow your first round
-                            </h1>
-                            <p className="text-muted-foreground text-[13px] leading-relaxed text-pretty">
-                                Ebb is a keyboard-first flowing app. Everything stays on this
-                                device. Pick a side to start.
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Keyboard shortcuts"
+                            data-testid="dashboard-guide"
+                            onClick={() => useFlowStore.getState().setCheatsheetOpen(true)}
+                        >
+                            <Question className="size-4.5" />
+                        </Button>
+                    </KeyTip>
+                    <KeyTip
+                        chord=","
+                        group="root"
+                        run={() => useFlowStore.getState().setSettingsOpen(true)}
+                    >
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Settings"
+                            data-testid="dashboard-settings"
+                            onClick={() => useFlowStore.getState().setSettingsOpen(true)}
+                        >
+                            <Gear className="size-4.5 rotate-[22.5deg]" />
+                        </Button>
+                    </KeyTip>
+                    <KeyTip
+                        chord="n"
+                        group="root"
+                        next="new"
+                        run={() =>
+                            document.querySelector<HTMLElement>('[data-testid="new-flow"]')?.click()
+                        }
+                    >
+                        <NewFlowButton />
+                    </KeyTip>
+                </div>
+
+                <div className="px-5 py-5">
+                    {empty ? (
+                        <div
+                            data-testid="dashboard-empty"
+                            className="mx-auto mt-24 flex max-w-md flex-col items-center gap-6 text-center"
+                        >
+                            <div className="space-y-1.5">
+                                <h1 className="text-foreground text-lg font-semibold tracking-tight text-balance">
+                                    Flow your first round
+                                </h1>
+                                <p className="text-muted-foreground text-[13px] leading-relaxed text-pretty">
+                                    Ebb is a keyboard-first flowing app. Everything stays on this
+                                    device. Pick a side to start.
+                                </p>
+                            </div>
+
+                            <div className="flex items-center justify-center gap-2.5">
+                                <button
+                                    type="button"
+                                    data-testid="empty-start-aff"
+                                    onClick={() => createFlow("aff")}
+                                    className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none"
+                                >
+                                    <span className="bg-aff size-2 rounded-full" aria-hidden />
+                                    Aff
+                                </button>
+                                <button
+                                    type="button"
+                                    data-testid="empty-start-neg"
+                                    onClick={() => createFlow("neg")}
+                                    className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none"
+                                >
+                                    <span className="bg-neg size-2 rounded-full" aria-hidden />
+                                    Neg
+                                </button>
+                                <button
+                                    type="button"
+                                    data-testid="empty-start-judge"
+                                    onClick={() => createFlow("judge")}
+                                    className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none"
+                                >
+                                    <span
+                                        className="bg-muted-foreground size-2 rounded-full"
+                                        aria-hidden
+                                    />
+                                    Judge
+                                </button>
+                            </div>
+
+                            <p className="text-muted-foreground text-[12.5px]">
+                                Flowing Public Forum or LD? Use + New flow.
                             </p>
                         </div>
-
-                        <div className="flex items-center justify-center gap-2.5">
-                            <button
-                                type="button"
-                                data-testid="empty-start-aff"
-                                onClick={() => createFlow("aff")}
-                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none"
-                            >
-                                <span className="bg-aff size-2 rounded-full" aria-hidden />
-                                Aff
-                            </button>
-                            <button
-                                type="button"
-                                data-testid="empty-start-neg"
-                                onClick={() => createFlow("neg")}
-                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none"
-                            >
-                                <span className="bg-neg size-2 rounded-full" aria-hidden />
-                                Neg
-                            </button>
-                            <button
-                                type="button"
-                                data-testid="empty-start-judge"
-                                onClick={() => createFlow("judge")}
-                                className="border-input bg-card text-foreground hover:border-ring hover:bg-accent focus-visible:border-ring inline-flex items-center gap-2 rounded-md border px-4 py-2 text-[13px] font-medium outline-none"
-                            >
-                                <span
-                                    className="bg-muted-foreground size-2 rounded-full"
-                                    aria-hidden
-                                />
-                                Judge
-                            </button>
-                        </div>
-
-                        <p className="text-muted-foreground text-[12.5px]">
-                            Flowing Public Forum or LD? Use + New flow.
-                        </p>
-                    </div>
-                ) : (
-                    <>
-                        <div className="text-muted-foreground mb-4 flex items-center gap-4 text-[12.5px]">
-                            <span data-testid="flow-count">{summaries.length} flows</span>
-                            <div className="flex-1" />
-                            <label className="flex items-center gap-2">
-                                Sort
-                                <select
-                                    value={sort}
-                                    onChange={(e) => setSort(e.target.value as SortKey)}
-                                    data-testid="sort-select"
-                                    className="border-input bg-card text-foreground focus-visible:border-ring rounded-md border px-2 py-1 outline-none"
+                    ) : (
+                        <>
+                            <div className="text-muted-foreground mb-4 flex items-center gap-4 text-[12.5px]">
+                                <KeyTip chord="f" group="root" next="flows" run={() => {}}>
+                                    <span data-testid="flow-count">{summaries.length} flows</span>
+                                </KeyTip>
+                                <div className="flex-1" />
+                                <KeyTip
+                                    chord="s"
+                                    group="flows"
+                                    run={() => sortRef.current?.focus()}
                                 >
-                                    <option value="updated">Last edited</option>
-                                    <option value="date">Date</option>
-                                    <option value="tournament">Tournament</option>
-                                    <option value="result">Result</option>
-                                </select>
-                            </label>
-                            <label className="flex items-center gap-2">
-                                Group by tournament
-                                <Switch
-                                    checked={grouped}
-                                    onCheckedChange={setGrouped}
-                                    data-testid="group-toggle"
-                                    aria-label="Group by tournament"
-                                />
-                            </label>
-                        </div>
+                                    <label className="flex items-center gap-2">
+                                        Sort
+                                        <select
+                                            ref={sortRef}
+                                            value={sort}
+                                            onChange={(e) => setSort(e.target.value as SortKey)}
+                                            data-testid="sort-select"
+                                            className="border-input bg-card text-foreground focus-visible:border-ring rounded-md border px-2 py-1 outline-none"
+                                        >
+                                            <option value="updated">Last edited</option>
+                                            <option value="date">Date</option>
+                                            <option value="tournament">Tournament</option>
+                                            <option value="result">Result</option>
+                                        </select>
+                                    </label>
+                                </KeyTip>
+                                <KeyTip
+                                    chord="t"
+                                    group="flows"
+                                    next="flows"
+                                    run={() => setGrouped((g) => !g)}
+                                >
+                                    <label className="flex items-center gap-2">
+                                        Group by tournament
+                                        <Switch
+                                            checked={grouped}
+                                            onCheckedChange={setGrouped}
+                                            data-testid="group-toggle"
+                                            aria-label="Group by tournament"
+                                        />
+                                    </label>
+                                </KeyTip>
+                            </div>
 
-                        <LayoutGroup>
-                            <AnimatePresence mode="wait" initial={false}>
-                                {groups ? (
-                                    <m.div
-                                        key="grouped"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.1 }}
-                                    >
-                                        {groups.map((g) => (
-                                            <section key={g.label} className="mb-6">
-                                                <h2 className="text-muted-foreground mb-2 text-[11px] font-bold tracking-widest uppercase">
-                                                    {g.label}
-                                                </h2>
-                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                                    <AnimatePresence
-                                                        mode="popLayout"
-                                                        initial={false}
-                                                    >
-                                                        {g.items.map((s) => (
-                                                            <m.div
-                                                                layout
-                                                                key={s.id}
-                                                                initial={{ opacity: 0 }}
-                                                                animate={{ opacity: 1 }}
-                                                                exit={{ opacity: 0 }}
-                                                            >
-                                                                <FlowCard
-                                                                    summary={s}
-                                                                    onOpen={open}
-                                                                    menu={
-                                                                        <FlowCardMenu
-                                                                            id={s.id}
-                                                                            onViewDetails={
-                                                                                setDetailId
-                                                                            }
-                                                                            onChanged={refresh}
-                                                                        />
-                                                                    }
-                                                                />
-                                                            </m.div>
-                                                        ))}
-                                                    </AnimatePresence>
-                                                </div>
-                                            </section>
-                                        ))}
-                                    </m.div>
-                                ) : (
-                                    <m.div
-                                        key="flat"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.1 }}
-                                        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                                    >
-                                        <AnimatePresence mode="popLayout" initial={false}>
-                                            {sorted.map((match) => (
-                                                <m.div
-                                                    layout
-                                                    key={match.summary.id}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-                                                >
-                                                    <FlowCard
-                                                        summary={match.summary}
-                                                        onOpen={open}
-                                                        menu={
-                                                            <FlowCardMenu
-                                                                id={match.summary.id}
-                                                                onViewDetails={setDetailId}
-                                                                onChanged={refresh}
-                                                            />
-                                                        }
-                                                    />
-                                                </m.div>
+                            <LayoutGroup>
+                                <AnimatePresence mode="wait" initial={false}>
+                                    {groups ? (
+                                        <m.div
+                                            key="grouped"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.1 }}
+                                        >
+                                            {groups.map((g) => (
+                                                <section key={g.label} className="mb-6">
+                                                    <h2 className="text-muted-foreground mb-2 text-[11px] font-bold tracking-widest uppercase">
+                                                        {g.label}
+                                                    </h2>
+                                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                                        <AnimatePresence
+                                                            mode="popLayout"
+                                                            initial={false}
+                                                        >
+                                                            {g.items.map((s) => (
+                                                                <m.div
+                                                                    layout
+                                                                    key={s.id}
+                                                                    initial={{ opacity: 0 }}
+                                                                    animate={{ opacity: 1 }}
+                                                                    exit={{ opacity: 0 }}
+                                                                >
+                                                                    <FlowCard
+                                                                        summary={s}
+                                                                        onOpen={open}
+                                                                        menu={
+                                                                            <FlowCardMenu
+                                                                                id={s.id}
+                                                                                onViewDetails={
+                                                                                    setDetailId
+                                                                                }
+                                                                                onChanged={refresh}
+                                                                            />
+                                                                        }
+                                                                    />
+                                                                </m.div>
+                                                            ))}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                </section>
                                             ))}
-                                        </AnimatePresence>
-                                    </m.div>
-                                )}
-                            </AnimatePresence>
-                        </LayoutGroup>
-                    </>
-                )}
-            </div>
+                                        </m.div>
+                                    ) : (
+                                        <m.div
+                                            key="flat"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.1 }}
+                                            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                                        >
+                                            <AnimatePresence mode="popLayout" initial={false}>
+                                                {sorted.map((match) => (
+                                                    <m.div
+                                                        layout
+                                                        key={match.summary.id}
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                    >
+                                                        <FlowCard
+                                                            summary={match.summary}
+                                                            onOpen={open}
+                                                            menu={
+                                                                <FlowCardMenu
+                                                                    id={match.summary.id}
+                                                                    onViewDetails={setDetailId}
+                                                                    onChanged={refresh}
+                                                                />
+                                                            }
+                                                        />
+                                                    </m.div>
+                                                ))}
+                                            </AnimatePresence>
+                                        </m.div>
+                                    )}
+                                </AnimatePresence>
+                            </LayoutGroup>
+                        </>
+                    )}
+                </div>
 
-            <KeybindingsCheatsheet />
-            <FlowDetailDrawer id={detailId} onClose={() => setDetailId(null)} onChanged={refresh} />
-        </div>
+                <KeybindingsCheatsheet />
+                <FlowDetailDrawer
+                    id={detailId}
+                    onClose={() => setDetailId(null)}
+                    onChanged={refresh}
+                />
+            </div>
+        </KeyTipsProvider>
     );
 }

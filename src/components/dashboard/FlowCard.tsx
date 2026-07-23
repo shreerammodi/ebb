@@ -47,6 +47,8 @@ export default function FlowCard({
         ? {
               role: "button" as const,
               tabIndex: 0,
+              // Roving-focus target for the dashboard's KeyTip flows navigation.
+              "data-keytip-card": "",
               "aria-label": `Open ${aff} vs ${neg}`,
               onClick: () => onOpen(summary.id),
               onKeyDown: (e: React.KeyboardEvent) => {
