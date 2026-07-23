@@ -1,14 +1,26 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 
 import {
     cardNavTarget,
+    DEFAULT_KEYTIPS,
+    effectiveKeytips,
     keyTipParent,
+    type KeytipId,
     type KeyTipGroup,
     type KeyTipMode,
 } from "@/lib/dashboard/keytips";
 import { isTextEntryFocus } from "@/lib/keymap/intercept";
+import { useFlowStore } from "@/lib/store/useFlowStore";
 
 /** DOM marker for a roving-focus flow card. */
 export const CARD_ATTR = "data-keytip-card";
@@ -17,6 +29,18 @@ export const MENU_ATTR = "data-keytip";
 
 /** Keys that are modifiers on their own; pressing one alone never routes. */
 const MODIFIER_KEYS: Record<string, true> = { Shift: true, Control: true, Alt: true, Meta: true };
+
+/**
+ * Number of cards in a grid row: the run of leading cards that share the first
+ * card's vertical position. Up/Down move by this many cards.
+ */
+function gridColumns(cards: NodeListOf<HTMLElement>): number {
+    if (cards.length <= 1) return Math.max(1, cards.length);
+    const top = cards[0].offsetTop;
+    let cols = 1;
+    while (cols < cards.length && cards[cols].offsetTop === top) cols++;
+    return cols;
+}
 
 interface RegisteredTip {
     run: () => void;
@@ -28,6 +52,8 @@ interface KeyTipsContextValue {
     mode: KeyTipMode;
     setMode: (mode: KeyTipMode) => void;
     register: (group: KeyTipGroup, chord: string, tip: RegisteredTip) => () => void;
+    /** Effective chord for every keytip, defaults merged with config overrides. */
+    keytips: Record<KeytipId, string>;
 }
 
 // Default is a live no-op so controls used outside the dashboard (and in their
@@ -36,6 +62,7 @@ const KeyTipsContext = createContext<KeyTipsContextValue>({
     mode: "off",
     setMode: () => {},
     register: () => () => {},
+    keytips: DEFAULT_KEYTIPS,
 });
 
 export function useKeyTips(): KeyTipsContextValue {
@@ -44,6 +71,12 @@ export function useKeyTips(): KeyTipsContextValue {
 
 export function KeyTipsProvider({ children }: { children: React.ReactNode }) {
     const [mode, setMode] = useState<KeyTipMode>("off");
+    const keytipOverrides = useFlowStore((s) => s.keytipOverrides);
+    const keytips = useMemo(() => effectiveKeytips(keytipOverrides), [keytipOverrides]);
+    const keytipsRef = useRef(keytips);
+    useEffect(() => {
+        keytipsRef.current = keytips;
+    }, [keytips]);
     const registry = useRef(new Map<string, RegisteredTip>());
     const modeRef = useRef(mode);
     useEffect(() => {
@@ -66,7 +99,7 @@ export function KeyTipsProvider({ children }: { children: React.ReactNode }) {
 
             if (current === "off") {
                 const bare = !e.metaKey && !e.ctrlKey && !e.altKey;
-                if (e.key === "g" && bare && !isTextEntryFocus(e.target)) {
+                if (e.key === keytipsRef.current.trigger && bare && !isTextEntryFocus(e.target)) {
                     e.preventDefault();
                     setMode("root");
                 }
@@ -101,7 +134,7 @@ export function KeyTipsProvider({ children }: { children: React.ReactNode }) {
                 const cards = document.querySelectorAll<HTMLElement>(`[${CARD_ATTR}]`);
                 const active = document.activeElement as HTMLElement | null;
                 const from = active ? Array.prototype.indexOf.call(cards, active) : -1;
-                const to = cardNavTarget(from, cards.length, e.key);
+                const to = cardNavTarget(from, cards.length, e.key, gridColumns(cards));
                 if (to !== null) {
                     e.preventDefault();
                     cards[to]?.focus();
@@ -155,7 +188,7 @@ export function KeyTipsProvider({ children }: { children: React.ReactNode }) {
     }, [mode]);
 
     return (
-        <KeyTipsContext.Provider value={{ mode, setMode, register }}>
+        <KeyTipsContext.Provider value={{ mode, setMode, register, keytips }}>
             {children}
         </KeyTipsContext.Provider>
     );

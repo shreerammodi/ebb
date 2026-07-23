@@ -69,7 +69,7 @@ export default function ImportExportControls({ onChanged }: ImportExportControls
                 data-testid="import-input"
                 onChange={onFile}
             />
-            <KeyTip chord="i" group="root" run={() => inputRef.current?.click()}>
+            <KeyTip id="root.import" run={() => inputRef.current?.click()}>
                 <Button
                     variant="ghost"
                     size="sm"
@@ -81,7 +81,7 @@ export default function ImportExportControls({ onChanged }: ImportExportControls
                     <span className="max-[899.98px]:hidden">Import</span>
                 </Button>
             </KeyTip>
-            <KeyTip chord="e" group="root" run={() => void exportAll()}>
+            <KeyTip id="root.export" run={() => void exportAll()}>
                 <Button
                     variant="ghost"
                     size="sm"

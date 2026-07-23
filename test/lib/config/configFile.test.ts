@@ -20,6 +20,7 @@ const sample: AppConfig = {
     affColor: "#1d4ed8",
     negColor: null,
     keymapOverrides: { [aCommandId]: "g g" },
+    keytipOverrides: { trigger: "k" },
     updateConfig: { autoCheckEnabled: true },
 };
 
@@ -50,6 +51,19 @@ describe("configFromState -> toAppConfig round-trip", () => {
         for (const id of Object.keys(COMMANDS)) expect(file.keymap).toHaveProperty(id);
         // info.open has no default chord, so it ships as "" ready to fill in.
         expect(file.keymap).toHaveProperty("info.open", "");
+    });
+
+    it("nests keytips, ships every default, and stores none when unchanged", () => {
+        const file = configFromState({ ...sample, keytipOverrides: {} });
+        expect(typeof file.keytips.root).toBe("object");
+        expect(file.keytips).toHaveProperty("trigger", "f");
+        expect(file.keytips).toHaveProperty("root.search", "s");
+        expect(toAppConfig(file).keytipOverrides).toEqual({});
+    });
+
+    it("keeps a keytip chord that differs from its default", () => {
+        const file = configFromState({ ...sample, keytipOverrides: { "root.search": "z" } });
+        expect(toAppConfig(file).keytipOverrides).toEqual({ "root.search": "z" });
     });
 });
 
@@ -86,6 +100,11 @@ describe("toAppConfig validation", () => {
         // under [keymap]; reading must recover them, not drop them.
         const cfg = toAppConfig({ keymap: { "info.open": "z" } });
         expect(cfg.keymapOverrides["info.open"]).toBe("z");
+    });
+
+    it("drops keytip entries for unknown ids", () => {
+        const cfg = toAppConfig({ keytips: { trigger: "k", notAKeytip: "x" } });
+        expect(cfg.keytipOverrides).toEqual({ trigger: "k" });
     });
 
     it("returns a fully-defaulted config for a non-object input", () => {

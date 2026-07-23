@@ -9,12 +9,14 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ### Added
 
-- Excel-style KeyTips on the dashboard. Press `g` to paint the key for every
-  control, then a key to fire it: `n` new flow, `i` import, `e` export, `t`
-  trash, `,` settings, `?` shortcuts. `f` focuses the flow list for arrow-key
-  navigation and Enter to open, and reveals `s` (sort) and `t` (group by
-  tournament). Entering the new-flow menu paints keys for every flow type,
-  including the Public Forum first-speaker submenu. Escape steps back a level.
+- Excel-style KeyTips on the dashboard. Push `f` to paint the key for each
+  control, then push a key to fire it: `n` new flow, `i` import, `e` export,
+  `t` trash, `s` search, `,` settings, and `?` shortcuts. `l` focuses the flow
+  list for arrow-key navigation, where Up and Down move a full grid row, and
+  reveals `s` (sort) and `t` (group by tournament). The new-flow menu paints a
+  key for each flow type, including the Public Forum first-speaker submenu.
+  Escape steps back one level. Every key is configurable in `config.toml` under
+  the `[keytips]` table.
 
 ### Fixed
 

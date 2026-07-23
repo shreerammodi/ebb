@@ -4,7 +4,7 @@ import { m } from "motion/react";
 import { useEffect, useRef } from "react";
 
 import { Kbd } from "@/components/ui/kbd";
-import type { KeyTipGroup, KeyTipMode } from "@/lib/dashboard/keytips";
+import type { KeyTipGroup, KeyTipMode, KeytipId } from "@/lib/dashboard/keytips";
 import { cn } from "@/lib/utils";
 
 import { useKeyTips } from "./KeyTipsProvider";
@@ -20,10 +20,8 @@ const PLACEMENT: Record<Placement, string> = {
 };
 
 export interface KeyTipProps {
-    /** Key the user presses to fire this tip. */
-    chord: string;
-    /** Overlay level this tip belongs to and is painted in. */
-    group: KeyTipGroup;
+    /** Keytip identity; its chord and group come from the effective config. */
+    id: KeytipId;
     /** Action to run when the chord is pressed. */
     run: () => void;
     /** Mode to enter afterward; defaults to closing the overlay. */
@@ -39,15 +37,16 @@ export interface KeyTipProps {
  * glued to the control, so it follows layout without any measurement.
  */
 export function KeyTip({
-    chord,
-    group,
+    id,
     run,
     next = "off",
     placement = "tl",
     className,
     children,
 }: KeyTipProps) {
-    const { mode, register } = useKeyTips();
+    const { mode, register, keytips } = useKeyTips();
+    const group = id.split(".")[0] as KeyTipGroup;
+    const chord = keytips[id];
     // The run closure changes every render; mirror it into a ref so the
     // registration below stays stable instead of re-registering each render.
     const runRef = useRef(run);
@@ -55,17 +54,17 @@ export function KeyTip({
         runRef.current = run;
     });
 
-    useEffect(
-        () => register(group, chord, { run: () => runRef.current(), next }),
-        [register, group, chord, next],
-    );
+    useEffect(() => {
+        if (!chord) return;
+        return register(group, chord, { run: () => runRef.current(), next });
+    }, [register, group, chord, next]);
 
     return (
         <span className={cn("relative inline-flex", className)}>
             {children}
-            {mode === group && (
+            {mode === group && chord && (
                 <m.span
-                    data-testid={`keytip-${chord}`}
+                    data-testid={`keytip-${id}`}
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.12, ease: [0.25, 1, 0.5, 1] }}

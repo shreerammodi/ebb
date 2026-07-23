@@ -46,6 +46,8 @@ export interface FlowState {
     speechTarget: { speechId: string } | null;
     /** CommandId -> custom chord, overriding the preset binding. */
     keymapOverrides: Record<string, string>;
+    /** KeytipId -> custom chord, overriding the dashboard keytip default. */
+    keytipOverrides: Record<string, string>;
     flowFont: FontId;
     /** Live grid-only zoom (1 = 100%); scales the flow grid, not the chrome. Session-only, seeded from defaultGridZoom. */
     gridZoom: number;
@@ -112,6 +114,8 @@ export interface FlowActions {
     setScouting(patch: Partial<Scouting>): void;
     setKeymapOverride(commandId: CommandId, chord: string): void;
     clearKeymapOverride(commandId: CommandId): void;
+    setKeytipOverride(id: string, chord: string): void;
+    clearKeytipOverride(id: string): void;
     setFlowFont(id: FontId): void;
     /** Sets the live grid zoom to an absolute factor, clamped to the zoom bounds. */
     setGridZoom(zoom: number): void;
@@ -164,6 +168,7 @@ export interface AppConfig {
     affColor: string | null;
     negColor: string | null;
     keymapOverrides: Record<string, string>;
+    keytipOverrides: Record<string, string>;
     updateConfig: UpdateConfig;
 }
 
@@ -171,6 +176,7 @@ export interface AppConfig {
 
 const KEYMAP_SETTINGS_KEY = "ebb-keymap-settings";
 const DISPLAY_SETTINGS_KEY = "ebb-display-settings";
+const KEYTIP_SETTINGS_KEY = "ebb-keytip-settings";
 export const ZOOM_MIN = 0.5;
 export const ZOOM_MAX = 3;
 /** One "zoom in/out" step: 10%. */
@@ -205,6 +211,27 @@ function saveKeymapOverrides(keymapOverrides: Record<string, string>): void {
     if (typeof window === "undefined") return;
     try {
         window.localStorage.setItem(KEYMAP_SETTINGS_KEY, JSON.stringify({ keymapOverrides }));
+    } catch {
+        // localStorage unavailable (private mode, quota) - ignore.
+    }
+}
+
+function loadKeytipOverrides(): Record<string, string> {
+    if (typeof window === "undefined") return {};
+    try {
+        const raw = window.localStorage.getItem(KEYTIP_SETTINGS_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw) as { keytipOverrides?: Record<string, string> };
+        return parsed.keytipOverrides ?? {};
+    } catch {
+        return {};
+    }
+}
+
+function saveKeytipOverrides(keytipOverrides: Record<string, string>): void {
+    if (typeof window === "undefined") return;
+    try {
+        window.localStorage.setItem(KEYTIP_SETTINGS_KEY, JSON.stringify({ keytipOverrides }));
     } catch {
         // localStorage unavailable (private mode, quota) - ignore.
     }
@@ -334,6 +361,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     focusedPane: 1,
     speechTarget: null,
     keymapOverrides: loadKeymapOverrides(),
+    keytipOverrides: loadKeytipOverrides(),
     flowFont: initialDisplaySettings.flowFont,
     gridZoom: initialDisplaySettings.defaultGridZoom,
     defaultGridZoom: initialDisplaySettings.defaultGridZoom,
@@ -577,6 +605,19 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         set({ keymapOverrides });
     },
 
+    setKeytipOverride(id, chord) {
+        const keytipOverrides = { ...get().keytipOverrides, [id]: chord };
+        saveKeytipOverrides(keytipOverrides);
+        set({ keytipOverrides });
+    },
+
+    clearKeytipOverride(id) {
+        const keytipOverrides = { ...get().keytipOverrides };
+        delete keytipOverrides[id];
+        saveKeytipOverrides(keytipOverrides);
+        set({ keytipOverrides });
+    },
+
     setFlowFont(id) {
         saveDisplaySettings({ ...displaySettingsOf(get()), flowFont: id });
         set({ flowFont: id });
@@ -636,12 +677,19 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     },
 
     applyExternalConfig(config) {
-        const { keymapOverrides, updateConfig, ...display } = config;
+        const { keymapOverrides, keytipOverrides, updateConfig, ...display } = config;
         saveDisplaySettings(display);
         saveKeymapOverrides(keymapOverrides);
+        saveKeytipOverrides(keytipOverrides);
         saveUpdateConfig(updateConfig);
         // The live grid follows the incoming default; on boot they already match.
-        set({ ...display, gridZoom: display.defaultGridZoom, keymapOverrides, updateConfig });
+        set({
+            ...display,
+            gridZoom: display.defaultGridZoom,
+            keymapOverrides,
+            keytipOverrides,
+            updateConfig,
+        });
     },
 
     setQuickSwitcherOpen(open, seed = "") {

@@ -108,19 +108,30 @@ export default function Dashboard() {
             <div className="bg-background min-h-screen">
                 <div className="border-border bg-card flex items-center gap-3 border-b px-5 py-4">
                     <Logo className="text-foreground h-5 w-auto" />
-                    <Input
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search flows…"
-                        className="h-9 min-w-0 flex-1 min-[900px]:max-w-[360px]"
-                        data-testid="dashboard-search"
-                    />
+                    <KeyTip
+                        id="root.search"
+                        className="min-w-0 flex-1 min-[900px]:max-w-[360px]"
+                        placement="bl"
+                        run={() =>
+                            document
+                                .querySelector<HTMLInputElement>('[data-testid="dashboard-search"]')
+                                ?.focus()
+                        }
+                    >
+                        <Input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search flows…"
+                            className="h-9 w-full"
+                            data-testid="dashboard-search"
+                        />
+                    </KeyTip>
                     {/* On wide screens this fills the gap and pushes the controls
                     right; below 900px it collapses so the search claims the
                     space the icon-only buttons free up. */}
                     <div className="flex-1 max-[899.98px]:hidden" />
                     <ImportExportControls onChanged={refresh} />
-                    <KeyTip chord="t" group="root" run={() => router.push("/trash")}>
+                    <KeyTip id="root.trash" run={() => router.push("/trash")}>
                         <Button variant="ghost" size="sm" asChild aria-label="Trash">
                             <Link href="/trash" data-testid="dashboard-trash-link">
                                 <Trash className="size-4.5" />
@@ -129,8 +140,7 @@ export default function Dashboard() {
                         </Button>
                     </KeyTip>
                     <KeyTip
-                        chord="?"
-                        group="root"
+                        id="root.help"
                         run={() => useFlowStore.getState().setCheatsheetOpen(true)}
                     >
                         <Button
@@ -144,8 +154,7 @@ export default function Dashboard() {
                         </Button>
                     </KeyTip>
                     <KeyTip
-                        chord=","
-                        group="root"
+                        id="root.settings"
                         run={() => useFlowStore.getState().setSettingsOpen(true)}
                     >
                         <Button
@@ -159,8 +168,7 @@ export default function Dashboard() {
                         </Button>
                     </KeyTip>
                     <KeyTip
-                        chord="n"
-                        group="root"
+                        id="root.new"
                         next="new"
                         run={() =>
                             document.querySelector<HTMLElement>('[data-testid="new-flow"]')?.click()
@@ -226,15 +234,11 @@ export default function Dashboard() {
                     ) : (
                         <>
                             <div className="text-muted-foreground mb-4 flex items-center gap-4 text-[12.5px]">
-                                <KeyTip chord="f" group="root" next="flows" run={() => {}}>
+                                <KeyTip id="root.flows" next="flows" run={() => {}}>
                                     <span data-testid="flow-count">{summaries.length} flows</span>
                                 </KeyTip>
                                 <div className="flex-1" />
-                                <KeyTip
-                                    chord="s"
-                                    group="flows"
-                                    run={() => sortRef.current?.focus()}
-                                >
+                                <KeyTip id="flows.sort" run={() => sortRef.current?.focus()}>
                                     <label className="flex items-center gap-2">
                                         Sort
                                         <select
@@ -252,8 +256,7 @@ export default function Dashboard() {
                                     </label>
                                 </KeyTip>
                                 <KeyTip
-                                    chord="t"
-                                    group="flows"
+                                    id="flows.group"
                                     next="flows"
                                     run={() => setGrouped((g) => !g)}
                                 >

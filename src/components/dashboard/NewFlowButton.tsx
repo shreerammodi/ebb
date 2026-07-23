@@ -13,6 +13,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Kbd } from "@/components/ui/kbd";
+import type { KeytipId } from "@/lib/dashboard/keytips";
 import type { Role, Side } from "@/lib/model/types";
 
 import { MENU_ATTR, useKeyTips } from "./keytips/KeyTipsProvider";
@@ -21,36 +22,33 @@ import { useCreateFlow } from "./useCreateFlow";
 interface FlowChoice {
     role: Role;
     label: string;
-    /** KeyTip chord; unique across every top-level item in this menu. */
-    key: string;
+    /** Keytip whose configured chord fires this item. */
+    tip: KeytipId;
 }
 
-// Distinct keys per visible item: Policy on the home cluster, PF on f/g/h, LD
-// on l/k/d. The PF first-speaker submenu reuses a/n because only one submenu is
-// open at a time and the overlay routes to the deepest visible match.
 const POLICY: FlowChoice[] = [
-    { role: "aff", label: "Aff", key: "a" },
-    { role: "neg", label: "Neg", key: "n" },
-    { role: "judge", label: "Judge", key: "j" },
+    { role: "aff", label: "Aff", tip: "new.policyAff" },
+    { role: "neg", label: "Neg", tip: "new.policyNeg" },
+    { role: "judge", label: "Judge", tip: "new.policyJudge" },
 ];
 const PF: FlowChoice[] = [
-    { role: "aff", label: "Aff", key: "f" },
-    { role: "neg", label: "Neg", key: "g" },
-    { role: "judge", label: "Judge", key: "h" },
+    { role: "aff", label: "Aff", tip: "new.pfAff" },
+    { role: "neg", label: "Neg", tip: "new.pfNeg" },
+    { role: "judge", label: "Judge", tip: "new.pfJudge" },
 ];
 const LD: FlowChoice[] = [
-    { role: "aff", label: "Aff", key: "l" },
-    { role: "neg", label: "Neg", key: "k" },
-    { role: "judge", label: "Judge", key: "d" },
+    { role: "aff", label: "Aff", tip: "new.ldAff" },
+    { role: "neg", label: "Neg", tip: "new.ldNeg" },
+    { role: "judge", label: "Judge", tip: "new.ldJudge" },
 ];
-const PF_ORDERS: { firstSide: Side; label: string; key: string }[] = [
-    { firstSide: "aff", label: "Aff speaks first", key: "a" },
-    { firstSide: "neg", label: "Neg speaks first", key: "n" },
+const PF_ORDERS: { firstSide: Side; label: string; tip: KeytipId }[] = [
+    { firstSide: "aff", label: "Aff speaks first", tip: "new.pfFirstAff" },
+    { firstSide: "neg", label: "Neg speaks first", tip: "new.pfFirstNeg" },
 ];
 
 export default function NewFlowButton() {
     const create = useCreateFlow();
-    const { mode, setMode } = useKeyTips();
+    const { mode, setMode, keytips } = useKeyTips();
     const tips = mode === "new";
 
     // The menu stays uncontrolled (mouse still opens it standalone); opening
@@ -64,38 +62,40 @@ export default function NewFlowButton() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Policy</DropdownMenuLabel>
-                {POLICY.map(({ role, label, key }) => (
+                {POLICY.map(({ role, label, tip }) => (
                     <DropdownMenuItem
                         key={role}
                         data-testid={`new-flow-role-${role}`}
-                        {...{ [MENU_ATTR]: key }}
+                        {...{ [MENU_ATTR]: keytips[tip] }}
                         onSelect={() => create(role)}
                     >
                         {label}
-                        {tips && <Kbd className="ml-auto">{key}</Kbd>}
+                        {tips && keytips[tip] && <Kbd className="ml-auto">{keytips[tip]}</Kbd>}
                     </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Public Forum</DropdownMenuLabel>
-                {PF.map(({ role, label, key }) => (
+                {PF.map(({ role, label, tip }) => (
                     <DropdownMenuSub key={role}>
                         <DropdownMenuSubTrigger
                             data-testid={`new-flow-pf-${role}`}
-                            {...{ [MENU_ATTR]: key }}
+                            {...{ [MENU_ATTR]: keytips[tip] }}
                         >
                             {label}
-                            {tips && <Kbd className="ml-auto">{key}</Kbd>}
+                            {tips && keytips[tip] && <Kbd className="ml-auto">{keytips[tip]}</Kbd>}
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent>
-                            {PF_ORDERS.map(({ firstSide, label: orderLabel, key: orderKey }) => (
+                            {PF_ORDERS.map(({ firstSide, label: orderLabel, tip: orderTip }) => (
                                 <DropdownMenuItem
                                     key={firstSide}
                                     data-testid={`new-flow-pf-${role}-${firstSide}`}
-                                    {...{ [MENU_ATTR]: orderKey }}
+                                    {...{ [MENU_ATTR]: keytips[orderTip] }}
                                     onSelect={() => create(role, "pf", firstSide)}
                                 >
                                     {orderLabel}
-                                    {tips && <Kbd className="ml-auto">{orderKey}</Kbd>}
+                                    {tips && keytips[orderTip] && (
+                                        <Kbd className="ml-auto">{keytips[orderTip]}</Kbd>
+                                    )}
                                 </DropdownMenuItem>
                             ))}
                         </DropdownMenuSubContent>
@@ -103,15 +103,15 @@ export default function NewFlowButton() {
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Lincoln-Douglas</DropdownMenuLabel>
-                {LD.map(({ role, label, key }) => (
+                {LD.map(({ role, label, tip }) => (
                     <DropdownMenuItem
                         key={role}
                         data-testid={`new-flow-ld-${role}`}
-                        {...{ [MENU_ATTR]: key }}
+                        {...{ [MENU_ATTR]: keytips[tip] }}
                         onSelect={() => create(role, "ld")}
                     >
                         {label}
-                        {tips && <Kbd className="ml-auto">{key}</Kbd>}
+                        {tips && keytips[tip] && <Kbd className="ml-auto">{keytips[tip]}</Kbd>}
                     </DropdownMenuItem>
                 ))}
             </DropdownMenuContent>

@@ -49,24 +49,26 @@ beforeEach(async () => {
     invalidateFlowSummaries();
     push.mockReset();
     localStorage.clear();
+    useFlowStore.setState({ keytipOverrides: {} });
     useFlowStore.getState().setSettingsOpen(false);
     useFlowStore.getState().setCheatsheetOpen(false);
 });
 
 describe("dashboard keytips", () => {
-    it("g paints the root tips and Escape clears them", async () => {
+    it("f paints the root tips and Escape clears them", async () => {
         await persistFlow(mk("a", { updatedAt: 5 }));
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
 
-        expect(screen.queryByTestId("keytip-i")).toBeNull();
-        press("g");
-        expect(screen.getByTestId("keytip-i")).toBeInTheDocument();
-        expect(screen.getByTestId("keytip-n")).toBeInTheDocument();
-        expect(screen.getByTestId("keytip-f")).toBeInTheDocument();
+        expect(screen.queryByTestId("keytip-root.import")).toBeNull();
+        press("f");
+        expect(screen.getByTestId("keytip-root.import")).toBeInTheDocument();
+        expect(screen.getByTestId("keytip-root.new")).toBeInTheDocument();
+        expect(screen.getByTestId("keytip-root.search")).toBeInTheDocument();
+        expect(screen.getByTestId("keytip-root.flows")).toBeInTheDocument();
 
         press("Escape");
-        expect(screen.queryByTestId("keytip-i")).toBeNull();
+        expect(screen.queryByTestId("keytip-root.import")).toBeNull();
     });
 
     it("does not activate while the search box is focused", async () => {
@@ -74,8 +76,20 @@ describe("dashboard keytips", () => {
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
 
-        fireEvent.keyDown(screen.getByTestId("dashboard-search"), { key: "g" });
-        expect(screen.queryByTestId("keytip-i")).toBeNull();
+        fireEvent.keyDown(screen.getByTestId("dashboard-search"), { key: "f" });
+        expect(screen.queryByTestId("keytip-root.import")).toBeNull();
+    });
+
+    it("respects a configured trigger override", async () => {
+        useFlowStore.getState().setKeytipOverride("trigger", "k");
+        await persistFlow(mk("a"));
+        renderDashboard();
+        await waitFor(() => screen.getByTestId("flow-card-a"));
+
+        press("f");
+        expect(screen.queryByTestId("keytip-root.import")).toBeNull();
+        press("k");
+        expect(screen.getByTestId("keytip-root.import")).toBeInTheDocument();
     });
 
     it("t opens the trash", async () => {
@@ -83,9 +97,19 @@ describe("dashboard keytips", () => {
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
 
-        press("g");
+        press("f");
         press("t");
         expect(push).toHaveBeenCalledWith("/trash");
+    });
+
+    it("s focuses the search box", async () => {
+        await persistFlow(mk("a"));
+        renderDashboard();
+        await waitFor(() => screen.getByTestId("flow-card-a"));
+
+        press("f");
+        press("s");
+        expect(document.activeElement).toBe(screen.getByTestId("dashboard-search"));
     });
 
     it("? opens the shortcut cheatsheet and , opens settings", async () => {
@@ -93,11 +117,11 @@ describe("dashboard keytips", () => {
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
 
-        press("g");
+        press("f");
         press("?");
         expect(useFlowStore.getState().cheatsheetOpen).toBe(true);
 
-        press("g");
+        press("f");
         press(",");
         expect(useFlowStore.getState().settingsOpen).toBe(true);
     });
@@ -107,7 +131,7 @@ describe("dashboard keytips", () => {
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
 
-        press("g");
+        press("f");
         press("n");
         await screen.findByTestId("new-flow-role-aff");
         press("a");
@@ -115,14 +139,14 @@ describe("dashboard keytips", () => {
         expect(push.mock.calls[0][0]).toContain("/flow?id=");
     });
 
-    it("f focuses the first card and Enter opens it", async () => {
+    it("l focuses the first card and Enter opens it", async () => {
         await persistFlow(mk("a", { updatedAt: 9 }));
         await persistFlow(mk("b", { updatedAt: 5 }));
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
 
-        press("g");
         press("f");
+        press("l");
         expect(document.activeElement).toBe(screen.getByTestId("flow-card-a"));
 
         press("ArrowRight");
@@ -132,25 +156,25 @@ describe("dashboard keytips", () => {
         expect(push).toHaveBeenCalledWith("/flow?id=b");
     });
 
-    it("f then s focuses the sort control", async () => {
+    it("l then s focuses the sort control", async () => {
         await persistFlow(mk("a"));
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
 
-        press("g");
         press("f");
+        press("l");
         press("s");
         expect(document.activeElement).toBe(screen.getByTestId("sort-select"));
     });
 
-    it("f then t groups by tournament", async () => {
+    it("l then t groups by tournament", async () => {
         await persistFlow(mk("a", { scouting: { ...emptyScouting(), tournament: "Berkeley" } }));
         await persistFlow(mk("b", { scouting: { ...emptyScouting(), tournament: "TOC" } }));
         renderDashboard();
         await waitFor(() => screen.getByTestId("flow-card-a"));
 
-        press("g");
         press("f");
+        press("l");
         press("t");
         await waitFor(() =>
             expect(screen.getByTestId("group-toggle")).toHaveAttribute("aria-checked", "true"),
