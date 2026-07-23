@@ -80,6 +80,23 @@ describe("dashboard keytips", () => {
         expect(screen.queryByTestId("keytip-root.import")).toBeNull();
     });
 
+    it("Escape blurs the search box so the trigger works again", async () => {
+        await persistFlow(mk("a"));
+        renderDashboard();
+        await waitFor(() => screen.getByTestId("flow-card-a"));
+
+        const search = screen.getByTestId("dashboard-search");
+        fireEvent.keyDown(search, { key: "s" });
+        search.focus();
+        expect(document.activeElement).toBe(search);
+
+        fireEvent.keyDown(search, { key: "Escape" });
+        expect(document.activeElement).not.toBe(search);
+
+        press("f");
+        expect(screen.getByTestId("keytip-root.import")).toBeInTheDocument();
+    });
+
     it("respects a configured trigger override", async () => {
         useFlowStore.getState().setKeytipOverride("trigger", "k");
         await persistFlow(mk("a"));

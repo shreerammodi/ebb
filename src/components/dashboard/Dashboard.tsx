@@ -154,6 +154,11 @@ export default function Dashboard() {
                             ref={searchRef}
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                // Escape releases the input so the bare trigger
+                                // key reaches the keytips layer again.
+                                if (e.key === "Escape") e.currentTarget.blur();
+                            }}
                             placeholder="Search flows…"
                             className="h-9 w-full"
                             data-testid="dashboard-search"
