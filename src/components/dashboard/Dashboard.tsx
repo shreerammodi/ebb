@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { filterFlows } from "@/lib/dashboard/filter";
 import { sortSummaries, groupByTournament, type SortKey } from "@/lib/dashboard/organize";
 import { listFlows, type RoundSummary } from "@/lib/persistence/flowPersistence";
+import { isMacPlatform } from "@/lib/platform";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import FlowCard from "./FlowCard";
@@ -49,6 +50,7 @@ export default function Dashboard() {
     const [grouped, setGrouped] = useState(false);
     const [detailId, setDetailId] = useState<string | null>(null);
     const sortRef = useRef<HTMLButtonElement>(null);
+    const searchRef = useRef<HTMLInputElement>(null);
 
     const createFlow = useCreateFlow();
 
@@ -78,6 +80,22 @@ export default function Dashboard() {
             else window.clearTimeout(handle);
         };
     }, [router]);
+
+    // Mod+F searches flows rather than opening the browser's find bar. The text
+    // is selected too, so a second press retypes over the live query.
+    // ponytail: local listener, not a keymap command - the keymap addresses a
+    // flow that isn't loaded here, and nothing on this screen is rebindable.
+    useEffect(() => {
+        function onKeyDown(e: KeyboardEvent) {
+            const mod = isMacPlatform() ? e.metaKey : e.ctrlKey;
+            if (e.key !== "f" || !mod || e.altKey || e.shiftKey) return;
+            e.preventDefault();
+            searchRef.current?.focus();
+            searchRef.current?.select();
+        }
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, []);
 
     const open = useCallback((id: string) => router.push(`/flow?id=${id}`), [router]);
 
@@ -133,6 +151,7 @@ export default function Dashboard() {
                         }
                     >
                         <Input
+                            ref={searchRef}
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder="Search flows…"

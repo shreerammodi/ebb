@@ -92,6 +92,17 @@ describe("Dashboard", () => {
         await waitFor(() => expect(screen.queryByTestId("flow-card-a")).not.toBeInTheDocument());
         expect(screen.getByTestId("flow-card-b")).toBeInTheDocument();
     });
+
+    it("focuses the search box on the mod+f chord", async () => {
+        await persistFlow(mk("a"));
+        renderDashboard();
+        await waitFor(() => screen.getByTestId("flow-card-a"));
+        const mod = navigator.platform.toLowerCase().includes("mac")
+            ? { metaKey: true }
+            : { ctrlKey: true };
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "f", code: "KeyF", ...mod }));
+        expect(screen.getByTestId("dashboard-search")).toHaveFocus();
+    });
 });
 
 describe("Dashboard first-run", () => {
