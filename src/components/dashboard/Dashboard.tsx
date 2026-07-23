@@ -11,6 +11,13 @@ import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { filterFlows } from "@/lib/dashboard/filter";
@@ -27,6 +34,13 @@ import { KeyTipsProvider } from "./keytips/KeyTipsProvider";
 import NewFlowButton from "./NewFlowButton";
 import { useCreateFlow } from "./useCreateFlow";
 
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+    { value: "updated", label: "Last edited" },
+    { value: "date", label: "Date" },
+    { value: "tournament", label: "Tournament" },
+    { value: "result", label: "Result" },
+];
+
 export default function Dashboard() {
     const router = useRouter();
     const [summaries, setSummaries] = useState<RoundSummary[] | null>(null);
@@ -34,7 +48,7 @@ export default function Dashboard() {
     const [sort, setSort] = useState<SortKey>("updated");
     const [grouped, setGrouped] = useState(false);
     const [detailId, setDetailId] = useState<string | null>(null);
-    const sortRef = useRef<HTMLSelectElement>(null);
+    const sortRef = useRef<HTMLButtonElement>(null);
 
     const createFlow = useCreateFlow();
 
@@ -239,21 +253,32 @@ export default function Dashboard() {
                                 </KeyTip>
                                 <div className="flex-1" />
                                 <KeyTip id="flows.sort" run={() => sortRef.current?.focus()}>
-                                    <label className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2">
                                         Sort
-                                        <select
-                                            ref={sortRef}
+                                        <Select
                                             value={sort}
-                                            onChange={(e) => setSort(e.target.value as SortKey)}
-                                            data-testid="sort-select"
-                                            className="border-input bg-card text-foreground focus-visible:border-ring rounded-md border px-2 py-1 outline-none"
+                                            // Base UI Select renders the raw value unless given a
+                                            // value->label map to resolve the trigger display.
+                                            items={SORT_OPTIONS}
+                                            onValueChange={(value) => setSort(value as SortKey)}
                                         >
-                                            <option value="updated">Last edited</option>
-                                            <option value="date">Date</option>
-                                            <option value="tournament">Tournament</option>
-                                            <option value="result">Result</option>
-                                        </select>
-                                    </label>
+                                            <SelectTrigger
+                                                ref={sortRef}
+                                                size="sm"
+                                                aria-label="Sort"
+                                                data-testid="sort-select"
+                                            >
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {SORT_OPTIONS.map((o) => (
+                                                    <SelectItem key={o.value} value={o.value}>
+                                                        {o.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </KeyTip>
                                 <KeyTip
                                     id="flows.group"
