@@ -1,7 +1,7 @@
 {
     "$schema": "../gen/schemas/desktop-schema.json",
     "identifier": "default",
-    "description": "Core capabilities for the main Ebb window.",
+    "description": "Core capabilities for the main ebb window.",
     "windows": ["main"],
     "permissions": [
         "core:default",

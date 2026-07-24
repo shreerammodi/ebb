@@ -23,7 +23,7 @@ Desktop builds are found on the [releases page](https://github.com/shreerammodi/
 - Apple Silicon: `*.aarch64.dmg`
 - Intel: `*.dmg`
 
-2. Open the `*.dmg` file, and drag Ebb to your Applications folder.
+2. Open the `*.dmg` file, and drag ebb to your Applications folder.
 
 On first launch, you will need to authorize the app to open since it's unsigned.
 
@@ -35,13 +35,13 @@ go to System Settings > Privacy & Security > scroll down > click "Open Anyway".
 
 If instead you see:
 
-> "Ebb.app" is damaged and can't be opened. You should move it to the Trash
+> "ebb.app" is damaged and can't be opened. You should move it to the Trash
 
 this is macOS Gatekeeper quarantining the download, not actual damage. Remove
 the quarantine flag in Terminal, then open the app normally:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/Ebb.app
+xattr -dr com.apple.quarantine /Applications/ebb.app
 ```
 
 If you would like to download standalone versions, you can download the
@@ -60,8 +60,8 @@ On first launch, you'll see "Windows protected your PC." Click More info > Run a
 2. Make it executable and run it:
 
 ```bash
-chmod +x Ebb_*.AppImage
-./Ebb_*.AppImage
+chmod +x ebb_*.AppImage
+./ebb_*.AppImage
 ```
 
 ## Building From Source

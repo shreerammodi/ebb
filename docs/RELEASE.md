@@ -72,7 +72,7 @@ autosave) and the user controls when they reload.
 A 4-way build matrix (`fail-fast: false`) - macOS arm64, macOS x64, Linux x64,
 Windows x64 - runs `tauri-apps/tauri-action`, which builds each installer, signs
 the updater artifacts with the Ed25519 key, generates `latest.json`, and uploads
-everything to a **draft** GitHub Release named `Ebb vX.Y.Z`.
+everything to a **draft** GitHub Release named `ebb vX.Y.Z`.
 
 `releaseDraft: true` is the safety valve: the updater reads
 `releases/latest/download/latest.json`, and a draft is never "latest", so

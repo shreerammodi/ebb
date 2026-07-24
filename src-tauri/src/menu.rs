@@ -55,17 +55,17 @@ pub fn build<R: Runtime>(
 
     // Custom Quit so we own the only deliberate exit (handled in lib.rs via
     // app.exit). Meta+Q is not an app binding, so the accelerator is safe.
-    let quit = MenuItemBuilder::new("Quit Ebb")
+    let quit = MenuItemBuilder::new("Quit ebb")
         .id(QUIT_ID)
         .accelerator("CmdOrCtrl+Q")
         .build(app)?;
 
     // macOS application menu (the bold first menu). On other platforms this
-    // simply contributes a leading "Ebb" submenu, which is harmless.
-    let app_menu = SubmenuBuilder::new(app, "Ebb")
+    // simply contributes a leading "ebb" submenu, which is harmless.
+    let app_menu = SubmenuBuilder::new(app, "ebb")
         .item(&PredefinedMenuItem::about(
             app,
-            Some("About Ebb"),
+            Some("About ebb"),
             Some(AboutMetadata::default()),
         )?)
         .separator()
