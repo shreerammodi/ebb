@@ -61,8 +61,8 @@ iroh-mdns-address-lookup = "0.4"
 # Pairing by short code. Both sides run one HKDF-SHA256 over the code to reach
 # the same key and the same relay, which is what lets a code be an address a
 # person carries with nothing published anywhere. RustCrypto, no network, no C.
-hkdf = "0.12"
-sha2 = "0.10"
+hkdf = "0.13"
+sha2 = "0.11"
 # iroh is async, so the collab module owns one runtime. The rest of the shell
 # stays synchronous, the way tiny_http does on its own thread. `time` is what
 # bounds a wait on a peer: an unadmitted dial and an unreachable dial are both
