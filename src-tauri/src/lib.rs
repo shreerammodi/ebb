@@ -134,6 +134,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             bridge::bridge_reply,
             bridge::cardmirror_insert,
+            bridge::cardmirror_insert_after,
             bridge::cardmirror_jump,
             bridge::cardmirror_replace,
             collab::collab_claim,

@@ -6,12 +6,23 @@
  * pushes the new text into the document, so the tag they sharpened on the flow
  * is the tag they read back in their file afterwards.
  *
+ * A line typed inside a run of those cells goes out too, as a new node right
+ * after the one above it. A debater who adds an argument in the middle of a
+ * card they flowed is writing a line that belongs in the file with the rest of
+ * them, and the document is where the run it joined already lives. A run is
+ * what a blank cell ends, and it has to hold a linked cell on both sides of
+ * the new line: the one above is the address, and the one below is what keeps
+ * the analytic typed under the last line of a send in the flow, since a rule
+ * that read upward alone would append every one of them to a document nobody
+ * asked to grow. CardMirror answers with the new node's token, and the cell
+ * adopts it, so from then on it is an ordinary linked cell.
+ *
  * It is silent on the way through. A push runs on every settled edit of a
  * sourced cell, so anything chatty here would talk over the round: success says
  * nothing at all, and each distinct failure says its piece once per session.
  *
  * Three rules bound what may leave. The push is the cell's first line alone,
- * because that is all the token names. Nothing is ever removed from the
+ * because that is all a token names. Nothing is ever removed from the
  * document, so an empty first line pushes nothing. And only provenance minted
  * on this machine is used, because a partner's token means nothing to the
  * CardMirror running here.
@@ -20,11 +31,12 @@
  * all on, nothing is queued and no timer runs.
  */
 
+import type Handsontable from "handsontable";
 import { toast } from "sonner";
 
 import { isForeignSource, sourceOwner } from "@/lib/collab/foreignSource";
 import { getReplica, replicaActor } from "@/lib/collab/replica";
-import { gridCol, toModelCol } from "@/lib/grid/colSpace";
+import { gridCol, toModelCol, type ModelCol } from "@/lib/grid/colSpace";
 import {
     getActiveHot,
     getActiveSheetId,
@@ -34,7 +46,7 @@ import {
 import type { CellSource } from "@/lib/model/flow";
 
 import type { BridgeCall, CardMirrorReply } from "./cardmirror";
-import { cardmirrorReplace } from "./cardmirror";
+import { cardmirrorInsertAfter, cardmirrorReplace } from "./cardmirror";
 import { CONSENT_MESSAGE } from "./commands";
 import { cardmirrorPushLive } from "./enabled";
 import { CARDMIRROR_APP } from "./flowPlan";
@@ -91,6 +103,14 @@ const PENDING_REASON = "pending";
 const PENDING_MESSAGE =
     "Waiting for approval in CardMirror. Your edit lands there when you allow ebb.";
 
+/**
+ * What a new line gets instead of the ordinary failure line. Every message
+ * above promises the text stayed in the flow, and about a line CardMirror may
+ * have written and lost the handle to, that is a promise ebb cannot make.
+ */
+const UNSETTLED_MESSAGE =
+    "CardMirror did not say where that new line went, so ebb will not send it again.";
+
 /** One address in the queue. */
 interface QueuedCell {
     sheetId: string;
@@ -98,17 +118,37 @@ interface QueuedCell {
     col: number;
 }
 
-/** What a cell has to push, read live off the grid. */
-interface Pushable {
-    text: string;
-    source: CellSource;
-}
+/**
+ * What a cell has CardMirror do, read live off the grid: rewrite the node it
+ * came from, or create one for a line that has none, after the node the cell
+ * above it came from.
+ */
+type Push =
+    | { kind: "replace"; text: string; source: CellSource }
+    | { kind: "insertAfter"; text: string; above: CellSource };
 
 const queue = new Map<string, QueuedCell>();
 const told = new Set<string>();
 let timer: ReturnType<typeof setTimeout> | undefined;
 let pendingSince = 0;
 let running: Promise<void> | null = null;
+
+/**
+ * Lines that may already be in the document, by the line and the node they
+ * were asked to follow.
+ *
+ * A rewrite is worth retrying: it names a node, and asking twice leaves the
+ * same text there. Asking for a new node twice leaves two of them, and a
+ * timeout or an `internal` is exactly the case where ebb does not know whether
+ * the first one landed - CardMirror answers `internal` for a node it inserted
+ * and could not mint a token for. So an outcome that settles nothing bars that
+ * line at that anchor for the session, and a refusal that names a reason does
+ * not: nothing was written, so the debater's next keystroke may try again.
+ */
+const unresolved = new Set<string>();
+
+/** One line at one anchor, which is what "already asked for" means here. */
+const unresolvedKey = (token: string, text: string): string => `${token}\n${text}`;
 
 /**
  * The cell's first line, trimmed, which is the only text a push may name.
@@ -126,27 +166,23 @@ export function firstLine(value: unknown): string {
 }
 
 /**
- * What this cell would push right now, or null when it may not push at all.
- *
- * Asked twice: once when the edit is queued, so a cell that can never push
- * installs no timer, and again at flush, because the cell may have been edited,
- * emptied, or re-sourced inside the window.
+ * The CardMirror provenance on one cell, when it is provenance this machine may
+ * hand back: a token, on a cell that still says something, minted here.
  */
-function pushable(sheetId: string, row: number, col: number): Pushable | null {
-    if (!cardmirrorPushLive()) return null;
-    const hot = getActiveHot();
-    // The grid holds one sheet at a time, so a queued cell on a sheet the user
-    // has since left has no live text to read. Whatever sits at that address on
-    // the sheet now would rewrite the document from the wrong cell.
-    if (!hot || getActiveSheetId() !== sheetId) return null;
+function linkOf(
+    hot: Handsontable,
+    sheetId: string,
+    at: ModelCol,
+    row: number,
+    col: number,
+): CellSource | null {
     // Handsontable types cell meta as an open bag, so the read is asserted the
     // same way the rest of the grid layer asserts className.
     const source = hot.getCellMeta(row, col).source as CellSource | undefined;
     if (!source || source.app !== CARDMIRROR_APP || !source.token) return null;
-    // A spacer stands for a speech this sheet does not hold, so nothing there
-    // is a cell that could have come from a document.
-    const at = toModelCol(gridCol(col), getActiveSpacers());
-    if (at === null) return null;
+    // Empty text came from nowhere, the way the rail already reads it: a source
+    // that outlived its text names a node this cell no longer stands for.
+    if (!firstLine(hot.getDataAtCell(row, col))) return null;
     // A token minted on a partner's machine names a document only they can
     // reach, so handing it to the CardMirror here would rewrite whatever it
     // happened to resolve to, or nothing at all.
@@ -154,9 +190,66 @@ function pushable(sheetId: string, row: number, col: number): Pushable | null {
     if (doc && isForeignSource(sourceOwner(doc.sheets[sheetId], at, row), replicaActor())) {
         return null;
     }
+    return source;
+}
+
+/**
+ * The nearest linked cell `step` away from `row`, inside the same run.
+ *
+ * A run is what a blank cell ends, which is how a flow separates one argument
+ * from the next and how a send with space below it separates one card from the
+ * next. Walking over the new lines between here and the link is what lets a
+ * debater open a gap and type three of them: each is inside the run, and each
+ * finds an address whether or not the one beside it has landed yet.
+ */
+function linkNear(
+    hot: Handsontable,
+    sheetId: string,
+    at: ModelCol,
+    col: number,
+    row: number,
+    step: 1 | -1,
+): CellSource | null {
+    const rows = hot.countRows();
+    for (let r = row + step; r >= 0 && r < rows; r += step) {
+        const link = linkOf(hot, sheetId, at, r, col);
+        if (link) return link;
+        if (!firstLine(hot.getDataAtCell(r, col))) return null;
+    }
+    return null;
+}
+
+/**
+ * What this cell would push right now, or null when it may not push at all.
+ *
+ * Asked twice: once when the edit is queued, so a cell that can never push
+ * installs no timer, and again at flush, because the cell may have been edited,
+ * emptied, or re-sourced inside the window.
+ */
+function pushable(sheetId: string, row: number, col: number): Push | null {
+    if (!cardmirrorPushLive()) return null;
+    const hot = getActiveHot();
+    // The grid holds one sheet at a time, so a queued cell on a sheet the user
+    // has since left has no live text to read. Whatever sits at that address on
+    // the sheet now would rewrite the document from the wrong cell.
+    if (!hot || getActiveSheetId() !== sheetId) return null;
+    // A spacer stands for a speech this sheet does not hold, so nothing there
+    // is a cell that could have come from a document.
+    const at = toModelCol(gridCol(col), getActiveSpacers());
+    if (at === null) return null;
     const text = firstLine(hot.getDataAtCell(row, col));
     if (!text) return null;
-    return { text, source };
+    const source = linkOf(hot, sheetId, at, row, col);
+    if (source) return { kind: "replace", text, source };
+    // A new line, and only one the run closes over on both sides. The link
+    // above is the address; the link below is the proof that this is an inside,
+    // and it is what keeps the analytic typed under the last line of a send in
+    // the flow: a rule that read upward alone would append every one of them to
+    // a document nobody asked to grow.
+    const above = linkNear(hot, sheetId, at, col, row, -1);
+    if (!above || !linkNear(hot, sheetId, at, col, row, 1)) return null;
+    if (unresolved.has(unresolvedKey(above.token, text))) return null;
+    return { kind: "insertAfter", text, above };
 }
 
 /**
@@ -171,54 +264,115 @@ function tell(reason: string, message: string): void {
 }
 
 /**
- * Adopts the token CardMirror minted for the text it just wrote. The stored one
- * anchors on the text that was overwritten, so without this exactly one edit
- * per cell would ever land.
+ * Adopts the token CardMirror minted for the node it just wrote.
  *
- * `key` and `title` are left alone: they name the same card in the same
- * document, and `key` going stale under an edit is what it already did before
- * anything pushed.
+ * A rewrite has to: the stored token anchors on the text that was overwritten,
+ * so without this exactly one edit per cell would ever land. `key` and `title`
+ * are left alone there, since they name the same card in the same document, and
+ * `key` going stale under an edit is what it already did before anything
+ * pushed.
+ *
+ * A new line adopts one for the first time, which is what turns it into a
+ * linked cell: it wears the rail, jump to source reaches it, and its next edit
+ * pushes as a rewrite. It carries the document title of the line above it,
+ * which is the document it was written into, and no `key`: a key is minted by
+ * the sending app for an item it sent, and nothing sent this line.
  */
-function adoptToken(cell: QueuedCell, source: CellSource, fresh: string | undefined): void {
+function adopt(cell: QueuedCell, push: Push, fresh: string | undefined): void {
     if (!fresh) return;
     const hot = getActiveHot();
     if (!hot || getActiveSheetId() !== cell.sheetId) return;
-    // Only onto the cell that is still the one that was pushed. A cell emptied
-    // while the request was out has dropped its provenance, and handing it back
-    // would strand a claim about a card on a blank cell.
     const live = hot.getCellMeta(cell.row, cell.col).source as CellSource | undefined;
-    if (!live || live.token !== source.token) return;
-    hot.setCellMeta(cell.row, cell.col, "source", { ...live, token: fresh });
-    // No undo action and no op. The refreshed token is local provenance about a
-    // document only this machine can reach, so a partner's copy of the cell can
-    // do nothing with it; and an undo step for a write the user never made would
+    if (push.kind === "replace") {
+        // Only onto the cell that is still the one that was pushed. A cell
+        // emptied while the request was out has dropped its provenance, and
+        // handing it back would strand a claim about a card on a blank cell.
+        if (!live || live.token !== push.source.token) return;
+        hot.setCellMeta(cell.row, cell.col, "source", { ...live, token: fresh });
+    } else {
+        // Only while the cell is still the line that went out. Rows shift and
+        // text moves on while a request is in flight, and provenance is a claim
+        // about where a cell's text came from: on any other text it would be a
+        // claim about a node holding something else.
+        if (live || firstLine(hot.getDataAtCell(cell.row, cell.col)) !== push.text) return;
+        hot.setCellMeta(cell.row, cell.col, "source", {
+            app: CARDMIRROR_APP,
+            token: fresh,
+            ...(push.above.title ? { title: push.above.title } : {}),
+        });
+        // A debater who types the lower of two new lines first leaves the
+        // upper cell blank, and a blank cell ends the run, so the lower one
+        // was outside it and pushed nothing. It is inside it now, so it is
+        // asked again - after this one, which is the order the two belong in.
+        // A cell that is blank or already linked is left alone: it has either
+        // nothing to say or nothing new to say.
+        const next = { ...cell, row: cell.row + 1 };
+        if (
+            firstLine(hot.getDataAtCell(next.row, next.col)) &&
+            !hot.getCellMeta(next.row, next.col).source
+        ) {
+            queuePushEdit(next.sheetId, next.row, next.col);
+        }
+    }
+    // No undo action and no op. The token is local provenance about a document
+    // only this machine can reach, so a partner's copy of the cell can do
+    // nothing with it; and an undo step for a write the user never made would
     // eat the undo they were about to spend on their own edit. The snapshot
     // carries it to the store, and from there to the file.
     notifyGridMutated();
 }
 
+/**
+ * Files a line whose fate the answer did not settle, so it is never asked for
+ * twice, and answers whether it filed anything. A rewrite is left alone: see
+ * `unresolved`.
+ */
+function holdUnresolved(push: Push): boolean {
+    if (push.kind !== "insertAfter") return false;
+    unresolved.add(unresolvedKey(push.above.token, push.text));
+    return true;
+}
+
 /** Files the outcome: a fresh token on success, one toast on anything else. */
-function report(call: BridgeCall<CardMirrorReply>, cell: QueuedCell, source: CellSource): void {
+function report(call: BridgeCall<CardMirrorReply>, cell: QueuedCell, push: Push): void {
     if (!call.ok) {
+        // A timeout is the one transport failure that settles nothing: the
+        // request reached a peer that stopped answering, which may have written
+        // the node first. The rest never left this machine, or arrived as a
+        // reply ebb could not read, and a reply it could not read is an answer
+        // about a request CardMirror did process.
+        const unsettled = call.error === "timeout" || call.error === "bad-response";
+        if (unsettled && holdUnresolved(push)) {
+            tell(`unsettled:${call.error}`, UNSETTLED_MESSAGE);
+            return;
+        }
         tell(call.error, PUSH_MESSAGE[call.error] ?? PUSH_FALLBACK);
         return;
     }
     const reply = call.value;
     // Checked before `ok`, because a queued route answers `ok: true` with
-    // nothing done. Approving in CardMirror replays the queued replace, so the
-    // text does land there eventually - but the token minted on that replay is
-    // never sent back here, so this cell's link is stale from that moment on and
-    // its next edit comes back `not-found`. Nothing is written back either way:
-    // the stored token is all ebb has, and it no longer describes anything.
+    // nothing done. Approving in CardMirror replays the queued request, so it
+    // does land there eventually - but the token minted on that replay is never
+    // sent back here. For a rewrite that means this cell's link is stale from
+    // that moment on and its next edit comes back `not-found`; for a new line
+    // it means a node may exist that nothing here can name, so the line is held
+    // rather than asked for again on the next keystroke.
     if (reply.pending) {
+        holdUnresolved(push);
         tell(PENDING_REASON, PENDING_MESSAGE);
         return;
     }
     if (reply.ok) {
-        adoptToken(cell, source, reply.source);
+        adopt(cell, push, reply.source);
         return;
     }
     const error = reply.error ?? "";
+    // CardMirror answers this for a node it wrote and could not mint a token
+    // for, among other things, so what it settles is nothing.
+    if (error === "internal" && holdUnresolved(push)) {
+        tell(`unsettled:${error}`, UNSETTLED_MESSAGE);
+        return;
+    }
     if (error === "doc-not-open") {
         const title = reply.docTitle;
         tell(
@@ -233,9 +387,13 @@ function report(call: BridgeCall<CardMirrorReply>, cell: QueuedCell, source: Cel
 }
 
 async function pushCell(cell: QueuedCell): Promise<void> {
-    const live = pushable(cell.sheetId, cell.row, cell.col);
-    if (!live) return;
-    report(await cardmirrorReplace(live.source.token, live.text), cell, live.source);
+    const push = pushable(cell.sheetId, cell.row, cell.col);
+    if (!push) return;
+    const call =
+        push.kind === "replace"
+            ? await cardmirrorReplace(push.source.token, push.text)
+            : await cardmirrorInsertAfter(push.above.token, push.text);
+    report(call, cell, push);
 }
 
 /**
@@ -254,12 +412,13 @@ async function drain(): Promise<void> {
 }
 
 /**
- * Notes that a sourced cell was edited. The address alone is stored: the text
- * and the token are read back off the grid at flush, so a cell edited three
- * times inside one window pushes once, carrying what it says when the window
- * closes and the token it holds by then.
+ * Notes that a cell was edited, whether it is linked or a new line between two
+ * that are. The address alone is stored: the text and the token are read back
+ * off the grid at flush, so a cell edited three times inside one window pushes
+ * once, carrying what it says when the window closes and the token it holds by
+ * then.
  */
-export function queueSourcedEdit(sheetId: string, row: number, col: number): void {
+export function queuePushEdit(sheetId: string, row: number, col: number): void {
     if (!pushable(sheetId, row, col)) return;
     if (queue.size === 0) pendingSince = Date.now();
     queue.set(`${sheetId}:${row}:${col}`, { sheetId, row, col });
@@ -268,11 +427,11 @@ export function queueSourcedEdit(sheetId: string, row: number, col: number): voi
     // rather than to the length of the burst, which during a speech is the whole
     // speech.
     if (Date.now() - pendingSince >= MAX_WAIT_MS) {
-        void flushSourcedEdits();
+        void flushPushEdits();
         return;
     }
     clearTimeout(timer);
-    timer = setTimeout(() => void flushSourcedEdits(), DEBOUNCE_MS);
+    timer = setTimeout(() => void flushPushEdits(), DEBOUNCE_MS);
 }
 
 /**
@@ -280,7 +439,7 @@ export function queueSourcedEdit(sheetId: string, row: number, col: number): voi
  * The quit path awaits this, so an edit made half a second before the window
  * closes still reaches the document.
  */
-export function flushSourcedEdits(): Promise<void> {
+export function flushPushEdits(): Promise<void> {
     clearTimeout(timer);
     timer = undefined;
     // A second caller joins the drain already running instead of opening a
@@ -298,12 +457,13 @@ export function flushSourcedEdits(): Promise<void> {
     return drained;
 }
 
-/** Test seam: forgets the queue, the drain, the timer and what was toasted. */
+/** Test seam: forgets the queue, the drain, the timer, the holds, the toasts. */
 export function resetPushEdits(): void {
     clearTimeout(timer);
     timer = undefined;
     pendingSince = 0;
     queue.clear();
     running = null;
+    unresolved.clear();
     told.clear();
 }

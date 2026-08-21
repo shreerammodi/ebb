@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { flushSourcedEdits } from "@/lib/bridge/pushEdits";
+import { flushPushEdits } from "@/lib/bridge/pushEdits";
 import { shutdownCollab } from "@/lib/collab/runtime";
 import { resolveUnsaved, saveBeforeLeaving } from "@/lib/commands/fileCommands";
 import { isDesktop } from "@/lib/update/adapter";
@@ -49,7 +49,7 @@ export default function QuitGuard() {
                     // conditional on it landing: the text is in the flow
                     // either way, and the bridge bounds its own wait.
                     try {
-                        await flushSourcedEdits();
+                        await flushPushEdits();
                     } catch {
                         // The push layer reports its own failures.
                     }

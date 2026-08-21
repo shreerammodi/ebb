@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { cardmirrorReplace } from "@/lib/bridge/cardmirror";
+import { cardmirrorInsertAfter, cardmirrorReplace } from "@/lib/bridge/cardmirror";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -58,6 +58,29 @@ describe("cardmirrorReplace", () => {
         delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
 
         const res = await cardmirrorReplace("cmsrc1.a", "next");
+
+        expect(res).toEqual({ ok: false, error: "unsupported" });
+        expect(invoked).not.toHaveBeenCalled();
+    });
+});
+
+describe("cardmirrorInsertAfter", () => {
+    it("hands the neighbour's token and the new line to the host", async () => {
+        invoked.mockResolvedValue({ ok: true, source: "cmsrc1.new" });
+
+        const res = await cardmirrorInsertAfter("cmsrc1.above", "arg four");
+
+        expect(invoked).toHaveBeenCalledWith("cardmirror_insert_after", {
+            source: "cmsrc1.above",
+            text: "arg four",
+        });
+        expect(res.ok && res.value.source).toBe("cmsrc1.new");
+    });
+
+    it("answers unsupported on the web build without invoking anything", async () => {
+        delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+
+        const res = await cardmirrorInsertAfter("cmsrc1.above", "arg four");
 
         expect(res).toEqual({ ok: false, error: "unsupported" });
         expect(invoked).not.toHaveBeenCalled();

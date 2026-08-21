@@ -14,8 +14,12 @@ export interface CellSource {
     app: string;
     /** The origin's opaque provenance token, handed back verbatim to jump. */
     token: string;
-    /** Stable equality key the origin mints, used for forward search. */
-    key: string;
+    /**
+     * Stable equality key the origin mints, used for forward search. Absent on
+     * a line ebb had the origin create: a key names an item that was sent, and
+     * nothing sent this one.
+     */
+    key?: string;
     /** Origin document title, for messages like "open X first". */
     title?: string;
 }

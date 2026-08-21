@@ -502,30 +502,46 @@ pub fn cardmirror_insert(text: String, role: String, new_paragraph: bool) -> Res
     )
 }
 
-/// Rewrites the document text a sourced cell came from. Distinct from a
-/// `/jump` plus `/insert` because the route is silent: it moves neither the
-/// peer's window nor its caret, which is what makes it usable on an edit the
-/// user did not ask to be published. The reply carries a re-anchored token,
-/// since the stored one still quotes the text that was just replaced.
+/// One push, off the thread that draws the window.
 ///
-/// `async` where its two neighbours are not, because a sync `#[tauri::command]`
-/// runs on the thread that draws the window. Jump and insert run because a
-/// debater pressed a key and is waiting on the answer, so a stalled peer costs
-/// them a wait they asked for; a push runs unasked on every settled edit, and a
-/// peer whose port is open but unresponsive would freeze a window mid-round for
-/// OUTBOUND_TIMEOUT with nothing on screen to explain it. A blocking-pool
-/// thread rather than an async task, because `post` blocks on a socket. A
-/// missing or closed CardMirror costs no network either way: `read_peer` fails
-/// on the file system before a connection is attempted.
-#[tauri::command]
-pub async fn cardmirror_replace(source: String, text: String) -> Result<Json, String> {
+/// A sync `#[tauri::command]` runs on the main thread. Jump and insert run
+/// because a debater pressed a key and is waiting on the answer, so a stalled
+/// peer costs them a wait they asked for; a push runs unasked on every settled
+/// edit, and a peer whose port is open but unresponsive would freeze a window
+/// mid-round for OUTBOUND_TIMEOUT with nothing on screen to explain it. A
+/// blocking-pool thread rather than an async task, because `post` blocks on a
+/// socket. A missing or closed CardMirror costs no network either way:
+/// `read_peer` fails on the file system before a connection is attempted.
+async fn push_off_thread(path: &'static str, source: String, text: String) -> Result<Json, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        post("/replace", &json!({ "source": source, "text": text }))
+        post(path, &json!({ "source": source, "text": text }))
     })
     .await
     // The host produced no answer at all, which is the malformed-reply case
     // from the caller's side rather than any of CardMirror's own failures.
     .map_err(|_| "bad-response".to_string())?
+}
+
+/// Rewrites the document text a sourced cell came from. Distinct from a
+/// `/jump` plus `/insert` because the route is silent: it moves neither the
+/// peer's window nor its caret, which is what makes it usable on an edit the
+/// user did not ask to be published. The reply carries a re-anchored token,
+/// since the stored one still quotes the text that was just replaced.
+#[tauri::command]
+pub async fn cardmirror_replace(source: String, text: String) -> Result<Json, String> {
+    push_off_thread("/replace", source, text).await
+}
+
+/// Puts a line that has no document node of its own into the document, as the
+/// next sibling of the line above it in the flow. `source` is that neighbour's
+/// token, so the route addresses a place rather than a node to overwrite, and
+/// the reply carries the token of the line it created - without which the cell
+/// it came from could never be edited into the document again.
+///
+/// Silent and off-thread for the same reasons as the replace above it.
+#[tauri::command]
+pub async fn cardmirror_insert_after(source: String, text: String) -> Result<Json, String> {
+    push_off_thread("/insert-after", source, text).await
 }
 
 // --- Startup -------------------------------------------------------------------
@@ -1141,11 +1157,15 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
-    /// `cardmirror_replace` is `async` where the other two outbound commands
-    /// are not, so driving it needs an executor: this is the same runtime the
-    /// command hands its blocking `post` to.
+    /// Both pushes are `async` where the other two outbound commands are not,
+    /// so driving one needs an executor: this is the same runtime the command
+    /// hands its blocking `post` to.
     fn push(source: &str, text: &str) -> Result<Json, String> {
         tauri::async_runtime::block_on(cardmirror_replace(source.into(), text.into()))
+    }
+
+    fn push_new_line(source: &str, text: &str) -> Result<Json, String> {
+        tauri::async_runtime::block_on(cardmirror_insert_after(source.into(), text.into()))
     }
 
     /// The push is the one outbound route whose reply ebb has to keep: the
@@ -1165,6 +1185,7 @@ mod tests {
         // One slot is enough for the scripted reply: a case sets it before its
         // own call and that call has returned before the next case sets it.
         let fresh = json!({ "ok": true, "source": "cmsrc1fresh" });
+        let grafted = json!({ "ok": true, "source": "cmsrc1new" });
         let reply: Arc<Mutex<Reply>> = Arc::new(Mutex::new((200, fresh.clone())));
         let seen = log.clone();
         let scripted = reply.clone();
@@ -1213,6 +1234,16 @@ mod tests {
             "the re-anchored token reaches the caller intact"
         );
 
+        // A line the debater typed between two sourced cells has no node of its
+        // own, so what it sends is the token of the line above it, and the
+        // reply names the node CardMirror created rather than one it rewrote.
+        *reply.lock() = (200, grafted.clone());
+        assert_eq!(
+            push_new_line("cmsrc1above", "arg four"),
+            Ok(grafted.clone()),
+            "the token of the created line reaches the caller intact"
+        );
+
         // A refusal is an answer, not a transport failure: CardMirror's reason
         // is the caller's, and `http_status_as_error(false)` is what stops a
         // status code from standing in for the body it arrived with. The 404 is
@@ -1237,10 +1268,9 @@ mod tests {
         assert_eq!(push("cmsrc1old", "edited"), Err("not-running".into()));
 
         let calls = log.lock().clone();
-        assert_eq!(calls.len(), 4, "one socket per reachable case: {calls:?}");
+        assert_eq!(calls.len(), 5, "one socket per reachable case: {calls:?}");
         for call in &calls {
             assert_eq!(call["method"], "POST", "{call}");
-            assert_eq!(call["url"], "/replace", "{call}");
             assert_eq!(call["token"], "peer-token", "the peer's session token");
             // CardMirror pins one consent decision per app id and rejects an
             // unidentified caller, so the push identifies ebb like every other
@@ -1248,9 +1278,28 @@ mod tests {
             assert_eq!(call["appId"], APP_ID, "{call}");
         }
         assert_eq!(
+            calls
+                .iter()
+                .map(|call| call["url"].clone())
+                .collect::<Vec<_>>(),
+            [
+                "/replace",
+                "/insert-after",
+                "/replace",
+                "/replace",
+                "/replace"
+            ],
+            "a rewrite and a new line are separate routes"
+        );
+        assert_eq!(
             calls[0]["body"],
             json!({ "source": "cmsrc1old", "text": "One edited line." }),
             "the stored token and the edited line go out verbatim, and nothing else"
+        );
+        assert_eq!(
+            calls[1]["body"],
+            json!({ "source": "cmsrc1above", "text": "arg four" }),
+            "the neighbour's token addresses the place the line belongs"
         );
 
         std::env::remove_var("CARDMIRROR_BRIDGE_DIR");

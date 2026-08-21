@@ -360,6 +360,19 @@ edge case; otherwise leave the code bare.
   reason toasts once per session and never again, because the trigger is a
   settled keystroke and a repeating reason would bury the round under corner
   messages.
+- **A new line goes out only from the inside of a linked run, and only once.**
+  A cell with no provenance of its own is pushed as `/insert-after` the node
+  the cell above it came from, so a line a debater types into the middle of a
+  card they flowed lands in the file with the rest of it. What bounds it is
+  the run: a blank cell ends one, and the walk in `pushEdits.ts` requires a
+  linked cell on both sides of the new line. Reading upward alone would append
+  every analytic typed under a send to a document nobody asked to grow, so
+  never relax the downward half. The reply's token is the cell's first, which
+  is what turns it into an ordinary linked cell; an answer that settles
+  nothing - a timeout, an unreadable reply, `internal`, or a request held
+  behind the consent prompt - bars that line at that anchor for the session,
+  because a rewrite asked twice leaves one node and a new line asked twice
+  leaves two. A refusal that names a reason wrote nothing, so it is retried.
 - Prefer `git rebase` over `git merge` when integrating changes to maintain a
   linear history.
 

@@ -27,6 +27,18 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   document, and a CardMirror too old to take an edit changes nothing either. A
   partner's cell in a shared round is never sent, since the provenance on it
   names a document on their machine rather than one of yours.
+- **A line you type between two cells that came from CardMirror now goes into
+  the document too.** Open a gap in the middle of a card you flowed, type the
+  argument you want, and it lands in your file right under the line above it,
+  with a rail of its own from then on - so the next edit you make to it
+  updates the document like any other linked cell. It rides the same switch as
+  the rest of this, off until you turn it on under Settings then Editor. Only
+  the inside of a run travels: a line needs a linked cell above it and one
+  below it, so the analytic you type under the last line of a send stays in
+  your flow, as does anything an empty cell separates from the run. A line ebb
+  could not get a straight answer about - CardMirror stopped answering, or took
+  it without saying where it went - is never sent a second time, because two
+  copies of one line in your file is worse than one copy in your flow alone.
 
 ## [1.6.0] - 2026-11-13
 

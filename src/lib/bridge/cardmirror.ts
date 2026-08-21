@@ -123,3 +123,15 @@ export function cardmirrorReplace(
 ): Promise<BridgeCall<CardMirrorReply>> {
     return post("cardmirror_replace", { source, text });
 }
+
+/**
+ * Put a new line into the document directly after the one `source` names. The
+ * reply's token is the created line's, so a caller that drops it has a cell in
+ * the document it can never address again.
+ */
+export function cardmirrorInsertAfter(
+    source: string,
+    text: string,
+): Promise<BridgeCall<CardMirrorReply>> {
+    return post("cardmirror_insert_after", { source, text });
+}
