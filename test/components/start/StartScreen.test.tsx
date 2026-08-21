@@ -1,5 +1,7 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { makeFlowRound } from "@/lib/model/flow";
@@ -247,5 +249,32 @@ describe("joining with a code from the start screen", () => {
         delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
         render(<StartScreen />);
         expect(screen.queryByTestId("start-join")).toBeNull();
+    });
+
+    // The static export is prerendered in Node, where no Tauri runtime exists,
+    // so anything this screen decides from `window` during render is absent
+    // from the server's HTML. React answers a mismatch by throwing the
+    // hydrated tree away and rebuilding it, which on a real desktop launch
+    // means the first thing a debater sees is a screen that flickers.
+    it("hydrates the desktop row without contradicting the prerender", async () => {
+        delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+        const html = renderToString(<StartScreen />);
+        expect(html).not.toContain("start-join");
+
+        // Only now is there a shell, exactly as the desktop webview arrives:
+        // the markup was rendered without one, the hydration runs with one.
+        (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+        const host = document.createElement("div");
+        host.innerHTML = html;
+        document.body.append(host);
+        const recovered: string[] = [];
+        await act(async () => {
+            hydrateRoot(host, <StartScreen />, {
+                onRecoverableError: (err) => recovered.push(String(err)),
+            });
+        });
+
+        expect(recovered).toEqual([]);
+        expect(host.querySelector("[data-testid='start-join']")).not.toBeNull();
     });
 });
