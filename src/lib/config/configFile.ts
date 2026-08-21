@@ -64,6 +64,9 @@ export interface ConfigFileShape {
     /** How CardMirror types text a cell sends it: one of its heading levels
      *  (pocket, hat, block, tag, analytic) or body. */
     cardmirror_text_type: string;
+    /** Whether editing a cell that came from CardMirror rewrites that text in
+     *  the document. Off by default; the master switch does not imply it. */
+    cardmirror_push_edits: boolean;
     /** Master switch for shared editing. Off by default. */
     collab_enabled: boolean;
     /** Whether a session may fall back to a relay. */
@@ -163,6 +166,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         cardmirror_enabled: s.cardmirrorEnabled,
         cardmirror_space_arguments: s.cardmirrorSpaceArguments,
         cardmirror_text_type: s.cardmirrorTextType,
+        cardmirror_push_edits: s.cardmirrorPushEdits,
         collab_enabled: s.collabEnabled,
         collab_relay: s.collabRelayEnabled,
         collab_listen: s.collabListenEnabled,
@@ -229,6 +233,7 @@ export function toAppConfig(raw: unknown): AppConfig {
         cardmirrorEnabled: bool(o.cardmirror_enabled, true),
         cardmirrorSpaceArguments: bool(o.cardmirror_space_arguments, false),
         cardmirrorTextType: resolveCardMirrorTextType(o.cardmirror_text_type),
+        cardmirrorPushEdits: bool(o.cardmirror_push_edits, false),
         collabEnabled: bool(o.collab_enabled, false),
         collabRelayEnabled: bool(o.collab_relay, true),
         collabListenEnabled: bool(o.collab_listen, false),

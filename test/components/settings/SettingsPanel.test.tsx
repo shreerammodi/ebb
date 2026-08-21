@@ -56,6 +56,7 @@ function resetStore() {
         settingsOpen: true,
         cardmirrorEnabled: true,
         cardmirrorSpaceArguments: false,
+        cardmirrorPushEdits: false,
         collabEnabled: false,
         collabRelayEnabled: true,
         collabListenEnabled: false,
@@ -396,6 +397,30 @@ describe("SettingsPanel", () => {
             await user.click(toggle);
             expect(useFlowStore.getState().cardmirrorEnabled).toBe(false);
             expect(screen.queryByTestId("cardmirror-text-type-select")).toBeNull();
+        });
+
+        it("hides the push-edits row until the integration is switched on", async () => {
+            const user = userEvent.setup();
+            renderSettingsPanel();
+            await user.click(screen.getByTestId("settings-nav-editor"));
+
+            expect(screen.getByTestId("cardmirror-push-edits-toggle")).toBeTruthy();
+
+            await user.click(screen.getByTestId("cardmirror-enabled-toggle"));
+            expect(screen.queryByTestId("cardmirror-push-edits-toggle")).toBeNull();
+        });
+
+        it("leaves pushing edits off by default and flips the store", async () => {
+            const user = userEvent.setup();
+            renderSettingsPanel();
+            await user.click(screen.getByTestId("settings-nav-editor"));
+
+            const toggle = screen.getByTestId("cardmirror-push-edits-toggle");
+            expect(toggle).not.toBeChecked();
+
+            await user.click(toggle);
+            expect(useFlowStore.getState().cardmirrorPushEdits).toBe(true);
+            expect(toggle).toBeChecked();
         });
 
         it("drops the CardMirror shortcuts from the Keyboard pane when off", async () => {

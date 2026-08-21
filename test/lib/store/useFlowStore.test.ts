@@ -529,3 +529,18 @@ describe("grid zoom", () => {
         );
     });
 });
+
+describe("setCardmirrorPushEdits", () => {
+    it("starts off and persists the flip", () => {
+        expect(useFlowStore.getState().cardmirrorPushEdits).toBe(false);
+
+        useFlowStore.getState().setCardmirrorPushEdits(true);
+        expect(useFlowStore.getState().cardmirrorPushEdits).toBe(true);
+
+        const raw = window.localStorage.getItem("ebb-display-settings");
+        expect(JSON.parse(raw!).cardmirrorPushEdits).toBe(true);
+
+        useFlowStore.getState().setCardmirrorPushEdits(false);
+        expect(useFlowStore.getState().cardmirrorPushEdits).toBe(false);
+    });
+});

@@ -29,6 +29,7 @@ const sample: AppConfig = {
     cardmirrorEnabled: false,
     cardmirrorSpaceArguments: true,
     cardmirrorTextType: "tag",
+    cardmirrorPushEdits: true,
     collabEnabled: false,
     collabRelayEnabled: true,
     collabListenEnabled: false,
@@ -89,6 +90,13 @@ describe("configFromState -> toAppConfig round-trip", () => {
         for (const type of ["pocket", "hat", "block", "tag", "analytic"]) {
             expect(toAppConfig({ cardmirror_text_type: type }).cardmirrorTextType).toBe(type);
         }
+    });
+
+    it("round-trips the push-edits switch and defaults it off", () => {
+        expect(configFromState(sample).cardmirror_push_edits).toBe(true);
+        expect(toAppConfig({ cardmirror_push_edits: true }).cardmirrorPushEdits).toBe(true);
+        expect(toAppConfig({ cardmirror_push_edits: false }).cardmirrorPushEdits).toBe(false);
+        expect(toAppConfig({}).cardmirrorPushEdits).toBe(false);
     });
 
     it("ships every default binding but stores none of them as overrides", () => {

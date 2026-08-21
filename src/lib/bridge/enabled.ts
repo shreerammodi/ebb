@@ -17,3 +17,16 @@ import { isDesktop } from "@/lib/update/adapter";
 export function cardmirrorLive(): boolean {
     return isDesktop() && useFlowStore.getState().cardmirrorEnabled;
 }
+
+/**
+ * The push gate: the same conditions plus its own switch.
+ *
+ * The integration switch is about ebb receiving text and about reaching the
+ * document when the debater asks for it, both of which start with a keystroke
+ * aimed at CardMirror. This one lets ebb rewrite a document nobody is looking
+ * at, on every cell edit that carries a token, so it is a second decision and
+ * defaults off rather than riding the first.
+ */
+export function cardmirrorPushLive(): boolean {
+    return cardmirrorLive() && useFlowStore.getState().cardmirrorPushEdits;
+}

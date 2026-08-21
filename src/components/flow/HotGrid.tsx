@@ -10,6 +10,8 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 
 import "handsontable/styles/handsontable.min.css";
 import "handsontable/styles/ht-theme-main.min.css";
 
+import { cardmirrorPushLive } from "@/lib/bridge/enabled";
+import { firstLine, queueSourcedEdit } from "@/lib/bridge/pushEdits";
 import { contactName } from "@/lib/collab/contacts";
 import { liveCells } from "@/lib/collab/doc";
 import {
@@ -1018,6 +1020,19 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                         (hot!.getCellMeta(row, col).className ?? "") as string,
                     );
                     recordOp({ kind: "cellMeta", sheetId: sid, col: at, row, meta: left ?? {} });
+                }
+            }
+            // A sourced cell the user rewrote goes back out to the document it
+            // came from. The gate is asked before the loop so an off
+            // integration costs one boolean per edit and nothing more.
+            if (sid && hot && cardmirrorPushLive() && isReplicatedSource(source)) {
+                for (const [row, prop, oldValue, newValue] of changes as GridChange[]) {
+                    if (typeof prop !== "number") continue;
+                    // The token names the cell's first line alone, so a cite
+                    // folded onto line 2 changing leaves the document node this
+                    // cell came from saying what it always said.
+                    if (firstLine(oldValue) === firstLine(newValue)) continue;
+                    if (hot.getCellMeta(row, prop).source) queueSourcedEdit(sid, row, prop);
                 }
             }
             snapshot();

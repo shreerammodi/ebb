@@ -135,6 +135,8 @@ export default function SettingsPanel() {
     const setCardmirrorEnabled = useFlowStore((s) => s.setCardmirrorEnabled);
     const cardmirrorSpaceArguments = useFlowStore((s) => s.cardmirrorSpaceArguments);
     const setCardmirrorSpaceArguments = useFlowStore((s) => s.setCardmirrorSpaceArguments);
+    const cardmirrorPushEdits = useFlowStore((s) => s.cardmirrorPushEdits);
+    const setCardmirrorPushEdits = useFlowStore((s) => s.setCardmirrorPushEdits);
     const collabEnabled = useFlowStore((s) => s.collabEnabled);
     const setCollabEnabled = useFlowStore((s) => s.setCollabEnabled);
     const collabRelayEnabled = useFlowStore((s) => s.collabRelayEnabled);
@@ -682,6 +684,18 @@ export default function SettingsPanel() {
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
+                                                    }
+                                                />
+                                                <SettingRow
+                                                    title="Push edits to CardMirror"
+                                                    description="Editing a cell that came from CardMirror rewrites that text in the document. A cell you typed yourself is never sent."
+                                                    control={
+                                                        <Switch
+                                                            checked={cardmirrorPushEdits}
+                                                            onCheckedChange={setCardmirrorPushEdits}
+                                                            data-testid="cardmirror-push-edits-toggle"
+                                                            aria-label="Push edits to CardMirror"
+                                                        />
                                                     }
                                                 />
                                             </>

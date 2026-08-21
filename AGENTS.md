@@ -336,6 +336,30 @@ edge case; otherwise leave the code bare.
   command that waits on the disk, a process or the network: a synchronous
   `#[tauri::command]` runs on the main thread, so it is
   `#[tauri::command(async)]` unless it only touches memory.
+- **A CardMirror source token names the cell's FIRST LINE, and a push that
+  lands mints a new one.** Column mode folds a cite onto line 2 of the tag's
+  cell and cell mode joins a whole send into one cell under the first item's
+  token (`src/lib/bridge/flowPlan.ts`), so the only text ebb may push back
+  into a document is the first line, and only when the first line is what
+  changed; everything below it belongs to the flow alone. A successful push
+  answers with a freshly minted token, and storing it back on the cell is not
+  optional: the stored token anchors on the text that was just replaced, so a
+  reply thrown away costs every later edit to that cell rather than only the
+  next one.
+- **ebb never pushes an emptied cell, a foreign-sourced cell, a remote peer's
+  write, or a structured write.** An emptied cell has already dropped its
+  link, so there is nothing to push and nothing to delete on the far side - ebb
+  removes no document text under any state. A token minted on a partner's
+  machine names a document the local CardMirror does not have, which is why
+  the push reads `isForeignSource` exactly as jump to source does; a write
+  arriving from a peer, and a write the app made structurally rather than a
+  debater made by hand, are not edits anyone asked to publish. The push is
+  gated by its own switch, `cardmirrorPushEdits`, off by default, read through
+  `cardmirrorPushLive()` on top of the integration switch, and off is dead: no
+  queue, no timer, no invoke. Success is silent, and each distinct failure
+  reason toasts once per session and never again, because the trigger is a
+  settled keystroke and a repeating reason would bury the round under corner
+  messages.
 - Prefer `git rebase` over `git merge` when integrating changes to maintain a
   linear history.
 

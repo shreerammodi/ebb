@@ -45,14 +45,14 @@ const INSERT_MESSAGE: Record<string, string> = {
 
 /**
  * CardMirror's consent layer. One decision per app governs its whole gated
- * surface, so these read the same on jump and insert alike.
+ * surface, so these read the same on every route that reaches it.
  *
  * All three are terminal: the user either made this choice deliberately or
  * has to change it in CardMirror. Retrying would nag them, and reaching the
  * document another way would route around a decision they made on purpose,
  * so ebb does neither - it says what happened and stops.
  */
-const CONSENT_MESSAGE: Record<string, string> = {
+export const CONSENT_MESSAGE: Record<string, string> = {
     unidentified: "CardMirror did not recognize ebb. Check for an ebb update.",
     "inserts-disabled": "CardMirror is refusing inserts from other apps.",
     "not-allowed": "CardMirror is blocking ebb. Allow it under External apps in its settings.",

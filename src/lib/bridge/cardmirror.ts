@@ -71,6 +71,13 @@ export interface CardMirrorReply {
      * signal, and never a success either.
      */
     pending?: string;
+    /**
+     * A freshly minted provenance token, on a successful replace. The stored
+     * token anchors on the text that was just overwritten, so the caller has
+     * to write this one back onto the cell or the next edit there has nothing
+     * left to locate.
+     */
+    source?: string;
 }
 
 function asReply(value: unknown): CardMirrorReply {
@@ -81,6 +88,7 @@ function asReply(value: unknown): CardMirrorReply {
         docTitle: typeof o.docTitle === "string" ? o.docTitle : undefined,
         inserted: o.inserted === true,
         pending: typeof o.pending === "string" ? o.pending : undefined,
+        source: typeof o.source === "string" ? o.source : undefined,
     };
 }
 
@@ -103,4 +111,15 @@ export function cardmirrorInsert(
     role: CardMirrorTextType,
 ): Promise<BridgeCall<CardMirrorReply>> {
     return post("cardmirror_insert", { text, role, newParagraph: true });
+}
+
+/**
+ * Rewrite the document text a sourced cell came from. CardMirror owns every
+ * rule about whether the edit may land, so a refusal arrives as a reply.
+ */
+export function cardmirrorReplace(
+    source: string,
+    text: string,
+): Promise<BridgeCall<CardMirrorReply>> {
+    return post("cardmirror_replace", { source, text });
 }

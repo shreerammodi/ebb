@@ -160,6 +160,14 @@ export interface FlowState {
     cardmirrorSpaceArguments: boolean;
     /** How CardMirror types text sent to it from a cell. */
     cardmirrorTextType: CardMirrorTextType;
+    /**
+     * Whether editing a cell that came from CardMirror writes the new text
+     * back into that document. Its own switch, not part of the master one:
+     * the integration is about text arriving here and about reaching the
+     * document when the debater asks, while this one lets ebb write into a
+     * document nobody is looking at. Off by default for that reason.
+     */
+    cardmirrorPushEdits: boolean;
     /** Master switch for shared editing; off leaves every route dead. */
     collabEnabled: boolean;
     /** Whether a session may fall back to a relay when a direct link fails. */
@@ -269,6 +277,7 @@ export interface FlowActions {
     setCardmirrorEnabled(on: boolean): void;
     setCardmirrorSpaceArguments(on: boolean): void;
     setCardmirrorTextType(type: CardMirrorTextType): void;
+    setCardmirrorPushEdits(on: boolean): void;
     setCollabEnabled(on: boolean): void;
     setCollabRelayEnabled(on: boolean): void;
     setCollabListenEnabled(on: boolean): void;
@@ -409,6 +418,7 @@ interface DisplaySettings {
     cardmirrorEnabled: boolean;
     cardmirrorSpaceArguments: boolean;
     cardmirrorTextType: CardMirrorTextType;
+    cardmirrorPushEdits: boolean;
     collabEnabled: boolean;
     collabRelayEnabled: boolean;
     collabListenEnabled: boolean;
@@ -462,6 +472,7 @@ function loadDisplaySettings(): DisplaySettings {
         cardmirrorEnabled: true,
         cardmirrorSpaceArguments: false,
         cardmirrorTextType: "analytic",
+        cardmirrorPushEdits: false,
         theme: "system",
         collabEnabled: false,
         collabRelayEnabled: true,
@@ -498,6 +509,7 @@ function loadDisplaySettings(): DisplaySettings {
             cardmirrorEnabled: bool(p.cardmirrorEnabled, true),
             cardmirrorSpaceArguments: bool(p.cardmirrorSpaceArguments, false),
             cardmirrorTextType: resolveCardMirrorTextType(p.cardmirrorTextType),
+            cardmirrorPushEdits: bool(p.cardmirrorPushEdits, false),
             theme: resolveThemeMode(p.theme),
             collabEnabled: bool(p.collabEnabled, false),
             collabRelayEnabled: bool(p.collabRelayEnabled, true),
@@ -545,6 +557,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
         cardmirrorEnabled: s.cardmirrorEnabled,
         cardmirrorSpaceArguments: s.cardmirrorSpaceArguments,
         cardmirrorTextType: s.cardmirrorTextType,
+        cardmirrorPushEdits: s.cardmirrorPushEdits,
         theme: s.theme,
         collabEnabled: s.collabEnabled,
         collabRelayEnabled: s.collabRelayEnabled,
@@ -655,6 +668,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     cardmirrorEnabled: initialDisplaySettings.cardmirrorEnabled,
     cardmirrorSpaceArguments: initialDisplaySettings.cardmirrorSpaceArguments,
     cardmirrorTextType: initialDisplaySettings.cardmirrorTextType,
+    cardmirrorPushEdits: initialDisplaySettings.cardmirrorPushEdits,
     collabEnabled: initialDisplaySettings.collabEnabled,
     collabRelayEnabled: initialDisplaySettings.collabRelayEnabled,
     collabListenEnabled: initialDisplaySettings.collabListenEnabled,
@@ -1008,6 +1022,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setCardmirrorSpaceArguments: (on) => persistDisplay(set, get, { cardmirrorSpaceArguments: on }),
 
     setCardmirrorTextType: (type) => persistDisplay(set, get, { cardmirrorTextType: type }),
+
+    setCardmirrorPushEdits: (on) => persistDisplay(set, get, { cardmirrorPushEdits: on }),
 
     setCollabEnabled: (on) => persistDisplay(set, get, { collabEnabled: on }),
 

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 
+import { flushSourcedEdits } from "@/lib/bridge/pushEdits";
 import { shutdownCollab } from "@/lib/collab/runtime";
 import { resolveUnsaved, saveBeforeLeaving } from "@/lib/commands/fileCommands";
 import { isDesktop } from "@/lib/update/adapter";
@@ -41,6 +42,17 @@ export default function QuitGuard() {
             // request; a full quit broadcasts, which reaches this listener too.
             const stop = await listenHere("app:flush", () => {
                 void (async () => {
+                    // Before the write, so the provenance a successful push
+                    // refreshes is in the round the write serializes. An edit
+                    // made a moment before the window went still belongs in
+                    // the document it came from, and leaving is not
+                    // conditional on it landing: the text is in the flow
+                    // either way, and the bridge bounds its own wait.
+                    try {
+                        await flushSourcedEdits();
+                    } catch {
+                        // The push layer reports its own failures.
+                    }
                     let leave = await saveBeforeLeaving().catch(() => false);
                     if (!leave) {
                         // The shell closes a window that does not answer in

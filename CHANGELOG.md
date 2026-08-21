@@ -7,6 +7,27 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Added
+
+- **An edit you make to a cell that came from CardMirror can now update the
+  text in the document it came from.** Retype the cell and the card reads what
+  you wrote; the teal rail is how you tell which cells those are. It is off
+  until you turn it on, under Settings then Editor in the CardMirror section,
+  and it exists only in the desktop app. What is sent is the cell's first
+  line, which is the line the document sent: a cite folded under a tag stays
+  in your flow, the lines below the first one in a cell that holds a whole
+  send stay there too, and a cell you typed yourself is never sent. ebb never
+  deletes text in a document - emptying a cell breaks its link, as it already
+  did, and sends nothing. It is also quiet: nothing is announced when an edit
+  lands. If CardMirror is closed, the document is closed, the document is in
+  read mode, or the card has been edited past recognition, ebb says so once
+  and then stops repeating itself, and your edit stays in your flow either
+  way. CardMirror's own permission still governs this the way it governs a
+  send: an ebb you have not allowed under External apps changes nothing in a
+  document, and a CardMirror too old to take an edit changes nothing either. A
+  partner's cell in a shared round is never sent, since the provenance on it
+  names a document on their machine rather than one of yours.
+
 ## [1.6.0] - 2026-11-13
 
 ### Added

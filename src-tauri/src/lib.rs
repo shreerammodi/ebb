@@ -135,6 +135,7 @@ pub fn run() {
             bridge::bridge_reply,
             bridge::cardmirror_insert,
             bridge::cardmirror_jump,
+            bridge::cardmirror_replace,
             collab::collab_claim,
             collab::collab_close,
             collab::collab_dial,
