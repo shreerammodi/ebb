@@ -373,6 +373,19 @@ edge case; otherwise leave the code bare.
   behind the consent prompt - bars that line at that anchor for the session,
   because a rewrite asked twice leaves one node and a new line asked twice
   leaves two. A refusal that names a reason wrote nothing, so it is retried.
+- **Send to CardMirror links the cells it sent, so provenance is not only
+  inbound.** `/insert` answers with one token per block it created, and
+  `linkSent` in `commands.ts` maps them back onto the cells: the rail, jump to
+  source, and push on edit all follow from that one stamp. The mapping is
+  positional, so it is all or nothing - the token count has to account for
+  every line that went out, a cell holding a folded cite is charged for two
+  blocks and keeps the first one's token, and anything else links nothing,
+  because a cell claiming a block it does not own would have `/replace`
+  rewrite a line the debater never chose. Only heading kinds come back with
+  tokens: a body-kind send lands as card body text, which `/replace` refuses
+  as `body-text`, so a token there would promise a link that cannot be used.
+  A cell that already carries provenance keeps it - a send never moves a link
+  that names where the text came from.
 - Prefer `git rebase` over `git merge` when integrating changes to maintain a
   linear history.
 

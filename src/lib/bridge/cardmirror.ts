@@ -78,6 +78,13 @@ export interface CardMirrorReply {
      * left to locate.
      */
     source?: string;
+    /**
+     * One token per block a successful insert created, in document order. The
+     * cells that were sent are linked from these, so a reply that carries a
+     * different count than the send had lines describes a mapping ebb cannot
+     * make and links nothing.
+     */
+    sources?: string[];
 }
 
 function asReply(value: unknown): CardMirrorReply {
@@ -89,6 +96,12 @@ function asReply(value: unknown): CardMirrorReply {
         inserted: o.inserted === true,
         pending: typeof o.pending === "string" ? o.pending : undefined,
         source: typeof o.source === "string" ? o.source : undefined,
+        // An entry that is not a string would shift every token after it onto
+        // the wrong cell, so a malformed list is no list.
+        sources:
+            Array.isArray(o.sources) && o.sources.every((one) => typeof one === "string")
+                ? (o.sources as string[])
+                : undefined,
     };
 }
 

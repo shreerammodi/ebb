@@ -181,6 +181,146 @@ describe("send to doc", () => {
     });
 });
 
+const SHEET = "sheet-1";
+
+interface SendGrid {
+    /** The cell's live meta, for asserting what the send left on it. */
+    at(row: number): { source?: CellSource };
+    rendered: () => void;
+    mutated: () => void;
+}
+
+/**
+ * A one-column grid over `texts`, selected top to bottom: what the send reads,
+ * plus the two hooks a link writes through.
+ */
+function sendGrid(texts: readonly (string | null)[], seeded: Record<number, CellSource> = {}) {
+    const meta = new Map<number, { source?: CellSource }>(
+        Object.entries(seeded).map(([row, source]) => [Number(row), { source }]),
+    );
+    const rendered = vi.fn();
+    const mutated = vi.fn();
+    const hot = {
+        getSelectedLast: () => [0, 0],
+        getSelectedRange: () => [
+            {
+                getTopLeftCorner: () => ({ row: 0, col: 0 }),
+                getBottomRightCorner: () => ({ row: texts.length - 1, col: 0 }),
+            },
+        ],
+        getCellMeta: (row: number) => meta.get(row) ?? {},
+        setCellMeta: (row: number, _col: number, key: string, value: unknown) => {
+            meta.set(row, { ...(meta.get(row) ?? {}), [key]: value as CellSource });
+        },
+        getDataAtCell: (row: number) => texts[row] ?? null,
+        render: rendered,
+    };
+    setActiveHot(hot as never, mutated, SHEET, 0);
+    const grid: SendGrid = { at: (row) => meta.get(row) ?? {}, rendered, mutated };
+    return grid;
+}
+
+describe("the cells a send puts in the document", () => {
+    it("links each one to the block it made, so it wears the rail", async () => {
+        const grid = sendGrid(["First", "Second"]);
+        invoked.mockResolvedValue({
+            ok: true,
+            inserted: true,
+            docTitle: "1AR",
+            sources: ["cmsrc1.first", "cmsrc1.second"],
+        });
+
+        await runSendToDoc();
+
+        // No key: a key names an item the document sent, and this went the
+        // other way. The title is the document the text landed in.
+        expect(grid.at(0).source).toEqual({
+            app: "cardmirror",
+            token: "cmsrc1.first",
+            title: "1AR",
+        });
+        expect(grid.at(1).source?.token).toBe("cmsrc1.second");
+        // The rail is drawn per cell on render, and no cell's text changed.
+        expect(grid.rendered).toHaveBeenCalled();
+        expect(grid.mutated).toHaveBeenCalled();
+    });
+
+    it("charges a cell for every line it sent and keeps the first one's token", async () => {
+        const grid = sendGrid(["Perm solves\nSmith 24", "Second"]);
+        invoked.mockResolvedValue({
+            ok: true,
+            inserted: true,
+            sources: ["cmsrc1.perm", "cmsrc1.cite", "cmsrc1.second"],
+        });
+
+        await runSendToDoc();
+
+        expect(grid.at(0).source?.token).toBe("cmsrc1.perm");
+        expect(grid.at(1).source?.token).toBe("cmsrc1.second");
+    });
+
+    it("links nothing when the blocks named do not account for the lines sent", async () => {
+        const grid = sendGrid(["First", "Second"]);
+        invoked.mockResolvedValue({ ok: true, inserted: true, sources: ["cmsrc1.first"] });
+
+        await runSendToDoc();
+
+        // One token for two cells is a mapping ebb cannot make, and a cell
+        // claiming the wrong block is worse than one claiming none.
+        expect(grid.at(0).source).toBeUndefined();
+        expect(grid.at(1).source).toBeUndefined();
+        expect(lastToast()).toBe("Sent to CardMirror.");
+    });
+
+    it("links nothing when the reply names no blocks at all", async () => {
+        const grid = sendGrid(["First"]);
+        // A CardMirror too old to name what it inserted, and a body-kind send,
+        // both land here. The send still happened.
+        invoked.mockResolvedValue({ ok: true, inserted: true, docTitle: "1AR" });
+
+        await runSendToDoc();
+
+        expect(grid.at(0).source).toBeUndefined();
+        expect(grid.rendered).not.toHaveBeenCalled();
+        expect(lastToast()).toBe('Sent to "1AR".');
+    });
+
+    it("leaves a cell that already came from a document pointing where it came from", async () => {
+        const grid = sendGrid(["Perm solves", "Second"], { 0: SOURCE });
+        invoked.mockResolvedValue({
+            ok: true,
+            inserted: true,
+            sources: ["cmsrc1.copy", "cmsrc1.second"],
+        });
+
+        await runSendToDoc();
+
+        expect(grid.at(0).source).toEqual(SOURCE);
+        expect(grid.at(1).source?.token).toBe("cmsrc1.second");
+    });
+
+    it("links nothing once the grid is showing another sheet", async () => {
+        const grid = sendGrid(["First"]);
+        invoked.mockImplementation(async () => {
+            setActiveHot(null, null, "sheet-2", 0);
+            return { ok: true, inserted: true, sources: ["cmsrc1.first"] };
+        });
+
+        await runSendToDoc();
+
+        expect(grid.at(0).source).toBeUndefined();
+    });
+
+    it("links nothing behind a consent prompt, since nothing was written", async () => {
+        const grid = sendGrid(["First"]);
+        invoked.mockResolvedValue({ ok: true, pending: "consent", sources: ["cmsrc1.first"] });
+
+        await runSendToDoc();
+
+        expect(grid.at(0).source).toBeUndefined();
+    });
+});
+
 describe("the desktop-only gate", () => {
     it("makes both commands silent no-ops when the switch is off", async () => {
         setActiveHot(makeGrid("Perm solves", SOURCE) as never, vi.fn(), null, 0);

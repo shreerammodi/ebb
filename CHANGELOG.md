@@ -39,6 +39,19 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   could not get a straight answer about - CardMirror stopped answering, or took
   it without saying where it went - is never sent a second time, because two
   copies of one line in your file is worse than one copy in your flow alone.
+- **Cells you send to CardMirror now keep the teal rail.** Send to CardMirror
+  used to be one-way: the text arrived in your document and the cells it came
+  from stayed strangers to it. Now each cell is linked to the line it wrote, so
+  it wears the rail, Jump to Source takes you to it, and editing it afterwards
+  updates the document the way an edit to a card you flowed does. Whether a
+  send can be linked depends on what it lands as, which is the text type in
+  Settings: the outline kinds - pocket, hat, block, tag, analytic - come back
+  named, and a plain body send does not, because body text in a card is quoted
+  evidence and CardMirror will not let another app rewrite it. A cell with a
+  cite folded under its tag keeps its tag's line. If CardMirror cannot account
+  for everything that went out, or is too old to say what it made, the send
+  still happens and nothing is linked - a cell pointing at the wrong line in
+  your file would be worse than a cell pointing at none.
 
 ## [1.6.0] - 2026-11-13
 
