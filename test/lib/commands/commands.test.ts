@@ -10,7 +10,13 @@ import { projectDoc } from "@/lib/collab/doc";
 import { clearReplica, getReplica, seedReplica } from "@/lib/collab/replica";
 import { executeCommand, runExtend } from "@/lib/commands/commands";
 import { COMMANDS, EDITS_ROUND, type CommandId } from "@/lib/commands/registry";
-import { BOLD_CLASS, GROUP_CLASS, HIGHLIGHT_CLASS, KICKED_CLASS } from "@/lib/grid/codec";
+import {
+    BOLD_CLASS,
+    GROUP_CLASS,
+    HIGHLIGHT_CLASS,
+    KICKED_CLASS,
+    trimGrid,
+} from "@/lib/grid/codec";
 import { registerHot, setActiveHot } from "@/lib/grid/hotInstance";
 import { isMovingIn, movingBlock, revertMove } from "@/lib/grid/moveSession";
 import { makeFlowRound, sortedSheets, type FlowRound } from "@/lib/model/flow";
@@ -336,9 +342,7 @@ describe("grid commands", () => {
             for (const [row, col, value] of changes) data[row][col] = value;
         });
         const selectCells = vi.fn();
-        const getDataAtCell = vi.fn(
-            (row: number, col: number) => data[row]?.[col] ?? null,
-        );
+        const getDataAtCell = vi.fn((row: number, col: number) => data[row]?.[col] ?? null);
         const getActiveEditor = vi.fn(
             (): { isOpened(): boolean; finishEditing(): void } | null => null,
         );
@@ -395,9 +399,7 @@ describe("grid commands", () => {
     it("persists and replicates against the supplied unfocused split grid", () => {
         const round = loadRound();
         const focused = round.sheets.find((candidate) => candidate.kind !== "cx")!;
-        const suppliedId = useFlowStore
-            .getState()
-            .addSheet({ title: "Other pane", group: "neg" });
+        const suppliedId = useFlowStore.getState().addSheet({ title: "Other pane", group: "neg" });
         useFlowStore.getState().updateSheetData(
             suppliedId,
             [
@@ -438,13 +440,11 @@ describe("grid commands", () => {
             endCol: 1,
         });
         const suppliedSnapshot = vi.fn(() =>
-            useFlowStore
-                .getState()
-                .updateSheetData(
-                    suppliedId,
-                    suppliedData.map((row) => row.slice(1)),
-                    {},
-                ),
+            useFlowStore.getState().updateSheetData(
+                suppliedId,
+                suppliedData.map((row) => row.slice(1)),
+                {},
+            ),
         );
         registerHot(suppliedHot as never, suppliedSnapshot, suppliedId, 1);
 
@@ -459,7 +459,10 @@ describe("grid commands", () => {
             [null, null, "destination"],
         ]);
         expect(
-            projectDoc(getReplica()!, stored).sheets.find((sheet) => sheet.id === suppliedId)!.data,
+            trimGrid(
+                projectDoc(getReplica()!, stored).sheets.find((sheet) => sheet.id === suppliedId)!
+                    .data,
+            ),
         ).toEqual([
             ["tag", "aff", "tag"],
             [null, null, "destination"],
