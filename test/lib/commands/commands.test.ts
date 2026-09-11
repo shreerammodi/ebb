@@ -10,13 +10,7 @@ import { projectDoc } from "@/lib/collab/doc";
 import { clearReplica, getReplica, seedReplica } from "@/lib/collab/replica";
 import { executeCommand, runExtend } from "@/lib/commands/commands";
 import { COMMANDS, EDITS_ROUND, type CommandId } from "@/lib/commands/registry";
-import {
-    BOLD_CLASS,
-    GROUP_CLASS,
-    HIGHLIGHT_CLASS,
-    KICKED_CLASS,
-    trimGrid,
-} from "@/lib/grid/codec";
+import { BOLD_CLASS, GROUP_CLASS, HIGHLIGHT_CLASS, KICKED_CLASS, trimGrid } from "@/lib/grid/codec";
 import { registerHot, setActiveHot } from "@/lib/grid/hotInstance";
 import { isMovingIn, movingBlock, revertMove } from "@/lib/grid/moveSession";
 import { makeFlowRound, sortedSheets, type FlowRound } from "@/lib/model/flow";
