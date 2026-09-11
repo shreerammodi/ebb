@@ -1015,10 +1015,14 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     }, [snapshot]);
 
     // Returning false is Handsontable's documented way to cancel an undo push.
-    // The session's live preview mutations never reach the stack; its commit,
-    // fired after the session closes, is the one action recorded.
+    // A partner's patch already lives in the replica and store, so it never
+    // becomes a local undo action. The move session's live preview mutations
+    // never reach the stack either; its commit is the one recorded action.
     const beforeUndoStackChange = useCallback(
-        () => (isMovingIn(hotRef.current?.hotInstance ?? null) ? false : undefined),
+        (_actions: unknown[], source?: string) =>
+            source === REMOTE_WRITE || isMovingIn(hotRef.current?.hotInstance ?? null)
+                ? false
+                : undefined,
         [],
     );
 
