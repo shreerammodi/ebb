@@ -10,8 +10,12 @@
  * split view can be the other one.
  */
 
+import type Handsontable from "handsontable";
+
 import { jumpToSource } from "@/lib/bridge/commands";
 import { cardmirrorLive } from "@/lib/bridge/enabled";
+import { runExtend } from "@/lib/commands/commands";
+
 import type { CellSource } from "@/lib/model/flow";
 
 /** The slice of Handsontable a menu item reads. Bound as `this` on both hooks. */
@@ -44,10 +48,19 @@ export const JUMP_TO_SOURCE_ITEM = {
     },
 };
 
+export const EXTEND_ITEM = {
+    key: "extend_to_next_speech",
+    name: "Extend to next speech",
+    callback(this: Handsontable): void {
+        runExtend(this);
+    },
+};
+
 export const FLOW_CONTEXT_MENU = [
     "row_above",
     "row_below",
     "remove_row",
+    EXTEND_ITEM,
     "---------",
     JUMP_TO_SOURCE_ITEM,
 ];

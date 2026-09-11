@@ -41,6 +41,7 @@ const RESERVED_KEYS = [
     "j", // rfd toggle
     // -- Rows / cells -------------------------------------------------------
     "Backspace", // row delete
+    "e", // extend argument
     "o", // insert cell (suppresses browser open-file)
     "O", // insert row (Shift encoded in uppercase key)
     "M", // move cells (suppresses the browser profile switcher)

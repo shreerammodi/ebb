@@ -27,6 +27,12 @@ it("binds the platform modifier+k to format.toggleKicked", () => {
     expect(FLAT_KEYMAP.bindings[`${mod}+k`]).toBe("format.toggleKicked");
 });
 
+it("binds modifier+e to Extend and leaves Jump to source unbound", () => {
+    expect(FLAT_KEYMAP.bindings[`${mod}+e`]).toBe("cell.extend");
+    expect(Object.values(FLAT_KEYMAP.bindings)).not.toContain("cell.jumpToSource");
+    expect(FLAT_KEYMAP.bindings[`${mod}+E`]).toBe("cell.sendToDoc");
+});
+
 it("binds undo and redo on the platform modifier", () => {
     expect(FLAT_KEYMAP.bindings[`${mod}+z`]).toBe("edit.undo");
     expect(FLAT_KEYMAP.bindings[`${mod}+Z`]).toBe("edit.redo");
