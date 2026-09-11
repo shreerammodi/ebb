@@ -57,7 +57,7 @@ iroh = { version = "1", default-features = false, features = [
     "fast-apple-datapath",
     "tls-ring",
 ] }
-iroh-mdns-address-lookup = "0.4"
+iroh-mdns-address-lookup = "0.5"
 # Pairing by short code. Both sides run one HKDF-SHA256 over the code to reach
 # the same key and the same relay, which is what lets a code be an address a
 # person carries with nothing published anywhere. RustCrypto, no network, no C.
