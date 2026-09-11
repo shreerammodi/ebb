@@ -3,6 +3,7 @@
 import { HotTable } from "@handsontable/react-wrapper";
 import type { HotTableRef } from "@handsontable/react-wrapper";
 import type Handsontable from "handsontable";
+import type { CellCoords } from "handsontable";
 import { registerAllModules } from "handsontable/registry";
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -969,7 +970,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     const pasteClasses = useRef<ClassEntry[]>([]);
 
     const beforePaste = useCallback(
-        (data: string[][]) => {
+        (data: unknown[][]) => {
             pasteShift.current = null;
             const hot = hotRef.current?.hotInstance;
             const sel = hot?.getSelectedRangeLast();
@@ -1272,25 +1273,19 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     // a click on one lands on the sheet's own first cell rather than parking
     // the cursor in a column that refuses every keystroke. A header click
     // arrives with a negative row and is redirected the same way.
-    const beforeOnCellMouseDown = useCallback(
-        (_event: unknown, coords: { row: number; col: number }) => {
-            const lead = loadedSpacersRef.current;
-            if (coords.col >= 0 && coords.col < lead) coords.col = lead;
-        },
-        [],
-    );
+    const beforeOnCellMouseDown = useCallback((_event: MouseEvent, coords: CellCoords) => {
+        const lead = loadedSpacersRef.current;
+        if (coords.col !== null && coords.col >= 0 && coords.col < lead) coords.col = lead;
+    }, []);
 
     // The same redirect for the moving end of a drag, which reaches the grid
     // here rather than through the mousedown. A range whose edge sits in the
     // pad decorates it, and collectMeta refuses to save a spacer's cells, so
     // the bolding would sit on the grid with nothing stored to clear it by.
-    const beforeOnCellMouseOver = useCallback(
-        (_event: unknown, coords: { row: number; col: number }) => {
-            const lead = loadedSpacersRef.current;
-            if (coords.col >= 0 && coords.col < lead) coords.col = lead;
-        },
-        [],
-    );
+    const beforeOnCellMouseOver = useCallback((_event: MouseEvent, coords: CellCoords) => {
+        const lead = loadedSpacersRef.current;
+        if (coords.col !== null && coords.col >= 0 && coords.col < lead) coords.col = lead;
+    }, []);
 
     // Whether a cell takes the editor. Handsontable merges what this returns
     // into meta it keeps between renders, so the answer has to be total: a

@@ -33,6 +33,17 @@ updates:
           # Stay on 9.x until eslint-config-next targets eslint 10.
           - dependency-name: eslint
             update-types: ["version-update:semver-major"]
+          # vitest 5 declares `Assertion<R extends void | Promise<void>, T>`,
+          # while @testing-library/jest-dom (7.0.1, latest) augments it as
+          # `Assertion<T>`. Declaration merging across a differing type
+          # parameter list is an error inside the .d.ts, which skipLibCheck
+          # swallows, so the augmentation is dropped and every jest-dom matcher
+          # disappears from the type surface while still working at runtime:
+          # `vitest run` stays green and `next build` fails the typecheck on
+          # 200+ assertions. Stay on 4.x until jest-dom augments the two-
+          # parameter interface.
+          - dependency-name: vitest
+            update-types: ["version-update:semver-major"]
 
     # The Rust half of the tree is the half that terminates bytes off the
     # network - QUIC, TLS, DNS, the relay client - and it is 693 packages deep.
