@@ -28,7 +28,7 @@ const REBASEABLE: Record<string, true> = {
     remove_row: true,
 };
 
-function shiftRow(row: number, change: StructuralChange): number | null {
+export function rebaseRow(row: number, change: StructuralChange): number | null {
     if (change.kind === "insertRow") {
         return row >= change.at ? row + change.amount : row;
     }
@@ -57,7 +57,7 @@ export function rebaseActions(
         if (action.changes) {
             const changes: NonNullable<UndoAction["changes"]> = [];
             for (const [row, prop, oldValue, newValue] of action.changes) {
-                const moved = shiftRow(row, change);
+                const moved = rebaseRow(row, change);
                 if (moved === null) return null;
                 changes.push([moved, prop, oldValue, newValue]);
             }
@@ -66,7 +66,7 @@ export function rebaseActions(
         }
 
         if (typeof action.index === "number") {
-            const moved = shiftRow(action.index, change);
+            const moved = rebaseRow(action.index, change);
             if (moved === null) return null;
             out.push({ ...action, index: moved });
             continue;

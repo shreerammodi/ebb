@@ -247,7 +247,7 @@ export function runExtend(grid = getActiveHot()): void {
 
     const targetCol = toGridCol(modelCol(target), spacers);
     const height = bottom.row - top.row + 1;
-    let redoMeta: { row: number; meta: CellMeta }[] = [];
+    let redoMeta: { offset: number; meta: CellMeta }[] = [];
     let before: ClassEntry[] | null = null;
     try {
         const required = extensionRequiredRows(grid, targetCol, top.row, height);
@@ -272,23 +272,24 @@ export function runExtend(grid = getActiveHot()): void {
             before,
             after: snapshotClasses(grid, [targetCol]),
             effects: {
-                beforeUndo: () => {
+                row: top.row,
+                beforeUndo: (row) => {
                     for (let index = 0; index < height; index++) {
-                        recordOp({ kind: "removeCell", sheetId, col: target, row: top.row });
+                        recordOp({ kind: "removeCell", sheetId, col: target, row });
                     }
                 },
-                beforeRedo: () => {
+                beforeRedo: (row) => {
                     for (let index = 0; index < height; index++) {
-                        recordOp({ kind: "insertCell", sheetId, col: target, row: top.row });
+                        recordOp({ kind: "insertCell", sheetId, col: target, row });
                     }
                 },
-                afterRedo: () => {
+                afterRedo: (row) => {
                     for (const copied of redoMeta) {
                         recordOp({
                             kind: "cellMeta",
                             sheetId,
                             col: target,
-                            row: copied.row,
+                            row: row + copied.offset,
                             meta: copied.meta,
                         });
                     }
@@ -332,7 +333,7 @@ export function runExtend(grid = getActiveHot()): void {
             const row = top.row + index;
             const meta = updated.meta[`${row},${target}`];
             if (meta && Object.keys(meta).length > 0) {
-                redoMeta.push({ row, meta });
+                redoMeta.push({ offset: index, meta });
                 recordOp({ kind: "cellMeta", sheetId, col: target, row, meta });
             }
         }

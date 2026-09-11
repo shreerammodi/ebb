@@ -6,8 +6,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import HotGrid, { applyMeta, collectMeta } from "@/components/flow/HotGrid";
 import { projectDoc, seedDoc } from "@/lib/collab/doc";
-import { applyOp, type OpContext } from "@/lib/collab/ops";
-import { clearReplica, getReplica, seedReplica } from "@/lib/collab/replica";
+import { applyOp, type CollabOp, type OpContext } from "@/lib/collab/ops";
+import {
+    clearReplica,
+    getReplica,
+    replaceReplicaDoc,
+    seedReplica,
+} from "@/lib/collab/replica";
 import { executeCommand } from "@/lib/commands/commands";
 import { createClock } from "@/lib/collab/stamp";
 import { gridCol, toModelCol } from "@/lib/grid/colSpace";
@@ -163,6 +168,25 @@ describe("argument extension", () => {
         });
     });
 
+    function expectReplicaMatchesGrid(sheetId: string): void {
+        const local = useFlowStore
+            .getState()
+            .round!.sheets.find((candidate) => candidate.id === sheetId)!;
+        const projected = projectDoc(getReplica()!, useFlowStore.getState().round!).sheets.find(
+            (candidate) => candidate.id === sheetId,
+        )!;
+        const localData = trimGrid(local.data);
+        const projectedData = trimGrid(projected.data);
+        const width = [...localData, ...projectedData].reduce(
+            (widest, row) => Math.max(widest, row.length),
+            0,
+        );
+        const rectangle = (data: (string | null)[][]) =>
+            data.map((row) => Array.from({ length: width }, (_, col) => row[col] ?? null));
+        expect(rectangle(projectedData)).toEqual(rectangle(localData));
+        expect(projected.meta).toEqual(local.meta);
+    }
+
     it("undoes and redoes one complete extension with metadata", async () => {
         const round = makeFlowRound();
         const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
@@ -181,43 +205,81 @@ describe("argument extension", () => {
         render(<HotGrid sheetId={sheet.id} pane={1} />);
         const hot = await mounted();
         hot.selectCells([[0, 0, 1, 0]]);
-        const expectReplicaMatchesGrid = () => {
-            const local = useFlowStore
-                .getState()
-                .round!.sheets.find((candidate) => candidate.id === sheet.id)!;
-            const projected = projectDoc(getReplica()!, useFlowStore.getState().round!).sheets.find(
-                (candidate) => candidate.id === sheet.id,
-            )!;
-            const localData = trimGrid(local.data);
-            const projectedData = trimGrid(projected.data);
-            const width = [...localData, ...projectedData].reduce(
-                (widest, row) => Math.max(widest, row.length),
-                0,
-            );
-            const rectangle = (data: (string | null)[][]) =>
-                data.map((row) =>
-                    Array.from({ length: width }, (_, col) => row[col] ?? null),
-                );
-            expect(rectangle(projectedData)).toEqual(rectangle(localData));
-            expect(projected.meta).toEqual(local.meta);
-        };
 
         act(() => executeCommand("cell.extend"));
         expect(hot.getDataAtCell(0, 2)).toBe("tag");
         expect(hot.getDataAtCell(2, 2)).toBe("destination");
         expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
-        expectReplicaMatchesGrid();
+        expectReplicaMatchesGrid(sheet.id);
 
         act(() => executeCommand("edit.undo"));
+
         expect(hot.getDataAtCell(0, 2)).toBe("destination");
         expect(hot.getCellMeta(0, 2).className).toBe("flow-highlight");
-        expectReplicaMatchesGrid();
+        expectReplicaMatchesGrid(sheet.id);
 
         act(() => executeCommand("edit.redo"));
         expect(hot.getDataAtCell(0, 2)).toBe("tag");
         expect(hot.getDataAtCell(2, 2)).toBe("destination");
         expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
-        expectReplicaMatchesGrid();
+        expectReplicaMatchesGrid(sheet.id);
+    });
+
+    it("rebases extension undo and redo across remote destination shifts", async () => {
+        const round = makeFlowRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        sheet.data = [
+            [null, "neg", "lead"],
+            ["tag", null, "destination"],
+            ["warrant", null, null],
+            [null, null, null],
+        ];
+        sheet.meta = {
+            "1,0": { bold: true, kicked: true, source: SRC },
+            "1,2": { highlight: true },
+        };
+        useFlowStore.getState().loadRound(round, { activeSheetId: sheet.id });
+        useFlowStore.setState({ splitSheetId: null, alignSpeeches: false });
+        render(<HotGrid sheetId={sheet.id} pane={1} />);
+        const hot = await mounted();
+        hot.selectCells([[1, 0, 2, 0]]);
+
+        let time = 5_000;
+        const ctx: OpContext = { actor: "sam", clock: createClock("sam", () => time++) };
+        const landRemote = (op: CollabOp) => {
+            const before = getReplica()!;
+            const after = applyOp(before, op, ctx);
+            act(() => {
+                replaceReplicaDoc(after);
+                const base = useFlowStore.getState().round!;
+                useFlowStore.getState().applyRemoteRound(projectDoc(after, base, before));
+                applyRemote(before, after);
+            });
+        };
+
+        act(() => executeCommand("cell.extend"));
+        expect(hot.getDataAtCell(1, 2)).toBe("tag");
+        expectReplicaMatchesGrid(sheet.id);
+
+        landRemote({ kind: "insertCell", sheetId: sheet.id, col: 2, row: 0 });
+        expect(hot.getDataAtCell(2, 2)).toBe("tag");
+        expectReplicaMatchesGrid(sheet.id);
+
+        act(() => executeCommand("edit.undo"));
+        expect(hot.getDataAtCell(2, 2)).toBe("destination");
+        expect(hot.getCellMeta(2, 2).className).toBe("flow-highlight");
+        expectReplicaMatchesGrid(sheet.id);
+
+        hot.selectCell(1, 2);
+        landRemote({ kind: "removeCell", sheetId: sheet.id, col: 2, row: 0 });
+        expect(hot.getDataAtCell(1, 2)).toBe("destination");
+        expectReplicaMatchesGrid(sheet.id);
+
+        act(() => executeCommand("edit.redo"));
+        expect(hot.getDataAtCell(1, 2)).toBe("tag");
+        expect(hot.getDataAtCell(3, 2)).toBe("destination");
+        expect(hot.getCellMeta(1, 2).className).toBe("flow-bold");
+        expectReplicaMatchesGrid(sheet.id);
     });
 });
 

@@ -6,6 +6,7 @@ import {
     onUndoStackChange,
     rebaseUndoStacks,
     restoreMetaRedo,
+    runMetaUndoBeforeUndo,
 } from "@/lib/grid/metaUndo";
 
 /** Stands in for Handsontable's undo plugin: two arrays of live actions. */
@@ -69,6 +70,44 @@ describe("rebaseUndoStacks", () => {
         // applyClasses blanks the column first, so the decorated row is the
         // only one it writes a class to.
         expect(written.filter(([, , v]) => v !== "").map(([r]) => r)).toEqual([5]);
+    });
+
+    it("shifts a structural effect with its native action", () => {
+        const action = changeAt(3);
+        const rows: number[] = [];
+        onUndoStackChange([], [action]);
+        attachMetaUndo({
+            cols: [0],
+            before: [],
+            after: [],
+            effects: {
+                row: 3,
+                beforeUndo: (row) => rows.push(row),
+            },
+        });
+        const p = plugin([action]);
+
+        rebaseUndoStacks(p, { kind: "insertRow", at: 0, amount: 2 });
+        onUndoStackChange([action], []);
+        runMetaUndoBeforeUndo();
+
+        expect(rows).toEqual([5]);
+    });
+
+    it("drops history when a remove takes away a structural effect row", () => {
+        const action = changeAt(5);
+        onUndoStackChange([], [action]);
+        attachMetaUndo({
+            cols: [0],
+            before: [],
+            after: [],
+            effects: { row: 2 },
+        });
+        const p = plugin([action]);
+
+        rebaseUndoStacks(p, { kind: "removeRow", at: 2, amount: 1 });
+
+        expect(p.doneActions).toEqual([]);
     });
 
     it("drops both stacks when a shape it cannot correct is present", () => {

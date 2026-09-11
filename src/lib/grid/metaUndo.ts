@@ -10,7 +10,12 @@
  * no-ops and text undo keeps working.
  */
 
-import { rebaseActions, type StructuralChange, type UndoAction } from "@/lib/collab/undoRebase";
+import {
+    rebaseActions,
+    rebaseRow,
+    type StructuralChange,
+    type UndoAction,
+} from "@/lib/collab/undoRebase";
 import type { CellSource } from "@/lib/model/flow";
 
 import type { CellGrid } from "./cellShift";
@@ -23,9 +28,10 @@ import type { CellGrid } from "./cellShift";
 export type ClassEntry = [row: number, col: number, className: string, source?: CellSource];
 
 export interface MetaUndoEffects {
-    beforeUndo?(): void;
-    beforeRedo?(): void;
-    afterRedo?(): void;
+    row: number;
+    beforeUndo?(row: number): void;
+    beforeRedo?(row: number): void;
+    afterRedo?(row: number): void;
 }
 
 export interface MetaSnapshot {
@@ -104,13 +110,19 @@ export function attachMetaUndo(snap: MetaSnapshot): void {
 
 /** `beforeUndo`: runs the structural effect bound to the action being undone. */
 export function runMetaUndoBeforeUndo(): void {
-    if (lastUndoing) snapshots.get(lastUndoing)?.effects?.beforeUndo?.();
+    if (lastUndoing) {
+        const effects = snapshots.get(lastUndoing)?.effects;
+        if (effects) effects.beforeUndo?.(effects.row);
+    }
     lastUndoing = null;
 }
 
 /** `beforeRedo`: runs the structural effect bound to the action being redone. */
 export function runMetaUndoBeforeRedo(): void {
-    if (lastRedoing) snapshots.get(lastRedoing)?.effects?.beforeRedo?.();
+    if (lastRedoing) {
+        const effects = snapshots.get(lastRedoing)?.effects;
+        if (effects) effects.beforeRedo?.(effects.row);
+    }
     lastRedoing = null;
 }
 
@@ -127,7 +139,7 @@ export function restoreMetaRedo(grid: CellGrid): boolean {
     const snap = lastPushed && snapshots.get(lastPushed);
     if (!snap) return false;
     applyClasses(grid, snap.cols, snap.after);
-    snap.effects?.afterRedo?.();
+    if (snap.effects) snap.effects.afterRedo?.(snap.effects.row);
     return true;
 }
 
@@ -150,11 +162,9 @@ function rebaseEntries(entries: ClassEntry[], change: StructuralChange): ClassEn
     const out: ClassEntry[] = [];
     for (const entry of entries) {
         const [row, col, className, source] = entry;
-        const asAction: UndoAction = { actionType: "change", changes: [[row, col, null, null]] };
-        const moved = rebaseActions([asAction], change);
+        const moved = rebaseRow(row, change);
         if (moved === null) return null;
-        const newRow = moved[0].changes![0][0];
-        out.push(source ? [newRow, col, className, source] : [newRow, col, className]);
+        out.push(source ? [moved, col, className, source] : [moved, col, className]);
     }
     return out;
 }
@@ -189,7 +199,12 @@ export function rebaseUndoStacks(
                   }
                 : null,
         );
-        const metaFailed = rebasedMetas.some((m) => m && (!m.before || !m.after));
+        const rebasedEffectRows = metas.map((m) =>
+            m?.effects ? rebaseRow(m.effects.row, change) : undefined,
+        );
+        const metaFailed =
+            rebasedMetas.some((m) => m && (!m.before || !m.after)) ||
+            rebasedEffectRows.some((row) => row === null);
 
         if (rebased === null || metaFailed) {
             // Losing history beats writing to the wrong cell.
@@ -207,6 +222,10 @@ export function rebaseUndoStacks(
             if (meta && held) {
                 held.before = meta.before as ClassEntry[];
                 held.after = meta.after as ClassEntry[];
+                const effectRow = rebasedEffectRows[i];
+                if (held.effects && effectRow !== undefined && effectRow !== null) {
+                    held.effects.row = effectRow;
+                }
             }
         });
     }
