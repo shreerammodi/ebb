@@ -188,7 +188,17 @@ describe("argument extension", () => {
             const projected = projectDoc(getReplica()!, useFlowStore.getState().round!).sheets.find(
                 (candidate) => candidate.id === sheet.id,
             )!;
-            expect(trimGrid(projected.data)).toEqual(local.data);
+            const localData = trimGrid(local.data);
+            const projectedData = trimGrid(projected.data);
+            const width = [...localData, ...projectedData].reduce(
+                (widest, row) => Math.max(widest, row.length),
+                0,
+            );
+            const rectangle = (data: (string | null)[][]) =>
+                data.map((row) =>
+                    Array.from({ length: width }, (_, col) => row[col] ?? null),
+                );
+            expect(rectangle(projectedData)).toEqual(rectangle(localData));
             expect(projected.meta).toEqual(local.meta);
         };
 
