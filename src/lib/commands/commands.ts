@@ -272,6 +272,8 @@ export function runExtend(grid = getActiveHot()): void {
             before,
             after: snapshotClasses(grid, [targetCol]),
             effects: {
+                col: targetCol,
+                requiresContiguousSuffix: true,
                 row: top.row,
                 beforeUndo: (row) => {
                     for (let index = 0; index < height; index++) {

@@ -1,17 +1,20 @@
 /**
  * Keeping undo honest across a partner's structural change.
  *
- * Handsontable's undo stack stores row indices. A remote row insert makes
- * every pending index stale, and an undo would then write into a row the
- * debater never touched. Rebasing the shapes this build understands keeps the
- * history; anything else clears it, because losing history beats writing to
- * the wrong cell.
+ * Handsontable's undo stack stores row indices. A remote cell or row insert
+ * makes some pending indices stale, and an undo would then write into a row
+ * the debater never touched. Rebasing the shapes this build understands keeps
+ * the history; anything else clears it, because losing history beats writing
+ * to the wrong cell.
  */
+
+/** Which columns a partner's structural change moves. */
+export type StructuralScope = { kind: "column"; col: number } | { kind: "row" };
 
 /** What a partner did, in the terms the stack has to be corrected for. */
 export type StructuralChange =
-    | { kind: "insertRow"; at: number; amount: number }
-    | { kind: "removeRow"; at: number; amount: number };
+    | { kind: "insertRow"; at: number; amount: number; scope: StructuralScope }
+    | { kind: "removeRow"; at: number; amount: number; scope: StructuralScope };
 
 /** One entry of Handsontable's own undo stack, in the parts that carry rows. */
 export interface UndoAction {
@@ -28,7 +31,21 @@ const REBASEABLE: Record<string, true> = {
     remove_row: true,
 };
 
-export function rebaseRow(row: number, change: StructuralChange): number | null {
+export function structuralAffectsColumn(change: StructuralChange, col: number): boolean {
+    return change.scope.kind === "row" || change.scope.col === col;
+}
+
+export function rebaseRow(
+    row: number,
+    change: StructuralChange,
+    col?: number,
+): number | null {
+    if (
+        change.scope.kind === "column" &&
+        (typeof col !== "number" || change.scope.col !== col)
+    ) {
+        return row;
+    }
     if (change.kind === "insertRow") {
         return row >= change.at ? row + change.amount : row;
     }
@@ -57,7 +74,7 @@ export function rebaseActions(
         if (action.changes) {
             const changes: NonNullable<UndoAction["changes"]> = [];
             for (const [row, prop, oldValue, newValue] of action.changes) {
-                const moved = rebaseRow(row, change);
+                const moved = rebaseRow(row, change, typeof prop === "number" ? prop : undefined);
                 if (moved === null) return null;
                 changes.push([moved, prop, oldValue, newValue]);
             }

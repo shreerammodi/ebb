@@ -74,6 +74,22 @@ describe("a partner edits a cell you are not in", () => {
         expect(plan.selectRow).toBeNull();
         expect(plan.deferredCells).toEqual([]);
     });
+
+    it("reports a structural change by column even without a selection", () => {
+        const plan = planRemoteApply(
+            before,
+            after({ kind: "insertCell", sheetId, col: 1, row: 1 }),
+            ctx({ selection: null }),
+        );
+        expect(plan.structural).toEqual([
+            {
+                kind: "insertRow",
+                at: 1,
+                amount: 1,
+                scope: { kind: "column", col: 1 },
+            },
+        ]);
+    });
 });
 
 describe("a partner edits the cell your editor is open on", () => {
@@ -109,7 +125,9 @@ describe("a partner inserts above your cursor", () => {
 
     it("reports the structural change so the undo stack can be corrected", () => {
         const plan = planRemoteApply(before, after({ kind: "insertRow", sheetId, row: 1 }), ctx());
-        expect(plan.structural).toMatchObject({ kind: "insertRow", at: 1 });
+        expect(plan.structural).toEqual([
+            { kind: "insertRow", at: 1, amount: 1, scope: { kind: "row" } },
+        ]);
     });
 });
 
@@ -136,7 +154,7 @@ describe("a partner touches a sheet you are not looking at", () => {
             after({ kind: "insertRow", sheetId: otherSheetId, row: 0 }),
             ctx(),
         );
-        expect(plan.structural).toBeNull();
+        expect(plan.structural).toEqual([]);
     });
 });
 

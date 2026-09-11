@@ -10,7 +10,7 @@
 
 import { modelCol, type ModelCol } from "@/lib/grid/colSpace";
 
-import { liveCells } from "./doc";
+import { liveCells, sheetWidth } from "./doc";
 import { followSelection, type CellRef } from "./selection";
 import type { CollabDoc, CollabSheet } from "./types";
 import type { StructuralChange } from "./undoRebase";
@@ -29,8 +29,8 @@ export interface ApplyPlan {
     deferredCells: CellRef[];
     /** The row the selection moves to, or null to leave it where it is. */
     selectRow: number | null;
-    /** What the undo stack has to be corrected for, if anything. */
-    structural: StructuralChange | null;
+    /** The column or whole-row shifts the undo stack has to be corrected for. */
+    structural: StructuralChange[];
     /**
      * Typed as the literal false. The hard rule is that a remote apply never
      * scrolls, and a type is harder to forget than a comment.
@@ -40,26 +40,35 @@ export interface ApplyPlan {
     leftSheet: string | null;
 }
 
-/** How many live cells a column holds, which is what a row insert changes. */
-function heightOf(sheet: CollabSheet | undefined, col: number): number {
-    return sheet ? liveCells(sheet, col).length : 0;
-}
-
 /**
  * The structural change a partner made to one column, in the terms the undo
  * stack needs. Derived from the live heights rather than from the op, because
  * a delta can carry several ops at once and only the net effect matters.
  */
-function structuralFor(
-    before: CollabSheet | undefined,
-    after: CollabSheet | undefined,
+function structuralForColumn(
+    before: CollabSheet,
+    after: CollabSheet,
     col: number,
-    around: number,
 ): StructuralChange | null {
-    const was = heightOf(before, col);
-    const now = heightOf(after, col);
-    if (now > was) return { kind: "insertRow", at: around, amount: now - was };
-    if (now < was) return { kind: "removeRow", at: around, amount: was - now };
+    const was = liveCells(before, col).length;
+    const now = liveCells(after, col).length;
+    const at = firstMovedRow(before, after, col);
+    if (now > was) {
+        return {
+            kind: "insertRow",
+            at,
+            amount: now - was,
+            scope: { kind: "column", col },
+        };
+    }
+    if (now < was) {
+        return {
+            kind: "removeRow",
+            at,
+            amount: was - now,
+            scope: { kind: "column", col },
+        };
+    }
     return null;
 }
 
@@ -74,21 +83,55 @@ function firstMovedRow(before: CollabSheet, after: CollabSheet, col: number): nu
     return shared;
 }
 
+/** All structural shifts in a sheet, with a common shift collapsed to a row scope. */
+function structuralForSheet(before: CollabSheet, after: CollabSheet): StructuralChange[] {
+    const width = Math.max(sheetWidth(before), sheetWidth(after));
+    const changes: StructuralChange[] = [];
+    for (let col = 0; col < width; col++) {
+        const change = structuralForColumn(before, after, col);
+        if (change) changes.push(change);
+    }
+    if (width === 0 || changes.length !== width) return changes;
+
+    const first = changes[0]!;
+    if (
+        !changes.every(
+            (change) =>
+                change.kind === first.kind &&
+                change.at === first.at &&
+                change.amount === first.amount,
+        )
+    ) {
+        return changes;
+    }
+    if (first.kind === "insertRow") {
+        return [
+            { kind: "insertRow", at: first.at, amount: first.amount, scope: { kind: "row" } },
+        ];
+    }
+    return [
+        { kind: "removeRow", at: first.at, amount: first.amount, scope: { kind: "row" } },
+    ];
+}
+
 export function planRemoteApply(before: CollabDoc, after: CollabDoc, ctx: ApplyContext): ApplyPlan {
     const plan: ApplyPlan = {
         writeCells: true,
         deferredCells: [],
         selectRow: null,
-        structural: null,
+        structural: [],
         scroll: false,
         leftSheet: null,
     };
 
     // A sheet the viewer is standing on that a partner removed.
     if (ctx.activeSheetId) {
-        const wasAlive = before.sheets[ctx.activeSheetId]?.deleted === null;
-        const nowGone = after.sheets[ctx.activeSheetId]?.deleted !== null;
+        const wasSheet = before.sheets[ctx.activeSheetId];
+        const nowSheet = after.sheets[ctx.activeSheetId];
+        const wasAlive = wasSheet?.deleted === null;
+        const nowGone = nowSheet?.deleted !== null;
         if (wasAlive && nowGone) plan.leftSheet = ctx.activeSheetId;
+        if (wasSheet && nowSheet) plan.structural = structuralForSheet(wasSheet, nowSheet);
     }
 
     // The cell under an open editor is held back. It is already in the
@@ -112,13 +155,6 @@ export function planRemoteApply(before: CollabDoc, after: CollabDoc, ctx: ApplyC
     const wasSheet = before.sheets[sel.sheetId];
     const nowSheet = after.sheets[sel.sheetId];
     if (!wasSheet || !nowSheet) return plan;
-
-    plan.structural = structuralFor(
-        wasSheet,
-        nowSheet,
-        sel.col,
-        firstMovedRow(wasSheet, nowSheet, sel.col),
-    );
 
     const followed = followSelection(wasSheet, nowSheet, sel.row, sel.col);
     // Null means leave it alone, which is also what happens when the cursor's

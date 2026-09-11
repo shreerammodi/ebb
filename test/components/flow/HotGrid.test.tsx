@@ -262,23 +262,28 @@ describe("argument extension", () => {
         expectReplicaMatchesGrid(sheet.id);
 
         landRemote({ kind: "insertCell", sheetId: sheet.id, col: 2, row: 0 });
-        expect(hot.getDataAtCell(2, 2)).toBe("tag");
+        landRemote({ kind: "insertCell", sheetId: sheet.id, col: 2, row: 0 });
+        expect(hot.getDataAtCell(3, 2)).toBe("tag");
         expectReplicaMatchesGrid(sheet.id);
 
         act(() => executeCommand("edit.undo"));
-        expect(hot.getDataAtCell(2, 2)).toBe("destination");
-        expect(hot.getCellMeta(2, 2).className).toBe("flow-highlight");
+        expect(hot.getDataAtCell(3, 2)).toBe("destination");
+        expect(hot.getCellMeta(3, 2).className).toBe("flow-highlight");
         expectReplicaMatchesGrid(sheet.id);
 
-        hot.selectCell(1, 2);
+        hot.selectCell(2, 2);
         landRemote({ kind: "removeCell", sheetId: sheet.id, col: 2, row: 0 });
-        expect(hot.getDataAtCell(1, 2)).toBe("destination");
+        expect(hot.getDataAtCell(2, 2)).toBe("destination");
         expectReplicaMatchesGrid(sheet.id);
 
         act(() => executeCommand("edit.redo"));
-        expect(hot.getDataAtCell(1, 2)).toBe("tag");
-        expect(hot.getDataAtCell(3, 2)).toBe("destination");
-        expect(hot.getCellMeta(1, 2).className).toBe("flow-bold");
+        expect(hot.getDataAtCell(2, 2)).toBe("tag");
+        expect(hot.getDataAtCell(4, 2)).toBe("destination");
+        expect(hot.getCellMeta(2, 2).className).toBe("flow-bold");
+        const projected = projectDoc(getReplica()!, useFlowStore.getState().round!).sheets.find(
+            (candidate) => candidate.id === sheet.id,
+        )!;
+        expect(projected.meta["2,2"]).toEqual({ bold: true, source: SRC });
         expectReplicaMatchesGrid(sheet.id);
     });
 });

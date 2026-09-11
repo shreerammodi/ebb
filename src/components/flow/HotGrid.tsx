@@ -473,10 +473,20 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
 
             // A stale index would make an undo write into a row the debater
             // never touched, so correct the two stacks together or drop both.
-            if (plan.structural) {
+            for (const change of plan.structural) {
+                const gridChange =
+                    change.scope.kind === "column"
+                        ? {
+                              ...change,
+                              scope: {
+                                  kind: "column" as const,
+                                  col: toGridCol(modelCol(change.scope.col), lead),
+                              },
+                          }
+                        : change;
                 rebaseUndoStacks(
                     hot.getPlugin("undoRedo") as unknown as UndoPluginLike,
-                    plan.structural,
+                    gridChange,
                 );
             }
 

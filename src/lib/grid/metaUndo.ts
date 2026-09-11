@@ -13,6 +13,7 @@
 import {
     rebaseActions,
     rebaseRow,
+    structuralAffectsColumn,
     type StructuralChange,
     type UndoAction,
 } from "@/lib/collab/undoRebase";
@@ -28,7 +29,10 @@ import type { CellGrid } from "./cellShift";
 export type ClassEntry = [row: number, col: number, className: string, source?: CellSource];
 
 export interface MetaUndoEffects {
+    col: number;
     row: number;
+    /** The effect rewrites every identity from `row` down, so it cannot be split. */
+    requiresContiguousSuffix?: boolean;
     beforeUndo?(row: number): void;
     beforeRedo?(row: number): void;
     afterRedo?(row: number): void;
@@ -162,7 +166,7 @@ function rebaseEntries(entries: ClassEntry[], change: StructuralChange): ClassEn
     const out: ClassEntry[] = [];
     for (const entry of entries) {
         const [row, col, className, source] = entry;
-        const moved = rebaseRow(row, change);
+        const moved = rebaseRow(row, change, col);
         if (moved === null) return null;
         out.push(source ? [moved, col, className, source] : [moved, col, className]);
     }
@@ -184,45 +188,61 @@ export function rebaseUndoStacks(
 ): void {
     if (!plugin) return;
 
-    for (const key of ["doneActions", "undoneActions"] as const) {
+    const keys = ["doneActions", "undoneActions"] as const;
+    const prepared = keys.map((key) => {
         const stack = plugin[key];
-        if (!stack || stack.length === 0) continue;
+        if (!stack || stack.length === 0) {
+            return { stack, rebased: [], rebasedMetas: [], effectRows: [] };
+        }
 
         const rebased = rebaseActions(stack, change);
-        const metas = stack.map((a) => snapshots.get(a));
-        const rebasedMetas = metas.map((m) =>
-            m
+        const metas = stack.map((action) => snapshots.get(action));
+        const rebasedMetas = metas.map((meta) =>
+            meta
                 ? {
-                      cols: m.cols,
-                      before: rebaseEntries(m.before, change),
-                      after: rebaseEntries(m.after, change),
+                      cols: meta.cols,
+                      before: rebaseEntries(meta.before, change),
+                      after: rebaseEntries(meta.after, change),
                   }
                 : null,
         );
-        const rebasedEffectRows = metas.map((m) =>
-            m?.effects ? rebaseRow(m.effects.row, change) : undefined,
-        );
-        const metaFailed =
-            rebasedMetas.some((m) => m && (!m.before || !m.after)) ||
-            rebasedEffectRows.some((row) => row === null);
+        const effectRows = metas.map((meta) => {
+            const effects = meta?.effects;
+            if (!effects) return undefined;
+            if (!structuralAffectsColumn(change, effects.col)) return effects.row;
+            if (effects.requiresContiguousSuffix && change.at > effects.row) return null;
+            return rebaseRow(effects.row, change, effects.col);
+        });
+        return { stack, rebased, rebasedMetas, effectRows };
+    });
 
-        if (rebased === null || metaFailed) {
-            // Losing history beats writing to the wrong cell.
-            stack.length = 0;
-            resetMetaUndo();
-            continue;
+    const failed = prepared.some(
+        ({ rebased, rebasedMetas, effectRows }) =>
+            rebased === null ||
+            rebasedMetas.some((meta) => meta && (!meta.before || !meta.after)) ||
+            effectRows.some((row) => row === null),
+    );
+    if (failed) {
+        for (const key of keys) {
+            const stack = plugin[key];
+            if (stack) stack.length = 0;
         }
+        resetMetaUndo();
+        return;
+    }
 
-        stack.forEach((action, i) => {
-            const next = rebased[i];
+    for (const { stack, rebased, rebasedMetas, effectRows } of prepared) {
+        if (!stack || !rebased) continue;
+        stack.forEach((action, index) => {
+            const next = rebased[index];
             if (next.changes) action.changes = next.changes;
             if (typeof next.index === "number") action.index = next.index;
-            const meta = rebasedMetas[i];
+            const meta = rebasedMetas[index];
             const held = snapshots.get(action);
             if (meta && held) {
                 held.before = meta.before as ClassEntry[];
                 held.after = meta.after as ClassEntry[];
-                const effectRow = rebasedEffectRows[i];
+                const effectRow = effectRows[index];
                 if (held.effects && effectRow !== undefined && effectRow !== null) {
                     held.effects.row = effectRow;
                 }
