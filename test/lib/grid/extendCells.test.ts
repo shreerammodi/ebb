@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import {
-    extendRun,
-    extensionRequiredRows,
-    nextSameSideColumn,
-} from "@/lib/grid/extendCells";
 import { BOLD_CLASS, GROUP_CLASS, HIGHLIGHT_CLASS, KICKED_CLASS } from "@/lib/grid/codec";
 import { gridCol } from "@/lib/grid/colSpace";
+import { extendRun, extensionRequiredRows, nextSameSideColumn } from "@/lib/grid/extendCells";
 import type { SpeechCol } from "@/lib/grid/flowColumns";
 
 import { fakeGrid } from "../../support/fakeHot";

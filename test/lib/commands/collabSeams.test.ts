@@ -9,19 +9,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { projectDoc } from "@/lib/collab/doc";
 import { clearReplica, getReplica, recordOp } from "@/lib/collab/replica";
 import { executeCommand } from "@/lib/commands/commands";
-import {
-    BOLD_CLASS,
-    classNameToMeta,
-    KICKED_CLASS,
-    trimGrid,
-} from "@/lib/grid/codec";
+import { BOLD_CLASS, classNameToMeta, KICKED_CLASS, trimGrid } from "@/lib/grid/codec";
 import { setActiveHot } from "@/lib/grid/hotInstance";
-import {
-    makeFlowRound,
-    type CellMeta,
-    type CellSource,
-    type FlowRound,
-} from "@/lib/model/flow";
+import { makeFlowRound, type CellMeta, type CellSource, type FlowRound } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import { metaStore, selectionHot } from "../../support/fakeHot";
@@ -135,9 +125,7 @@ describe("an argument extension reaches the replica as one column insertion", ()
             ["extend", null, null],
             [null, null, null],
         ];
-        const meta = metaStore([
-            ["0,0", { className: `${BOLD_CLASS} ${KICKED_CLASS}`, source }],
-        ]);
+        const meta = metaStore([["0,0", { className: `${BOLD_CLASS} ${KICKED_CLASS}`, source }]]);
         const range = {
             getTopLeftCorner: () => ({ row: 0, col: 0 }),
             getBottomRightCorner: () => ({ row: 2, col: 0 }),
@@ -175,11 +163,7 @@ describe("an argument extension reaches the replica as one column insertion", ()
             }
             useFlowStore
                 .getState()
-                .updateSheetData(
-                    sheetId,
-                    trimGrid(data.map((row) => [...row])),
-                    storedMeta,
-                );
+                .updateSheetData(sheetId, trimGrid(data.map((row) => [...row])), storedMeta);
         };
         setActiveHot(grid as never, snapshot, sheetId, 0);
 

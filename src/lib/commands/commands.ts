@@ -8,7 +8,6 @@
  */
 
 import type Handsontable from "handsontable";
-
 import { toast } from "sonner";
 
 import { runJumpToSource, runSendToDoc } from "@/lib/bridge/commands";
@@ -22,13 +21,7 @@ import {
     KICKED_CLASS,
     toggleClassToken,
 } from "@/lib/grid/codec";
-import {
-    gridCol,
-    modelCol,
-    toGridCol,
-    toModelCol,
-    type GridCol,
-} from "@/lib/grid/colSpace";
+import { gridCol, modelCol, toGridCol, toModelCol, type GridCol } from "@/lib/grid/colSpace";
 import { extendRun, extensionRequiredRows, nextSameSideColumn } from "@/lib/grid/extendCells";
 import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import {
@@ -40,12 +33,7 @@ import {
 import { attachMetaUndo, snapshotClasses, type ClassEntry } from "@/lib/grid/metaUndo";
 import { beginMove } from "@/lib/grid/moveSession";
 import { STRUCTURED_WRITE } from "@/lib/grid/staleSource";
-import {
-    moveSheetRange,
-    sheetRangeIds,
-    sortedSheets,
-    type CellMeta,
-} from "@/lib/model/flow";
+import { moveSheetRange, sheetRangeIds, sortedSheets, type CellMeta } from "@/lib/model/flow";
 import { askToShare } from "@/lib/store/useCollabConsent";
 import { useCollabStore } from "@/lib/store/useCollabStore";
 import { chooseContact } from "@/lib/store/useContactPicker";
@@ -176,11 +164,7 @@ function runInsertCell(where: "at" | "below"): void {
     if (sheetId && at !== null) recordOp({ kind: "insertCell", sheetId, col: at, row });
 }
 
-function restoreExtensionMeta(
-    grid: Handsontable,
-    targetCol: GridCol,
-    entries: ClassEntry[],
-): void {
+function restoreExtensionMeta(grid: Handsontable, targetCol: GridCol, entries: ClassEntry[]): void {
     for (let row = 0; row < grid.countRows(); row++) {
         grid.setCellMeta(row, targetCol, "className", "");
         grid.setCellMeta(row, targetCol, "source", undefined);

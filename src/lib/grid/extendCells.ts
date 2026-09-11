@@ -32,7 +32,7 @@ export function extensionRequiredRows(
     for (let row = startRow; row < grid.countRows(); row++) {
         const text = grid.getDataAtCell(row, targetCol);
         const meta = grid.getCellMeta(row, targetCol);
-        if (text != null && text !== "" || meta.className || meta.source) last = row;
+        if ((text != null && text !== "") || meta.className || meta.source) last = row;
     }
 
     return Math.max(grid.countRows(), last + 1 + height);

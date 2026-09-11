@@ -7,16 +7,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import HotGrid, { applyMeta, collectMeta } from "@/components/flow/HotGrid";
 import { projectDoc, seedDoc } from "@/lib/collab/doc";
 import { applyOp, type CollabOp, type OpContext } from "@/lib/collab/ops";
-import {
-    clearReplica,
-    getReplica,
-    replaceReplicaDoc,
-    seedReplica,
-} from "@/lib/collab/replica";
-import { executeCommand } from "@/lib/commands/commands";
+import { clearReplica, getReplica, replaceReplicaDoc, seedReplica } from "@/lib/collab/replica";
 import { createClock } from "@/lib/collab/stamp";
-import { gridCol, toModelCol } from "@/lib/grid/colSpace";
+import { executeCommand } from "@/lib/commands/commands";
 import { trimGrid } from "@/lib/grid/codec";
+import { gridCol, toModelCol } from "@/lib/grid/colSpace";
 import { getActiveHot, getActiveSpacers } from "@/lib/grid/hotInstance";
 import { applyRemote } from "@/lib/grid/remoteBridge";
 import { makeFlowRound, makeFlowSheet, type CellMeta, type CellSource } from "@/lib/model/flow";

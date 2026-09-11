@@ -15,7 +15,6 @@ import type Handsontable from "handsontable";
 import { jumpToSource } from "@/lib/bridge/commands";
 import { cardmirrorLive } from "@/lib/bridge/enabled";
 import { runExtend } from "@/lib/commands/commands";
-
 import type { CellSource } from "@/lib/model/flow";
 
 /** The slice of Handsontable a menu item reads. Bound as `this` on both hooks. */

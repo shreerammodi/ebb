@@ -18,11 +18,7 @@ function changeAt(row: number, col = 0): UndoAction {
     return { actionType: "change", changes: [[row, col, "old", "new"]] };
 }
 
-function rowChange(
-    kind: StructuralChange["kind"],
-    at: number,
-    amount: number,
-): StructuralChange {
+function rowChange(kind: StructuralChange["kind"], at: number, amount: number): StructuralChange {
     return { kind, at, amount, scope: { kind: "row" } };
 }
 

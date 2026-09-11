@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-    rebaseActions,
-    type StructuralChange,
-    type UndoAction,
-} from "@/lib/collab/undoRebase";
+import { rebaseActions, type StructuralChange, type UndoAction } from "@/lib/collab/undoRebase";
 
 const change = (...rows: number[]): UndoAction => ({
     actionType: "change",
@@ -98,16 +94,12 @@ describe("a remote row remove", () => {
 describe("an action shape this build does not recognize", () => {
     it("clears the whole stack rather than leaving a stale index", () => {
         for (const actionType of ["row_move", "filter", "merge_cells", "col_sort"]) {
-            expect(
-                rebaseActions([{ actionType }], rowInsert(0, 1)),
-            ).toBeNull();
+            expect(rebaseActions([{ actionType }], rowInsert(0, 1))).toBeNull();
         }
     });
 
     it("clears even when the unrecognized action sits beside a good one", () => {
-        expect(
-            rebaseActions([change(1), { actionType: "row_move" }], rowInsert(0, 1)),
-        ).toBeNull();
+        expect(rebaseActions([change(1), { actionType: "row_move" }], rowInsert(0, 1))).toBeNull();
     });
 });
 

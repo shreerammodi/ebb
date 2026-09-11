@@ -105,13 +105,9 @@ function structuralForSheet(before: CollabSheet, after: CollabSheet): Structural
         return changes;
     }
     if (first.kind === "insertRow") {
-        return [
-            { kind: "insertRow", at: first.at, amount: first.amount, scope: { kind: "row" } },
-        ];
+        return [{ kind: "insertRow", at: first.at, amount: first.amount, scope: { kind: "row" } }];
     }
-    return [
-        { kind: "removeRow", at: first.at, amount: first.amount, scope: { kind: "row" } },
-    ];
+    return [{ kind: "removeRow", at: first.at, amount: first.amount, scope: { kind: "row" } }];
 }
 
 export function planRemoteApply(before: CollabDoc, after: CollabDoc, ctx: ApplyContext): ApplyPlan {

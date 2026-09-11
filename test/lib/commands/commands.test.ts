@@ -499,16 +499,12 @@ describe("grid commands", () => {
     it("refuses the last same-side speech", () => {
         const round = loadRound();
         const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
-        const { hot } = extensionHot(
-            [[null, null, null, null, null, null, "final"]],
-            metaStore(),
-            {
-                startRow: 0,
-                endRow: 0,
-                startCol: 6,
-                endCol: 6,
-            },
-        );
+        const { hot } = extensionHot([[null, null, null, null, null, null, "final"]], metaStore(), {
+            startRow: 0,
+            endRow: 0,
+            startCol: 6,
+            endCol: 6,
+        });
         setActiveHot(hot as never, vi.fn(), sheet.id, 0);
 
         executeCommand("cell.extend");
@@ -553,9 +549,8 @@ describe("grid commands", () => {
         expect(hot.selectCells).not.toHaveBeenCalled();
         expect(onMutated).not.toHaveBeenCalled();
         expect(
-            useFlowStore
-                .getState()
-                .round!.sheets.find((candidate) => candidate.id === sheet.id)!.data,
+            useFlowStore.getState().round!.sheets.find((candidate) => candidate.id === sheet.id)!
+                .data,
         ).toEqual([["stored"]]);
         expect(getReplica()).toBe(beforeReplica);
         expect(toast.error).toHaveBeenCalledWith("Could not extend this argument");

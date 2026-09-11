@@ -35,15 +35,8 @@ export function structuralAffectsColumn(change: StructuralChange, col: number): 
     return change.scope.kind === "row" || change.scope.col === col;
 }
 
-export function rebaseRow(
-    row: number,
-    change: StructuralChange,
-    col?: number,
-): number | null {
-    if (
-        change.scope.kind === "column" &&
-        (typeof col !== "number" || change.scope.col !== col)
-    ) {
+export function rebaseRow(row: number, change: StructuralChange, col?: number): number | null {
+    if (change.scope.kind === "column" && (typeof col !== "number" || change.scope.col !== col)) {
         return row;
     }
     if (change.kind === "insertRow") {
