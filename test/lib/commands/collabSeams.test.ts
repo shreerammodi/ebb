@@ -7,13 +7,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { projectDoc } from "@/lib/collab/doc";
-import { clearReplica, getReplica } from "@/lib/collab/replica";
+import { clearReplica, getReplica, recordOp } from "@/lib/collab/replica";
 import { executeCommand } from "@/lib/commands/commands";
+import {
+    BOLD_CLASS,
+    classNameToMeta,
+    KICKED_CLASS,
+    trimGrid,
+} from "@/lib/grid/codec";
 import { setActiveHot } from "@/lib/grid/hotInstance";
-import { makeFlowRound, type FlowRound } from "@/lib/model/flow";
+import {
+    makeFlowRound,
+    type CellMeta,
+    type CellSource,
+    type FlowRound,
+} from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
-import { selectionHot } from "../../support/fakeHot";
+import { metaStore, selectionHot } from "../../support/fakeHot";
 
 let round: FlowRound;
 let sheetId: string;
@@ -93,5 +104,93 @@ describe("a cell insert reaches the replica as one shift", () => {
         // One blank opened at row 1 of column 0; column 1 never moved.
         expect(sheet.data.map((r) => r[0])).toEqual(["perm", null, "cap bad", "extend"]);
         expect(sheet.data.map((r) => r[1])).toEqual(["link", "turn", null, null]);
+    });
+});
+
+describe("an argument extension reaches the replica as one column insertion", () => {
+    it("projects the copy with metadata and leaves adjacent columns fixed", () => {
+        const source: CellSource = {
+            app: "cardmirror",
+            token: "cmsrc1abc",
+            key: "doc1|perm",
+            title: "AT - Cap K",
+        };
+        round = makeFlowRound();
+        const flow = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        sheetId = flow.id;
+        flow.data = [
+            ["perm", "link"],
+            ["cap bad", "turn"],
+            ["extend", null],
+        ];
+        flow.meta = { "0,0": { bold: true, kicked: true, source } };
+        useFlowStore.getState().loadRound(round);
+        // One trailing blank destination cell is a real rank that the extension
+        // pushes below the three copied cells.
+        recordOp({ kind: "cellText", sheetId, col: 2, row: 0, text: null });
+
+        const data = [
+            ["perm", "link", null],
+            ["cap bad", "turn", null],
+            ["extend", null, null],
+            [null, null, null],
+        ];
+        const meta = metaStore([
+            ["0,0", { className: `${BOLD_CLASS} ${KICKED_CLASS}`, source }],
+        ]);
+        const range = {
+            getTopLeftCorner: () => ({ row: 0, col: 0 }),
+            getBottomRightCorner: () => ({ row: 2, col: 0 }),
+        };
+        const grid = {
+            getSelectedRange: () => [range],
+            countRows: () => data.length,
+            countCols: () => data[0].length,
+            getDataAtCell: (row: number, col: number) => data[row]?.[col] ?? null,
+            getCellMeta: meta.getCellMeta,
+            setCellMeta: meta.setCellMeta,
+            alter: vi.fn(),
+            setDataAtCell: vi.fn((changes: [number, number, string | null][]) => {
+                for (const [row, col, value] of changes) data[row][col] = value;
+            }),
+            selectCells: vi.fn(),
+            render: vi.fn(),
+        };
+        const snapshot = () => {
+            const storedMeta: Record<string, CellMeta> = {};
+            for (let row = 0; row < data.length; row++) {
+                for (let col = 0; col < data[row].length; col++) {
+                    const runtime = meta.at(row, col);
+                    const flags = classNameToMeta(runtime.className ?? "");
+                    const provenance =
+                        data[row][col] == null || data[row][col] === ""
+                            ? undefined
+                            : runtime.source;
+                    if (provenance) {
+                        storedMeta[`${row},${col}`] = { ...(flags ?? {}), source: provenance };
+                    } else if (flags) {
+                        storedMeta[`${row},${col}`] = flags;
+                    }
+                }
+            }
+            useFlowStore
+                .getState()
+                .updateSheetData(
+                    sheetId,
+                    trimGrid(data.map((row) => [...row])),
+                    storedMeta,
+                );
+        };
+        setActiveHot(grid as never, snapshot, sheetId, 0);
+
+        executeCommand("cell.extend");
+
+        const projected = projectDoc(getReplica()!, round).sheets.find(
+            (candidate) => candidate.id === sheetId,
+        )!;
+        expect(projected.data.map((row) => row[2])).toEqual(["perm", "cap bad", "extend", null]);
+        expect(projected.data.map((row) => row[0])).toEqual(["perm", "cap bad", "extend", null]);
+        expect(projected.data.map((row) => row[1])).toEqual(["link", "turn", null, null]);
+        expect(projected.meta["0,2"]).toEqual({ bold: true, source });
     });
 });

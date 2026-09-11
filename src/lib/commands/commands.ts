@@ -7,6 +7,8 @@
  * commands unconditionally.
  */
 
+import type Handsontable from "handsontable";
+
 import { toast } from "sonner";
 
 import { runJumpToSource, runSendToDoc } from "@/lib/bridge/commands";
@@ -20,14 +22,22 @@ import {
     KICKED_CLASS,
     toggleClassToken,
 } from "@/lib/grid/codec";
-import { gridCol, toModelCol } from "@/lib/grid/colSpace";
+import {
+    gridCol,
+    modelCol,
+    toGridCol,
+    toModelCol,
+    type GridCol,
+} from "@/lib/grid/colSpace";
+import { extendRun, extensionRequiredRows, nextSameSideColumn } from "@/lib/grid/extendCells";
+import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import {
     getActiveHot,
     getActiveSheetId,
     getActiveSpacers,
     notifyGridMutated,
 } from "@/lib/grid/hotInstance";
-import { attachMetaUndo, snapshotClasses } from "@/lib/grid/metaUndo";
+import { attachMetaUndo, snapshotClasses, type ClassEntry } from "@/lib/grid/metaUndo";
 import { beginMove } from "@/lib/grid/moveSession";
 import { STRUCTURED_WRITE } from "@/lib/grid/staleSource";
 import { moveSheetRange, sheetRangeIds, sortedSheets } from "@/lib/model/flow";
@@ -161,6 +171,141 @@ function runInsertCell(where: "at" | "below"): void {
     if (sheetId && at !== null) recordOp({ kind: "insertCell", sheetId, col: at, row });
 }
 
+function restoreExtensionMeta(
+    grid: Handsontable,
+    targetCol: GridCol,
+    entries: ClassEntry[],
+): void {
+    for (let row = 0; row < grid.countRows(); row++) {
+        grid.setCellMeta(row, targetCol, "className", "");
+        grid.setCellMeta(row, targetCol, "source", undefined);
+    }
+    for (const [row, col, className, source] of entries) {
+        grid.setCellMeta(row, col, "className", className);
+        grid.setCellMeta(row, col, "source", source);
+    }
+}
+
+export function runExtend(grid = getActiveHot()): void {
+    if (!grid) return;
+    const ranges = grid.getSelectedRange();
+    if (!ranges || ranges.length === 0) return;
+    if (ranges.length !== 1) {
+        toast.error("Select cells in one speech to extend");
+        return;
+    }
+
+    const top = ranges[0].getTopLeftCorner();
+    const bottom = ranges[0].getBottomRightCorner();
+    if (
+        top.row == null ||
+        top.col == null ||
+        bottom.row == null ||
+        bottom.col == null ||
+        top.col !== bottom.col
+    ) {
+        toast.error("Select cells in one speech to extend");
+        return;
+    }
+
+    let hasText = false;
+    for (let row = top.row; row <= bottom.row; row++) {
+        const text = grid.getDataAtCell(row, top.col);
+        if (text !== null && text !== undefined && text !== "") {
+            hasText = true;
+            break;
+        }
+    }
+    if (!hasText) {
+        toast.error("Select an argument to extend");
+        return;
+    }
+
+    const { round } = useFlowStore.getState();
+    const sheetId = getActiveSheetId();
+    const sheet = round?.sheets.find((candidate) => candidate.id === sheetId);
+    if (!round || !sheetId || !sheet) return;
+
+    const spacers = getActiveSpacers();
+    const sourceCol = toModelCol(gridCol(top.col), spacers);
+    const columns = columnsForFlowSheet(round, sheet);
+    if (sheet.kind === "cx" || sourceCol === null || sourceCol < 0 || sourceCol >= columns.length) {
+        toast.error("This column is not a speech");
+        return;
+    }
+
+    const target = nextSameSideColumn(columns, sourceCol);
+    if (target === null) {
+        toast.error("No later speech for this side");
+        return;
+    }
+
+    const targetCol = toGridCol(modelCol(target), spacers);
+    const height = bottom.row - top.row + 1;
+    let before: ClassEntry[] | null = null;
+    try {
+        const required = extensionRequiredRows(grid, targetCol, top.row, height);
+        if (required > grid.countRows()) {
+            grid.alter(
+                "insert_row_below",
+                grid.countRows() - 1,
+                required - grid.countRows(),
+                "auto",
+            );
+        }
+        before = snapshotClasses(grid, [targetCol]);
+        const changes = extendRun(grid, {
+            sourceCol: gridCol(top.col),
+            targetCol,
+            startRow: top.row,
+            height,
+        });
+        grid.setDataAtCell(changes, STRUCTURED_WRITE);
+        attachMetaUndo({ cols: [targetCol], before, after: snapshotClasses(grid, [targetCol]) });
+    } catch {
+        if (before) {
+            try {
+                restoreExtensionMeta(grid, targetCol, before);
+            } catch {
+                // A grid refusing metadata writes cannot be repaired through the same API.
+            }
+        }
+        toast.error("Could not extend this argument");
+        return;
+    }
+
+    grid.render();
+    notifyGridMutated();
+
+    for (let index = 0; index < height; index++) {
+        recordOp({ kind: "insertCell", sheetId, col: target, row: top.row });
+    }
+    const updated = useFlowStore
+        .getState()
+        .round?.sheets.find((candidate) => candidate.id === sheetId);
+    if (updated) {
+        for (let index = 0; index < height; index++) {
+            const row = top.row + index;
+            recordOp({
+                kind: "cellText",
+                sheetId,
+                col: target,
+                row,
+                text: updated.data[row]?.[target] ?? null,
+            });
+        }
+        for (let index = 0; index < height; index++) {
+            const row = top.row + index;
+            const meta = updated.meta[`${row},${target}`];
+            if (meta && Object.keys(meta).length > 0) {
+                recordOp({ kind: "cellMeta", sheetId, col: target, row, meta });
+            }
+        }
+    }
+
+    grid.selectCells([[top.row, targetCol, bottom.row, targetCol]]);
+}
+
 /**
  * Opens the modal move session over the selection's bounding rectangle. From
  * here `HotGrid`'s beforeKeyDown owns Up, Down, Enter, and Esc until the
@@ -253,6 +398,9 @@ export function executeCommand(id: CommandId): void {
             return;
         case "cell.move":
             startMove();
+            return;
+        case "cell.extend":
+            runExtend();
             return;
 
         // --- CardMirror -------------------------------------------------------

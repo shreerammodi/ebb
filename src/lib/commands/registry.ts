@@ -29,6 +29,7 @@ export type CommandId =
     | "cell.insert"
     | "cell.insertBelow"
     | "cell.move"
+    | "cell.extend"
     | "cell.jumpToSource"
     | "cell.sendToDoc"
     | "sheet.next"
@@ -111,6 +112,7 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "cell.insert": { id: "cell.insert", label: "Insert cell" },
     "cell.insertBelow": { id: "cell.insertBelow", label: "Insert cell below" },
     "cell.move": { id: "cell.move", label: "Move cells" },
+    "cell.extend": { id: "cell.extend", label: "Extend to next speech" },
     "cell.jumpToSource": {
         id: "cell.jumpToSource",
         label: "Jump to source in CardMirror",
@@ -213,6 +215,7 @@ export const EDITS_ROUND: Record<CommandId, boolean> = {
     "cell.insert": true,
     "cell.insertBelow": true,
     "cell.move": true,
+    "cell.extend": true,
     "cell.jumpToSource": false,
     "cell.sendToDoc": false,
     "sheet.next": false,
@@ -296,6 +299,7 @@ export const GRID_SCOPED: Record<CommandId, boolean> = {
     "cell.insert": true,
     "cell.insertBelow": true,
     "cell.move": true,
+    "cell.extend": true,
     "cell.jumpToSource": true,
     "cell.sendToDoc": true,
     "sheet.next": false,

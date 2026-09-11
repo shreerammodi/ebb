@@ -8,6 +8,7 @@ import HotGrid, { applyMeta, collectMeta } from "@/components/flow/HotGrid";
 import { seedDoc } from "@/lib/collab/doc";
 import { applyOp, type OpContext } from "@/lib/collab/ops";
 import { clearReplica, getReplica, seedReplica } from "@/lib/collab/replica";
+import { executeCommand } from "@/lib/commands/commands";
 import { createClock } from "@/lib/collab/stamp";
 import { gridCol, toModelCol } from "@/lib/grid/colSpace";
 import { getActiveHot, getActiveSpacers } from "@/lib/grid/hotInstance";
@@ -147,6 +148,56 @@ describe("collectMeta / applyMeta", () => {
         expect(h.getCellMeta(1, 0).source).toBeUndefined();
         expect(h.getCellMeta(0, 1).source).toBeUndefined();
         expect(collectMeta(h)).toEqual({});
+    });
+});
+
+describe("argument extension", () => {
+    afterEach(() => {
+        clearReplica();
+        useFlowStore.setState({
+            round: null,
+            activeSheetId: null,
+            splitSheetId: null,
+            alignSpeeches: false,
+        });
+    });
+
+    it("undoes and redoes one complete extension with metadata", async () => {
+        const round = makeFlowRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        sheet.data = [
+            ["tag", "neg", "destination"],
+            ["warrant", null, null],
+            [null, null, null],
+            [null, null, null],
+        ];
+        sheet.meta = {
+            "0,0": { bold: true, kicked: true, source: SRC },
+            "0,2": { highlight: true },
+        };
+        useFlowStore.setState({
+            round,
+            activeSheetId: sheet.id,
+            splitSheetId: null,
+            alignSpeeches: false,
+        });
+        render(<HotGrid sheetId={sheet.id} pane={1} />);
+        const hot = await mounted();
+        hot.selectCells([[0, 0, 1, 0]]);
+
+        act(() => executeCommand("cell.extend"));
+        expect(hot.getDataAtCell(0, 2)).toBe("tag");
+        expect(hot.getDataAtCell(2, 2)).toBe("destination");
+        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
+
+        act(() => executeCommand("edit.undo"));
+        expect(hot.getDataAtCell(0, 2)).toBe("destination");
+        expect(hot.getCellMeta(0, 2).className).toBe("flow-highlight");
+
+        act(() => executeCommand("edit.redo"));
+        expect(hot.getDataAtCell(0, 2)).toBe("tag");
+        expect(hot.getDataAtCell(2, 2)).toBe("destination");
+        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
     });
 });
 

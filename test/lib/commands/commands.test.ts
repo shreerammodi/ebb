@@ -316,12 +316,303 @@ describe("split commands", () => {
 });
 
 describe("grid commands", () => {
+    function extensionHot(
+        data: (string | null)[][],
+        meta = metaStore(),
+        selection = { startRow: 0, endRow: 2, startCol: 0, endCol: 0 },
+    ) {
+        const range = {
+            highlight: { row: selection.startRow, col: selection.startCol },
+            getTopLeftCorner: () => ({ row: selection.startRow, col: selection.startCol }),
+            getBottomRightCorner: () => ({ row: selection.endRow, col: selection.endCol }),
+        };
+        const alter = vi.fn((_action: string, _index: number, amount: number) => {
+            const width = data.reduce((widest, row) => Math.max(widest, row.length), 0);
+            for (let index = 0; index < amount; index++) {
+                data.push(Array.from({ length: width }, () => null));
+            }
+        });
+        const setDataAtCell = vi.fn((changes: [number, number, string | null][]) => {
+            for (const [row, col, value] of changes) data[row][col] = value;
+        });
+        const selectCells = vi.fn();
+        const hot = {
+            getSelectedRange: () => [range],
+            countRows: () => data.length,
+            countCols: () => data.reduce((widest, row) => Math.max(widest, row.length), 0),
+            getDataAtCell: (row: number, col: number) => data[row]?.[col] ?? null,
+            getCellMeta: meta.getCellMeta,
+            setCellMeta: meta.setCellMeta,
+            alter,
+            setDataAtCell,
+            selectCells,
+            render: vi.fn(),
+        };
+        return { data, meta, range, hot };
+    }
+
+    it("extends one selected argument into the next same-side speech", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const source = {
+            app: "cardmirror",
+            token: "cmsrc1abc",
+            key: "doc1|tag",
+            title: "AT - Cap K",
+        };
+        const data = [
+            ["tag", "neg-a", "dest-a"],
+            [null, "neg-b", "dest-b"],
+            ["warrant", null, null],
+            [null, null, null],
+            [null, null, null],
+        ];
+        const meta = metaStore([
+            ["0,0", { className: `${BOLD_CLASS} ${KICKED_CLASS}`, source }],
+            ["1,0", { className: GROUP_CLASS }],
+        ]);
+        const { hot } = extensionHot(data, meta);
+        const onMutated = vi.fn();
+        setActiveHot(hot as never, onMutated, sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(data.map((row) => row[2])).toEqual(["tag", null, "warrant", "dest-a", "dest-b"]);
+        expect(data.map((row) => row[0])).toEqual(["tag", null, "warrant", null, null]);
+        expect(meta.at(0, 2).className).toBe(BOLD_CLASS);
+        expect(meta.at(0, 2).source).toEqual(source);
+        expect(hot.selectCells).toHaveBeenCalledWith([[0, 2, 2, 2]]);
+        expect(onMutated).toHaveBeenCalledTimes(1);
+    });
+
+    it("adds blank capacity before extending an occupied destination tail", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const data = [
+            ["tag", "neg", "destination"],
+            ["warrant", null, null],
+        ];
+        const { hot } = extensionHot(data, metaStore(), {
+            startRow: 0,
+            endRow: 1,
+            startCol: 0,
+            endCol: 0,
+        });
+        setActiveHot(hot as never, vi.fn(), sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(hot.alter).toHaveBeenCalledWith("insert_row_below", 1, 1, "auto");
+        expect(data.map((row) => row[2])).toEqual(["tag", "warrant", "destination"]);
+        expect(hot.selectCells).toHaveBeenCalledWith([[0, 2, 1, 2]]);
+    });
+
+    it("refuses selections with multiple ranges", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const { hot, range } = extensionHot([["tag", null, null]], metaStore(), {
+            startRow: 0,
+            endRow: 0,
+            startCol: 0,
+            endCol: 0,
+        });
+        hot.getSelectedRange = () => [range, range];
+        setActiveHot(hot as never, vi.fn(), sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(toast.error).toHaveBeenCalledWith("Select cells in one speech to extend");
+        expect(hot.setDataAtCell).not.toHaveBeenCalled();
+    });
+
+    it("refuses selections spanning multiple columns", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const { hot } = extensionHot([["tag", "neg", null]], metaStore(), {
+            startRow: 0,
+            endRow: 0,
+            startCol: 0,
+            endCol: 1,
+        });
+        setActiveHot(hot as never, vi.fn(), sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(toast.error).toHaveBeenCalledWith("Select cells in one speech to extend");
+        expect(hot.setDataAtCell).not.toHaveBeenCalled();
+    });
+
+    it("refuses an all-blank run", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const { hot } = extensionHot([
+            [null, null, null],
+            [null, null, null],
+            [null, null, null],
+        ]);
+        setActiveHot(hot as never, vi.fn(), sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(toast.error).toHaveBeenCalledWith("Select an argument to extend");
+        expect(hot.setDataAtCell).not.toHaveBeenCalled();
+    });
+
+    it("refuses a cross-examination column", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind === "cx")!;
+        const { hot } = extensionHot([["question"]], metaStore(), {
+            startRow: 0,
+            endRow: 0,
+            startCol: 0,
+            endCol: 0,
+        });
+        setActiveHot(hot as never, vi.fn(), sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(toast.error).toHaveBeenCalledWith("This column is not a speech");
+        expect(hot.setDataAtCell).not.toHaveBeenCalled();
+    });
+
+    it("refuses an overflow column that names no speech", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const { hot } = extensionHot(
+            [[null, null, null, null, null, null, null, "overflow"]],
+            metaStore(),
+            {
+                startRow: 0,
+                endRow: 0,
+                startCol: 7,
+                endCol: 7,
+            },
+        );
+        setActiveHot(hot as never, vi.fn(), sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(toast.error).toHaveBeenCalledWith("This column is not a speech");
+        expect(hot.setDataAtCell).not.toHaveBeenCalled();
+    });
+
+    it("refuses the last same-side speech", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const { hot } = extensionHot(
+            [[null, null, null, null, null, null, "final"]],
+            metaStore(),
+            {
+                startRow: 0,
+                endRow: 0,
+                startCol: 6,
+                endCol: 6,
+            },
+        );
+        setActiveHot(hot as never, vi.fn(), sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(toast.error).toHaveBeenCalledWith("No later speech for this side");
+        expect(hot.setDataAtCell).not.toHaveBeenCalled();
+    });
+
+    it("leaves only blank appended capacity when capacity growth fails", () => {
+        const round = makeFlowRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        sheet.data = [["stored"]];
+        useFlowStore.getState().loadRound(round);
+        const data = [["tag", null, "destination"]];
+        const meta = metaStore([
+            ["0,0", { className: BOLD_CLASS }],
+            ["0,2", { className: HIGHLIGHT_CLASS }],
+        ]);
+        const { hot } = extensionHot(data, meta, {
+            startRow: 0,
+            endRow: 0,
+            startCol: 0,
+            endCol: 0,
+        });
+        hot.alter.mockImplementationOnce((_action, _index, amount) => {
+            for (let index = 0; index < amount; index++) data.push([null, null, null]);
+            throw new Error("capacity");
+        });
+        const onMutated = vi.fn();
+        const beforeReplica = getReplica();
+        setActiveHot(hot as never, onMutated, sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(data).toEqual([
+            ["tag", null, "destination"],
+            [null, null, null],
+        ]);
+        expect(meta.at(0, 0).className).toBe(BOLD_CLASS);
+        expect(meta.at(0, 2).className).toBe(HIGHLIGHT_CLASS);
+        expect(hot.setDataAtCell).not.toHaveBeenCalled();
+        expect(hot.selectCells).not.toHaveBeenCalled();
+        expect(onMutated).not.toHaveBeenCalled();
+        expect(
+            useFlowStore
+                .getState()
+                .round!.sheets.find((candidate) => candidate.id === sheet.id)!.data,
+        ).toEqual([["stored"]]);
+        expect(getReplica()).toBe(beforeReplica);
+        expect(toast.error).toHaveBeenCalledWith("Could not extend this argument");
+    });
+
+    it("restores destination metadata when the structured write fails", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const destinationSource = {
+            app: "cardmirror",
+            token: "cmsrc1destination",
+            key: "doc1|destination",
+        };
+        const data = [
+            ["tag", null, "destination"],
+            [null, null, null],
+        ];
+        const meta = metaStore([
+            ["0,0", { className: BOLD_CLASS }],
+            ["0,2", { className: HIGHLIGHT_CLASS, source: destinationSource }],
+        ]);
+        const { hot } = extensionHot(data, meta, {
+            startRow: 0,
+            endRow: 0,
+            startCol: 0,
+            endCol: 0,
+        });
+        hot.setDataAtCell.mockImplementationOnce(() => {
+            throw new Error("write");
+        });
+        const onMutated = vi.fn();
+        const beforeReplica = getReplica();
+        setActiveHot(hot as never, onMutated, sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(data).toEqual([
+            ["tag", null, "destination"],
+            [null, null, null],
+        ]);
+        expect(meta.at(0, 2).className).toBe(HIGHLIGHT_CLASS);
+        expect(meta.at(0, 2).source).toEqual(destinationSource);
+        expect(meta.at(1, 2).className).toBe("");
+        expect(meta.at(1, 2).source).toBeUndefined();
+        expect(hot.selectCells).not.toHaveBeenCalled();
+        expect(onMutated).not.toHaveBeenCalled();
+        expect(getReplica()).toBe(beforeReplica);
+        expect(toast.error).toHaveBeenCalledWith("Could not extend this argument");
+    });
+
     it("no-op gracefully without a live grid", () => {
         expect(() => {
             executeCommand("edit.undo");
             executeCommand("edit.redo");
             executeCommand("format.toggleBold");
             executeCommand("row.delete");
+            executeCommand("cell.extend");
         }).not.toThrow();
     });
 
