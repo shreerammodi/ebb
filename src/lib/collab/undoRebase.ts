@@ -75,6 +75,17 @@ export function rebaseActions(
             continue;
         }
 
+        // A whole-row action carries one index for every column. Once only one
+        // column has shifted, no single corrected index can still name that
+        // action honestly.
+        if (
+            change.scope.kind === "column" &&
+            (action.actionType === "insert_row" || action.actionType === "remove_row") &&
+            typeof action.index === "number"
+        ) {
+            return null;
+        }
+
         if (typeof action.index === "number") {
             const moved = rebaseRow(action.index, change);
             if (moved === null) return null;

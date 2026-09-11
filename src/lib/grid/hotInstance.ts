@@ -1,24 +1,42 @@
 /**
- * Registry for the single live Handsontable instance. Command handlers reach
- * the grid through this module so lib/commands stays import-safe in tests and
- * on routes where no grid is mounted.
+ * Registry for live Handsontable instances. The focused grid remains the
+ * command target, while every mounted grid retains the sheet context needed
+ * by commands invoked directly from that grid (for example, its context menu).
  */
 
 import type Handsontable from "handsontable";
 
+export interface HotContext {
+    mutated: (() => void) | null;
+    sheetId: string | null;
+    spacers: number;
+}
+
+const contexts = new WeakMap<Handsontable, HotContext>();
 let active: Handsontable | null = null;
 let onMutated: (() => void) | null = null;
 let activeSheetId: string | null = null;
 let activeSpacers = 0;
 
+/** Retains the sheet context owned by one mounted grid. */
+export function registerHot(
+    hot: Handsontable,
+    mutated: (() => void) | null,
+    sheetId: string | null,
+    spacers: number,
+): void {
+    contexts.set(hot, { mutated, sheetId, spacers });
+}
+
+/** Returns the context belonging to `hot`, independently of keyboard focus. */
+export function getHotContext(hot: Handsontable): HotContext | null {
+    return contexts.get(hot) ?? null;
+}
+
 /**
- * HotGrid registers its instance (and snapshot callback) on mount, null on
- * unmount. `spacers` is the pane's inert leading column count: the pane owns
- * it and publishes it here so a command reaching the grid through this
- * registry converts against the number the grid was drawn with, rather than
- * deriving its own and drifting on padded sheets alone. Every argument is
- * required, so a caller that forgets the count cannot quietly republish zero
- * over a padded pane's real one.
+ * Marks the focused grid. `spacers` is the pane's inert leading column count:
+ * the pane owns it and publishes it here so keyboard commands convert against
+ * the number the grid was drawn with.
  */
 export function setActiveHot(
     hot: Handsontable | null,
@@ -30,6 +48,7 @@ export function setActiveHot(
     onMutated = mutated;
     activeSheetId = sheetId;
     activeSpacers = spacers;
+    if (hot) registerHot(hot, mutated, sheetId, spacers);
 }
 
 export function getActiveHot(): Handsontable | null {

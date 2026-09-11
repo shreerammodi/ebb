@@ -8,10 +8,10 @@ import { toast } from "sonner";
 
 import { projectDoc } from "@/lib/collab/doc";
 import { clearReplica, getReplica, seedReplica } from "@/lib/collab/replica";
-import { executeCommand } from "@/lib/commands/commands";
+import { executeCommand, runExtend } from "@/lib/commands/commands";
 import { COMMANDS, EDITS_ROUND, type CommandId } from "@/lib/commands/registry";
 import { BOLD_CLASS, GROUP_CLASS, HIGHLIGHT_CLASS, KICKED_CLASS } from "@/lib/grid/codec";
-import { setActiveHot } from "@/lib/grid/hotInstance";
+import { registerHot, setActiveHot } from "@/lib/grid/hotInstance";
 import { isMovingIn, movingBlock, revertMove } from "@/lib/grid/moveSession";
 import { makeFlowRound, sortedSheets, type FlowRound } from "@/lib/model/flow";
 import { useCollabStore } from "@/lib/store/useCollabStore";
@@ -336,11 +336,18 @@ describe("grid commands", () => {
             for (const [row, col, value] of changes) data[row][col] = value;
         });
         const selectCells = vi.fn();
+        const getDataAtCell = vi.fn(
+            (row: number, col: number) => data[row]?.[col] ?? null,
+        );
+        const getActiveEditor = vi.fn(
+            (): { isOpened(): boolean; finishEditing(): void } | null => null,
+        );
         const hot = {
             getSelectedRange: () => [range],
             countRows: () => data.length,
             countCols: () => data.reduce((widest, row) => Math.max(widest, row.length), 0),
-            getDataAtCell: (row: number, col: number) => data[row]?.[col] ?? null,
+            getDataAtCell,
+            getActiveEditor,
             getCellMeta: meta.getCellMeta,
             setCellMeta: meta.setCellMeta,
             alter,
@@ -383,6 +390,132 @@ describe("grid commands", () => {
         expect(meta.at(0, 2).source).toEqual(source);
         expect(hot.selectCells).toHaveBeenCalledWith([[0, 2, 2, 2]]);
         expect(onMutated).toHaveBeenCalledTimes(1);
+    });
+
+    it("persists and replicates against the supplied unfocused split grid", () => {
+        const round = loadRound();
+        const focused = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const suppliedId = useFlowStore
+            .getState()
+            .addSheet({ title: "Other pane", group: "neg" });
+        useFlowStore.getState().updateSheetData(
+            suppliedId,
+            [
+                ["tag", "aff", "destination"],
+                [null, null, null],
+            ],
+            {},
+        );
+        useFlowStore.setState({
+            activeSheetId: focused.id,
+            splitSheetId: suppliedId,
+            focusedPane: 1,
+            alignSpeeches: true,
+        });
+        const stored = useFlowStore.getState().round!;
+        seedReplica(stored);
+
+        const focusedData = [["focused"]];
+        const { hot: focusedHot } = extensionHot(focusedData, metaStore(), {
+            startRow: 0,
+            endRow: 0,
+            startCol: 0,
+            endCol: 0,
+        });
+        const focusedSnapshot = vi.fn(() =>
+            useFlowStore.getState().updateSheetData(focused.id, focusedData, {}),
+        );
+        setActiveHot(focusedHot as never, focusedSnapshot, focused.id, 0);
+
+        const suppliedData = [
+            ["spacer", "tag", "aff", "destination"],
+            ["spacer", null, null, null],
+        ];
+        const { hot: suppliedHot } = extensionHot(suppliedData, metaStore(), {
+            startRow: 0,
+            endRow: 0,
+            startCol: 1,
+            endCol: 1,
+        });
+        const suppliedSnapshot = vi.fn(() =>
+            useFlowStore
+                .getState()
+                .updateSheetData(
+                    suppliedId,
+                    suppliedData.map((row) => row.slice(1)),
+                    {},
+                ),
+        );
+        registerHot(suppliedHot as never, suppliedSnapshot, suppliedId, 1);
+
+        runExtend(suppliedHot as never);
+
+        expect(suppliedSnapshot).toHaveBeenCalledTimes(1);
+        expect(focusedSnapshot).not.toHaveBeenCalled();
+        expect(
+            useFlowStore.getState().round!.sheets.find((sheet) => sheet.id === suppliedId)!.data,
+        ).toEqual([
+            ["tag", "aff", "tag"],
+            [null, null, "destination"],
+        ]);
+        expect(
+            projectDoc(getReplica()!, stored).sheets.find((sheet) => sheet.id === suppliedId)!.data,
+        ).toEqual([
+            ["tag", "aff", "tag"],
+            [null, null, "destination"],
+        ]);
+        expect(
+            projectDoc(getReplica()!, stored).sheets.find((sheet) => sheet.id === focused.id)!.data,
+        ).toEqual(focused.data);
+    });
+
+    it.each([
+        { startRow: -1, endRow: 0 },
+        { startRow: 0, endRow: -1 },
+    ])("rejects a selection whose row endpoint is below zero", ({ startRow, endRow }) => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const { hot } = extensionHot([["tag", null, null]], metaStore(), {
+            startRow,
+            endRow,
+            startCol: 0,
+            endCol: 0,
+        });
+        const finishEditing = vi.fn();
+        hot.getActiveEditor.mockReturnValue({ isOpened: () => true, finishEditing });
+        setActiveHot(hot as never, vi.fn(), sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(toast.error).toHaveBeenCalledWith("Select cells in one speech to extend");
+        expect(finishEditing).not.toHaveBeenCalled();
+        expect(hot.getDataAtCell).not.toHaveBeenCalled();
+        expect(hot.setDataAtCell).not.toHaveBeenCalled();
+    });
+
+    it("commits the supplied grid editor before copying the selected text", () => {
+        const round = loadRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        const data = [
+            [null, "neg", "destination"],
+            [null, null, null],
+        ];
+        const { hot } = extensionHot(data, metaStore(), {
+            startRow: 0,
+            endRow: 0,
+            startCol: 0,
+            endCol: 0,
+        });
+        const finishEditing = vi.fn(() => {
+            data[0][0] = "typed argument";
+        });
+        hot.getActiveEditor.mockReturnValue({ isOpened: () => true, finishEditing });
+        setActiveHot(hot as never, vi.fn(), sheet.id, 0);
+
+        executeCommand("cell.extend");
+
+        expect(finishEditing).toHaveBeenCalledTimes(1);
+        expect(data.map((row) => row[2])).toEqual(["typed argument", "destination"]);
     });
 
     it("adds blank capacity before extending an occupied destination tail", () => {

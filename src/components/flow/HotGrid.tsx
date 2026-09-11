@@ -41,7 +41,7 @@ import {
     spacerCount,
     type SpeechCol,
 } from "@/lib/grid/flowColumns";
-import { getActiveHot, setActiveHot } from "@/lib/grid/hotInstance";
+import { getActiveHot, registerHot, setActiveHot } from "@/lib/grid/hotInstance";
 import {
     attachMetaUndo,
     rebaseUndoStacks,
@@ -666,11 +666,11 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             });
             applyMeta(hot, sheet.meta, prevMeta, lead, prevLead);
         });
-        // The grid now carries the new pad, so the registry says so before
-        // anything reaching it through `getActiveSpacers` can act on it.
-        if (getActiveHot() === hot) {
-            setActiveHot(hot, snapshot, sheet.id, lead);
-        }
+        // The grid now carries the new sheet and pad. Retain that context even
+        // while this pane is unfocused: its context menu is bound to this grid,
+        // not to the focused-grid singleton used by keyboard commands.
+        if (getActiveHot() === hot) setActiveHot(hot, snapshot, sheet.id, lead);
+        else registerHot(hot, snapshot, sheet.id, lead);
         // A reload under a changed pad re-keys every column, and both undo
         // histories hold the grid coordinates their action was recorded with.
         // Nothing empties Handsontable's stack on a sheet switch, so what goes

@@ -192,6 +192,26 @@ describe("rebaseUndoStacks", () => {
         expect(p.undoneActions).toEqual([]);
     });
 
+    it.each(["insertRow", "removeRow"] as const)(
+        "drops both stacks when a column-scoped %s meets whole-row history",
+        (kind) => {
+            const p = plugin(
+                [{ actionType: "insert_row", index: 3, amount: 1 }],
+                [{ actionType: "remove_row", index: 5, amount: 1 }],
+            );
+
+            rebaseUndoStacks(p, {
+                kind,
+                at: 1,
+                amount: 1,
+                scope: { kind: "column", col: 0 },
+            });
+
+            expect(p.doneActions).toEqual([]);
+            expect(p.undoneActions).toEqual([]);
+        },
+    );
+
     it("drops the stack when an action names a row the remove took away", () => {
         const p = plugin([changeAt(2)]);
         rebaseUndoStacks(p, rowChange("removeRow", 2, 1));

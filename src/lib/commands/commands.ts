@@ -28,6 +28,7 @@ import {
     getActiveHot,
     getActiveSheetId,
     getActiveSpacers,
+    getHotContext,
     notifyGridMutated,
 } from "@/lib/grid/hotInstance";
 import { attachMetaUndo, snapshotClasses, type ClassEntry } from "@/lib/grid/metaUndo";
@@ -177,6 +178,8 @@ function restoreExtensionMeta(grid: Handsontable, targetCol: GridCol, entries: C
 
 export function runExtend(grid = getActiveHot()): void {
     if (!grid) return;
+    const context = getHotContext(grid);
+    if (!context) return;
     const ranges = grid.getSelectedRange();
     if (!ranges || ranges.length === 0) return;
     if (ranges.length !== 1) {
@@ -188,14 +191,19 @@ export function runExtend(grid = getActiveHot()): void {
     const bottom = ranges[0].getBottomRightCorner();
     if (
         top.row == null ||
+        top.row < 0 ||
         top.col == null ||
         bottom.row == null ||
+        bottom.row < 0 ||
         bottom.col == null ||
         top.col !== bottom.col
     ) {
         toast.error("Select cells in one speech to extend");
         return;
     }
+
+    const editor = grid.getActiveEditor?.();
+    if (editor?.isOpened()) editor.finishEditing();
 
     let hasText = false;
     for (let row = top.row; row <= bottom.row; row++) {
@@ -211,11 +219,10 @@ export function runExtend(grid = getActiveHot()): void {
     }
 
     const { round } = useFlowStore.getState();
-    const sheetId = getActiveSheetId();
+    const { sheetId, spacers } = context;
     const sheet = round?.sheets.find((candidate) => candidate.id === sheetId);
     if (!round || !sheetId || !sheet) return;
 
-    const spacers = getActiveSpacers();
     const sourceCol = toModelCol(gridCol(top.col), spacers);
     const columns = columnsForFlowSheet(round, sheet);
     if (sheet.kind === "cx" || sourceCol === null || sourceCol < 0 || sourceCol >= columns.length) {
@@ -295,7 +302,7 @@ export function runExtend(grid = getActiveHot()): void {
     }
 
     grid.render();
-    notifyGridMutated();
+    context.mutated?.();
 
     for (let index = 0; index < height; index++) {
         recordOp({ kind: "insertCell", sheetId, col: target, row: top.row });
