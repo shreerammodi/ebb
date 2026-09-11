@@ -40,7 +40,12 @@ import {
 import { attachMetaUndo, snapshotClasses, type ClassEntry } from "@/lib/grid/metaUndo";
 import { beginMove } from "@/lib/grid/moveSession";
 import { STRUCTURED_WRITE } from "@/lib/grid/staleSource";
-import { moveSheetRange, sheetRangeIds, sortedSheets } from "@/lib/model/flow";
+import {
+    moveSheetRange,
+    sheetRangeIds,
+    sortedSheets,
+    type CellMeta,
+} from "@/lib/model/flow";
 import { askToShare } from "@/lib/store/useCollabConsent";
 import { useCollabStore } from "@/lib/store/useCollabStore";
 import { chooseContact } from "@/lib/store/useContactPicker";
@@ -242,6 +247,7 @@ export function runExtend(grid = getActiveHot()): void {
 
     const targetCol = toGridCol(modelCol(target), spacers);
     const height = bottom.row - top.row + 1;
+    let redoMeta: { row: number; meta: CellMeta }[] = [];
     let before: ClassEntry[] | null = null;
     try {
         const required = extensionRequiredRows(grid, targetCol, top.row, height);
@@ -261,7 +267,34 @@ export function runExtend(grid = getActiveHot()): void {
             height,
         });
         grid.setDataAtCell(changes, STRUCTURED_WRITE);
-        attachMetaUndo({ cols: [targetCol], before, after: snapshotClasses(grid, [targetCol]) });
+        attachMetaUndo({
+            cols: [targetCol],
+            before,
+            after: snapshotClasses(grid, [targetCol]),
+            effects: {
+                beforeUndo: () => {
+                    for (let index = 0; index < height; index++) {
+                        recordOp({ kind: "removeCell", sheetId, col: target, row: top.row });
+                    }
+                },
+                beforeRedo: () => {
+                    for (let index = 0; index < height; index++) {
+                        recordOp({ kind: "insertCell", sheetId, col: target, row: top.row });
+                    }
+                },
+                afterRedo: () => {
+                    for (const copied of redoMeta) {
+                        recordOp({
+                            kind: "cellMeta",
+                            sheetId,
+                            col: target,
+                            row: copied.row,
+                            meta: copied.meta,
+                        });
+                    }
+                },
+            },
+        });
     } catch {
         if (before) {
             try {
@@ -294,10 +327,12 @@ export function runExtend(grid = getActiveHot()): void {
                 text: updated.data[row]?.[target] ?? null,
             });
         }
+        redoMeta = [];
         for (let index = 0; index < height; index++) {
             const row = top.row + index;
             const meta = updated.meta[`${row},${target}`];
             if (meta && Object.keys(meta).length > 0) {
+                redoMeta.push({ row, meta });
                 recordOp({ kind: "cellMeta", sheetId, col: target, row, meta });
             }
         }

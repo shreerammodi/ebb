@@ -47,6 +47,8 @@ import {
     rebaseUndoStacks,
     onRedoStackChange,
     onUndoStackChange,
+    runMetaUndoBeforeRedo,
+    runMetaUndoBeforeUndo,
     resetMetaUndo,
     restoreMetaRedo,
     restoreMetaUndo,
@@ -1340,6 +1342,8 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                     beforePaste={beforePaste}
                     afterPaste={afterPaste}
                     beforeUndoStackChange={beforeUndoStackChange}
+                    beforeUndo={runMetaUndoBeforeUndo}
+                    beforeRedo={runMetaUndoBeforeRedo}
                     afterUndoStackChange={onUndoStackChange}
                     afterRedoStackChange={onRedoStackChange}
                     afterUndo={afterUndo}

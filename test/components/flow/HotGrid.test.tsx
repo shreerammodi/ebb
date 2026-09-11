@@ -5,12 +5,13 @@ import { useLayoutEffect } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import HotGrid, { applyMeta, collectMeta } from "@/components/flow/HotGrid";
-import { seedDoc } from "@/lib/collab/doc";
+import { projectDoc, seedDoc } from "@/lib/collab/doc";
 import { applyOp, type OpContext } from "@/lib/collab/ops";
 import { clearReplica, getReplica, seedReplica } from "@/lib/collab/replica";
 import { executeCommand } from "@/lib/commands/commands";
 import { createClock } from "@/lib/collab/stamp";
 import { gridCol, toModelCol } from "@/lib/grid/colSpace";
+import { trimGrid } from "@/lib/grid/codec";
 import { getActiveHot, getActiveSpacers } from "@/lib/grid/hotInstance";
 import { applyRemote } from "@/lib/grid/remoteBridge";
 import { makeFlowRound, makeFlowSheet, type CellMeta, type CellSource } from "@/lib/model/flow";
@@ -175,29 +176,38 @@ describe("argument extension", () => {
             "0,0": { bold: true, kicked: true, source: SRC },
             "0,2": { highlight: true },
         };
-        useFlowStore.setState({
-            round,
-            activeSheetId: sheet.id,
-            splitSheetId: null,
-            alignSpeeches: false,
-        });
+        useFlowStore.getState().loadRound(round, { activeSheetId: sheet.id });
+        useFlowStore.setState({ splitSheetId: null, alignSpeeches: false });
         render(<HotGrid sheetId={sheet.id} pane={1} />);
         const hot = await mounted();
         hot.selectCells([[0, 0, 1, 0]]);
+        const expectReplicaMatchesGrid = () => {
+            const local = useFlowStore
+                .getState()
+                .round!.sheets.find((candidate) => candidate.id === sheet.id)!;
+            const projected = projectDoc(getReplica()!, useFlowStore.getState().round!).sheets.find(
+                (candidate) => candidate.id === sheet.id,
+            )!;
+            expect(trimGrid(projected.data)).toEqual(local.data);
+            expect(projected.meta).toEqual(local.meta);
+        };
 
         act(() => executeCommand("cell.extend"));
         expect(hot.getDataAtCell(0, 2)).toBe("tag");
         expect(hot.getDataAtCell(2, 2)).toBe("destination");
         expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
+        expectReplicaMatchesGrid();
 
         act(() => executeCommand("edit.undo"));
         expect(hot.getDataAtCell(0, 2)).toBe("destination");
         expect(hot.getCellMeta(0, 2).className).toBe("flow-highlight");
+        expectReplicaMatchesGrid();
 
         act(() => executeCommand("edit.redo"));
         expect(hot.getDataAtCell(0, 2)).toBe("tag");
         expect(hot.getDataAtCell(2, 2)).toBe("destination");
         expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
+        expectReplicaMatchesGrid();
     });
 });
 

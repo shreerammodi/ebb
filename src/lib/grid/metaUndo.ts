@@ -22,11 +22,18 @@ import type { CellGrid } from "./cellShift";
  */
 export type ClassEntry = [row: number, col: number, className: string, source?: CellSource];
 
+export interface MetaUndoEffects {
+    beforeUndo?(): void;
+    beforeRedo?(): void;
+    afterRedo?(): void;
+}
+
 export interface MetaSnapshot {
     /** The columns the snapshots cover; restoring clears these in full first. */
     cols: number[];
     before: ClassEntry[];
     after: ClassEntry[];
+    effects?: MetaUndoEffects;
 }
 
 // The stack-change hooks hand out the live action objects, so a WeakMap keyed on
@@ -37,6 +44,8 @@ export interface MetaSnapshot {
 const snapshots = new WeakMap<object, MetaSnapshot>();
 let lastPushed: object | null = null;
 let lastUndone: object | null = null;
+let lastUndoing: object | null = null;
+let lastRedoing: object | null = null;
 
 /** Records the decorated or sourced cells of `cols`, top to bottom. */
 export function snapshotClasses(grid: CellGrid, cols: number[]): ClassEntry[] {
@@ -67,16 +76,18 @@ function applyClasses(grid: CellGrid, cols: number[], entries: ClassEntry[]): vo
 }
 
 /**
- * `afterUndoStackChange`: remembers the action just pushed onto the undo stack,
- * whether by a fresh write or by a redo putting one back.
+ * `afterUndoStackChange`: remembers a pushed action for attachment or redo,
+ * and a popped action whose before-undo effect is about to run.
  */
 export function onUndoStackChange(before: readonly object[], after: readonly object[]): void {
     lastPushed = after.length > before.length ? (after[after.length - 1] ?? null) : null;
+    lastUndoing = after.length < before.length ? (before[before.length - 1] ?? null) : null;
 }
 
-/** `afterRedoStackChange`: remembers the action an undo just took off. */
+/** `afterRedoStackChange`: remembers an undone action or one about to be redone. */
 export function onRedoStackChange(before: readonly object[], after: readonly object[]): void {
     lastUndone = after.length > before.length ? (after[after.length - 1] ?? null) : null;
+    lastRedoing = after.length < before.length ? (before[before.length - 1] ?? null) : null;
 }
 
 /**
@@ -89,6 +100,18 @@ export function attachMetaUndo(snap: MetaSnapshot): void {
     if (!lastPushed) return;
     snapshots.set(lastPushed, snap);
     lastPushed = null;
+}
+
+/** `beforeUndo`: runs the structural effect bound to the action being undone. */
+export function runMetaUndoBeforeUndo(): void {
+    if (lastUndoing) snapshots.get(lastUndoing)?.effects?.beforeUndo?.();
+    lastUndoing = null;
+}
+
+/** `beforeRedo`: runs the structural effect bound to the action being redone. */
+export function runMetaUndoBeforeRedo(): void {
+    if (lastRedoing) snapshots.get(lastRedoing)?.effects?.beforeRedo?.();
+    lastRedoing = null;
 }
 
 /** `afterUndo`. Returns whether a snapshot was found and restored. */
@@ -104,6 +127,7 @@ export function restoreMetaRedo(grid: CellGrid): boolean {
     const snap = lastPushed && snapshots.get(lastPushed);
     if (!snap) return false;
     applyClasses(grid, snap.cols, snap.after);
+    snap.effects?.afterRedo?.();
     return true;
 }
 
@@ -111,6 +135,8 @@ export function restoreMetaRedo(grid: CellGrid): boolean {
 export function resetMetaUndo(): void {
     lastPushed = null;
     lastUndone = null;
+    lastUndoing = null;
+    lastRedoing = null;
 }
 
 /** The parts of Handsontable's undo plugin this has to correct. */
