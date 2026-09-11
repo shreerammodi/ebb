@@ -7,6 +7,19 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-11
+
+### Added
+
+- **Extend an argument into the next speech for the same side.** Select one
+  vertical run and press `Mod+E`, choose Extend to next speech from the command
+  palette, or use the grid context menu. ebb copies the text, formatting, card
+  data, groups, and CardMirror source into the matching later speech, shifts
+  existing cells down instead of overwriting them, and leaves the source
+  unchanged. One undo or redo reverses or restores the complete operation.
+  Shared rounds replicate the extension as one structural edit, including
+  rebasing local undo history around remote changes.
+
 ## [1.1.0] - 2026-09-02
 
 ### Added
@@ -773,7 +786,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/shreerammodi/ebb/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/shreerammodi/ebb/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/shreerammodi/ebb/compare/v0.7.2...v1.0.0
 [0.7.2]: https://github.com/shreerammodi/ebb/compare/v0.7.1...v0.7.2
