@@ -152,7 +152,7 @@ export function resetMetaUndo(): void {
 }
 
 /** The parts of Handsontable's undo plugin this has to correct. */
-interface UndoPluginLike {
+export interface UndoPluginLike {
     doneActions?: UndoAction[];
     undoneActions?: UndoAction[];
 }

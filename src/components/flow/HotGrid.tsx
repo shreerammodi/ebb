@@ -54,6 +54,7 @@ import {
     restoreMetaUndo,
     snapshotClasses,
     type ClassEntry,
+    type UndoPluginLike,
 } from "@/lib/grid/metaUndo";
 import {
     cellIsMoving,
@@ -474,8 +475,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             // never touched, so correct the two stacks together or drop both.
             if (plan.structural) {
                 rebaseUndoStacks(
-                    (hot as unknown as { undoRedo?: Parameters<typeof rebaseUndoStacks>[0] })
-                        .undoRedo,
+                    hot.getPlugin("undoRedo") as unknown as UndoPluginLike,
                     plan.structural,
                 );
             }
