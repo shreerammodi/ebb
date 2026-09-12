@@ -17,8 +17,9 @@
 //! resolve to a focus instead of a new window.
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::LazyLock;
+use std::time::{Duration, Instant};
 
 use parking_lot::Mutex;
 use serde::Serialize;
@@ -180,6 +181,16 @@ pub fn open_dashboard<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWi
     build(app, WebviewUrl::App("index.html".into()))
 }
 
+/// The query a flow route carries. Reuses the `Url` query-pair encoder to
+/// match the percent-encoding `encodeURIComponent` produces on the frontend
+/// (see flowNav.ts's flowRouteFor); the scheme and host here are thrown away
+/// immediately.
+fn flow_query(path: &str) -> String {
+    let mut qs = tauri::Url::parse("app://ebb").expect("static URL parses");
+    qs.query_pairs_mut().append_pair("path", path);
+    qs.query().unwrap_or_default().to_string()
+}
+
 /// Opens a new window on the given flow, or focuses the window already
 /// showing it - a debater who double-clicks the same round twice should
 /// land back on the one flow, not a duplicate beside it.
@@ -188,13 +199,18 @@ pub fn open_flow<R: Runtime>(app: &AppHandle<R>, path: &str) -> tauri::Result<We
         let _ = existing.set_focus();
         return Ok(existing);
     }
-    // Reuses the `Url` query-pair encoder to match the percent-encoding
-    // `encodeURIComponent` produces on the frontend (see flowNav.ts's
-    // flowRouteFor); the scheme and host here are thrown away immediately.
-    let mut qs = tauri::Url::parse("app://ebb").expect("static URL parses");
-    qs.query_pairs_mut().append_pair("path", path);
-    let target = format!("flow/?{}", qs.query().unwrap_or_default());
-    build(app, WebviewUrl::App(target.into()))
+    let route = format!("flow/?{}", flow_query(path));
+    build(app, WebviewUrl::App(route.into()))
+}
+
+/// Points an already-open window at `path`, keeping whatever origin it is
+/// already on - the scheme is a custom one in a bundle and the dev server in
+/// development, and only the window knows which.
+fn navigate_to_flow<R: Runtime>(window: &WebviewWindow<R>, path: &str) -> tauri::Result<()> {
+    let mut target = window.url()?;
+    target.set_path("/flow/");
+    target.set_query(Some(&flow_query(path)));
+    window.navigate(target)
 }
 
 /// Opens a new dashboard window. The JS side of `window.new` (Mod+N, the
@@ -215,67 +231,116 @@ pub fn close_window<R: Runtime>(app: AppHandle<R>, window: WebviewWindow<R>) {
 
 // --- Cold-launch bootstrap ------------------------------------------------------
 //
-// A .ebb opened from the file manager reaches Rust as argv (Windows/Linux,
-// available synchronously before any window exists, so setup() can just
-// build the right window directly) or as RunEvent::Opened (macOS, which can
-// only be observed once the run loop is already pumping - after setup() has
-// already had to decide whether to open a dashboard). Rather than race that
-// delivery, setup() opens its default dashboard as usual and marks it here;
-// if a path then turns out to have been requested by the very same launch,
-// it adopts that still-blank window instead of leaving a redundant one
-// beside a new flow window. Once settled - adopted, or drained empty - the
-// window is ordinary again and never adopts a later, unrelated open.
+// A .ebb opened from the file manager reaches Rust as argv (Windows and
+// Linux) or as RunEvent::Opened (macOS), and the macOS half arrives before
+// setup() runs: the open event is delivered while the event loop is being
+// created, which is roughly a tenth of a second ahead of the setup hook that
+// has to decide whether this launch shows a dashboard. So an open that lands
+// before setup() is only recorded here, and setup() drains it and opens the
+// flow - one window, and no dashboard ever built to be closed again.
+//
+// An open that lands after setup() is the same launch arriving late, and the
+// dashboard setup() built with nothing requested is still blank, so that
+// window is navigated onto the flow rather than left over beside a second
+// window showing it. The shell navigates the webview itself rather than
+// handing the path to that window's frontend to route, because the frontend
+// is the far side of a race it cannot win: the open may land before its JS
+// has loaded or after it has already asked whether anything was pending.
+// A navigate needs nothing loaded and nothing listening.
+
+/// Paths the file manager asked for before setup() ran.
+static LAUNCH_OPENS: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+/// True once setup() has drained them and decided what the launch shows.
+static STARTED: AtomicBool = AtomicBool::new(false);
+
+/// Records `paths` for setup() to open, reporting whether it took them. A
+/// `false` means the app is already up and the caller opens them itself.
+pub fn queue_launch_opens(paths: &[String]) -> bool {
+    if STARTED.load(Ordering::SeqCst) {
+        return false;
+    }
+    LAUNCH_OPENS.lock().extend(paths.iter().cloned());
+    true
+}
+
+/// The paths this launch was asked to open, argv's first, each only once -
+/// macOS can deliver a path as an open event and in argv both. Called once,
+/// by setup(); every later open is handled live.
+pub fn take_launch_opens(argv: Vec<String>) -> Vec<String> {
+    // Flagged before the drain, not after: a queue call that had already
+    // passed the flag would otherwise append to a vector nobody reads again,
+    // and that debater's round would never open. Refused instead, it reaches
+    // the live route, which builds its window.
+    STARTED.store(true, Ordering::SeqCst);
+    let mut paths = argv;
+    paths.append(&mut LAUNCH_OPENS.lock());
+    let mut seen = Vec::with_capacity(paths.len());
+    paths.retain(|p| {
+        let fresh = !seen.contains(p);
+        if fresh {
+            seen.push(p.clone());
+        }
+        fresh
+    });
+    paths
+}
+
+/// How long after launch an open is still taken to be that launch's own.
+/// macOS delivers it within the first turns of the run loop; past this, a
+/// double-click is a debater opening a second flow, which gets its own
+/// window.
+const ADOPT_WINDOW: Duration = Duration::from_secs(5);
 
 struct Bootstrap {
-    /// The dashboard window setup() created with nothing requested. A
-    /// permanent identity, so a drain from a different (e.g. Mod+N-opened)
-    /// dashboard can tell it is not the one being asked for.
+    /// The dashboard window setup() created with nothing requested.
     window: Option<String>,
-    /// True once a path has been buffered for adoption, or the window has
-    /// drained with nothing pending - either way, adoption is no longer
-    /// available, so neither a second simultaneously-opened file nor a
-    /// stray late arrival can overwrite or reclaim it.
-    settled: bool,
-    pending: Option<String>,
+    /// When that window was created, which is launch.
+    at: Option<Instant>,
+    /// True once the offer has been taken, so two files opened in the same
+    /// gesture do not both try to land in the one window.
+    taken: bool,
 }
 
 static BOOTSTRAP: Mutex<Bootstrap> = Mutex::new(Bootstrap {
     window: None,
-    settled: false,
-    pending: None,
+    at: None,
+    taken: false,
 });
 
-/// Marks `label` as the window that can still adopt a same-launch file open.
+/// Marks `label` as the window a same-launch file open may take over.
 /// Called at most once, right after setup() opens a dashboard with nothing
 /// requested.
 pub fn mark_bootstrap(label: &str) {
-    BOOTSTRAP.lock().window = Some(label.to_string());
+    let mut b = BOOTSTRAP.lock();
+    b.window = Some(label.to_string());
+    b.at = Some(Instant::now());
 }
 
-/// Opens `path`, adopting the bootstrap window in its place if one is still
-/// available, otherwise opening a brand new window.
-pub fn adopt_or_open<R: Runtime>(app: &AppHandle<R>, path: &str) {
-    let mut b = BOOTSTRAP.lock();
-    if !b.settled && b.window.is_some() {
-        b.pending = Some(path.to_string());
-        b.settled = true;
-        return;
-    }
-    drop(b);
-    let _ = open_flow(app, path);
-}
-
-/// Called once by the dashboard's own frontend on mount. Returns the path
-/// waiting for this exact window, if any - `None` both when nothing is
-/// pending and when `window` is a different, unrelated dashboard.
-#[tauri::command]
-pub fn drain_boot_open<R: Runtime>(window: WebviewWindow<R>) -> Option<String> {
-    let mut b = BOOTSTRAP.lock();
-    if b.window.as_deref() != Some(window.label()) {
+/// The bootstrap window's label, if an open observed at `now` is still
+/// plausibly the launch's own; taking it consumes the offer.
+fn claim(b: &mut Bootstrap, now: Instant) -> Option<String> {
+    if b.taken {
         return None;
     }
-    b.settled = true;
-    b.pending.take()
+    if now.duration_since(b.at?) > ADOPT_WINDOW {
+        return None;
+    }
+    b.taken = true;
+    b.window.clone()
+}
+
+/// Opens `path`, taking over the launch's own still-blank dashboard if that
+/// offer is still good, otherwise opening a brand new window.
+pub fn adopt_or_open<R: Runtime>(app: &AppHandle<R>, path: &str) {
+    let claimed = claim(&mut BOOTSTRAP.lock(), Instant::now());
+    if let Some(window) = claimed.and_then(|label| app.get_webview_window(&label)) {
+        if navigate_to_flow(&window, path).is_ok() {
+            let _ = window.set_focus();
+            return;
+        }
+    }
+    let _ = open_flow(app, path);
 }
 
 #[cfg(test)]
@@ -325,5 +390,88 @@ mod tests {
             assert!(!allowed(raw, false), "{raw} must be refused in a bundle");
             assert!(allowed(raw, true), "{raw} must work against the dev server");
         }
+    }
+
+    /// macOS hands over a double-clicked file about a tenth of a second
+    /// before setup() runs, so nothing may open a window on its own that
+    /// early: setup() opened a dashboard beside the flow when it did.
+    #[test]
+    fn a_pre_setup_open_waits_for_setup_to_build_it() {
+        assert!(queue_launch_opens(&["/flows/berkeley.ebb".to_string()]));
+
+        // Argv leads, and a path delivered both ways is one flow.
+        let paths = take_launch_opens(vec!["/flows/berkeley.ebb".into(), "/flows/pf.ebb".into()]);
+        assert_eq!(paths, ["/flows/berkeley.ebb", "/flows/pf.ebb"]);
+
+        assert!(
+            !queue_launch_opens(&["/flows/later.ebb".to_string()]),
+            "the app is up, so a later open is the caller's to handle"
+        );
+    }
+
+    /// The whole point of the bootstrap record: one double-clicked round is
+    /// one window. The launch's blank dashboard is navigated onto the flow
+    /// in place, and nothing opens beside it.
+    ///
+    /// Both halves live in one test because the record is process-wide, and
+    /// two tests over it would race each other rather than the run loop.
+    #[test]
+    fn a_launch_open_lands_in_the_window_the_launch_made() {
+        let app = tauri::test::mock_app();
+        let handle = app.handle().clone();
+        let dashboard = open_dashboard(&handle).expect("a dashboard");
+        mark_bootstrap(dashboard.label());
+
+        adopt_or_open(&handle, "/flows/berkeley r1.ebb");
+
+        assert_eq!(handle.webview_windows().len(), 1, "no window beside it");
+        let url = dashboard.url().expect("a url");
+        assert_eq!(url.path(), "/flow/");
+        assert_eq!(url.query(), Some("path=%2Fflows%2Fberkeley+r1.ebb"));
+
+        // A second path in the same gesture, and every open after the
+        // launch's own, is a flow of its own and gets its own window.
+        adopt_or_open(&handle, "/flows/harvard r2.ebb");
+        assert_eq!(handle.webview_windows().len(), 2);
+        assert_eq!(
+            dashboard.url().expect("a url").query(),
+            Some("path=%2Fflows%2Fberkeley+r1.ebb"),
+            "the adopted window keeps the flow it took"
+        );
+    }
+
+    /// A file open that arrives long after launch is a debater opening a
+    /// second flow, not the launch's own argument, so the offer expires
+    /// rather than steering whatever window happens to be sitting there.
+    #[test]
+    fn the_offer_is_launch_scoped_and_single_use() {
+        let now = Instant::now();
+        let fresh = || Bootstrap {
+            window: Some("win-0".into()),
+            at: Some(now),
+            taken: false,
+        };
+
+        let mut b = fresh();
+        assert_eq!(claim(&mut b, now), Some("win-0".into()));
+        assert_eq!(claim(&mut b, now), None, "one taker only");
+
+        let mut b = fresh();
+        assert_eq!(claim(&mut b, now + ADOPT_WINDOW), Some("win-0".into()));
+
+        let mut b = fresh();
+        assert_eq!(
+            claim(&mut b, now + ADOPT_WINDOW + Duration::from_millis(1)),
+            None
+        );
+
+        // A launch that opened a flow directly marks nothing, so there is
+        // no window to take over.
+        let mut unmarked = Bootstrap {
+            window: None,
+            at: None,
+            taken: false,
+        };
+        assert_eq!(claim(&mut unmarked, now), None);
     }
 }

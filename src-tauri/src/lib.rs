@@ -29,7 +29,14 @@ fn system_info() -> [&'static str; 2] {
 /// focuses whatever window is already frontmost, falling back to a fresh
 /// dashboard if none exists. Shared by a second launch's forwarded argv and
 /// macOS's `RunEvent::Opened`.
+///
+/// macOS delivers a double-clicked file before `setup()` runs, so an open
+/// that lands that early is only queued; setup() drains it and builds the one
+/// window it asked for.
 fn handle_open<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<String>) {
+    if windows::queue_launch_opens(&paths) {
+        return;
+    }
     if paths.is_empty() {
         match windows::target_window(app) {
             Some(w) => {
@@ -94,12 +101,13 @@ pub fn run() {
 
             // A cold launch with a .ebb argument (a double-click, or "Open
             // With") opens straight onto that flow instead of the dashboard.
-            // macOS delivers the same case as RunEvent::Opened below, which
-            // can only be observed once the run loop starts - after this
-            // decision already has to be made - so a plain launch's
-            // dashboard is marked adoptable in case that turns out to be
-            // exactly what it was.
-            let paths = flowfile::flow_paths_in(&std::env::args().collect::<Vec<_>>());
+            // Windows and Linux carry it in argv; macOS delivers it as
+            // RunEvent::Opened below, which lands before this hook runs and
+            // is queued for exactly this drain. A launch that asked for
+            // nothing gets the dashboard, marked adoptable in case an open
+            // event turns out to arrive after all (see windows.rs).
+            let argv = std::env::args().collect::<Vec<_>>();
+            let paths = windows::take_launch_opens(flowfile::flow_paths_in(&argv));
             if paths.is_empty() {
                 let dashboard = windows::open_dashboard(handle)?;
                 windows::mark_bootstrap(dashboard.label());
@@ -137,7 +145,6 @@ pub fn run() {
             flowfile::write_flow_file,
             flowfile::write_recents,
             menu::rebuild_menu,
-            windows::drain_boot_open,
             sidecar::read_sidecar,
             sidecar::write_sidecar,
             shutdown::finish_quit,
