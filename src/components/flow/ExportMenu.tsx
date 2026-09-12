@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tip } from "@/components/ui/tooltip";
 import { errorMessage } from "@/lib/errorMessage";
-import { downloadXlsx } from "@/lib/export/xlsx";
+import { saveXlsx } from "@/lib/export/xlsx";
 import type { FlowRound } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -48,7 +48,7 @@ export default function ExportMenu() {
                     Save As writes one wherever the user wants it. */}
                 <DropdownMenuItem
                     data-testid="export-excel"
-                    onSelect={() => run((r) => downloadXlsx(r, useFlowStore.getState().contacts))}
+                    onSelect={() => run((r) => saveXlsx(r, useFlowStore.getState().contacts))}
                 >
                     Excel
                 </DropdownMenuItem>

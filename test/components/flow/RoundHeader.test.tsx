@@ -28,7 +28,7 @@ vi.mock("next/link", () => ({
 
 // Mock the exporter the header reaches for.
 vi.mock("@/lib/export/xlsx", () => ({
-    downloadXlsx: vi.fn().mockResolvedValue(undefined),
+    saveXlsx: vi.fn().mockResolvedValue(undefined),
 }));
 
 function setupRound() {

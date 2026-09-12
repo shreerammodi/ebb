@@ -199,6 +199,16 @@ Formatting is `oxfmt` (via `npm run format` / `format:check`), not Prettier.
   never holds a general filesystem capability. `src-tauri/src/sidecar.rs` adds
   the two that persist a collaboration replica, and neither of those takes a
   path either.
+- **An export is filed where the debater says, never into a downloads folder.**
+  Excel export is a workbook the debater hands to a judge or a partner, so it
+  ends with a save panel, not with a file appearing somewhere they did not
+  choose. `saveExport` (`src/lib/export/download.ts`) routes the bytes: on the
+  desktop through `saveDesktop.ts`, which opens the native panel and writes the
+  result with `write_export_file` (`src-tauri/src/export.rs`, the one command
+  that writes bytes rather than text); in a browser through the File System
+  Access picker, falling back to an anchor download only where an engine
+  offers no picker at all. Cancelling the panel writes nothing and reports no
+  error.
 - Keyboard-first UX is a core product value - preserve and extend keybindings
   rather than replacing them with mouse-only flows.
 

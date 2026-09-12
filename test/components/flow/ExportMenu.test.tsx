@@ -8,7 +8,7 @@ import { makeFlowRound } from "@/lib/model/flow";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 vi.mock("@/lib/export/xlsx", () => ({
-    downloadXlsx: vi.fn().mockResolvedValue(undefined),
+    saveXlsx: vi.fn().mockResolvedValue(undefined),
 }));
 
 beforeEach(() => {
@@ -39,9 +39,9 @@ describe("ExportMenu", () => {
         expect(screen.queryByTestId("export-json")).not.toBeInTheDocument();
     });
 
-    it("Excel item invokes downloadXlsx", async () => {
+    it("Excel item invokes saveXlsx", async () => {
         const user = userEvent.setup();
-        const { downloadXlsx } = await import("@/lib/export/xlsx");
+        const { saveXlsx } = await import("@/lib/export/xlsx");
         render(
             <TooltipProvider>
                 <ExportMenu />
@@ -49,6 +49,6 @@ describe("ExportMenu", () => {
         );
         await user.click(screen.getByTestId("export-btn"));
         await user.click(await screen.findByTestId("export-excel"));
-        expect(downloadXlsx).toHaveBeenCalled();
+        expect(saveXlsx).toHaveBeenCalled();
     });
 });

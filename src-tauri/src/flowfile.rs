@@ -68,7 +68,7 @@ pub fn flow_paths() -> Result<FlowPaths, String> {
 /// The rename is the atomic step, but only if the bytes are already durable, so
 /// the temp file is synced before it is moved: a crash mid-round can cost the
 /// last debounce interval, never a truncated flow.
-pub(crate) fn write_atomic(path: &Path, contents: &str) -> Result<(), String> {
+pub(crate) fn write_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {
     let dir = path
         .parent()
         .ok_or_else(|| format!("{} has no parent directory", path.display()))?;
@@ -91,7 +91,7 @@ pub(crate) fn write_atomic(path: &Path, contents: &str) -> Result<(), String> {
             .write(true)
             .create_new(true)
             .open(&tmp)?;
-        f.write_all(contents.as_bytes())?;
+        f.write_all(contents)?;
         f.sync_all()
     };
     if let Err(e) = write() {
@@ -193,7 +193,7 @@ pub fn write_flow_file(
         // writing it back is the friendlier outcome.
     }
 
-    write_atomic(target, &contents)?;
+    write_atomic(target, contents.as_bytes())?;
     mtime_ms(target)
 }
 
@@ -266,7 +266,7 @@ pub fn read_recents() -> Result<Option<String>, String> {
 #[tauri::command]
 pub fn write_recents(contents: String) -> Result<(), String> {
     let path = recents_path().ok_or("Could not locate your config directory")?;
-    write_atomic(&path, &contents)
+    write_atomic(&path, contents.as_bytes())
 }
 
 // --- Open-with ---------------------------------------------------------------------
@@ -315,7 +315,7 @@ mod tests {
     fn atomic_write_leaves_no_temp_file() {
         let dir = tmpdir("atomic");
         let path = dir.join("round.ebb");
-        write_atomic(&path, "{\"version\":3}").unwrap();
+        write_atomic(&path, b"{\"version\":3}").unwrap();
 
         assert_eq!(fs::read_to_string(&path).unwrap(), "{\"version\":3}");
         let leftovers: Vec<_> = fs::read_dir(&dir)
@@ -330,8 +330,8 @@ mod tests {
     fn atomic_write_replaces_without_truncating() {
         let dir = tmpdir("replace");
         let path = dir.join("round.ebb");
-        write_atomic(&path, "first").unwrap();
-        write_atomic(&path, "second").unwrap();
+        write_atomic(&path, b"first").unwrap();
+        write_atomic(&path, b"second").unwrap();
         assert_eq!(fs::read_to_string(&path).unwrap(), "second");
     }
 
@@ -390,7 +390,7 @@ mod tests {
         std::os::unix::fs::symlink(&target, dir.join(".round.ebb.tmp")).unwrap();
 
         let path = dir.join("round.ebb");
-        write_atomic(&path, "flow").unwrap();
+        write_atomic(&path, b"flow").unwrap();
 
         assert_eq!(fs::read_to_string(&target).unwrap(), "secret");
         assert_eq!(fs::read_to_string(&path).unwrap(), "flow");

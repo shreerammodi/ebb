@@ -53,7 +53,7 @@ fn read_sidecar_in(base: &Path, round_id: &str) -> Result<Option<String>, String
 }
 
 fn write_sidecar_in(base: &Path, round_id: &str, contents: &str) -> Result<(), String> {
-    write_atomic(&sidecar_path_in(base, round_id)?, contents)
+    write_atomic(&sidecar_path_in(base, round_id)?, contents.as_bytes())
 }
 
 fn base_dir() -> Result<PathBuf, String> {

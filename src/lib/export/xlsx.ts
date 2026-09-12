@@ -16,7 +16,7 @@ import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import { sortedSheets, type FlowRound, type FlowSheet } from "@/lib/model/flow";
 import type { Side } from "@/lib/model/types";
 
-import { exportFilename, MIME_BY_EXT, saveBlob } from "./download";
+import { exportFilename, saveExport } from "./download";
 import { applyInfoWorksheet, maybeAddRfdWorksheet } from "./infoSheet";
 import { safeSheetName } from "./sheetNames";
 
@@ -130,13 +130,10 @@ export function fillWorkbook(
 }
 
 /** Contacts name the authors of any peer notes on the RFD worksheet. */
-export async function downloadXlsx(round: FlowRound, contacts: Contacts = {}): Promise<void> {
+export async function saveXlsx(round: FlowRound, contacts: Contacts = {}): Promise<void> {
     const { default: ExcelJS } = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
     fillWorkbook(workbook, round, contacts);
     const out = await workbook.xlsx.writeBuffer();
-    await saveBlob(
-        new Blob([out], { type: MIME_BY_EXT[".xlsx"] }),
-        exportFilename(round.createdAt, "xlsx"),
-    );
+    await saveExport(new Uint8Array(out as ArrayBuffer), exportFilename(round.createdAt, "xlsx"));
 }
