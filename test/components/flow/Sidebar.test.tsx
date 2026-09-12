@@ -563,11 +563,14 @@ describe("the share button", () => {
         expect(screen.queryByTestId("share-controls")).toBeNull();
     });
 
-    it("is reachable from the collapsed rail too, where the chips float", () => {
+    // Collapsing is a request for the grid's width; Share and Join are drawn
+    // in every round, so floating them would overlay the flow permanently.
+    it("is off the collapsed rail, leaving the grid's edge clear", () => {
         setupRound();
         useFlowStore.setState({ sidebarCollapsed: true });
         renderSidebar();
-        expect(screen.getByTestId("sidebar-share")).toBeInTheDocument();
+        expect(screen.queryByTestId("sidebar-share")).toBeNull();
+        expect(screen.queryByTestId("sidebar-join")).toBeNull();
     });
 
     // Shown before there is anybody to invite, so the route is discoverable

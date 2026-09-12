@@ -155,11 +155,14 @@ export default function Sidebar() {
                     </Tip>
                 </nav>
                 {/* No footer to sit in, so the chips float over the grid's left
-                    edge, clear of the collapsed rail. */}
+                    edge, clear of the collapsed rail. Share and Join stay out:
+                    they are always drawn in a round, so floating them would
+                    park two buttons over the flow for a debater who collapsed
+                    the sidebar to get the width back. A live session or a
+                    waiting invitation is news, and goes with itself. */}
                 <div className="no-print fixed bottom-3 left-11 z-30 flex flex-col items-start gap-1">
                     <InviteChip />
                     <SessionChip />
-                    <ShareButton />
                 </div>
             </>
         );
