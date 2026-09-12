@@ -241,6 +241,17 @@ export async function startCollabSession(deps: CollabSessionDeps): Promise<Colla
     // that put a reopened round's partners back. Not asked at all with
     // relaying off: there is no relay for this endpoint to be homed on.
     let homed = settings.relay ? link.relayUrl().catch(() => "") : Promise.resolve("");
+    /**
+     * The relay this side is homed on, once the shell has said. Read at the
+     * moment a hello goes out rather than awaited there: a hello held behind
+     * a relay that is slow to answer is a hello the host's deadline refuses.
+     * Empty is not sent, and the host falls back to what the link observed.
+     */
+    let myRelay = "";
+    const noteHomed = (relay: string) => {
+        if (relay) myRelay = relay;
+    };
+    void homed.then(noteHomed);
 
     /**
      * Where this host can be reached, waited out only when a ticket needs it.
@@ -255,6 +266,7 @@ export async function startCollabSession(deps: CollabSessionDeps): Promise<Colla
         const first = await homed;
         if (first) return first;
         homed = link.relayUrl().catch(() => "");
+        void homed.then(noteHomed);
         return homed;
     }
 
@@ -533,7 +545,6 @@ export async function startCollabSession(deps: CollabSessionDeps): Promise<Colla
             // for the heartbeat to lapse.
             presences = releasePeer(presences, peer.endpointId);
             setPresences(presences);
-            announce();
             // A link that blips mid-round is the ordinary case in a gym full
             // of laptops, and the dial that opened this one only retried while
             // the session was coming up. Without re-arming here, the first
@@ -541,8 +552,11 @@ export async function startCollabSession(deps: CollabSessionDeps): Promise<Colla
             //
             // Only the side that dialled redials: the host cannot reach a
             // guest that has not spoken, and both sides trying would race two
-            // connections into one slot.
+            // connections into one slot. Armed before the drop is announced,
+            // so the announcement reads as reconnecting rather than as a
+            // session with nobody to reach.
             if (!stopped && dialled.has(peer.endpointId)) redial(peer.endpointId);
+            announce();
         });
         announce();
         return sync;
@@ -622,7 +636,11 @@ export async function startCollabSession(deps: CollabSessionDeps): Promise<Colla
                     endpointId: remoteId,
                     role: verdict.role,
                     connectionType: conn.connectionType(),
-                    relayUrl: conn.relayUrl() ?? undefined,
+                    // Where the guest says it lives, over where its packets
+                    // came in: a guest that dialled this host's relay reaches
+                    // this side through it, and the link reports that relay,
+                    // which is nowhere to find the guest once it hangs up.
+                    relayUrl: msg.relayUrl || conn.relayUrl() || undefined,
                     name: typeof msg.name === "string" ? msg.name : undefined,
                 },
                 verdict.role === "viewer",
@@ -699,6 +717,7 @@ export async function startCollabSession(deps: CollabSessionDeps): Promise<Colla
                     ticket: secret,
                     label: deps.roundLabel,
                     name: deps.displayName,
+                    relayUrl: myRelay,
                 }),
             );
         });

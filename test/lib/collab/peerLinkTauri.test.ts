@@ -217,10 +217,11 @@ describe("createPeerLink", () => {
         expect(seen).toHaveLength(0);
     });
 
-    // The shell refuses a send only for a connection it no longer holds: a peer
-    // that quit, or an endpoint that stopped. Both are ordinary, and neither
-    // may reach the debater as an unhandled rejection.
-    it("drops a connection the shell will not send on, without rejecting", async () => {
+    // The shell refuses a send for a connection it no longer holds, and for
+    // one whose writer is stalled behind a full queue. The second is still a
+    // live link on the far side, so the refusal has to end it there too, or
+    // one window reads the peer as gone while the peer reads it as connected.
+    it("hangs up on a connection the shell will not send on, without rejecting", async () => {
         const link = await createPeerLink({ discovery: "mdns", relay: true }, fake.bridge);
         const conn = await link.dial("sam");
         const onClose = vi.fn();
@@ -229,6 +230,7 @@ describe("createPeerLink", () => {
         fake.refuse.add("collab_send");
         conn.send({ type: "bye" });
         await vi.waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+        expect(fake.calls.filter((c) => c.cmd === "collab_close")).toHaveLength(1);
 
         // Gone is gone: the link stops trying, and the shell hears no more.
         const before = fake.calls.filter((c) => c.cmd === "collab_send").length;

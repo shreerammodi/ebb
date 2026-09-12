@@ -11,7 +11,12 @@ import {
 } from "@/lib/collab/peerLink";
 import { HANDSHAKE_MS } from "@/lib/collab/peerLink";
 import { createMemoryNet, memoryRelay, noPairing } from "@/lib/collab/peerLinkMemory";
-import { forgetRoundPeers, knownRoundPeers, setRoundPeers } from "@/lib/collab/roundPeers";
+import {
+    forgetRoundPeers,
+    knownRoundPeers,
+    knownRoundRelays,
+    setRoundPeers,
+} from "@/lib/collab/roundPeers";
 import {
     startCollabSession,
     type CollabPeer,
@@ -887,6 +892,60 @@ describe("telling a peer it has been saved", () => {
         expect(saved).toEqual([{ endpointId: SAM, name: "Rae", relayUrl: memoryRelay(SAM) }]);
 
         await host.stop();
+    });
+
+    /**
+     * What a link observes about a dialler is the relay its packets came in
+     * through. A guest that dialled the host's relay is reported at the
+     * host's relay, which is nowhere to find that guest once it hangs up, so
+     * the guest says where it is homed and that is what the round keeps.
+     */
+    it("keeps the relay a guest names over the one the link observed", async () => {
+        const saved: SavedByPeer[] = [];
+        const host = (await open(ALEX, {
+            onContact: (peer: SavedByPeer) => saved.push(peer),
+        }))!;
+        const secret = (await host.share("editor")).secret;
+        const link = await net.create(SAM)({ discovery: "mdns", relay: true });
+        const conn = await link.dial(ALEX);
+        const home = "https://relay.invalid/where-sam-lives";
+        conn.send({
+            type: "hello",
+            protocol: PROTOCOL_MAJOR,
+            app: "0.11.0",
+            endpointId: SAM,
+            roundId: shared.id,
+            role: "editor",
+            capabilities: [],
+            ticket: secret,
+            relayUrl: home,
+        });
+        await settle();
+
+        expect(host.peers().map((p) => p.relayUrl)).toEqual([home]);
+        expect(knownRoundRelays(shared.id)).toEqual({ [SAM]: home });
+        conn.send({ type: "contact", name: "Sam" });
+        await settle();
+        expect(saved).toEqual([{ endpointId: SAM, name: "Sam", relayUrl: home }]);
+
+        await host.stop();
+    });
+
+    it("says where it is homed in the hello it dials with", async () => {
+        const heard: WireMessage[] = [];
+        const link = await net.create(ALEX)({ discovery: "mdns", relay: true });
+        await link.listen((conn) =>
+            conn.onMessage((m) => {
+                heard.push(m);
+                conn.send({ type: "helloAck", ok: true });
+            }),
+        );
+        const guest = (await open(SAM, { dial: [ALEX] }))!;
+        await settle();
+        expect(heard[0]).toMatchObject({ type: "hello", relayUrl: memoryRelay(SAM) });
+
+        await guest.stop();
+        await link.stop();
     });
 });
 

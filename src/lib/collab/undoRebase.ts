@@ -49,7 +49,12 @@ export function rebaseRow(row: number, change: StructuralChange, col?: number): 
 }
 
 /**
- * The stack corrected for `change`, or null meaning clear it.
+ * Each action corrected for `change`, or null where it cannot be.
+ *
+ * One slot per action, in order, so the caller can keep what is still
+ * honest: a history is undone from the top, and an entry that cannot be
+ * corrected takes with it only what sits beneath it, since none of that is
+ * reachable without undoing through it first.
  *
  * Never mutates the actions it is given: Handsontable owns those objects, and
  * `metaUndo` keys its parallel snapshots on their identity.
@@ -57,11 +62,8 @@ export function rebaseRow(row: number, change: StructuralChange, col?: number): 
 export function rebaseActions(
     actions: readonly UndoAction[],
     change: StructuralChange,
-): UndoAction[] | null {
-    if (actions.length === 0) return [];
-
-    const out: UndoAction[] = [];
-    for (const action of actions) {
+): (UndoAction | null)[] {
+    return actions.map((action) => {
         if (!REBASEABLE[action.actionType]) return null;
 
         if (action.changes) {
@@ -71,8 +73,7 @@ export function rebaseActions(
                 if (moved === null) return null;
                 changes.push([moved, prop, oldValue, newValue]);
             }
-            out.push({ ...action, changes });
-            continue;
+            return { ...action, changes };
         }
 
         // A whole-row action carries one index for every column. Once only one
@@ -89,11 +90,9 @@ export function rebaseActions(
         if (typeof action.index === "number") {
             const moved = rebaseRow(action.index, change);
             if (moved === null) return null;
-            out.push({ ...action, index: moved });
-            continue;
+            return { ...action, index: moved };
         }
 
-        out.push({ ...action });
-    }
-    return out;
+        return { ...action };
+    });
 }

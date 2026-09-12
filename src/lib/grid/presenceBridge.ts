@@ -18,7 +18,7 @@
  * editor open on; whatever session is live decides who hears about it.
  */
 
-import type { Presence } from "@/lib/collab/presence";
+import { PRESENCE_TTL_MS, type Presence } from "@/lib/collab/presence";
 
 import type { ModelCol } from "./colSpace";
 import { getActiveHot } from "./hotInstance";
@@ -29,10 +29,79 @@ const NO_PRESENCE: readonly Presence[] = [];
 let presences: readonly Presence[] = NO_PRESENCE;
 const listeners = new Set<() => void>();
 
-/** The session layer publishes the whole table; there is no incremental path. */
-export function setPresences(next: readonly Presence[]): void {
-    presences = next.length === 0 ? NO_PRESENCE : next;
+/**
+ * Whether two tables paint the same. A heartbeat refreshes `heldAt` and
+ * nothing else, four times a second per peer, and a repaint for each would
+ * have the grid re-rendering all day for a marker that has not moved.
+ */
+function paintsAlike(a: readonly Presence[], b: readonly Presence[]): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+        const x = a[i];
+        const y = b[i];
+        if (
+            x.endpointId !== y.endpointId ||
+            x.sheetId !== y.sheetId ||
+            x.col !== y.col ||
+            x.row !== y.row ||
+            x.editing !== y.editing ||
+            x.readOnly !== y.readOnly
+        )
+            return false;
+    }
+    return true;
+}
+
+/**
+ * The repaint armed for the moment the next entry would expire. A marker's
+ * liveness is read at paint time, so without a paint scheduled for it a peer
+ * that stopped heartbeating stays on screen until something unrelated
+ * repaints - which on an idle sheet is never. The table itself is left as
+ * the session published it: the paint is what reads the TTL, and an entry
+ * dropped here would only be put back by the next publish.
+ */
+let expiry: ReturnType<typeof setTimeout> | undefined;
+
+function notify(): void {
     for (const listener of listeners) listener();
+}
+
+function armExpiry(): void {
+    clearTimeout(expiry);
+    expiry = undefined;
+    const now = Date.now();
+    let next = Infinity;
+    for (const p of presences) {
+        const at = p.heldAt + PRESENCE_TTL_MS;
+        // One already past is already painted as gone, or will be by the
+        // paint this call is about to cause; arming for it would fire at once
+        // and again after each fire, for as long as the session keeps it.
+        if (at > now && at < next) next = at;
+    }
+    if (next === Infinity) return;
+    expiry = setTimeout(
+        () => {
+            expiry = undefined;
+            notify();
+            armExpiry();
+        },
+        next - now + 1,
+    );
+}
+
+/**
+ * The session layer publishes the whole table; there is no incremental path.
+ * Listeners hear only a change that paints differently. A heartbeat alone
+ * refreshes `heldAt`, which is read at paint time, so a repaint for it would
+ * change nothing on screen - and four of them a second per peer is the grid
+ * re-rendering all day for a marker that has not moved.
+ */
+export function setPresences(next: readonly Presence[]): void {
+    const prev = presences;
+    presences = next.length === 0 ? NO_PRESENCE : next;
+    armExpiry();
+    if (paintsAlike(prev, presences)) return;
+    notify();
 }
 
 export function getPresences(): readonly Presence[] {

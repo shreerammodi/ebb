@@ -162,14 +162,19 @@ export async function createPeerLink(
                     if (!entry.open) return;
                     const write = () =>
                         shell.invoke("collab_send", { connId, payload: JSON.stringify(msg) });
-                    // The shell refuses a send for one reason: it is not
-                    // holding this connection. A peer that quit and an endpoint
-                    // that stopped both land here, neither is retryable, and a
-                    // peer going away is ordinary. So the link is dropped
-                    // rather than left claiming to be up, and nothing about it
-                    // reaches the debater as an error.
-                    void (entry.claiming ? entry.claiming.then(write) : write()).catch(() =>
-                        dropConn(connId),
+                    // A refused send is not always a connection the shell has
+                    // already dropped: a writer stalled behind a full queue is
+                    // refused too, over a connection that is still up and
+                    // still a peer on the far side. Forgetting it here alone
+                    // would leave that connection open with nobody holding it,
+                    // one side reading the peer as gone while the other reads
+                    // connected, and neither side redialling. Hanging up
+                    // through the shell is what makes the far side hear it.
+                    void (entry.claiming ? entry.claiming.then(write) : write()).catch(
+                        (err: unknown) => {
+                            console.warn(`collab: send to ${remote} refused: ${String(err)}`);
+                            entry.conn.close();
+                        },
                     );
                 },
                 onMessage(cb) {
@@ -222,8 +227,23 @@ export async function createPeerLink(
     unlisten.push(
         await shell.listen("collab:closed", (payload) => {
             if (payload === null || typeof payload !== "object") return;
-            const p = payload as { connId?: unknown };
+            const p = payload as {
+                connId?: unknown;
+                reason?: unknown;
+                connectionType?: unknown;
+                relayUrl?: unknown;
+            };
             if (typeof p.connId !== "string") return;
+            const entry = held.get(p.connId);
+            // The one place a drop says why. A timed-out relayed link and a
+            // timed-out direct one are different failures, and the chip
+            // shows neither.
+            if (entry) {
+                const via = typeof p.relayUrl === "string" ? ` via ${p.relayUrl}` : "";
+                console.warn(
+                    `collab: ${entry.conn.id} closed: ${String(p.reason ?? "unknown")} (${String(p.connectionType ?? "unknown")}${via})`,
+                );
+            }
             dropConn(p.connId);
         }),
     );

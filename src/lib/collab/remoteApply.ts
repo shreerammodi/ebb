@@ -11,7 +11,7 @@
 import { modelCol, type ModelCol } from "@/lib/grid/colSpace";
 
 import { liveCells, sheetWidth } from "./doc";
-import { followSelection, type CellRef } from "./selection";
+import { followSelection, selectionIdentity, type CellRef } from "./selection";
 import type { CollabDoc, CollabSheet } from "./types";
 import type { StructuralChange } from "./undoRebase";
 
@@ -132,17 +132,15 @@ export function planRemoteApply(before: CollabDoc, after: CollabDoc, ctx: ApplyC
 
     // The cell under an open editor is held back. It is already in the
     // replica, so last-writer-wins still decides; only the grid write waits,
-    // so nothing overwrites what is being typed right now.
+    // so nothing overwrites what is being typed right now. Named from the
+    // sheet as it was: the editor's row is an index into that one, and a
+    // partner's insert above it moves the same index onto another cell.
     if (ctx.editorOpen && ctx.editorCell) {
-        const sheet = after.sheets[ctx.editorCell.sheetId];
-        const cell = sheet ? liveCells(sheet, ctx.editorCell.col)[ctx.editorCell.row] : undefined;
-        if (cell) {
-            plan.deferredCells.push({
-                col: modelCol(cell.col),
-                rank: cell.rank,
-                actor: cell.actor,
-            });
-        }
+        const sheet = before.sheets[ctx.editorCell.sheetId];
+        const cell = sheet
+            ? selectionIdentity(sheet, ctx.editorCell.row, ctx.editorCell.col)
+            : null;
+        if (cell && after.sheets[ctx.editorCell.sheetId]) plan.deferredCells.push(cell);
     }
 
     const sel = ctx.selection;

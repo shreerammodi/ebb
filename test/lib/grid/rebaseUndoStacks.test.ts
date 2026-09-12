@@ -185,18 +185,28 @@ describe("rebaseUndoStacks", () => {
         expect(p.doneActions).toEqual([]);
     });
 
-    it("drops both stacks when a shape it cannot correct is present", () => {
-        const p = plugin([changeAt(1), { actionType: "row_move" }], [changeAt(0)]);
+    /**
+     * A history is undone from the top. An entry that cannot be corrected
+     * takes only what lies beneath it, since nothing there is reachable
+     * without undoing through it; what sits above is still honest. Emptying
+     * both stacks for one such entry was Cmd+Z going dead on every partner's
+     * row insert.
+     */
+    it("keeps the entries above a shape it cannot correct, in each stack", () => {
+        const newest = changeAt(1);
+        const p = plugin([changeAt(7), { actionType: "row_move" }, newest], [changeAt(0)]);
         rebaseUndoStacks(p, rowChange("insertRow", 0, 1));
-        expect(p.doneActions).toEqual([]);
-        expect(p.undoneActions).toEqual([]);
+        expect(p.doneActions).toEqual([newest]);
+        expect(newest.changes![0][0]).toBe(2);
+        expect(p.undoneActions.map((a) => a.changes![0][0])).toEqual([1]);
     });
 
     it.each(["insertRow", "removeRow"] as const)(
-        "drops both stacks when a column-scoped %s meets whole-row history",
+        "drops whole-row history from a column-scoped %s, and only that",
         (kind) => {
+            const above = changeAt(9, 1);
             const p = plugin(
-                [{ actionType: "insert_row", index: 3, amount: 1 }],
+                [changeAt(2), { actionType: "insert_row", index: 3, amount: 1 }, above],
                 [{ actionType: "remove_row", index: 5, amount: 1 }],
             );
 
@@ -207,10 +217,21 @@ describe("rebaseUndoStacks", () => {
                 scope: { kind: "column", col: 0 },
             });
 
-            expect(p.doneActions).toEqual([]);
+            expect(p.doneActions).toEqual([above]);
             expect(p.undoneActions).toEqual([]);
         },
     );
+
+    it("drops an entry whole when only its decorations cannot follow", () => {
+        // The text at row 5 rebases to 4; only the bold snapshot at row 2 is
+        // in the removed span, and that alone takes the whole entry.
+        const bold = withMeta(changeAt(5), 2);
+        const later = changeAt(7);
+        const p = plugin([bold, later]);
+        rebaseUndoStacks(p, rowChange("removeRow", 2, 1));
+        expect(p.doneActions).toEqual([later]);
+        expect(later.changes![0][0]).toBe(6);
+    });
 
     it("drops the stack when an action names a row the remove took away", () => {
         const p = plugin([changeAt(2)]);

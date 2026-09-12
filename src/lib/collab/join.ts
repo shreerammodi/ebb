@@ -112,6 +112,20 @@ export async function joinRound(deps: JoinDeps): Promise<JoinResult | null> {
 
     try {
         const endpointId = await link.endpointId();
+        // Asked beside the dial, not before it: a relay slow to answer must
+        // not hold the dial, and the hello only carries what is known by the
+        // time it goes out. What it is for is the host dialling back from
+        // another network later, which the ticket's own relay says nothing
+        // about.
+        let myRelay = "";
+        if (settings.relay) {
+            void link
+                .relayUrl()
+                .then((relay) => {
+                    myRelay = relay;
+                })
+                .catch(() => {});
+        }
         const name = deps.displayName ?? (await broadcastName());
         // Where the ticket says the host is. Without it the dial has only an
         // EndpointId, which mDNS answers for across a room and nowhere else -
@@ -140,6 +154,7 @@ export async function joinRound(deps: JoinDeps): Promise<JoinResult | null> {
                     appVersion: deps.appVersion,
                     ticket: ticket?.secret,
                     name,
+                    relayUrl: myRelay,
                 }),
             );
         });

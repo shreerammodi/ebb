@@ -70,6 +70,8 @@ export function helloFrom(input: {
     label?: string;
     /** What this side calls itself, so a peer has something to save. */
     name?: string;
+    /** Where this side is homed, when it knows yet. */
+    relayUrl?: string;
 }): WireMessage {
     const hello: Extract<WireMessage, { type: "hello" }> = {
         type: "hello",
@@ -84,6 +86,7 @@ export function helloFrom(input: {
     };
     if (input.label) hello.label = input.label;
     if (input.name) hello.name = input.name;
+    if (input.relayUrl) hello.relayUrl = input.relayUrl;
     return input.ticket ? { ...hello, ticket: input.ticket } : hello;
 }
 

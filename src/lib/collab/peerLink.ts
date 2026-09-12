@@ -52,6 +52,15 @@ export type WireMessage =
           name?: string;
           /** Present only on the first join, and spent when it is accepted. */
           ticket?: string;
+          /**
+           * The relay the dialler is homed on, so the far side can dial it
+           * back from another network. What the transport observes about a
+           * dialler is the relay its packets came in through - the receiver's
+           * own, when that is where it was dialled - which is not where the
+           * dialler lives once this connection is gone. A routing hint and
+           * never an authorization, exactly as a ticket's is.
+           */
+          relayUrl?: string;
       }
     /**
      * The host answers with its own name, so naming works in both directions,
@@ -163,7 +172,8 @@ function isHello(m: Record<string, unknown>): m is Hello {
         m.capabilities.every(isField) &&
         isOptionalField(m.ticket) &&
         isOptionalField(m.label) &&
-        isOptionalField(m.name)
+        isOptionalField(m.name) &&
+        isOptionalField(m.relayUrl)
     );
 }
 

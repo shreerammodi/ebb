@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { seedDoc } from "@/lib/collab/doc";
+import { liveCells, seedDoc } from "@/lib/collab/doc";
 import { applyOp, type OpContext } from "@/lib/collab/ops";
 import { planRemoteApply, type ApplyContext } from "@/lib/collab/remoteApply";
 import { createClock } from "@/lib/collab/stamp";
@@ -114,6 +114,23 @@ describe("a partner edits the cell your editor is open on", () => {
         );
         expect(plan.writeCells).toBe(true);
         expect(plan.deferredCells).toHaveLength(1);
+    });
+
+    /**
+     * The editor's row is an index into the sheet as it was. A partner
+     * inserting above it shifts every row down, so that index into the
+     * sheet as it is now names the cell above the one being typed in - and
+     * the debater's own cell is painted over under the editor.
+     */
+    it("holds back the cell the editor is on, not the one now at its old row", () => {
+        const plan = planRemoteApply(
+            before,
+            after({ kind: "insertRow", sheetId, row: 0 }),
+            ctx({ editorOpen: true, editorCell: { sheetId, col: modelCol(0), row: 1 } }),
+        );
+        const a1 = liveCells(before.sheets[sheetId], 0)[1];
+        expect(plan.deferredCells).toEqual([{ col: 0, rank: a1.rank, actor: a1.actor }]);
+        expect(plan.selectRow).toBe(3);
     });
 });
 

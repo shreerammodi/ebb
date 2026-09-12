@@ -174,13 +174,19 @@ function rebaseEntries(entries: ClassEntry[], change: StructuralChange): ClassEn
 }
 
 /**
- * Corrects both undo histories for a partner's structural change, or drops
- * both when it cannot.
+ * Corrects both undo histories for a partner's structural change, dropping
+ * from each what it cannot correct.
  *
- * The two stacks are halves of one history: rebasing text and not decorations
- * would leave a bold toggle undoing onto a row its text no longer sits on.
- * The action objects are corrected in place rather than replaced, because the
- * decoration snapshots are keyed on their identity.
+ * A history is undone from the top, so an entry that cannot be corrected
+ * takes with it only what lies beneath it: everything above is still an
+ * honest step from the grid as it is now. What one entry cannot do without
+ * is its own other half - rebasing its text and not its decorations would
+ * leave a bold toggle undoing onto a row its text no longer sits on - so an
+ * entry is kept whole or dropped whole. Emptying the whole history for one
+ * bad entry was Cmd+Z going dead the moment a partner inserted a row.
+ *
+ * The action objects are corrected in place rather than replaced, because
+ * the decoration snapshots are keyed on their identity.
  */
 export function rebaseUndoStacks(
     plugin: UndoPluginLike | undefined,
@@ -188,19 +194,15 @@ export function rebaseUndoStacks(
 ): void {
     if (!plugin) return;
 
-    const keys = ["doneActions", "undoneActions"] as const;
-    const prepared = keys.map((key) => {
+    for (const key of ["doneActions", "undoneActions"] as const) {
         const stack = plugin[key];
-        if (!stack || stack.length === 0) {
-            return { stack, rebased: [], rebasedMetas: [], effectRows: [] };
-        }
+        if (!stack || stack.length === 0) continue;
 
         const rebased = rebaseActions(stack, change);
         const metas = stack.map((action) => snapshots.get(action));
         const rebasedMetas = metas.map((meta) =>
             meta
                 ? {
-                      cols: meta.cols,
                       before: rebaseEntries(meta.before, change),
                       after: rebaseEntries(meta.after, change),
                   }
@@ -213,28 +215,34 @@ export function rebaseUndoStacks(
             if (effects.requiresContiguousSuffix && change.at > effects.row) return null;
             return rebaseRow(effects.row, change, effects.col);
         });
-        return { stack, rebased, rebasedMetas, effectRows };
-    });
 
-    const failed = prepared.some(
-        ({ rebased, rebasedMetas, effectRows }) =>
-            rebased === null ||
-            rebasedMetas.some((meta) => meta && (!meta.before || !meta.after)) ||
-            effectRows.some((row) => row === null),
-    );
-    if (failed) {
-        for (const key of keys) {
-            const stack = plugin[key];
-            if (stack) stack.length = 0;
+        // The newest entry that cannot be corrected, and nothing beneath it
+        // is reachable. The top of the stack is its end.
+        let cut = -1;
+        for (let index = stack.length - 1; index >= 0; index--) {
+            const meta = rebasedMetas[index];
+            if (
+                rebased[index] === null ||
+                (meta && (!meta.before || !meta.after)) ||
+                effectRows[index] === null
+            ) {
+                cut = index;
+                break;
+            }
         }
-        resetMetaUndo();
-        return;
-    }
+        if (cut >= 0) {
+            // A pending reference to an action just dropped would hang the
+            // next snapshot on an object no stack holds.
+            const dropped = new Set<object>(stack.splice(0, cut + 1));
+            if (lastPushed && dropped.has(lastPushed)) lastPushed = null;
+            if (lastUndone && dropped.has(lastUndone)) lastUndone = null;
+            if (lastUndoing && dropped.has(lastUndoing)) lastUndoing = null;
+            if (lastRedoing && dropped.has(lastRedoing)) lastRedoing = null;
+        }
 
-    for (const { stack, rebased, rebasedMetas, effectRows } of prepared) {
-        if (!stack || !rebased) continue;
-        stack.forEach((action, index) => {
-            const next = rebased[index];
+        for (let index = cut + 1; index < rebased.length; index++) {
+            const action = stack[index - cut - 1];
+            const next = rebased[index]!;
             if (next.changes) action.changes = next.changes;
             if (typeof next.index === "number") action.index = next.index;
             const meta = rebasedMetas[index];
@@ -247,6 +255,6 @@ export function rebaseUndoStacks(
                     held.effects.row = effectRow;
                 }
             }
-        });
+        }
     }
 }

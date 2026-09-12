@@ -136,6 +136,16 @@ struct MessageEvent {
 #[serde(rename_all = "camelCase")]
 struct ClosedEvent {
     conn_id: String,
+    /// Why the connection ended, as QUIC saw it: timed out, closed by the
+    /// peer, reset, or ended here. Every one of those looks the same to a
+    /// webview that only hears "closed", and they point at different
+    /// failures - an idle timeout on a relayed path is a relay that went
+    /// away, on a direct one a NAT mapping that expired.
+    reason: String,
+    /// The path as last observed, beside the reason, because the reason
+    /// alone does not say which path it was on when it went.
+    connection_type: String,
+    relay_url: Option<String>,
 }
 
 /// One thing that happened on a connection, on its way to the webview.
@@ -207,6 +217,10 @@ struct Conn {
     /// any window may answer it and any window may hang up on it, which is what
     /// a refusal is.
     owner: Option<String>,
+    /// The windows that refused this connection while nobody owned it. A
+    /// refusal is one window's answer and the hang-up waits for all of them,
+    /// since the window that admits the peer answers in the same instant.
+    refused: Vec<String>,
 }
 
 impl Conn {
@@ -473,10 +487,15 @@ enum Line {
     /// The peer hung up. A partial line at the end is not a message anyone
     /// finished sending, so it goes with the connection.
     Eof,
-    /// Past the cap, not UTF-8, or a broken stream. A refused line takes the
-    /// connection with it rather than being truncated and parsed, because what
-    /// would be left is not what the peer sent.
+    /// Past the cap or not UTF-8. A refused line takes the connection with it
+    /// rather than being truncated and parsed, because what would be left is
+    /// not what the peer sent.
     Refused,
+    /// The stream failed under the read: reset by the peer, the connection
+    /// gone, or the hello deadline passed. Carried out by name, because with
+    /// the connection still open none of these leaves a close reason behind
+    /// and they would all read as the peer finishing its stream.
+    Broken(String),
 }
 
 /// Reads one newline-delimited line, refusing anything longer than `cap`.
@@ -485,12 +504,13 @@ enum Line {
 /// from one that runs past it.
 async fn read_capped_line<R: AsyncBufRead + Unpin>(reader: &mut R, cap: usize) -> Line {
     let mut buf = Vec::new();
-    let Ok(read) = (&mut *reader)
+    let read = match (&mut *reader)
         .take(cap as u64 + 1)
         .read_until(b'\n', &mut buf)
         .await
-    else {
-        return Line::Refused;
+    {
+        Ok(read) => read,
+        Err(e) => return Line::Broken(format!("read failed: {e}")),
     };
     if read == 0 {
         return Line::Eof;
@@ -516,7 +536,7 @@ async fn read_capped_line<R: AsyncBufRead + Unpin>(reader: &mut R, cap: usize) -
 async fn read_hello<R: AsyncBufRead + Unpin>(reader: &mut R, cap: usize, within: Duration) -> Line {
     timeout(within, read_capped_line(reader, cap))
         .await
-        .unwrap_or(Line::Refused)
+        .unwrap_or_else(|_| Line::Broken("no hello within the deadline".to_string()))
 }
 
 /// Pumps one connection's bidirectional stream in both directions.
@@ -530,6 +550,7 @@ fn spawn_conn(
     conn_id: String,
     owner: Option<String>,
     hello: Duration,
+    endpoint: Endpoint,
     conn: Connection,
     send: iroh::endpoint::SendStream,
     recv: iroh::endpoint::RecvStream,
@@ -570,7 +591,7 @@ fn spawn_conn(
     tokio::spawn(async move {
         let mut recv = BufReader::new(recv);
         let mut first = true;
-        loop {
+        let (ended, refused) = loop {
             let line = if std::mem::take(&mut first) {
                 read_hello(&mut recv, MAX_LINE, hello).await
             } else {
@@ -597,13 +618,28 @@ fn spawn_conn(
                         }),
                     );
                 }
-                Line::Eof => break,
-                Line::Refused => {
-                    reader_conn.close(1u32.into(), b"line refused");
-                    break;
-                }
+                Line::Eof => break ("stream ended".to_string(), false),
+                Line::Refused => break ("line refused".to_string(), true),
+                Line::Broken(why) => break (why, false),
             }
+        };
+        // Read before any close of this side's, which would otherwise report
+        // every ending as this side's own. QUIC's reason when it has one; the
+        // read's when the connection is still up and only the stream went.
+        let quic = reader_conn.close_reason();
+        if refused {
+            reader_conn.close(1u32.into(), b"line refused");
         }
+        let reason = quic.map_or(ended, |err| err.to_string());
+        let (connection_type, relay_url) = remote_path(&endpoint, reader_conn.remote_id()).await;
+        eprintln!(
+            "collab: {} closed: {reason} ({connection_type}{})",
+            reader_conn.remote_id().fmt_short(),
+            relay_url
+                .as_deref()
+                .map(|r| format!(" via {r}"))
+                .unwrap_or_default()
+        );
         // Ending the read means this link is over, so it is closed here rather
         // than waited on. A peer that finishes its send stream and keeps
         // answering keepalives never closes the connection, and waiting for it
@@ -615,7 +651,12 @@ fn spawn_conn(
         }
         events.emit(
             route.as_deref(),
-            Event::Closed(ClosedEvent { conn_id: reader_id }),
+            Event::Closed(ClosedEvent {
+                conn_id: reader_id,
+                reason,
+                connection_type,
+                relay_url,
+            }),
         );
     });
 
@@ -626,6 +667,7 @@ fn spawn_conn(
             conn,
             writer,
             owner,
+            refused: Vec::new(),
         },
     );
 }
@@ -791,7 +833,9 @@ fn spawn_accept(
                         Event::Peer(peer)
                     },
                 );
-                spawn_conn(events, conns, conn_id, owner, hello, conn, send, recv);
+                spawn_conn(
+                    events, conns, conn_id, owner, hello, endpoint, conn, send, recv,
+                );
             });
         }
     })
@@ -974,7 +1018,9 @@ fn dial(
     // for an inbound peer.
     let owner = Some(holder.to_string());
     let id = conn_id.clone();
-    runtime.spawn(async move { spawn_conn(events, conns, id, owner, hello, conn, send, recv) });
+    runtime.spawn(async move {
+        spawn_conn(events, conns, id, owner, hello, endpoint, conn, send, recv)
+    });
     Ok(DialResult {
         conn_id,
         connection_type: kind,
@@ -1044,6 +1090,9 @@ fn claim(state: &CollabState, holder: &str, conn_id: &str) -> Result<(), String>
         return Err("That peer belongs to another window".to_string());
     }
     conn.owner = Some(holder.to_string());
+    // Whatever refused it before now was the other windows answering a hello
+    // this one has admitted, and none of that is a reason to hang up.
+    conn.refused.clear();
     Ok(())
 }
 
@@ -1062,20 +1111,54 @@ pub async fn collab_close(
 /// Returns once the peer has been hung up on rather than once the hang-up has
 /// been started, so a window that says goodbye and then tears its session down
 /// has said it. The wait is the deadline and no longer.
+///
+/// A hang-up on a connection nobody has claimed is a refusal, and one window's
+/// refusal is not the answer: an accepted connection reaches every window
+/// holding the endpoint, the round it is for arrives in its hello, and the
+/// windows not hosting that round refuse it in the same instant the one that
+/// is admits it. Those are IPC calls from different webviews and nothing
+/// orders them, so a refusal that hung up on arrival would take a guest away
+/// from its host whenever it landed first. So a refusal is counted, and the
+/// connection goes only once every holder has refused it, or once the hello
+/// deadline has passed with nobody claiming it - which covers a window that
+/// holds the endpoint and never answers.
 fn close(state: &CollabState, holder: &str, conn_id: &str) -> Result<(), String> {
     let (runtime, hung_up) = {
         let held = state.live.lock();
         let live = held.as_ref().ok_or("No collaboration session is running")?;
         let gone = {
             let mut conns = live.conns.lock();
-            // A window may hang up on a connection nothing has claimed: that is
-            // what a refusal is, and a window that refuses never answers the
-            // hello. A connection another window owns is not its to end.
-            match conns.get(conn_id).and_then(|conn| conn.owner.as_deref()) {
+            let Some(conn) = conns.get_mut(conn_id) else {
+                return Ok(());
+            };
+            match conn.owner.as_deref() {
+                // A connection another window owns is not its to end.
                 Some(owner) if owner != holder => {
                     return Err("That peer belongs to another window".to_string())
                 }
-                _ => conns.remove(conn_id),
+                Some(_) => conns.remove(conn_id),
+                None => {
+                    if !conn.refused.iter().any(|w| w == holder) {
+                        conn.refused.push(holder.to_string());
+                    }
+                    let first = conn.refused.len() == 1;
+                    let everyone = live
+                        .holders
+                        .keys()
+                        .all(|w| conn.refused.iter().any(|r| r == w));
+                    if everyone {
+                        conns.remove(conn_id)
+                    } else {
+                        if first {
+                            live.runtime.spawn(hang_up_unclaimed(
+                                live.conns.clone(),
+                                conn_id.to_string(),
+                                state.hello,
+                            ));
+                        }
+                        return Ok(());
+                    }
+                }
             }
         };
         let Some(conn) = gone else { return Ok(()) };
@@ -1094,6 +1177,28 @@ fn close(state: &CollabState, holder: &str, conn_id: &str) -> Result<(), String>
         let _ = timeout(HANG_UP_GRACE, hung_up.closed()).await;
     });
     Ok(())
+}
+
+/// Ends a refused connection nobody claimed within the hello deadline.
+///
+/// The backstop for a holder that never answers: without it a refusal from
+/// every window but one would hold the connection until the session ends.
+async fn hang_up_unclaimed(
+    conns: Arc<Mutex<HashMap<String, Conn>>>,
+    conn_id: String,
+    within: Duration,
+) {
+    tokio::time::sleep(within).await;
+    let unclaimed = {
+        let mut conns = conns.lock();
+        match conns.get(&conn_id) {
+            Some(conn) if conn.owner.is_none() => conns.remove(&conn_id),
+            _ => None,
+        }
+    };
+    if let Some(conn) = unclaimed {
+        conn.hang_up().await;
+    }
 }
 
 #[tauri::command]
@@ -2831,6 +2936,7 @@ mod loopback {
                 "c1".to_string(),
                 Some("guest-window".to_string()),
                 HELLO_DEADLINE,
+                guest.endpoint.clone(),
                 conn,
                 send_stream,
                 recv,
@@ -2938,9 +3044,10 @@ mod loopback {
     }
 
     /// A refusal hangs up, and it never claims what it refused, so hanging up
-    /// on a connection nobody has claimed has to stay open to any window.
+    /// on a connection nobody has claimed has to stay open to any window. With
+    /// one window holding the endpoint, its refusal is everyone's.
     #[test]
-    fn a_window_that_owns_nothing_may_hang_up_on_an_unclaimed_peer() {
+    fn the_only_window_refusing_an_unclaimed_peer_hangs_up_on_it() {
         let state = CollabState::default();
         let events = Arc::new(Recorder::default());
         start(&state, events.clone(), false, false, "session").expect("bind");
@@ -2951,11 +3058,102 @@ mod loopback {
         events.wait("the hello", |seen| !seen.messages().is_empty());
         let conn_id = events.peers()[0].clone();
 
-        close(&state, "refusing-window", &conn_id).expect("a refusal hangs up");
+        close(&state, "session", &conn_id).expect("a refusal hangs up");
         assert!(!holds(&state, &conn_id));
         wait_closed(&conn);
 
         stop(&state, "session").expect("stop");
+    }
+
+    /// The other window's refusal and the host's claim are two IPC calls
+    /// from two webviews, and nothing orders them. A refusal that landed
+    /// first used to hang up on the guest before the host could claim it, so
+    /// the outcome of every join with two windows open was the order two
+    /// event loops happened to run in.
+    #[test]
+    fn a_refusal_that_lands_before_the_claim_does_not_cost_the_host_its_guest() {
+        let state = CollabState::default();
+        let events = Arc::new(Recorder::default());
+        start(&state, events.clone(), false, false, "host").expect("bind");
+        start(&state, events.clone(), false, false, "other").expect("second window");
+
+        let guest = Guest::new();
+        let (conn, mut send_stream, _recv) = guest.dial(live_addr(&state));
+        guest.write(&mut send_stream, b"{\"type\":\"hello\",\"protocol\":1}\n");
+        events.wait("the hello", |seen| !seen.messages().is_empty());
+        let conn_id = events.peers()[0].clone();
+
+        close(&state, "other", &conn_id).expect("a refusal is accepted");
+        assert!(
+            holds(&state, &conn_id),
+            "one refusal of two is not a hang-up"
+        );
+        claim(&state, "host", &conn_id).expect("the host still gets its guest");
+        assert!(
+            conn.close_reason().is_none(),
+            "and the guest is still connected"
+        );
+        send(
+            &state,
+            "host",
+            &conn_id,
+            "{\"type\":\"helloAck\",\"ok\":true}".to_string(),
+        )
+        .expect("the ack goes out on it");
+
+        stop(&state, "host").expect("stop");
+        stop(&state, "other").expect("stop");
+    }
+
+    /// Every holder refusing is the whole answer, so a stranger is still hung
+    /// up on without waiting out any deadline.
+    #[test]
+    fn every_window_refusing_an_unclaimed_peer_hangs_up_on_it() {
+        let state = CollabState::default();
+        let events = Arc::new(Recorder::default());
+        start(&state, events.clone(), false, false, "host").expect("bind");
+        start(&state, events.clone(), false, false, "other").expect("second window");
+
+        let guest = Guest::new();
+        let (conn, mut send_stream, _recv) = guest.dial(live_addr(&state));
+        guest.write(&mut send_stream, b"{\"type\":\"hello\",\"protocol\":1}\n");
+        events.wait("the hello", |seen| !seen.messages().is_empty());
+        let conn_id = events.peers()[0].clone();
+
+        close(&state, "other", &conn_id).expect("first refusal");
+        close(&state, "other", &conn_id).expect("a repeat counts once");
+        assert!(holds(&state, &conn_id));
+        close(&state, "host", &conn_id).expect("second refusal");
+        assert!(!holds(&state, &conn_id));
+        wait_closed(&conn);
+
+        stop(&state, "host").expect("stop");
+        stop(&state, "other").expect("stop");
+    }
+
+    /// A window that holds the endpoint and never answers would otherwise
+    /// hold every refused stranger open for the life of the session.
+    #[test]
+    fn a_refused_peer_nobody_claims_is_hung_up_on_at_the_hello_deadline() {
+        let state = impatient();
+        let events = Arc::new(Recorder::default());
+        start(&state, events.clone(), false, false, "host").expect("bind");
+        start(&state, events.clone(), false, false, "silent").expect("second window");
+
+        let guest = Guest::new();
+        let (conn, mut send_stream, _recv) = guest.dial(live_addr(&state));
+        guest.write(&mut send_stream, b"{\"type\":\"hello\",\"protocol\":1}\n");
+        events.wait("the hello", |seen| !seen.messages().is_empty());
+        let conn_id = events.peers()[0].clone();
+
+        close(&state, "host", &conn_id).expect("refusal");
+        assert!(holds(&state, &conn_id));
+        wait_closed(&conn);
+        events.wait("the close", |seen| !seen.closed().is_empty());
+        assert!(!holds(&state, &conn_id));
+
+        stop(&state, "host").expect("stop");
+        stop(&state, "silent").expect("stop");
     }
 
     /// Ids are process-global over one shared endpoint, so the owner is what

@@ -19,8 +19,14 @@ import type { ModelCol } from "@/lib/grid/colSpace";
 
 /** Refresh cadence while a peer is anywhere at all. */
 export const HEARTBEAT_MS = 250;
-/** An entry nothing refreshed inside this window is gone. */
-export const PRESENCE_TTL_MS = 1_000;
+/**
+ * An entry nothing refreshed inside this window is gone. Twelve heartbeats
+ * wide rather than four: a relayed path adds a few hundred milliseconds
+ * and jitter on top, and a marker that expires between two late beats
+ * blinks. The two releases that matter, the cursor moving and the link
+ * dropping, are instant; this is only the backstop for a frozen process.
+ */
+export const PRESENCE_TTL_MS = 3_000;
 
 export interface Presence {
     endpointId: string;
@@ -42,10 +48,16 @@ export interface Presence {
 
 /**
  * One cell per peer: a cursor is on exactly one, so a new position replaces
- * whatever that peer was on before.
+ * whatever that peer was on before. In the slot it held, so a refresh that
+ * moved nothing leaves the table in the order it was, which is what lets the
+ * grid tell a heartbeat from a move without walking the whole table twice.
  */
 export function claim(list: readonly Presence[], next: Presence): Presence[] {
-    return [...list.filter((p) => p.endpointId !== next.endpointId), next];
+    const at = list.findIndex((p) => p.endpointId === next.endpointId);
+    if (at === -1) return [...list, next];
+    const out = [...list];
+    out[at] = next;
+    return out;
 }
 
 /** The peer left the grid, or has no cell to report. Instant. */

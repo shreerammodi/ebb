@@ -120,11 +120,11 @@ describe("a partner's change on the live grid", () => {
     /**
      * Holding a cell back under an open editor is only half the rule: the text
      * has to land once the editor is gone. Escape is what proves it, because
-     * it abandons the edit and moves nothing, so nothing announces the close.
-     * Left held, the grid keeps the line that was there before the partner
-     * wrote, and the next snapshot pushes that back over their text.
+     * it abandons the edit and moves nothing, so nothing else announces the
+     * close. Left held, the grid keeps the line that was there before the
+     * partner wrote, and the next snapshot pushes that back over their text.
      */
-    it("lands a held-back cell once the editor is abandoned", async () => {
+    it("lands a held-back cell the moment the editor is abandoned", async () => {
         const hot = await mount();
         hot.selectCell(0, 0);
         hot.getActiveEditor()!.beginEditing();
@@ -139,12 +139,15 @@ describe("a partner's change on the live grid", () => {
         );
         await waitFor(() => expect(hot.getDataAtCell(1, 0)).toBe("also theirs"));
 
-        // Escape: abandon the edit entirely.
-        hot.getActiveEditor()!.cancelChanges();
-        hot.getActiveEditor()!.finishEditing(true);
-        // Moving off the cell is the first chance to show what was held.
-        hot.selectCell(1, 1);
+        // Escape, as the grid hears it: the edit is abandoned and the
+        // selection stays put, so nothing but the key itself can flush.
+        const target = document.activeElement ?? hot.rootElement;
+        target.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+        );
+        await waitFor(() => expect(hot.getActiveEditor()!.isOpened()).toBe(false));
         await waitFor(() => expect(hot.getDataAtCell(0, 0)).toBe("theirs"));
+        expect(hot.getSelectedLast()?.[0]).toBe(0);
 
         // And an unrelated edit reads the grid back into the store, which is
         // where their line would have been lost.
@@ -152,5 +155,36 @@ describe("a partner's change on the live grid", () => {
         await waitFor(() => expect(hot.getDataAtCell(1, 1)).toBe("my later note"));
         const st = useFlowStore.getState().round!.sheets.find((s) => s.id === sheetId)!;
         expect(st.data[0][0]).toBe("theirs");
+    });
+
+    /**
+     * A partner inserting a row above the editor moves the cell under it
+     * down one. The editor is the grid's, and it belongs to a row index: left
+     * where it is, what the debater types commits into the row the partner
+     * just inserted, and their own line is what gets painted over.
+     */
+    it("moves an open editor with the cell a partner shifted, text and all", async () => {
+        const hot = await mount();
+        hot.selectCell(1, 0);
+        hot.getActiveEditor()!.beginEditing();
+        hot.getActiveEditor()!.setValue("cap bad, and mine");
+
+        applyRemoteDoc(
+            round,
+            fromSam(
+                { kind: "insertCell", sheetId, col: 0, row: 0 },
+                { kind: "cellText", sheetId, col: 0, row: 0, text: "extend" },
+            ),
+        );
+        await waitFor(() => expect(hot.getDataAtCell(0, 0)).toBe("extend"));
+        expect(hot.getSelectedLast()?.[0]).toBe(2);
+        expect(hot.getActiveEditor()!.isOpened()).toBe(true);
+        expect(hot.getActiveEditor()!.getValue()).toBe("cap bad, and mine");
+
+        hot.getActiveEditor()!.finishEditing();
+        await waitFor(() => expect(hot.getDataAtCell(2, 0)).toBe("cap bad, and mine"));
+        expect(hot.getDataAtCell(1, 0)).toBe("perm");
+        const st = useFlowStore.getState().round!.sheets.find((s) => s.id === sheetId)!;
+        expect(st.data.map((r) => r[0])).toEqual(["extend", "perm", "cap bad, and mine"]);
     });
 });

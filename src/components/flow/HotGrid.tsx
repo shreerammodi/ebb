@@ -198,6 +198,17 @@ function pasteCols(hot: Handsontable, { col, width }: PasteShift): GridCol[] {
 }
 
 /**
+ * The box a text editor types into, when the active editor is one. Named on
+ * the text editor and on nothing this build's editors share, so it is read
+ * off the object rather than the type.
+ */
+function textareaOf(editor: Handsontable.editors.BaseEditor): HTMLTextAreaElement | null {
+    if (!("TEXTAREA" in editor)) return null;
+    const box: unknown = editor.TEXTAREA;
+    return box instanceof HTMLTextAreaElement ? box : null;
+}
+
+/**
  * The sheet's meta as it stands on the grid, keyed by model column. A sheet
  * saves its own cells and none of the pad's, so the spacers are skipped and
  * every key shifts down past them.
@@ -460,6 +471,22 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 deferredRef.current = { sheetId: sid, cells: plan.deferredCells };
             }
 
+            // An editor whose row a partner shifted is moved with its cell,
+            // and the patch below writes over the row it is on: the grid's
+            // own write hook refreshes an open editor from the cell, so what
+            // was typed is taken out first, the edit discarded, and the
+            // editor reopened on the row the cell moved to with the text
+            // back in. Left in place, closing it would commit the text into
+            // the row the partner inserted - somebody else's cell.
+            const moving = editorOpen && plan.selectRow !== null && sel;
+            const typed = moving ? String(editor!.getValue() ?? "") : null;
+            const fullEdit = moving ? editor!.isInFullEditMode() : false;
+            // The caret too, or a partner's insert above puts it at the end
+            // of a line the debater was fixing in the middle of.
+            const box = moving ? textareaOf(editor!) : null;
+            const caret = box ? [box.selectionStart, box.selectionEnd] : null;
+            if (typed !== null) editor!.cancelChanges();
+
             // A partner's text goes on cell by cell. Reloading the pane would
             // be simpler and would reset the scroll position and destroy the
             // open editor, which is exactly what a remote apply may not do.
@@ -496,11 +523,28 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 // default is true, and the difference is invisible until a
                 // partner types on a sheet the debater has scrolled away from.
                 hot.selectCell(plan.selectRow, sel[1], plan.selectRow, sel[1], false);
+                if (typed !== null) {
+                    // The cell it was holding back lands now, while it is
+                    // closed: landed after the reopen, the grid's own write
+                    // hook would refresh the editor over what was typed.
+                    flushDeferred();
+                    const reopened = hot.getActiveEditor();
+                    if (reopened) {
+                        // The mode it had, so arrows keep meaning what they
+                        // meant. Only a full edit takes an initial value, so
+                        // the text goes in after the open either way.
+                        if (fullEdit) reopened.enableFullEditMode();
+                        reopened.beginEditing();
+                        reopened.setValue(typed);
+                        const again = textareaOf(reopened);
+                        if (again && caret) again.setSelectionRange(caret[0], caret[1]);
+                    }
+                }
             }
         };
         setRemoteApply(onRemote);
         return () => setRemoteApply(null);
-    }, []);
+    }, [flushDeferred]);
 
     // A peer moving, claiming, or releasing a cell has to show up without
     // waiting for an unrelated render, so the table's own change drives the
@@ -1056,7 +1100,14 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     const beforeKeyDown = useCallback(
         function (this: unknown, e: KeyboardEvent) {
             const hot = hotRef.current?.hotInstance;
-            if (hot?.getActiveEditor()?.isOpened()) return;
+            if (hot?.getActiveEditor()?.isOpened()) {
+                // Escape abandons the edit and moves nothing, so nothing else
+                // announces the close. The grid's own handler runs after this
+                // one in the same dispatch, and the flush waits behind it so
+                // it finds the editor gone.
+                if (e.key === "Escape") queueMicrotask(flushDeferred);
+                return;
+            }
 
             // Move mode is modal: Up and Down nudge the block, Meta/Ctrl with them
             // lands it against the next filled cell, Enter commits, Esc reverts, and
@@ -1266,7 +1317,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 return false;
             }
         },
-        [showLockHint, snapshot],
+        [flushDeferred, showLockHint, snapshot],
     );
 
     // A spacer stands for a speech this sheet does not hold, so it is scenery:

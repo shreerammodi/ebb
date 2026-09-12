@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { Presence } from "@/lib/collab/presence";
+import { PRESENCE_TTL_MS, type Presence } from "@/lib/collab/presence";
 import { modelCol } from "@/lib/grid/colSpace";
 import {
     claimCell,
@@ -61,6 +61,52 @@ describe("presence arriving from a session", () => {
         const first = getPresences();
         setPresences([]);
         expect(getPresences()).toBe(first);
+    });
+
+    /**
+     * A heartbeat every quarter second per peer, each one a full grid
+     * render, is the grid re-rendering all day for a marker that has not
+     * moved - and the jank a debater feels while their partner idles.
+     */
+    it("does not repaint for a heartbeat that moved nobody", () => {
+        const paint = vi.fn();
+        onPresenceChanged(paint);
+        setPresences([on("sam"), on("kim")]);
+        expect(paint).toHaveBeenCalledTimes(1);
+
+        setPresences([{ ...on("sam"), heldAt: 1_250 }, on("kim")]);
+        expect(paint).toHaveBeenCalledTimes(1);
+
+        setPresences([{ ...on("sam"), heldAt: 1_500, row: 4 }, on("kim")]);
+        expect(paint).toHaveBeenCalledTimes(2);
+        setPresences([on("kim")]);
+        expect(paint).toHaveBeenCalledTimes(3);
+    });
+
+    /**
+     * The TTL is read at paint time, so a peer that stops heartbeating
+     * stays painted until something repaints. On an idle sheet that is
+     * never, so the bridge arms a paint for the moment they would expire.
+     */
+    it("repaints once a marker nobody refreshed has expired", () => {
+        vi.useFakeTimers();
+        try {
+            const paint = vi.fn();
+            onPresenceChanged(paint);
+            const now = Date.now();
+            setPresences([{ ...on("sam"), heldAt: now }]);
+            expect(paint).toHaveBeenCalledTimes(1);
+
+            vi.advanceTimersByTime(PRESENCE_TTL_MS - 10);
+            expect(paint).toHaveBeenCalledTimes(1);
+            vi.advanceTimersByTime(20);
+            expect(paint).toHaveBeenCalledTimes(2);
+            // Once. Nothing is armed for an entry already past.
+            vi.advanceTimersByTime(PRESENCE_TTL_MS * 5);
+            expect(paint).toHaveBeenCalledTimes(2);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 
