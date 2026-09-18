@@ -22,6 +22,7 @@ import {
     bool,
     resolveColor,
     resolveSidebarWidth,
+    resolveSpeakingWpm,
     resolveZoom,
     useFlowStore,
 } from "@/lib/store/useFlowStore";
@@ -35,6 +36,7 @@ export interface ConfigFileShape {
     flow_font: string;
     /** The grid zoom new sessions open at, as a factor (1 = 100%). */
     default_zoom: number;
+    speaking_wpm: number;
     sidebar_collapsed: boolean;
     sidebar_width: number;
     rfd_open: boolean;
@@ -134,6 +136,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         theme: s.theme,
         flow_font: fontLabel(s.flowFont),
         default_zoom: s.defaultGridZoom,
+        speaking_wpm: s.speakingWpm,
         sidebar_collapsed: s.sidebarCollapsed,
         sidebar_width: s.sidebarWidth,
         rfd_open: s.rfdOpen,
@@ -195,6 +198,7 @@ export function toAppConfig(raw: unknown): AppConfig {
     return {
         flowFont: resolveFontName(o.flow_font),
         defaultGridZoom: resolveZoom(o.default_zoom),
+        speakingWpm: resolveSpeakingWpm(o.speaking_wpm),
         sidebarCollapsed: bool(o.sidebar_collapsed, false),
         sidebarWidth: resolveSidebarWidth(o.sidebar_width),
         rfdOpen: bool(o.rfd_open, false),

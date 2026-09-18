@@ -333,6 +333,12 @@ describe("speech alignment", () => {
         expect(hot.getColHeader(0)).toBe("1NC");
     });
 
+    it("tracks the speech under the cursor", async () => {
+        const hot = await mount(negSheet.id, true);
+        hot.selectCell(0, 2);
+        expect(useFlowStore.getState().selectedSpeechId).toBe("2ac");
+    });
+
     it("leaves a cx sheet unpadded, since its columns are periods", async () => {
         const hot = await mount(round.sheets[0].id, true);
         expect(hot.getColHeader(0)).toBe("Question");

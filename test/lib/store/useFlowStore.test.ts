@@ -103,6 +103,15 @@ describe("loadRound", () => {
         expect(useFlowStore.getState().tooltips).toBe(false);
         expect(window.localStorage.getItem("ebb-display-settings")).toContain('"tooltips":false');
     });
+
+    it("persists a clamped speaking speed", () => {
+        useFlowStore.getState().setSpeakingWpm(180.4);
+        expect(useFlowStore.getState().speakingWpm).toBe(180);
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain('"speakingWpm":180');
+
+        useFlowStore.getState().setSpeakingWpm(0);
+        expect(useFlowStore.getState().speakingWpm).toBe(1);
+    });
 });
 
 describe("closeRound", () => {

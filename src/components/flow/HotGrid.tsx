@@ -755,7 +755,8 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             currentSheetIdRef.current,
             lead,
         );
-        const { splitSheetId, focusedPane, focusPane } = useFlowStore.getState();
+        const { splitSheetId, focusedPane, focusPane, round, setSelectedSpeech } =
+            useFlowStore.getState();
         if (splitSheetId != null && focusedPane !== pane) focusPane(pane);
         const sid = currentSheetIdRef.current;
         const cell = hotRef.current?.hotInstance?.getSelectedRangeLast()?.highlight;
@@ -764,6 +765,12 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             // partner hears nothing rather than hearing the first column.
             const at = toModelCol(gridCol(cell.col), lead);
             if (at !== null) claimCursor({ sheetId: sid, col: at, row: cell.row });
+            const sheet = round?.sheets.find((candidate) => candidate.id === sid);
+            setSelectedSpeech(
+                at !== null && sheet?.kind !== "cx"
+                    ? (colsRef.current[cell.col]?.id ?? null)
+                    : null,
+            );
         }
     }, [pane, snapshot, flushDeferred]);
 

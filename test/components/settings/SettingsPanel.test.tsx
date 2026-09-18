@@ -61,6 +61,7 @@ function resetStore() {
         collabListenEnabled: false,
         collabShowViewers: true,
         contacts: {},
+        speakingWpm: 150,
     });
 }
 
@@ -330,6 +331,18 @@ describe("SettingsPanel", () => {
         await userEvent.click(toggle);
         expect(useFlowStore.getState().alignSpeeches).toBe(true);
         expect(toggle).toBeChecked();
+    });
+
+    it("sets the speaking speed", async () => {
+        const user = userEvent.setup();
+        renderSettingsPanel();
+        const input = screen.getByTestId("speaking-wpm-input");
+
+        await user.type(input, "180", { initialSelectionStart: 0, initialSelectionEnd: 3 });
+        await user.tab();
+
+        expect(useFlowStore.getState().speakingWpm).toBe(180);
+        expect(input).toHaveValue("180");
     });
 
     it("toggles the insert paste setting from the Editor category", async () => {

@@ -4,8 +4,9 @@ import dynamic from "next/dynamic";
 
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
 import SearchPalette from "@/components/palette/SearchPalette";
-import { sideLabels } from "@/lib/format/events";
+import { getEvent, sideLabels, speechOrder } from "@/lib/format/events";
 import { useKeymap } from "@/lib/keymap/useKeymap";
+import { speechDuration, speechWordCount } from "@/lib/speechTime";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import InfoPanel from "./InfoPanel";
@@ -17,6 +18,29 @@ import Sidebar from "./Sidebar";
 
 // Handsontable touches window at import time; keep it out of prerendering.
 const HotGrid = dynamic(() => import("./HotGrid"), { ssr: false });
+
+function SpeechTimeStatus() {
+    const round = useFlowStore((s) => s.round);
+    const speechId = useFlowStore((s) => s.selectedSpeechId);
+    const wpm = useFlowStore((s) => s.speakingWpm);
+    const speech =
+        round && speechId
+            ? speechOrder(getEvent(round.event), round.firstSide ?? "aff").find(
+                  (candidate) => candidate.id === speechId,
+              )
+            : undefined;
+    const words = round && speech ? speechWordCount(round, speech.id) : 0;
+
+    return (
+        <div
+            className="border-border text-muted-foreground absolute inset-x-0 bottom-0 flex h-7 items-center justify-end border-t px-3 text-xs tabular-nums"
+            data-testid="speech-time-status"
+        >
+            {speech &&
+                `${speech.short}: ${words} ${words === 1 ? "word" : "words"} | ${speechDuration(words, wpm)} at ${wpm} WPM`}
+        </div>
+    );
+}
 
 export default function Workspace() {
     useKeymap();
@@ -43,7 +67,7 @@ export default function Workspace() {
                     // isolate: trap Handsontable's frozen-header clone layers (z-index up
                     // to ~1060) in their own stacking context so they can't punch through
                     // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
-                    className="no-print isolate flex min-w-0 flex-1 overflow-hidden"
+                    className="no-print relative isolate flex min-w-0 flex-1 overflow-hidden pb-7"
                     data-testid="workspace-content"
                 >
                     {activeSheetId ? (
@@ -95,6 +119,7 @@ export default function Workspace() {
                             .
                         </div>
                     )}
+                    <SpeechTimeStatus />
                 </main>
             </div>
             {rfdOpen && roundId && <RfdDrawer key={roundId} />}

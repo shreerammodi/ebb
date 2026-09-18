@@ -147,22 +147,31 @@ export default function SettingsPanel() {
     const setTooltips = useFlowStore((s) => s.setTooltips);
     const defaultGridZoom = useFlowStore((s) => s.defaultGridZoom);
     const setDefaultGridZoom = useFlowStore((s) => s.setDefaultGridZoom);
+    const speakingWpm = useFlowStore((s) => s.speakingWpm);
+    const setSpeakingWpm = useFlowStore((s) => s.setSpeakingWpm);
 
     const [recording, setRecording] = useState<CommandId | null>(null);
     const [category, setCategory] = useState<Category>("display");
     const [query, setQuery] = useState("");
     const [zoomDraft, setZoomDraft] = useState("");
+    const [wpmDraft, setWpmDraft] = useState("");
 
-    // Mirror the stored default zoom into the editable field on open and on
-    // external changes (e.g. the field commits a clamped value back).
+    // Mirror stored numeric settings into their drafts on open and external changes.
     useEffect(() => {
         setZoomDraft(String(Math.round(defaultGridZoom * 100)));
-    }, [defaultGridZoom, open]);
+        setWpmDraft(String(speakingWpm));
+    }, [defaultGridZoom, speakingWpm, open]);
 
     function commitZoom() {
         const n = parseInt(zoomDraft, 10);
         if (!Number.isNaN(n)) setDefaultGridZoom(n / 100);
         else setZoomDraft(String(Math.round(defaultGridZoom * 100)));
+    }
+
+    function commitWpm() {
+        const n = parseInt(wpmDraft, 10);
+        if (!Number.isNaN(n)) setSpeakingWpm(n);
+        else setWpmDraft(String(speakingWpm));
     }
 
     // Reset transient UI state whenever the dialog closes.
@@ -364,6 +373,30 @@ export default function SettingsPanel() {
                                             />
                                             <span className="text-muted-foreground text-[13px]">
                                                 %
+                                            </span>
+                                        </div>
+                                    }
+                                />
+                                <SettingRow
+                                    title="Speaking speed"
+                                    description="Used to estimate the selected speech's length."
+                                    control={
+                                        <div className="flex items-center gap-1">
+                                            <Input
+                                                type="text"
+                                                inputMode="numeric"
+                                                value={wpmDraft}
+                                                onChange={(e) => setWpmDraft(e.target.value)}
+                                                onBlur={commitWpm}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") e.currentTarget.blur();
+                                                }}
+                                                aria-label="Speaking speed in words per minute"
+                                                data-testid="speaking-wpm-input"
+                                                className="h-8 w-16 text-right tabular-nums"
+                                            />
+                                            <span className="text-muted-foreground text-[13px]">
+                                                WPM
                                             </span>
                                         </div>
                                     }

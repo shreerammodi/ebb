@@ -64,6 +64,8 @@ export interface FlowState {
     focusedPane: 1 | 2;
     /** Speech (column) to switch to; HotGrid seeds every sheet's cursor to its top row and selects it on the active sheet. A fresh object re-fires the effect. */
     speechTarget: { speechId: string } | null;
+    /** Speech under the focused pane's cursor, for the word count status. */
+    selectedSpeechId: string | null;
     /** CommandId -> custom chord, overriding the preset binding. */
     keymapOverrides: Record<string, string>;
     flowFont: FontId;
@@ -71,6 +73,7 @@ export interface FlowState {
     gridZoom: number;
     /** Persisted zoom the grid opens at; the header control adjusts gridZoom without disturbing this. */
     defaultGridZoom: number;
+    speakingWpm: number;
     theme: ThemeMode;
     /** Custom aff/neg ink; null keeps the theme default. */
     affColor: string | null;
@@ -189,6 +192,7 @@ export interface FlowActions {
      * speech target for the focused pane without changing which sheets show.
      */
     switchSpeech(speechId: string): void;
+    setSelectedSpeech(speechId: string | null): void;
     /** Flips which side speaks first; no-op unless the event's order varies (PF). */
     swapSpeakingOrder(): void;
     /** Opens a second pane on the next sheet, or collapses back to the focused pane's sheet. */
@@ -217,6 +221,7 @@ export interface FlowActions {
     zoomGrid(delta: number): void;
     /** Sets the persisted default zoom, also applying it to the live grid. */
     setDefaultGridZoom(zoom: number): void;
+    setSpeakingWpm(wpm: number): void;
     setRfdVim(on: boolean): void;
     setInsertPaste(on: boolean): void;
     setAppendEdit(on: boolean): void;
@@ -279,6 +284,9 @@ export const ZOOM_MIN = 0.5;
 export const ZOOM_MAX = 3;
 /** One "zoom in/out" step: 10%. */
 export const ZOOM_STEP = 0.1;
+export const DEFAULT_SPEAKING_WPM = 150;
+export const SPEAKING_WPM_MIN = 1;
+export const SPEAKING_WPM_MAX = 1000;
 
 /** Clamps to the zoom bounds and snaps to whole percents so steps never drift. */
 export function clampZoom(zoom: number): number {
@@ -291,6 +299,12 @@ export function clampZoom(zoom: number): number {
  */
 export function resolveZoom(value: unknown): number {
     return typeof value === "number" && Number.isFinite(value) ? clampZoom(value) : 1;
+}
+
+export function resolveSpeakingWpm(value: unknown): number {
+    return typeof value === "number" && Number.isFinite(value)
+        ? Math.min(SPEAKING_WPM_MAX, Math.max(SPEAKING_WPM_MIN, Math.round(value)))
+        : DEFAULT_SPEAKING_WPM;
 }
 
 function loadKeymapOverrides(): Record<string, string> {
@@ -317,6 +331,7 @@ function saveKeymapOverrides(keymapOverrides: Record<string, string>): void {
 interface DisplaySettings {
     flowFont: FontId;
     defaultGridZoom: number;
+    speakingWpm: number;
     sidebarCollapsed: boolean;
     sidebarWidth: number;
     rfdOpen: boolean;
@@ -365,6 +380,7 @@ function loadDisplaySettings(): DisplaySettings {
     const fallback: DisplaySettings = {
         flowFont: DEFAULT_FONT_ID,
         defaultGridZoom: 1,
+        speakingWpm: DEFAULT_SPEAKING_WPM,
         sidebarCollapsed: false,
         sidebarWidth: SIDEBAR_WIDTH_DEFAULT,
         rfdOpen: false,
@@ -396,6 +412,7 @@ function loadDisplaySettings(): DisplaySettings {
         return {
             flowFont: resolveFontId(p.flowFont),
             defaultGridZoom: resolveZoom(p.defaultGridZoom),
+            speakingWpm: resolveSpeakingWpm(p.speakingWpm),
             sidebarCollapsed: bool(p.sidebarCollapsed, false),
             sidebarWidth: resolveSidebarWidth(p.sidebarWidth),
             rfdOpen: bool(p.rfdOpen, false),
@@ -438,6 +455,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
     return {
         flowFont: s.flowFont,
         defaultGridZoom: s.defaultGridZoom,
+        speakingWpm: s.speakingWpm,
         sidebarCollapsed: s.sidebarCollapsed,
         sidebarWidth: s.sidebarWidth,
         rfdOpen: s.rfdOpen,
@@ -524,10 +542,12 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     splitSheetId: null,
     focusedPane: 1,
     speechTarget: null,
+    selectedSpeechId: null,
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
     gridZoom: initialDisplaySettings.defaultGridZoom,
     defaultGridZoom: initialDisplaySettings.defaultGridZoom,
+    speakingWpm: initialDisplaySettings.speakingWpm,
     theme: initialDisplaySettings.theme,
     flowsDir: initialDisplaySettings.flowsDir,
     affColor: initialDisplaySettings.affColor,
@@ -571,6 +591,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
                 opts?.activeSheetId !== undefined ? opts.activeSheetId : firstFlowSheetId(round),
             splitSheetId: null,
             focusedPane: 1,
+            selectedSpeechId: null,
             // A brand-new flow always opens with the RFD drawer closed; an
             // existing flow restores the persisted preference. loadRound never
             // persists rfdOpen, so forcing it closed here stays transient.
@@ -595,6 +616,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             docPath: null,
             activeSheetId: null,
             splitSheetId: null,
+            selectedSpeechId: null,
             renamingSheetId: null,
             sheetRange: null,
         });
@@ -765,6 +787,10 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         set({ activeSheetId: topId, speechTarget: { speechId } });
     },
 
+    setSelectedSpeech(speechId) {
+        if (speechId !== get().selectedSpeechId) set({ selectedSpeechId: speechId });
+    },
+
     toggleSplit() {
         const { round, splitSheetId, activeSheetId } = get();
         if (!round) return;
@@ -864,6 +890,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         saveDisplaySettings({ ...displaySettingsOf(get()), defaultGridZoom: z });
         set({ defaultGridZoom: z, gridZoom: z });
     },
+
+    setSpeakingWpm: (wpm) => persistDisplay(set, get, { speakingWpm: resolveSpeakingWpm(wpm) }),
 
     setRfdVim: (on) => persistDisplay(set, get, { rfdVim: on }),
 

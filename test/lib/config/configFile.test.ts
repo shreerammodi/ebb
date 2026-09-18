@@ -12,6 +12,7 @@ const anotherCommandId = Object.keys(COMMANDS)[1];
 const sample: AppConfig = {
     flowFont: "plex-mono",
     defaultGridZoom: 1.25,
+    speakingWpm: 175,
     sidebarCollapsed: true,
     sidebarWidth: 312,
     rfdOpen: false,
@@ -47,6 +48,7 @@ describe("configFromState -> toAppConfig round-trip", () => {
         const file = configFromState(sample);
         expect(file.flow_font).toBe("IBM Plex Mono");
         expect(file.default_zoom).toBe(1.25);
+        expect(file.speaking_wpm).toBe(175);
         expect(file.sidebar_width).toBe(312);
         expect(file.rfd_vim).toBe(true);
         expect(file.cardmirror_space_arguments).toBe(true);
@@ -119,6 +121,13 @@ describe("toAppConfig validation", () => {
         expect(toAppConfig({ default_zoom: 0.1 }).defaultGridZoom).toBe(0.5);
         expect(toAppConfig({ default_zoom: "big" }).defaultGridZoom).toBe(1);
         expect(toAppConfig({}).defaultGridZoom).toBe(1);
+    });
+
+    it("clamps speaking speed and defaults malformed values", () => {
+        expect(toAppConfig({ speaking_wpm: 2000 }).speakingWpm).toBe(1000);
+        expect(toAppConfig({ speaking_wpm: 0 }).speakingWpm).toBe(1);
+        expect(toAppConfig({ speaking_wpm: "fast" }).speakingWpm).toBe(150);
+        expect(toAppConfig({}).speakingWpm).toBe(150);
     });
 
     it("clamps sidebar width and defaults malformed values", () => {
