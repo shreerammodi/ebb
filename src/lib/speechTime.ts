@@ -1,6 +1,11 @@
 import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import type { FlowRound } from "@/lib/model/flow";
 
+export function textWordCount(text: string | null | undefined): number {
+    const trimmed = text?.trim();
+    return trimmed ? trimmed.split(/\s+/).length : 0;
+}
+
 export function speechWordCount(round: FlowRound, speechId: string): number {
     let words = 0;
     for (const sheet of round.sheets) {
@@ -9,10 +14,7 @@ export function speechWordCount(round: FlowRound, speechId: string): number {
             (candidate) => candidate.id === speechId,
         );
         if (col < 0) continue;
-        for (const row of sheet.data) {
-            const text = row[col]?.trim();
-            if (text) words += text.split(/\s+/).length;
-        }
+        for (const row of sheet.data) words += textWordCount(row[col]);
     }
     return words;
 }

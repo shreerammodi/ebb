@@ -22,6 +22,7 @@ const HotGrid = dynamic(() => import("./HotGrid"), { ssr: false });
 function SpeechTimeStatus() {
     const round = useFlowStore((s) => s.round);
     const speechId = useFlowStore((s) => s.selectedSpeechId);
+    const selectedWordCount = useFlowStore((s) => s.selectedWordCount);
     const wpm = useFlowStore((s) => s.speakingWpm);
     const speech =
         round && speechId
@@ -29,15 +30,16 @@ function SpeechTimeStatus() {
                   (candidate) => candidate.id === speechId,
               )
             : undefined;
-    const words = round && speech ? speechWordCount(round, speech.id) : 0;
+    const words = selectedWordCount ?? (round && speech ? speechWordCount(round, speech.id) : 0);
+    const label = selectedWordCount === null ? speech?.short : "Selection";
 
     return (
         <div
             className="border-border text-muted-foreground absolute inset-x-0 bottom-0 flex h-7 items-center justify-end border-t px-3 text-xs tabular-nums"
             data-testid="speech-time-status"
         >
-            {speech &&
-                `${speech.short}: ${words} ${words === 1 ? "word" : "words"} | ${speechDuration(words, wpm)} at ${wpm} WPM`}
+            {label &&
+                `${label}: ${words} ${words === 1 ? "word" : "words"} | ${speechDuration(words, wpm)} at ${wpm} WPM`}
         </div>
     );
 }

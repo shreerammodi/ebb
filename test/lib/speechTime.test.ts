@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { makeFlowRound, makeFlowSheet } from "@/lib/model/flow";
-import { speechDuration, speechWordCount } from "@/lib/speechTime";
+import { speechDuration, speechWordCount, textWordCount } from "@/lib/speechTime";
+
+describe("textWordCount", () => {
+    it("counts whitespace-delimited words", () => {
+        expect(textWordCount(" one\n two  three ")).toBe(3);
+        expect(textWordCount("  ")).toBe(0);
+        expect(textWordCount(null)).toBe(0);
+    });
+});
 
 describe("speechWordCount", () => {
     it("counts the same speech across flow sheets", () => {

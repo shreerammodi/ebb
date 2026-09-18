@@ -337,6 +337,19 @@ describe("speech alignment", () => {
         const hot = await mount(negSheet.id, true);
         hot.selectCell(0, 2);
         expect(useFlowStore.getState().selectedSpeechId).toBe("2ac");
+        expect(useFlowStore.getState().selectedWordCount).toBeNull();
+    });
+
+    it("counts only a multi-cell selection", async () => {
+        const hot = await mount(negSheet.id, true);
+        hot.setDataAtCell(0, 1, "one two");
+        hot.setDataAtCell(0, 2, "three");
+
+        hot.selectCells([[0, 1, 0, 2]]);
+        expect(useFlowStore.getState().selectedWordCount).toBe(3);
+
+        hot.selectCell(0, 2);
+        expect(useFlowStore.getState().selectedWordCount).toBeNull();
     });
 
     it("leaves a cx sheet unpadded, since its columns are periods", async () => {

@@ -66,6 +66,8 @@ export interface FlowState {
     speechTarget: { speechId: string } | null;
     /** Speech under the focused pane's cursor, for the word count status. */
     selectedSpeechId: string | null;
+    /** Word count of a multi-cell selection; null keeps the full-speech count. */
+    selectedWordCount: number | null;
     /** CommandId -> custom chord, overriding the preset binding. */
     keymapOverrides: Record<string, string>;
     flowFont: FontId;
@@ -192,7 +194,7 @@ export interface FlowActions {
      * speech target for the focused pane without changing which sheets show.
      */
     switchSpeech(speechId: string): void;
-    setSelectedSpeech(speechId: string | null): void;
+    setSelectedSpeech(speechId: string | null, wordCount?: number | null): void;
     /** Flips which side speaks first; no-op unless the event's order varies (PF). */
     swapSpeakingOrder(): void;
     /** Opens a second pane on the next sheet, or collapses back to the focused pane's sheet. */
@@ -543,6 +545,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     focusedPane: 1,
     speechTarget: null,
     selectedSpeechId: null,
+    selectedWordCount: null,
     keymapOverrides: loadKeymapOverrides(),
     flowFont: initialDisplaySettings.flowFont,
     gridZoom: initialDisplaySettings.defaultGridZoom,
@@ -592,6 +595,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             splitSheetId: null,
             focusedPane: 1,
             selectedSpeechId: null,
+            selectedWordCount: null,
             // A brand-new flow always opens with the RFD drawer closed; an
             // existing flow restores the persisted preference. loadRound never
             // persists rfdOpen, so forcing it closed here stays transient.
@@ -617,6 +621,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             activeSheetId: null,
             splitSheetId: null,
             selectedSpeechId: null,
+            selectedWordCount: null,
             renamingSheetId: null,
             sheetRange: null,
         });
@@ -787,8 +792,10 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
         set({ activeSheetId: topId, speechTarget: { speechId } });
     },
 
-    setSelectedSpeech(speechId) {
-        if (speechId !== get().selectedSpeechId) set({ selectedSpeechId: speechId });
+    setSelectedSpeech(speechId, selectedWordCount = null) {
+        if (speechId !== get().selectedSpeechId || selectedWordCount !== get().selectedWordCount) {
+            set({ selectedSpeechId: speechId, selectedWordCount });
+        }
     },
 
     toggleSplit() {
