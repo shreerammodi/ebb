@@ -7,6 +7,61 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-18
+
+### Added
+
+- **The workspace reports how long the selected speech runs.** A status line
+  along the bottom of the grid gives the word count of the speech under the
+  cursor and how long it takes to deliver, at a speaking speed you set in
+  Settings (150 WPM by default). Select a run of cells and it counts the
+  selection instead of the whole speech. Cross-examination sheets are left out
+  of a speech's count.
+- **CardMirror can leave a blank row between pasted arguments.** One send
+  carrying several tags or analytics arrived as an unbroken column. With
+  "Space pasted arguments" on, ebb separates each argument with an empty row
+  and keeps a card's headings with the card they belong to. Off by default.
+
+### Changed
+
+- **An Excel export asks where the workbook goes.** The export landed in the
+  downloads folder without asking, which is the wrong shape for a file a
+  debater hands to a judge. It now ends at the native save panel on the
+  desktop and at the file picker in a browser, falling back to a download only
+  where an engine offers no picker. Cancelling writes nothing and reports no
+  error.
+- Update npm and Cargo dependencies, including rustls 0.23.45, which closes
+  RUSTSEC-2026-0285.
+
+### Fixed
+
+- **A shared round that drops says what happened.** A closed link reported
+  nothing, so a partner going quiet read the same as a timeout. ebb now names
+  the reason a connection closed and the path it was last seen on. A send the
+  far side refuses hangs the link up rather than forgetting it locally, which
+  used to leave one side reading connected to a peer that had gone.
+- **A partner's row insert no longer moves what you are typing.** An insert
+  above an open editor shifted the editor onto the wrong cell and committed
+  the typed text into the inserted row. The editor now moves with its own
+  cell, keeping the text, the mode and the caret.
+- **A partner's change truncates undo history instead of emptying it.** Only
+  the entries their change makes uncorrectable are dropped, and the undo and
+  redo stacks are cut one at a time.
+- **Presence markers no longer repaint the grid.** A heartbeat redrew the flow
+  with nothing on screen changed. Only a visible change repaints now, and a
+  marker lives longer before it expires, so a relayed partner's marker does
+  not blink.
+- **Double-clicking a `.ebb` opens one window.** On macOS the file arrived
+  before the window was built, so the flow took a window of its own and an
+  empty dashboard was left beside it.
+- **The collapsed sidebar keeps Share and Join off the grid.** The rail
+  floated both buttons over the last speech column, which is the width a
+  debater collapses the sidebar to get back. Both routes still run from the
+  command palette and the File menu.
+- **A CardMirror insert-paste below the last filled row reserves the rows it
+  needs.** Sending to a cell past the end of a column's text ran the write
+  past the grid's last row.
+
 ## [1.2.1] - 2026-09-11
 
 ### Changed
@@ -793,7 +848,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/shreerammodi/ebb/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/shreerammodi/ebb/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/shreerammodi/ebb/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/shreerammodi/ebb/compare/v1.0.0...v1.1.0
