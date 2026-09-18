@@ -50,11 +50,18 @@ function applyFlow(req: FlowRequest): BridgeReply {
     // A spacer stands for a speech this sheet does not hold, so it is no more
     // a place to send a card to than an empty pane is.
     if (at === null) return bridgeError("no-active-cell");
-    const cells = planFlowWrite(req.items, req.mode, req.docTitle, req.space);
+    const cells = planFlowWrite(
+        req.items,
+        req.mode,
+        req.docTitle,
+        req.space,
+        state.cardmirrorSpaceArguments,
+    );
     // Insert-paste pushes the column's tail down, so the grid has to hold the
     // whole displaced run; an overwrite only has to hold the write itself.
     const needed = state.insertPaste
-        ? lastFilledRow(hot.countRows(), (r) => hot.getDataAtCell(r, col)) + 1 + cells.length
+        ? Math.max(row, lastFilledRow(hot.countRows(), (r) => hot.getDataAtCell(r, col)) + 1) +
+          cells.length
         : row + cells.length;
     if (needed > hot.countRows()) {
         hot.alter("insert_row_below", hot.countRows() - 1, needed - hot.countRows());
@@ -93,8 +100,14 @@ function applyFlow(req: FlowRequest): BridgeReply {
     });
     return {
         status: 200,
-        // The empty separator cells are not items, so they do not count.
-        body: { ok: true, written: cells.length - req.space, sheet: sheet.title, row, col: at },
+        // Empty separator cells do not count as content written.
+        body: {
+            ok: true,
+            written: cells.filter((cell) => cell.text.length > 0).length,
+            sheet: sheet.title,
+            row,
+            col: at,
+        },
     };
 }
 

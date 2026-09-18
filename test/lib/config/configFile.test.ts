@@ -22,6 +22,7 @@ const sample: AppConfig = {
     alignSpeeches: true,
     tooltips: false,
     cardmirrorEnabled: false,
+    cardmirrorSpaceArguments: true,
     cardmirrorTextType: "tag",
     collabEnabled: false,
     collabRelayEnabled: true,
@@ -48,6 +49,7 @@ describe("configFromState -> toAppConfig round-trip", () => {
         expect(file.default_zoom).toBe(1.25);
         expect(file.sidebar_width).toBe(312);
         expect(file.rfd_vim).toBe(true);
+        expect(file.cardmirror_space_arguments).toBe(true);
         expect(file.neg_color).toBeNull();
         expect(file.update.auto_check_enabled).toBe(true);
     });
@@ -58,6 +60,10 @@ describe("configFromState -> toAppConfig round-trip", () => {
 
     it("defaults append mode on when the file does not name it", () => {
         expect(toAppConfig({}).appendEdit).toBe(true);
+    });
+
+    it("defaults CardMirror argument spacing off when the file does not name it", () => {
+        expect(toAppConfig({}).cardmirrorSpaceArguments).toBe(false);
     });
 
     it("falls back to the analytic text type when the file names an unknown one", () => {

@@ -55,6 +55,7 @@ function resetStore() {
         keymapOverrides: {},
         settingsOpen: true,
         cardmirrorEnabled: true,
+        cardmirrorSpaceArguments: false,
         collabEnabled: false,
         collabRelayEnabled: true,
         collabListenEnabled: false,
@@ -356,6 +357,18 @@ describe("SettingsPanel", () => {
     });
 
     describe("CardMirror section", () => {
+        it("toggles spacing between pasted arguments", async () => {
+            const user = userEvent.setup();
+            renderSettingsPanel();
+            await user.click(screen.getByTestId("settings-nav-editor"));
+
+            const toggle = screen.getByTestId("cardmirror-space-arguments-toggle");
+            expect(toggle).not.toBeChecked();
+            await user.click(toggle);
+            expect(useFlowStore.getState().cardmirrorSpaceArguments).toBe(true);
+            expect(toggle).toBeChecked();
+        });
+
         it("hides the text type picker until the integration is switched on", async () => {
             const user = userEvent.setup();
             renderSettingsPanel();

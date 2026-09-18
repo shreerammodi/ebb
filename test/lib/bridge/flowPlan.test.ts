@@ -122,3 +122,47 @@ describe("planFlowWrite with a paste space", () => {
         expect(planFlowWrite([], "column", "AT - Cap K", 3)).toEqual([]);
     });
 });
+
+describe("planFlowWrite with argument spacing", () => {
+    it("separates tags and analytics while keeping a cite with its tag", () => {
+        const cells = planFlowWrite(
+            [
+                item("block", "Cap K"),
+                item("tag", "Perm solves"),
+                item("cite", "Smith 24"),
+                item("analytic", "No link"),
+                item("tag", "Turn case"),
+            ],
+            "column",
+            "AT - Cap K",
+            0,
+            true,
+        );
+
+        expect(cells.map((cell) => cell.text)).toEqual([
+            "Cap K",
+            "Perm solves\nSmith 24",
+            "",
+            "No link",
+            "",
+            "Turn case",
+        ]);
+    });
+
+    it("keeps intervening headings with the argument they introduce", () => {
+        const cells = planFlowWrite(
+            [item("tag", "First card"), item("block", "Next block"), item("tag", "Second card")],
+            "column",
+            "AT - Cap K",
+            0,
+            true,
+        );
+
+        expect(cells.map((cell) => cell.text)).toEqual([
+            "First card",
+            "",
+            "Next block",
+            "Second card",
+        ]);
+    });
+});

@@ -47,6 +47,8 @@ export interface ConfigFileShape {
     tooltips: boolean;
     /** Master switch for the CardMirror integration. */
     cardmirror_enabled: boolean;
+    /** Whether tags and analytics in one CardMirror send are separated by blank rows. */
+    cardmirror_space_arguments: boolean;
     /** How CardMirror types text a cell sends it: one of its heading levels
      *  (pocket, hat, block, tag, analytic) or body. */
     cardmirror_text_type: string;
@@ -142,6 +144,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         align_speeches: s.alignSpeeches,
         tooltips: s.tooltips,
         cardmirror_enabled: s.cardmirrorEnabled,
+        cardmirror_space_arguments: s.cardmirrorSpaceArguments,
         cardmirror_text_type: s.cardmirrorTextType,
         collab_enabled: s.collabEnabled,
         collab_relay: s.collabRelayEnabled,
@@ -202,6 +205,7 @@ export function toAppConfig(raw: unknown): AppConfig {
         alignSpeeches: bool(o.align_speeches, false),
         tooltips: bool(o.tooltips, true),
         cardmirrorEnabled: bool(o.cardmirror_enabled, true),
+        cardmirrorSpaceArguments: bool(o.cardmirror_space_arguments, false),
         cardmirrorTextType: resolveCardMirrorTextType(o.cardmirror_text_type),
         collabEnabled: bool(o.collab_enabled, false),
         collabRelayEnabled: bool(o.collab_relay, true),

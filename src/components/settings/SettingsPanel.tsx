@@ -129,6 +129,8 @@ export default function SettingsPanel() {
     const setCardmirrorTextType = useFlowStore((s) => s.setCardmirrorTextType);
     const cardmirrorEnabled = useFlowStore((s) => s.cardmirrorEnabled);
     const setCardmirrorEnabled = useFlowStore((s) => s.setCardmirrorEnabled);
+    const cardmirrorSpaceArguments = useFlowStore((s) => s.cardmirrorSpaceArguments);
+    const setCardmirrorSpaceArguments = useFlowStore((s) => s.setCardmirrorSpaceArguments);
     const collabEnabled = useFlowStore((s) => s.collabEnabled);
     const setCollabEnabled = useFlowStore((s) => s.setCollabEnabled);
     const collabRelayEnabled = useFlowStore((s) => s.collabRelayEnabled);
@@ -582,40 +584,56 @@ export default function SettingsPanel() {
                                             }
                                         />
                                         {cardmirrorEnabled && (
-                                            <SettingRow
-                                                title="Send to CardMirror as"
-                                                description="What style ebb should apply to text sent to CardMirror."
-                                                control={
-                                                    <Select
-                                                        value={cardmirrorTextType}
-                                                        items={CARDMIRROR_TEXT_TYPES}
-                                                        onValueChange={(value) =>
-                                                            setCardmirrorTextType(
-                                                                value as CardMirrorTextType,
-                                                            )
-                                                        }
-                                                    >
-                                                        <SelectTrigger
-                                                            aria-label="Send to CardMirror as"
-                                                            data-testid="cardmirror-text-type-select"
-                                                            className="w-44"
+                                            <>
+                                                <SettingRow
+                                                    title="Space pasted arguments"
+                                                    description="Leave a blank row between cards and analytics pasted in one send."
+                                                    control={
+                                                        <Switch
+                                                            checked={cardmirrorSpaceArguments}
+                                                            onCheckedChange={
+                                                                setCardmirrorSpaceArguments
+                                                            }
+                                                            data-testid="cardmirror-space-arguments-toggle"
+                                                            aria-label="Space pasted arguments"
+                                                        />
+                                                    }
+                                                />
+                                                <SettingRow
+                                                    title="Send to CardMirror as"
+                                                    description="What style ebb should apply to text sent to CardMirror."
+                                                    control={
+                                                        <Select
+                                                            value={cardmirrorTextType}
+                                                            items={CARDMIRROR_TEXT_TYPES}
+                                                            onValueChange={(value) =>
+                                                                setCardmirrorTextType(
+                                                                    value as CardMirrorTextType,
+                                                                )
+                                                            }
                                                         >
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {CARDMIRROR_TEXT_TYPES.map((t) => (
-                                                                <SelectItem
-                                                                    key={t.value}
-                                                                    value={t.value}
-                                                                    data-testid={`cardmirror-text-type-${t.value}`}
-                                                                >
-                                                                    {t.label}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                }
-                                            />
+                                                            <SelectTrigger
+                                                                aria-label="Send to CardMirror as"
+                                                                data-testid="cardmirror-text-type-select"
+                                                                className="w-44"
+                                                            >
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {CARDMIRROR_TEXT_TYPES.map((t) => (
+                                                                    <SelectItem
+                                                                        key={t.value}
+                                                                        value={t.value}
+                                                                        data-testid={`cardmirror-text-type-${t.value}`}
+                                                                    >
+                                                                        {t.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    }
+                                                />
+                                            </>
                                         )}
                                     </section>
                                 )}

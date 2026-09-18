@@ -66,6 +66,14 @@ describe("loadRound", () => {
         expect(window.localStorage.getItem("ebb-display-settings")).toContain('"insertPaste":true');
     });
 
+    it("persists CardMirror argument spacing", () => {
+        useFlowStore.getState().setCardmirrorSpaceArguments(true);
+        expect(useFlowStore.getState().cardmirrorSpaceArguments).toBe(true);
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain(
+            '"cardmirrorSpaceArguments":true',
+        );
+    });
+
     it("persists appendEdit through setAppendEdit, defaulting on", () => {
         expect(useFlowStore.getState().appendEdit).toBe(true);
         useFlowStore.getState().setAppendEdit(false);

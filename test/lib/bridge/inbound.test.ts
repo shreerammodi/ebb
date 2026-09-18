@@ -79,6 +79,7 @@ beforeEach(() => {
         insertPaste: false,
         revealTarget: null,
         cardmirrorEnabled: true,
+        cardmirrorSpaceArguments: false,
     });
 });
 
@@ -121,6 +122,30 @@ describe("the flow route", () => {
         expect(grid.data[4][1]).toBe("Perm solves");
     });
 
+    it("spaces CardMirror arguments when argument spacing is on", () => {
+        loadRound();
+        useFlowStore.setState({ cardmirrorSpaceArguments: true });
+        const grid = makeGrid(10, 3);
+        setActiveHot(grid.hot as never, vi.fn(), null, 0);
+
+        const reply = send([
+            tag,
+            cite,
+            { kind: "analytic", text: "No link" },
+            { kind: "tag", text: "Turn case" },
+        ]);
+
+        expect(reply.body).toMatchObject({ ok: true, written: 3 });
+        expect(grid.data.slice(0, 5).map((row) => row[0])).toEqual([
+            "Perm solves\nSmith 24",
+            "",
+            "No link",
+            "",
+            "Turn case",
+        ]);
+        expect(grid.hot.getSelectedLast()).toEqual([5, 0]);
+    });
+
     it("overwrites the column by default", () => {
         loadRound();
         const grid = makeGrid(10, 3);
@@ -148,6 +173,19 @@ describe("the flow route", () => {
         expect(grid.data[2][0]).toBe("older");
         expect(grid.at(1, 0).className).toBe("flow-bold");
         expect(grid.at(0, 0).className).toBe("flow-card");
+    });
+
+    it("grows an insert paste from a selection below the column tail", () => {
+        loadRound();
+        useFlowStore.setState({ insertPaste: true, cardmirrorSpaceArguments: true });
+        const grid = makeGrid(3, 1);
+        grid.select(2, 0);
+        setActiveHot(grid.hot as never, vi.fn(), null, 0);
+
+        send([tag, { kind: "analytic", text: "No link" }]);
+
+        expect(grid.data).toHaveLength(5);
+        expect(grid.data.slice(2).map((row) => row[0])).toEqual(["Perm solves", "", "No link"]);
     });
 
     it("grows the grid rather than dropping a send off the bottom", () => {

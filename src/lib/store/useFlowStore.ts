@@ -118,6 +118,8 @@ export interface FlowState {
     tooltips: boolean;
     /** Master switch for the CardMirror bridge; off leaves every route dead. */
     cardmirrorEnabled: boolean;
+    /** Blank rows separate tags and analytics within a CardMirror column send. */
+    cardmirrorSpaceArguments: boolean;
     /** How CardMirror types text sent to it from a cell. */
     cardmirrorTextType: CardMirrorTextType;
     /** Master switch for shared editing; off leaves every route dead. */
@@ -222,6 +224,7 @@ export interface FlowActions {
     setAlignSpeeches(on: boolean): void;
     setTooltips(on: boolean): void;
     setCardmirrorEnabled(on: boolean): void;
+    setCardmirrorSpaceArguments(on: boolean): void;
     setCardmirrorTextType(type: CardMirrorTextType): void;
     setCollabEnabled(on: boolean): void;
     setCollabRelayEnabled(on: boolean): void;
@@ -324,6 +327,7 @@ interface DisplaySettings {
     alignSpeeches: boolean;
     tooltips: boolean;
     cardmirrorEnabled: boolean;
+    cardmirrorSpaceArguments: boolean;
     cardmirrorTextType: CardMirrorTextType;
     collabEnabled: boolean;
     collabRelayEnabled: boolean;
@@ -371,6 +375,7 @@ function loadDisplaySettings(): DisplaySettings {
         alignSpeeches: false,
         tooltips: true,
         cardmirrorEnabled: true,
+        cardmirrorSpaceArguments: false,
         cardmirrorTextType: "analytic",
         theme: "system",
         collabEnabled: false,
@@ -401,6 +406,7 @@ function loadDisplaySettings(): DisplaySettings {
             alignSpeeches: bool(p.alignSpeeches, false),
             tooltips: bool(p.tooltips, true),
             cardmirrorEnabled: bool(p.cardmirrorEnabled, true),
+            cardmirrorSpaceArguments: bool(p.cardmirrorSpaceArguments, false),
             cardmirrorTextType: resolveCardMirrorTextType(p.cardmirrorTextType),
             theme: resolveThemeMode(p.theme),
             collabEnabled: bool(p.collabEnabled, false),
@@ -442,6 +448,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
         alignSpeeches: s.alignSpeeches,
         tooltips: s.tooltips,
         cardmirrorEnabled: s.cardmirrorEnabled,
+        cardmirrorSpaceArguments: s.cardmirrorSpaceArguments,
         cardmirrorTextType: s.cardmirrorTextType,
         theme: s.theme,
         collabEnabled: s.collabEnabled,
@@ -542,6 +549,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     alignSpeeches: initialDisplaySettings.alignSpeeches,
     tooltips: initialDisplaySettings.tooltips,
     cardmirrorEnabled: initialDisplaySettings.cardmirrorEnabled,
+    cardmirrorSpaceArguments: initialDisplaySettings.cardmirrorSpaceArguments,
     cardmirrorTextType: initialDisplaySettings.cardmirrorTextType,
     collabEnabled: initialDisplaySettings.collabEnabled,
     collabRelayEnabled: initialDisplaySettings.collabRelayEnabled,
@@ -870,6 +878,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setTooltips: (on) => persistDisplay(set, get, { tooltips: on }),
 
     setCardmirrorEnabled: (on) => persistDisplay(set, get, { cardmirrorEnabled: on }),
+
+    setCardmirrorSpaceArguments: (on) => persistDisplay(set, get, { cardmirrorSpaceArguments: on }),
 
     setCardmirrorTextType: (type) => persistDisplay(set, get, { cardmirrorTextType: type }),
 

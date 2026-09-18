@@ -62,6 +62,7 @@ export function planFlowWrite(
     mode: "column" | "cell",
     docTitle: string,
     space = 0,
+    spaceArguments = false,
 ): PlannedCell[] {
     if (items.length === 0) return [];
 
@@ -81,6 +82,8 @@ export function planFlowWrite(
     }
 
     const cells: PlannedCell[] = [];
+    let hasArgument = false;
+    let pendingHeadingStart: number | null = null;
     for (const item of items) {
         const previous = cells[cells.length - 1];
         // A leading cite has no tag to ride on, so it falls through and takes
@@ -88,6 +91,16 @@ export function planFlowWrite(
         if (item.kind === "cite" && previous) {
             previous.text = `${previous.text}\n${item.text}`;
             continue;
+        }
+        if (HEADING_KINDS[item.kind] && hasArgument && pendingHeadingStart === null) {
+            pendingHeadingStart = cells.length;
+        }
+        if (item.kind === "tag" || item.kind === "analytic") {
+            if (spaceArguments && hasArgument) {
+                cells.splice(pendingHeadingStart ?? cells.length, 0, { text: "", meta: {} });
+            }
+            hasArgument = true;
+            pendingHeadingStart = null;
         }
         cells.push({ text: item.text, meta: metaFor(item, docTitle) });
     }
