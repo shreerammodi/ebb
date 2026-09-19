@@ -45,26 +45,34 @@ function isEmpty(value: unknown): boolean {
 }
 
 /**
- * Clears the provenance of every cell `changes` emptied, and pairs the clear
- * with the undo action the write just pushed, so an undo brings the link back
- * with the text. Returns whether it cleared anything.
+ * Clears stale meta from every cell `changes` emptied, and pairs the clear with
+ * the undo action the write just pushed. A direct edit keeps decorations; a cut
+ * moves only text, so its source decorations must be removed explicitly.
  *
  * Call it from `afterChange`: Handsontable records the undo action on
  * `beforeChange`, so the action this snapshot binds to is already on the stack.
  */
-export function breakEmptiedLinks(grid: CellGrid, changes: readonly GridChange[]): boolean {
+export function breakEmptiedLinks(
+    grid: CellGrid,
+    changes: readonly GridChange[],
+    clearDecorations = false,
+): [row: number, col: number][] {
     const hits: [row: number, col: number][] = [];
     for (const [row, prop, , newValue] of changes) {
         // A flow sheet holds array rows, so Handsontable's prop is the column.
         const col = Number(prop);
         if (!Number.isInteger(col) || !isEmpty(newValue)) continue;
-        if (grid.getCellMeta(row, col).source) hits.push([row, col]);
+        const meta = grid.getCellMeta(row, col);
+        if (meta.source || (clearDecorations && meta.className)) hits.push([row, col]);
     }
-    if (hits.length === 0) return false;
+    if (hits.length === 0) return hits;
 
     const cols = [...new Set(hits.map(([, col]) => col))];
     const before = snapshotClasses(grid, cols);
-    for (const [row, col] of hits) grid.setCellMeta(row, col, "source", undefined);
+    for (const [row, col] of hits) {
+        if (clearDecorations) grid.setCellMeta(row, col, "className", "");
+        grid.setCellMeta(row, col, "source", undefined);
+    }
     attachMetaUndo({ cols, before, after: snapshotClasses(grid, cols) });
-    return true;
+    return hits;
 }

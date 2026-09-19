@@ -6,6 +6,7 @@ import {
     onRedoStackChange,
     onUndoStackChange,
     resetMetaUndo,
+    restoreMetaRedo,
     restoreMetaUndo,
 } from "@/lib/grid/metaUndo";
 import { breakEmptiedLinks, STRUCTURED_WRITE, type GridChange } from "@/lib/grid/staleSource";
@@ -22,8 +23,7 @@ const SRC: CellSource = {
 
 /**
  * The module runs against the live grid from inside `afterChange`, so the suite
- * wires a miniature HotGrid: the same undo hooks, and the same "only a direct
- * cell edit breaks a link" filter the pane applies.
+ * wires a miniature HotGrid with the same undo hooks and empty-cell filters.
  */
 describe("breakEmptiedLinks", () => {
     let hot: Handsontable;
@@ -40,13 +40,14 @@ describe("breakEmptiedLinks", () => {
             undo: true,
             licenseKey: "non-commercial-and-evaluation",
             afterChange: (changes, source) => {
-                if (changes && source === "edit") {
-                    breakEmptiedLinks(hot, changes as GridChange[]);
+                if (changes && (source === "edit" || source === "CopyPaste.cut")) {
+                    breakEmptiedLinks(hot, changes as GridChange[], source === "CopyPaste.cut");
                 }
             },
             afterUndoStackChange: onUndoStackChange,
             afterRedoStackChange: onRedoStackChange,
             afterUndo: () => restoreMetaUndo(hot),
+            afterRedo: () => restoreMetaRedo(hot),
         });
         hot.setCellMeta(0, 0, "className", "flow-card");
         hot.setCellMeta(0, 0, "source", SRC);
@@ -75,6 +76,25 @@ describe("breakEmptiedLinks", () => {
         expect(sourceAt(0, 0)).toEqual(SRC);
     });
 
+    it("removes decoration and provenance from a cut cell, with undo and redo", () => {
+        hot.selectCell(0, 0);
+        hot.emptySelectedCells("CopyPaste.cut");
+
+        expect(hot.getCellMeta(0, 0).className).toBe("");
+        expect(sourceAt(0, 0)).toBeUndefined();
+
+        const undo = hot.getPlugin("undoRedo") as unknown as { undo(): void; redo(): void };
+        undo.undo();
+        expect(hot.getDataAtCell(0, 0)).toBe("Perm solves");
+        expect(hot.getCellMeta(0, 0).className).toBe("flow-card");
+        expect(sourceAt(0, 0)).toEqual(SRC);
+
+        undo.redo();
+        expect(hot.getDataAtCell(0, 0)).toBeNull();
+        expect(hot.getCellMeta(0, 0).className).toBe("");
+        expect(sourceAt(0, 0)).toBeUndefined();
+    });
+
     it("keeps the link when the user edits the text instead of emptying it", () => {
         hot.setDataAtCell(0, 0, "Perm solves the link turn");
 
@@ -90,6 +110,6 @@ describe("breakEmptiedLinks", () => {
     });
 
     it("ignores a cell that carries no provenance", () => {
-        expect(breakEmptiedLinks(hot, [[1, 0, "c", ""]])).toBe(false);
+        expect(breakEmptiedLinks(hot, [[1, 0, "c", ""]])).toEqual([]);
     });
 });

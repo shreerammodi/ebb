@@ -7,6 +7,14 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-09-19
+
+### Fixed
+
+- **Cutting a formatted cell no longer leaves its formatting behind.** Card,
+  group, highlight, bold and kicked markers leave the source cell with its
+  text, restore together on undo, and stay in sync in a shared round.
+
 ## [1.3.0] - 2026-09-18
 
 ### Added
@@ -848,7 +856,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/shreerammodi/ebb/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/shreerammodi/ebb/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/shreerammodi/ebb/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/shreerammodi/ebb/compare/v1.1.0...v1.2.0

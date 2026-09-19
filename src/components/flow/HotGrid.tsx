@@ -951,9 +951,9 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     // them, and snapshotting it would push the grid over the projection that
     // wrote it, taking a deferred cell's remote text with it.
     //
-    // "edit" is a cell the user typed, emptied, or cut: every structured write
-    // names itself instead, and carries its own meta bookkeeping. So this is
-    // the one path that can strand provenance on a cell it no longer describes.
+    // "edit" is a cell the user typed or emptied. A cut has its own source and
+    // moves only text, so it also has to clear the decorations left behind.
+    // Every structured write names itself and carries its own meta bookkeeping.
     const afterChange = useCallback(
         (changes: unknown, source: unknown) => {
             if (!changes) return;
@@ -962,9 +962,12 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 return;
             }
             const hot = hotRef.current?.hotInstance;
-            if (hot && source === "edit" && breakEmptiedLinks(hot, changes as GridChange[])) {
-                hot.render();
-            }
+            const cut = source === "CopyPaste.cut";
+            const cleared =
+                hot && (source === "edit" || cut)
+                    ? breakEmptiedLinks(hot, changes as GridChange[], cut)
+                    : [];
+            if (cleared.length > 0) hot!.render();
             const sid = currentSheetIdRef.current;
             if (sid && isReplicatedSource(source)) {
                 const lead = loadedSpacersRef.current;
@@ -978,6 +981,13 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                     named.push([row, at, oldValue, newValue]);
                 }
                 for (const op of textOpsFromChanges(sid, named)) recordOp(op);
+                if (cut) {
+                    for (const [row, col] of cleared) {
+                        const at = toModelCol(gridCol(col), lead);
+                        if (at !== null)
+                            recordOp({ kind: "cellMeta", sheetId: sid, col: at, row, meta: {} });
+                    }
+                }
             }
             snapshot();
             publishWordCount();
