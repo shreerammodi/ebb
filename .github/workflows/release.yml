@@ -108,7 +108,7 @@ jobs:
                   releaseName: "ebb ${{ github.ref_name }}"
                   # The changelog is pinned to the tag, not to main: linking main
                   # would show entries written after this release went out.
-                  releaseBody: "See the assets below to download and install, and the [changelog](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md) for a log of updates."
+                  releaseBody: "See the assets below to download and run or install, and the [changelog](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md) for a log of updates."
                   # Every matrix job uploads into this one release, so it stays a draft
                   # until the last platform lands. The updater reads
                   # `releases/latest/download/latest.json` and a draft is never
@@ -118,6 +118,18 @@ jobs:
                   prerelease: false
                   uploadUpdaterJson: true
                   args: ${{ matrix.args }}
+
+            - name: Upload portable Windows app
+              if: matrix.platform == 'windows-latest'
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  TAG: ${{ github.ref_name }}
+              run: |
+                  version=$(node -p "require('./package.json').version")
+                  portable="ebb_${version}_x64-portable.exe"
+                  cp src-tauri/target/release/ebb.exe "$portable"
+                  gh release upload "$TAG" "$portable" --repo "$GITHUB_REPOSITORY"
 
     # Runs only when every matrix platform built, so a release reaches users whole
     # or not at all. A failed platform leaves the draft in place for a human.

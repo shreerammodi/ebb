@@ -86,15 +86,16 @@ release and uploads into a single rolling prerelease tagged `nightly`.
 Three properties keep a nightly from being mistaken for a release:
 
 - **It does not claim a version.** Assets are named for their platform alone -
-  `ebb_universal.dmg`, `ebb_amd64.deb`, `ebb_x64-setup.exe` - because a rolling
-  build stamped `0.7.2` is a file that lies about itself the moment it is
-  downloaded. This is why the build does not use `tauri-action`: that action
-  owns the upload and names assets from the config version. The workflow runs
-  `tauri build` itself, strips the version from each bundle name, and uploads
-  to the release id `prepare` produced. It refuses to upload a name the version
-  was not found in, so a rename upstream fails the run instead of quietly
-  shipping `ebb_0.8.0_universal.dmg` off `main`. The side benefit is a download
-  URL under the `nightly` tag that never changes.
+  `ebb_universal.dmg`, `ebb_amd64.deb`, `ebb_x64-setup.exe`,
+  `ebb_x64-portable.exe` - because a rolling build stamped `0.7.2` is a file
+  that lies about itself the moment it is downloaded. This is why the build
+  does not use `tauri-action`: that action owns the upload and names assets
+  from the config version. The workflow runs `tauri build` itself, strips the
+  version from each bundle name, and uploads to the release id `prepare`
+  produced. It refuses to upload a bundle name the version was not found in,
+  so a rename upstream fails the run instead of quietly shipping
+  `ebb_0.8.0_universal.dmg` off `main`. The side benefit is a download URL under
+  the `nightly` tag that never changes.
 - **It cannot update anyone.** `src-tauri/tauri.nightly.conf.json` overlays
   `createUpdaterArtifacts: false`, so the build emits no `.tar.gz`/`.sig` pair
   and no signing key is present to make one. There is no path by which a
@@ -147,7 +148,8 @@ after the ref and a dispatch on `main` would publish a release tagged `main`.
 A 3-way build matrix (`fail-fast: false`) - macOS universal, Linux x64, Windows
 x64 - runs `tauri-apps/tauri-action`, which builds each installer, signs the
 updater artifacts with the Ed25519 key, generates `latest.json`, and uploads
-everything to a GitHub Release named `ebb vX.Y.Z`.
+everything to a GitHub Release named `ebb vX.Y.Z`. The Windows job also uploads
+the built `ebb.exe` as `ebb_X.Y.Z_x64-portable.exe`.
 
 The workflow creates the release as a draft, and the `publish` job
 (`needs: release`) publishes it after all three platforms succeed, then

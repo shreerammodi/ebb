@@ -197,6 +197,19 @@ jobs:
                              \( -name '*.dmg' -o -name '*.AppImage' -o -name '*.deb' \
                                 -o -name '*.rpm' -o -name '*.exe' -o -name '*.msi' \) | sort)
 
+                  if [ "${{ matrix.platform }}" = windows-latest ]; then
+                    file=src-tauri/target/release/ebb.exe
+                    name=ebb_x64-portable.exe
+                    echo "$(basename "$file") -> $name"
+                    curl -sSf -X POST \
+                      -H "Authorization: Bearer $GH_TOKEN" \
+                      -H "Content-Type: application/octet-stream" \
+                      --data-binary @"$file" \
+                      "https://uploads.github.com/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?name=$name" \
+                      -o /dev/null
+                    found=$((found + 1))
+                  fi
+
                   # A green build that shipped nothing is the failure this catches.
                   [ "$found" -gt 0 ] || { echo "no installers found under src-tauri/target" >&2; exit 1; }
 

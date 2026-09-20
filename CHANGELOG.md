@@ -7,6 +7,12 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-09-20
+
+### Added
+
+- Windows releases include a portable `ebb.exe` alongside the installer.
+
 ## [1.3.1] - 2026-09-19
 
 ### Fixed
@@ -856,7 +862,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/shreerammodi/ebb/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/shreerammodi/ebb/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/shreerammodi/ebb/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/shreerammodi/ebb/compare/v1.2.0...v1.2.1

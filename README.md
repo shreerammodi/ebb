@@ -105,7 +105,8 @@ npm run desktop:build:linux            # single-file AppImage
 On Windows, `desktop:build:bin` is the portable route: `ebb.exe` lands in
 `src-tauri/target/release` with no NSIS installer beside it. The macOS
 universal build needs both `aarch64-apple-darwin` and `x86_64-apple-darwin`
-installed via `rustup target add`.
+installed via `rustup target add`. Windows releases also include this binary as
+`ebb_<version>_x64-portable.exe` (or `ebb_x64-portable.exe` for a nightly).
 
 ## Development
 
