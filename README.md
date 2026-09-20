@@ -54,10 +54,19 @@ signature, and macOS then refuses to launch it with no error message.
 
 ### Windows
 
+Installer:
+
 1. Download `*-setup.exe`
 2. Run the installer
 
-On first launch, you'll see "Windows protected your PC." Click More info > Run anyway.
+Portable:
+
+1. Download `*-portable.exe`
+2. Run it directly. It does not need installation.
+
+The portable app does not register `.ebb` file associations. On first launch of
+either build, you may see "Windows protected your PC." Click More info > Run
+anyway.
 
 ### Linux
 

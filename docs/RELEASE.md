@@ -14,11 +14,11 @@ links carry the internals.
 
 ## 1. Shipping model
 
-| Product         | What it is                              | Distribution                                            | How it updates                                                    |
-| --------------- | --------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
-| **Web build**   | Static export in `out/`                 | Vercel CDN, no backend                                  | User reloads; the CDN serves the newest tag                       |
-| **Desktop app** | Tauri 2 shell wrapping the same `out/`  | Signed installers, GitHub Release                       | In-app signed auto-updater, install on user confirm               |
-| **Nightly**     | The same desktop app, built from `main` | Unsigned installers on the rolling `nightly` prerelease | Updates itself to the next tagged release, not to a newer nightly |
+| Product         | What it is                              | Distribution                                        | How it updates                                                    |
+| --------------- | --------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
+| **Web build**   | Static export in `out/`                 | Vercel CDN, no backend                              | User reloads; the CDN serves the newest tag                       |
+| **Desktop app** | Tauri 2 shell wrapping the same `out/`  | Installers and portable builds, GitHub Release      | In-app signed auto-updater, install on user confirm               |
+| **Nightly**     | The same desktop app, built from `main` | Unsigned builds on the rolling `nightly` prerelease | Updates itself to the next tagged release, not to a newer nightly |
 
 Both products ship from one tag, so a version number means the same thing on
 both. The nightly channel sits outside that: it is the current tip of `main`,
@@ -230,8 +230,9 @@ Ships fine for beta, worth doing after:
 cargo update -p ebb --manifest-path src-tauri/Cargo.toml   # refresh Cargo.lock
 git commit -am "$VERSION" && git tag -s "v$VERSION" -m "v$VERSION"
 git push --follow-tags
-# -> release.yml builds 3 installers into a draft GitHub Release, publishes it
-#    once every platform succeeds, and fast-forwards `release` to the tag.
+# -> release.yml builds every platform plus the portable Windows executable
+#    into a draft GitHub Release, publishes it once every platform succeeds,
+#    and fast-forwards `release` to the tag.
 # -> the /latest/ redirect flips; desktop clients pick it up on next check.
 # -> Vercel deploys `release` to production, so web lands on the same commit.
 ```
