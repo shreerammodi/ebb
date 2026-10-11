@@ -65,6 +65,8 @@ describe("saveBlob", () => {
         } as unknown as HTMLAnchorElement);
         vi.spyOn(document.body, "appendChild").mockImplementation((n) => n);
         vi.spyOn(document.body, "removeChild").mockImplementation((n) => n);
+        vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:x");
+        vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
 
         await saveBlob(new Blob(["hi"]), "x.json");
         expect(click).toHaveBeenCalled();
