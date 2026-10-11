@@ -184,6 +184,11 @@ pub fn build<R: Runtime>(
             "CmdOrCtrl+Backslash",
         )?)
         .item(&cmd("rfd.toggle", "Toggle RFD", "CmdOrCtrl+J")?)
+        .item(&cmd(
+            "view.decision",
+            "Toggle Decision View",
+            "CmdOrCtrl+Shift+J",
+        )?)
         .build()?;
 
     // Window: New Window first, matching the platform convention; Close

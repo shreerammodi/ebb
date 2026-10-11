@@ -255,6 +255,45 @@ describe("UI commands", () => {
         executeCommand("rfd.toggle");
         expect(useFlowStore.getState().rfdOpen).toBe(false);
     });
+
+    it("view.decision commits the cell being typed before the grid goes away", () => {
+        useFlowStore.getState().loadRound(makeFlowRound({}));
+        const order: string[] = [];
+        const editor = {
+            isOpened: () => true,
+            finishEditing: () => order.push(useFlowStore.getState().workspaceView),
+        };
+        setActiveHot(
+            { getActiveEditor: () => editor } as unknown as Parameters<typeof setActiveHot>[0],
+            null,
+            null,
+            0,
+        );
+
+        executeCommand("view.decision");
+        // The editor closed while the grid was still the view on screen.
+        expect(order).toEqual(["flow"]);
+        expect(useFlowStore.getState().workspaceView).toBe("decision");
+
+        executeCommand("view.decision");
+        expect(useFlowStore.getState().workspaceView).toBe("flow");
+    });
+
+    it("view.decision does nothing with no round open", () => {
+        executeCommand("view.decision");
+        expect(useFlowStore.getState().workspaceView).toBe("flow");
+    });
+
+    it("opens every round on the flow with no panel choices carried over", () => {
+        const round = makeFlowRound({});
+        useFlowStore.getState().loadRound(round);
+        executeCommand("view.decision");
+        useFlowStore.getState().setDecisionPanel(round.sheets[0].id, true);
+
+        useFlowStore.getState().loadRound(makeFlowRound({}));
+        expect(useFlowStore.getState().workspaceView).toBe("flow");
+        expect(useFlowStore.getState().decisionPanels).toEqual({});
+    });
 });
 
 describe("theme commands", () => {

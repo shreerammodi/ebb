@@ -39,6 +39,7 @@ const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
         [`${mod}+,`]: "settings.open",
         [`${mod}+\\`]: "sidebar.toggle",
         [`${mod}+j`]: "rfd.toggle",
+        [`${mod}+J`]: "view.decision",
         [`${mod}+Backspace`]: "row.delete",
         [`${mod}+o`]: "cell.insert",
         [`${mod}+Alt+o`]: "cell.insertBelow",

@@ -25,6 +25,7 @@ import { gridCol, modelCol, toGridCol, toModelCol, type GridCol } from "@/lib/gr
 import { extendRun, extensionRequiredRows, nextSameSideColumn } from "@/lib/grid/extendCells";
 import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import {
+    commitOpenEdit,
     getActiveHot,
     getActiveSheetId,
     getActiveSpacers,
@@ -38,7 +39,12 @@ import { moveSheetRange, sheetRangeIds, sortedSheets, type CellMeta } from "@/li
 import { askToShare } from "@/lib/store/useCollabConsent";
 import { useCollabStore } from "@/lib/store/useCollabStore";
 import { chooseContact } from "@/lib/store/useContactPicker";
-import { focusedSheetId, useFlowStore, ZOOM_STEP } from "@/lib/store/useFlowStore";
+import {
+    focusedSheetId,
+    useFlowStore,
+    ZOOM_STEP,
+    type WorkspaceView,
+} from "@/lib/store/useFlowStore";
 import { askForCode } from "@/lib/store/useJoinDialog";
 import { openShareSheet, showShareCode, showShareFailure } from "@/lib/store/useShareSheet";
 
@@ -53,6 +59,18 @@ import {
 import { navigateToFlow } from "./flowNav";
 import { EDITS_ROUND, type CommandId } from "./registry";
 import { closeCurrentWindow, openNewWindow } from "./windowCommands";
+
+/**
+ * Switches the workspace between the flow grid and the decision view. The
+ * grid unmounts on the way out, so a cell still being typed is committed
+ * first rather than going down with its editor.
+ */
+export function showWorkspaceView(view: WorkspaceView): void {
+    const state = useFlowStore.getState();
+    if (!state.round || state.workspaceView === view) return;
+    commitOpenEdit();
+    state.setWorkspaceView(view);
+}
 
 /** Jumps to the Nth (1-indexed, order-sorted) flow sheet, no-op if out of range. */
 function jumpToSheet(n: number): void {
@@ -574,6 +592,9 @@ export function executeCommand(id: CommandId): void {
             return;
         case "rfd.toggle":
             state.setRfdOpen(!state.rfdOpen);
+            return;
+        case "view.decision":
+            showWorkspaceView(state.workspaceView === "decision" ? "flow" : "decision");
             return;
         case "help.open":
             state.setCheatsheetOpen(!state.cheatsheetOpen);

@@ -4,15 +4,50 @@ import { Gear, House, Question } from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { segmentedTabClass } from "@/components/ui/segmented-tab";
 import { Tip } from "@/components/ui/tooltip";
+import { showWorkspaceView } from "@/lib/commands/commands";
 import { sideLabels } from "@/lib/format/events";
 import { teamCode } from "@/lib/model/teamCode";
-import { useFlowStore } from "@/lib/store/useFlowStore";
+import { useFlowStore, type WorkspaceView } from "@/lib/store/useFlowStore";
 
 import ExportMenu from "./ExportMenu";
 import SaveStatus from "./SaveStatus";
 import SpeechSwitcher from "./SpeechSwitcher";
 import ZoomControl from "./ZoomControl";
+
+const VIEWS: { view: WorkspaceView; label: string }[] = [
+    { view: "flow", label: "Flow" },
+    { view: "decision", label: "Decision" },
+];
+
+/** Flow / Decision: the grid, or the last rebuttals and cross-ex beside the RFD. */
+function ViewTabs() {
+    const current = useFlowStore((s) => s.workspaceView);
+    return (
+        <Tip label="Switch view" command="view.decision">
+            <div
+                role="tablist"
+                aria-label="Workspace view"
+                className="border-border ribbon-tight:flex hidden flex-none overflow-hidden rounded-md border text-[12px]"
+            >
+                {VIEWS.map(({ view, label }) => (
+                    <button
+                        key={view}
+                        type="button"
+                        role="tab"
+                        aria-selected={current === view}
+                        data-testid={`view-tab-${view}`}
+                        onClick={() => showWorkspaceView(view)}
+                        className={segmentedTabClass(current === view)}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+        </Tip>
+    );
+}
 
 export default function RoundHeader() {
     const scouting = useFlowStore((s) => s.round?.scouting);
@@ -50,6 +85,7 @@ export default function RoundHeader() {
             </div>
 
             <div className="no-print ribbon:gap-2 flex flex-none items-center gap-1">
+                <ViewTabs />
                 <SpeechSwitcher />
                 <ZoomControl />
                 <Tip label="Round info" command="info.open">
@@ -61,20 +97,6 @@ export default function RoundHeader() {
                         data-testid="info-btn"
                     >
                         Info
-                    </Button>
-                </Tip>
-                <Tip label="RFD" command="rfd.toggle">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                            const s = useFlowStore.getState();
-                            s.setRfdOpen(!s.rfdOpen);
-                        }}
-                        aria-label="RFD"
-                        data-testid="rfd-btn"
-                    >
-                        RFD
                     </Button>
                 </Tip>
                 <Tip label="Keyboard shortcuts" command="help.open">

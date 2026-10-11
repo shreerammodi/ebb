@@ -139,6 +139,7 @@ export const MENU_COMMAND_IDS = [
     "palette.open",
     "sidebar.toggle",
     "rfd.toggle",
+    "view.decision",
     "help.open",
 ] as const satisfies readonly CommandId[];
 

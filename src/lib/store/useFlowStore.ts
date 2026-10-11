@@ -46,6 +46,9 @@ export interface SheetRange {
     head: string;
 }
 
+/** What the workspace lays out: the flow grid, or the decision view beside the RFD. */
+export type WorkspaceView = "flow" | "decision";
+
 export interface FlowState {
     round: FlowRound | null;
     /**
@@ -102,6 +105,17 @@ export interface FlowState {
     rfdOpen: boolean;
     /** Vim keybindings in the RFD editor; persisted like sidebarCollapsed. */
     rfdVim: boolean;
+    /**
+     * Whether the workspace shows the flow grid or the decision view. Belongs
+     * to the open round: every round opens on the flow.
+     */
+    workspaceView: WorkspaceView;
+    /**
+     * Decision view panels shown or hidden by hand, by sheet id. A sheet with
+     * no entry follows whether its columns hold any text. Belongs to the open
+     * round, and never reaches a `.ebb`.
+     */
+    decisionPanels: Record<string, boolean>;
     /** Paste pushes the target columns' existing cells down instead of overwriting them. */
     insertPaste: boolean;
     /**
@@ -271,6 +285,9 @@ export interface FlowActions {
     setSidebarCollapsed(collapsed: boolean): void;
     setSidebarWidth(width: number): void;
     setRfdOpen(open: boolean): void;
+    setWorkspaceView(view: WorkspaceView): void;
+    /** Shows or hides one sheet's panel in the decision view. */
+    setDecisionPanel(sheetId: string, shown: boolean): void;
     setRenamingSheet(id: string | null): void;
 }
 
@@ -577,6 +594,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     sidebarWidth: initialDisplaySettings.sidebarWidth,
     rfdOpen: initialDisplaySettings.rfdOpen,
     rfdVim: initialDisplaySettings.rfdVim,
+    workspaceView: "flow",
+    decisionPanels: {},
     insertPaste: initialDisplaySettings.insertPaste,
     appendEdit: initialDisplaySettings.appendEdit,
     cxEnterAlternates: initialDisplaySettings.cxEnterAlternates,
@@ -612,6 +631,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             // existing flow restores the persisted preference. loadRound never
             // persists rfdOpen, so forcing it closed here stays transient.
             rfdOpen: opts?.newFlow ? false : loadDisplaySettings().rfdOpen,
+            workspaceView: "flow",
+            decisionPanels: {},
             quickSwitcherOpen: false,
             renamingSheetId: null,
             sheetRange: null,
@@ -635,6 +656,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
             selectedSpeechId: null,
             selectedWordCount: null,
             renamingSheetId: null,
+            workspaceView: "flow",
+            decisionPanels: {},
             sheetRange: null,
         });
     },
@@ -997,6 +1020,12 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setSidebarWidth: (width) =>
         persistDisplay(set, get, { sidebarWidth: resolveSidebarWidth(width) }),
     setRfdOpen: (open) => persistDisplay(set, get, { rfdOpen: open }),
+    setWorkspaceView(view) {
+        set({ workspaceView: view });
+    },
+    setDecisionPanel(sheetId, shown) {
+        set({ decisionPanels: { ...get().decisionPanels, [sheetId]: shown } });
+    },
     setRenamingSheet(id) {
         set({ renamingSheetId: id });
     },

@@ -7,6 +7,23 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Added
+
+- **Decision view.** A Flow / Decision switch in the round header, or
+  Meta+Shift+J (Ctrl+Shift+J elsewhere), swaps the grid for the round laid out
+  for writing a decision: the cross-ex sheet and every sheet's last rebuttals
+  (the 2NR and 2AR in Policy and LD, the final focuses in Public Forum, the
+  Opposition Block and PMR in Parliamentary) side by side, beside the RFD
+  editor. Any number of sheets fit at once. A sheet shows once those speeches
+  hold text, cross-ex narrows to the periods that were used, and any sheet can
+  be hidden or brought back by hand.
+
+### Changed
+
+- **The round header has no RFD button.** The Decision view is where the RFD
+  is written now; the RFD drawer is still a scratchpad one Meta+J away, and the
+  View menu and the palette still open it.
+
 ### Fixed
 
 - **Closing or quitting mid-cell keeps the cell.** Close Window, Quit, Close

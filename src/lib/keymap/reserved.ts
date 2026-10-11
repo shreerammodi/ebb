@@ -39,6 +39,10 @@ const RESERVED_KEYS = [
     "\\", // sidebar toggle
     ",", // settings
     "j", // rfd toggle
+    // Decision view. Ctrl+Shift+J is Chrome's console on Windows and Linux;
+    // where the browser takes it before the page, the header tabs and the
+    // palette still reach the view.
+    "J",
     // -- Rows / cells -------------------------------------------------------
     "Backspace", // row delete
     "e", // extend argument

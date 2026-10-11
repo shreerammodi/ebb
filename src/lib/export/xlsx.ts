@@ -52,7 +52,7 @@ export function addFlowWorksheet(
     if (sheet.kind === "cx") {
         // Period tier above the Question/Response (or Aff/Neg) columns,
         // merged across each period's pair.
-        for (let c = 0; c < cols.length; ) {
+        for (let c = 0; c < cols.length;) {
             let end = c;
             while (end + 1 < cols.length && cols[end + 1].group === cols[c].group) end++;
             const cell = ws.getCell(1, c + 1);

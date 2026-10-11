@@ -55,6 +55,7 @@ export type CommandId =
     | "settings.open"
     | "info.open"
     | "rfd.toggle"
+    | "view.decision"
     | "help.open"
     | "sidebar.toggle"
     | "view.zoomIn"
@@ -152,6 +153,11 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "settings.open": { id: "settings.open", label: "Open settings" },
     "info.open": { id: "info.open", label: "Open round info" },
     "rfd.toggle": { id: "rfd.toggle", label: "Toggle RFD" },
+    "view.decision": {
+        id: "view.decision",
+        label: "Toggle decision view",
+        keywords: "rfd reason for decision rebuttals 2nr 2ar cross-ex cx tab",
+    },
     "help.open": { id: "help.open", label: "Keyboard shortcuts" },
     "sidebar.toggle": { id: "sidebar.toggle", label: "Toggle sidebar" },
     "view.zoomIn": { id: "view.zoomIn", label: "Zoom in" },
@@ -243,6 +249,7 @@ export const EDITS_ROUND: Record<CommandId, boolean> = {
     "settings.open": false,
     "info.open": false,
     "rfd.toggle": false,
+    "view.decision": false,
     "help.open": false,
     "sidebar.toggle": false,
     "view.zoomIn": false,
@@ -325,6 +332,7 @@ export const GRID_SCOPED: Record<CommandId, boolean> = {
     "settings.open": false,
     "info.open": false,
     "rfd.toggle": false,
+    "view.decision": false,
     "help.open": false,
     "sidebar.toggle": false,
     "view.zoomIn": false,

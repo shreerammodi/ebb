@@ -53,8 +53,10 @@ export function replaceSpanOps(
  * row position and leaves a peer holding keys that no longer name anything.
  */
 export function openSpanOps(sheetId: string, col: ModelCol, at: number, count: number): CollabOp[] {
-    return Array.from(
-        { length: Math.max(count, 0) },
-        (): CollabOp => ({ kind: "insertCell", sheetId, col, row: at }),
-    );
+    return Array.from({ length: Math.max(count, 0) }, (): CollabOp => ({
+        kind: "insertCell",
+        sheetId,
+        col,
+        row: at,
+    }));
 }

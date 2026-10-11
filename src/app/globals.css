@@ -378,6 +378,33 @@ html .ht-theme-main {
     );
 }
 
+/* The decision view's read-only tables wear the same decorations on the
+   app's own surface rather than on paper, so each one is drawn from a token
+   or a translucent wash that holds up under both themes. */
+.decision-flow td.flow-highlight {
+    background-color: color-mix(in srgb, #fde047 35%, transparent);
+}
+.decision-flow td.flow-card {
+    box-shadow: inset 0 -2px 0 #2563eb;
+}
+.decision-flow td.flow-group {
+    box-shadow: inset 3px 0 0 var(--muted-foreground);
+}
+.decision-flow td.flow-card.flow-group {
+    box-shadow:
+        inset 0 -2px 0 #2563eb,
+        inset 3px 0 0 var(--muted-foreground);
+}
+.decision-flow td.flow-kicked {
+    background-image: linear-gradient(
+        to bottom right,
+        transparent calc(50% - 0.5px),
+        var(--muted-foreground) calc(50% - 0.5px),
+        var(--muted-foreground) calc(50% + 0.5px),
+        transparent calc(50% + 0.5px)
+    );
+}
+
 /* Move mode: the travelling block, tinted for the life of the session. Painted
    from the move session by afterRenderer, never from cellMeta, so it never
    reaches a saved sheet. */

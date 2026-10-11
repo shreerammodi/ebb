@@ -125,6 +125,7 @@ const GROUPS: { label: string; rows: { commandId: CommandId }[] }[] = [
             { commandId: "settings.open" as CommandId },
             { commandId: "info.open" as CommandId },
             { commandId: "rfd.toggle" as CommandId },
+            { commandId: "view.decision" as CommandId },
             { commandId: "sidebar.toggle" as CommandId },
             { commandId: "help.open" as CommandId },
         ],

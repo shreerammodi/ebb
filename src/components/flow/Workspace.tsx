@@ -9,6 +9,7 @@ import { useKeymap } from "@/lib/keymap/useKeymap";
 import { speechDuration, speechWordCount } from "@/lib/speechTime";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
+import DecisionView from "./DecisionView";
 import InfoPanel from "./InfoPanel";
 import PrintView from "./PrintView";
 import RfdDrawer from "./RfdDrawer";
@@ -52,6 +53,7 @@ export default function Workspace() {
     const focusedPane = useFlowStore((s) => s.focusedPane);
     const round = useFlowStore((s) => s.round);
     const rfdOpen = useFlowStore((s) => s.rfdOpen);
+    const view = useFlowStore((s) => s.workspaceView);
     const roundId = useFlowStore((s) => s.round?.id);
     const sides = sideLabels(round?.event);
 
@@ -64,67 +66,84 @@ export default function Workspace() {
         <div className="bg-background flex h-screen flex-col" data-testid="workspace">
             <RoundHeader />
             <div className="flex min-h-0 flex-1">
-                <Sidebar />
-                <main
-                    // isolate: trap Handsontable's frozen-header clone layers (z-index up
-                    // to ~1060) in their own stacking context so they can't punch through
-                    // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
-                    className="no-print relative isolate flex min-w-0 flex-1 overflow-hidden pb-7"
-                    data-testid="workspace-content"
-                >
-                    {activeSheetId ? (
-                        <>
-                            {/* Same element/position in single and split mode so toggling
-                                    split never remounts pane 1's live HotGrid. */}
-                            <div
-                                data-testid="pane-1"
-                                className="flex min-w-0 flex-1 flex-col overflow-hidden"
-                            >
-                                <SheetTitleBar
-                                    sheetId={activeSheetId}
-                                    title={titleOf(activeSheetId)}
-                                    side={sideOf(activeSheetId)}
-                                    tabLabel={splitSheetId ? "Tab 1" : undefined}
-                                    focused={splitSheetId ? focusedPane === 1 : undefined}
-                                />
-                                <div className="min-h-0 flex-1">
-                                    <HotGrid key="pane1" sheetId={activeSheetId} pane={1} />
-                                </div>
-                            </div>
-                            {splitSheetId && (
+                {view === "decision" ? (
+                    <DecisionView key={roundId} />
+                ) : (
+                    <>
+                        <Sidebar />
+                        <main
+                            // isolate: trap Handsontable's frozen-header clone layers (z-index up
+                            // to ~1060) in their own stacking context so they can't punch through
+                            // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
+                            className="no-print relative isolate flex min-w-0 flex-1 overflow-hidden pb-7"
+                            data-testid="workspace-content"
+                        >
+                            {activeSheetId ? (
                                 <>
-                                    <div className="border-border w-px shrink-0 border-l" />
+                                    {/* Same element/position in single and split mode so toggling
+                                    split never remounts pane 1's live HotGrid. */}
                                     <div
-                                        data-testid="pane-2"
+                                        data-testid="pane-1"
                                         className="flex min-w-0 flex-1 flex-col overflow-hidden"
                                     >
                                         <SheetTitleBar
-                                            sheetId={splitSheetId}
-                                            title={titleOf(splitSheetId)}
-                                            side={sideOf(splitSheetId)}
-                                            tabLabel="Tab 2"
-                                            focused={focusedPane === 2}
+                                            sheetId={activeSheetId}
+                                            title={titleOf(activeSheetId)}
+                                            side={sideOf(activeSheetId)}
+                                            tabLabel={splitSheetId ? "Tab 1" : undefined}
+                                            focused={splitSheetId ? focusedPane === 1 : undefined}
                                         />
                                         <div className="min-h-0 flex-1">
-                                            <HotGrid key="pane2" sheetId={splitSheetId} pane={2} />
+                                            <HotGrid key="pane1" sheetId={activeSheetId} pane={1} />
                                         </div>
                                     </div>
+                                    {splitSheetId && (
+                                        <>
+                                            <div className="border-border w-px shrink-0 border-l" />
+                                            <div
+                                                data-testid="pane-2"
+                                                className="flex min-w-0 flex-1 flex-col overflow-hidden"
+                                            >
+                                                <SheetTitleBar
+                                                    sheetId={splitSheetId}
+                                                    title={titleOf(splitSheetId)}
+                                                    side={sideOf(splitSheetId)}
+                                                    tabLabel="Tab 2"
+                                                    focused={focusedPane === 2}
+                                                />
+                                                <div className="min-h-0 flex-1">
+                                                    <HotGrid
+                                                        key="pane2"
+                                                        sheetId={splitSheetId}
+                                                        pane={2}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </>
+                            ) : (
+                                <div className="text-muted-foreground w-full p-6 text-[13px]">
+                                    No sheet selected. Choose one from the sidebar, or add a sheet
+                                    with{" "}
+                                    <span className="text-foreground font-medium">
+                                        + {sides.aff.label}
+                                    </span>{" "}
+                                    /{" "}
+                                    <span className="text-foreground font-medium">
+                                        + {sides.neg.label}
+                                    </span>
+                                    .
+                                </div>
                             )}
-                        </>
-                    ) : (
-                        <div className="text-muted-foreground w-full p-6 text-[13px]">
-                            No sheet selected. Choose one from the sidebar, or add a sheet with{" "}
-                            <span className="text-foreground font-medium">+ {sides.aff.label}</span>{" "}
-                            /{" "}
-                            <span className="text-foreground font-medium">+ {sides.neg.label}</span>
-                            .
-                        </div>
-                    )}
-                    <SpeechTimeStatus />
-                </main>
+                            <SpeechTimeStatus />
+                        </main>
+                    </>
+                )}
             </div>
-            {rfdOpen && roundId && <RfdDrawer key={roundId} />}
+            {/* The decision view carries its own RFD editor, and two at once would
+                    each keep the notes as they stood when it mounted. */}
+            {view === "flow" && rfdOpen && roundId && <RfdDrawer key={roundId} />}
             <SearchPalette />
             <InfoPanel />
             <KeybindingsCheatsheet />
