@@ -539,6 +539,26 @@ describe("speech alignment", () => {
         press(hot, " ", { ctrlKey: true, shiftKey: true });
         expect(hot.getSelectedLast()).toEqual([0, 1, hot.countRows() - 1, hot.countCols() - 1]);
     });
+
+    it("keeps Tab in the grid at either edge of the sheet", async () => {
+        const hot = await mount(negSheet.id, true);
+        const last = hot.countCols() - 1;
+        for (const [col, shiftKey] of [
+            [last, false],
+            [1, true],
+        ] as const) {
+            hot.selectCell(0, col);
+            const e = new KeyboardEvent("keydown", {
+                key: "Tab",
+                shiftKey,
+                bubbles: true,
+                cancelable: true,
+            });
+            hot.rootElement.dispatchEvent(e);
+            expect(e.defaultPrevented).toBe(true);
+            expect(hot.getSelectedRangeLast()!.highlight.col).toBe(col);
+        }
+    });
 });
 
 /**

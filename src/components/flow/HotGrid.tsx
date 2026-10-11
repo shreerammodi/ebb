@@ -1258,12 +1258,16 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 const shiftLeft = e.key === "ArrowLeft" || e.key === "Home";
                 const edge = e.shiftKey && shiftLeft ? range.to : range.highlight;
                 const mod = e.metaKey || e.ctrlKey;
-                // At the sheet's own first column Shift+Tab has nowhere to
-                // move inside the grid, so Handsontable lets the browser tab
-                // focus out to the previous tabbable element (a sidebar
-                // sheet). stopImmediate is what also keeps the chord off
+                // At the sheet's own first column Shift+Tab, and at its last
+                // column Tab, has nowhere to move inside the grid, so
+                // Handsontable lets the browser tab focus out to a neighboring
+                // tabbable element (a sidebar sheet, or past the grid
+                // entirely). stopImmediate is what also keeps the chord off
                 // useKeymap's window listener.
-                if (e.key === "Tab" && e.shiftKey && edge.col === pad) {
+                const tabOut =
+                    e.key === "Tab" &&
+                    (e.shiftKey ? edge.col === pad : edge.col === hot.countCols() - 1);
+                if (tabOut) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     return false;
