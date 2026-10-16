@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { executeCommand } from "@/lib/commands/commands";
 import { GRID_SCOPED, type CommandId } from "@/lib/commands/registry";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+import { isDesktop } from "@/lib/update/adapter";
 
 import { effectiveKeymap as computeEffectiveKeymap } from "./effective";
 import {
@@ -13,6 +14,7 @@ import {
     isGridEditorFocus,
     isNativeEditingChord,
 } from "./intercept";
+import { runNativeEditActionForChord } from "./nativeEdit";
 import { resolveCommand, eventToChord } from "./resolve";
 
 /** Returns the keymap currently in effect: flat preset merged with user overrides. */
@@ -48,9 +50,32 @@ export function useKeymap(): void {
             const inTextField = isTextEntryFocus(e.target);
             if (inTextField) {
                 pendingPrefix = null;
-                // Native editing chords (Meta+A/C/V/X/Z, copy, paste, undo, etc.)
-                // must pass through to the browser - do not intercept them.
-                if (isNativeEditingChord(e)) return;
+                // Native editing chords (Meta+A/C/V/X/Z, copy, paste, undo,
+                // etc.) must pass through to the browser - do not intercept
+                // them. Where the shell's Edit-menu accelerator consumed the
+                // chord this handler never sees it; where it did not - the
+                // GTK backend can end up with replaced accelerators never
+                // installed (see nativeEdit.ts) - the webview has to perform
+                // the reserved edit itself or the chord does nothing while a
+                // text field is focused. Copy/cut/paste and the caret jumps
+                // fall out of the action lookup and stay with the browser.
+                if (isNativeEditingChord(e)) {
+                    if (isDesktop()) {
+                        const chord = eventToChord({
+                            key: e.key,
+                            metaKey: e.metaKey,
+                            ctrlKey: e.ctrlKey,
+                            altKey: e.altKey,
+                            shiftKey: e.shiftKey,
+                        });
+                        if (runNativeEditActionForChord(chord, e.target as HTMLElement)) {
+                            // The action ran here; keep the engine's own
+                            // default from applying a second copy of it.
+                            e.preventDefault();
+                        }
+                    }
+                    return;
+                }
                 if (!(e.metaKey || e.ctrlKey || e.altKey)) return;
             }
 

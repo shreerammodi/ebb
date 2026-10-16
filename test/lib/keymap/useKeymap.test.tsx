@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { act } from "react";
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 import type * as CommandsModule from "@/lib/commands/commands";
 import { useKeymap } from "@/lib/keymap/useKeymap";
@@ -120,6 +120,132 @@ describe("useKeymap", () => {
 
         expect(useFlowStore.getState().cheatsheetOpen).toBe(false);
         textarea.remove();
+    });
+});
+
+describe("useKeymap native editing chords", () => {
+    let execCommand: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        document.body.innerHTML = "";
+        useFlowStore.setState({ round: null, activeSheetId: null, keymapOverrides: {} });
+        freshRound();
+        execCommand = vi.fn();
+        document.execCommand = execCommand as unknown as typeof document.execCommand;
+    });
+
+    afterEach(() => {
+        delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+    });
+
+    function desktop(): void {
+        (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+    }
+
+    function focus(tag: "input" | "textarea", className?: string): HTMLElement {
+        const el = document.createElement(tag);
+        if (className) el.className = className;
+        document.body.appendChild(el);
+        el.focus();
+        return el;
+    }
+
+    it("performs the native undo for the modifier+z chord in the cell editor", () => {
+        desktop();
+        render(<Harness />);
+        const editor = focus("textarea", "handsontableInput");
+        dispatchKey("z", MOD, editor);
+        expect(execCommand).toHaveBeenCalledWith("undo");
+        // The grid behind the editor does not also undo.
+        expect(executeCommand).not.toHaveBeenCalled();
+        editor.remove();
+    });
+
+    it("performs the native undo for a chrome text field too", () => {
+        desktop();
+        render(<Harness />);
+        const input = focus("input");
+        dispatchKey("z", MOD, input);
+        expect(execCommand).toHaveBeenCalledWith("undo");
+        expect(executeCommand).not.toHaveBeenCalled();
+        input.remove();
+    });
+
+    it("prevents the engine's default once the native edit ran", () => {
+        desktop();
+        render(<Harness />);
+        const editor = focus("textarea", "handsontableInput");
+        const event = new KeyboardEvent("keydown", {
+            key: "z",
+            bubbles: true,
+            cancelable: true,
+            ...MOD,
+        });
+        act(() => {
+            editor.dispatchEvent(event);
+        });
+        expect(event.defaultPrevented).toBe(true);
+        editor.remove();
+    });
+
+    it("leaves the native undo to the browser on the web build", () => {
+        render(<Harness />);
+        const editor = focus("textarea", "handsontableInput");
+        const event = new KeyboardEvent("keydown", {
+            key: "z",
+            bubbles: true,
+            cancelable: true,
+            ...MOD,
+        });
+        act(() => {
+            editor.dispatchEvent(event);
+        });
+        expect(execCommand).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+        editor.remove();
+    });
+
+    it("stays out of the clipboard chords while typing", () => {
+        desktop();
+        render(<Harness />);
+        const editor = focus("textarea", "handsontableInput");
+        const event = new KeyboardEvent("keydown", {
+            key: "c",
+            bubbles: true,
+            cancelable: true,
+            ...MOD,
+        });
+        act(() => {
+            editor.dispatchEvent(event);
+        });
+        expect(execCommand).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
+        editor.remove();
+    });
+
+    it("deletes to line start on modifier+Backspace instead of deleting the row", () => {
+        desktop();
+        render(<Harness />);
+        const editor = focus("textarea", "handsontableInput") as HTMLTextAreaElement;
+        editor.value = "line1\nline2";
+        editor.setSelectionRange(9, 9);
+        dispatchKey("Backspace", MOD, editor);
+        expect(execCommand).toHaveBeenCalledWith("delete");
+        expect(editor.selectionStart).toBe(6);
+        expect(executeCommand).not.toHaveBeenCalled();
+        editor.remove();
+    });
+
+    it("selects the editor's text on select-all instead of adding a sheet", () => {
+        desktop();
+        render(<Harness />);
+        const editor = focus("textarea", "handsontableInput") as HTMLTextAreaElement;
+        const select = vi.spyOn(editor, "select");
+        dispatchKey("a", MOD, editor);
+        expect(select).toHaveBeenCalledTimes(1);
+        expect(executeCommand).not.toHaveBeenCalled();
+        editor.remove();
     });
 });
 
