@@ -12,6 +12,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+use notify::event::EventKind;
 use notify::{RecursiveMode, Watcher};
 use serde_json::Value as Json;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State, WebviewWindow};
@@ -240,6 +241,18 @@ fn on_file_event(app: &AppHandle, path: &Path, last: &LastSeen) {
     let _ = app.emit("config:changed", json);
 }
 
+/// Whether a watcher event can mean the file's bytes changed.
+///
+/// Opening the file for the read every event triggers raises an
+/// `Access(Open)` event of its own on the watched directory, so a callback
+/// that reacted to every kind would re-trigger itself: each read feeds the
+/// watcher the next event, and the thread re-reads the file in a tight loop
+/// for as long as the app runs. Only the kinds that can carry new bytes
+/// answer the question the watcher is asking.
+fn is_content_change(kind: &EventKind) -> bool {
+    matches!(kind, EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_))
+}
+
 /// Sets up the config file and its watcher. Silently no-ops if the config dir
 /// can't be resolved (e.g. no HOME) - config sync is a convenience, never fatal.
 pub fn init(app: &AppHandle) {
@@ -265,7 +278,7 @@ pub fn init(app: &AppHandle) {
     let watch_path = path.clone();
     let watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
         if let Ok(event) = res {
-            if event.paths.iter().any(|p| *p == watch_path) {
+            if is_content_change(&event.kind) && event.paths.iter().any(|p| *p == watch_path) {
                 on_file_event(&app_handle, &watch_path, &last);
             }
         }
@@ -318,6 +331,22 @@ mod tests {
         let out = render_toml(Some(existing), &json!({ "theme": "dark" })).unwrap();
         assert!(out.contains("my_custom = 3"), "unknown key kept: {out}");
         assert!(out.contains("# personal"));
+    }
+
+    /// Every read the watcher performed feeds the watcher an open event of
+    /// its own, so a callback that reacted to every kind re-triggered itself:
+    /// a tight read loop that burned a core for as long as the app ran. Only
+    /// content-bearing kinds wake the callback now.
+    #[test]
+    fn only_content_events_wake_the_watcher() {
+        use notify::event::{AccessKind, AccessMode, CreateKind, DataChange, ModifyKind, RemoveKind};
+
+        assert!(!is_content_change(&EventKind::Access(AccessKind::Open(AccessMode::Any))));
+        assert!(!is_content_change(&EventKind::Access(AccessKind::Close(AccessMode::Write))));
+        assert!(!is_content_change(&EventKind::Any));
+        assert!(is_content_change(&EventKind::Create(CreateKind::File)));
+        assert!(is_content_change(&EventKind::Modify(ModifyKind::Data(DataChange::Any))));
+        assert!(is_content_change(&EventKind::Remove(RemoveKind::File)));
     }
 
     #[test]
