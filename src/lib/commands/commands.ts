@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 import { runJumpToSource, runSendToDoc } from "@/lib/bridge/commands";
 import { recordOp } from "@/lib/collab/replica";
+import { argMarkerLength, formatArgMarker, nextArgNumber } from "@/lib/grid/argNumber";
 import { insertCell as insertCellChanges } from "@/lib/grid/cellShift";
 import {
     BOLD_CLASS,
@@ -31,6 +32,7 @@ import {
     getActiveSpacers,
     getHotContext,
     notifyGridMutated,
+    textareaOf,
 } from "@/lib/grid/hotInstance";
 import { attachMetaUndo, snapshotClasses, type ClassEntry } from "@/lib/grid/metaUndo";
 import { beginMove } from "@/lib/grid/moveSession";
@@ -186,6 +188,41 @@ function runInsertCell(where: "at" | "below"): void {
     // cursor, so a null here opens nothing.
     const at = toModelCol(col, getActiveSpacers());
     if (sheetId && at !== null) recordOp({ kind: "insertCell", sheetId, col: at, row });
+}
+
+/**
+ * Writes the next argument number at the head of the cursor's cell, counting
+ * on from the nearest marker above it in the same column. A cell that already
+ * opens with a marker has it replaced, so a second press renumbers. The cell
+ * is left open in its editor, so the debater types the argument straight
+ * after it; an editor already open keeps what was typed and where the caret
+ * was.
+ */
+function runNumberArg(): void {
+    const hot = getActiveHot();
+    const sel = hot?.getSelectedLast();
+    const editor = hot?.getActiveEditor();
+    if (!hot || !sel || !editor) return;
+    const [row, col] = sel;
+    if (hot.getCellMeta(row, col).readOnly) return;
+    const { round, argMarker } = useFlowStore.getState();
+    const sheet = round?.sheets.find((s) => s.id === getActiveSheetId());
+    const at = toModelCol(gridCol(col), getActiveSpacers());
+    if (!round || !sheet || at === null) return;
+    const speech = columnsForFlowSheet(round, sheet)[at]?.short;
+    if (!speech) return;
+
+    const n = nextArgNumber(hot.getDataAtCol(col), row, argMarker, speech);
+    const marker = formatArgMarker(argMarker, speech, n);
+    const open = editor.isOpened();
+    const current = String((open ? editor.getValue() : hot.getDataAtCell(row, col)) ?? "");
+    const caret = open ? (textareaOf(editor)?.selectionStart ?? current.length) : current.length;
+    const head = argMarkerLength(current, argMarker, speech);
+
+    if (!open) editor.beginEditing();
+    editor.setValue(marker + current.slice(head));
+    const pos = marker.length + Math.max(caret - head, 0);
+    textareaOf(editor)?.setSelectionRange(pos, pos);
 }
 
 function restoreExtensionMeta(grid: Handsontable, targetCol: GridCol, entries: ClassEntry[]): void {
@@ -453,6 +490,9 @@ export function executeCommand(id: CommandId): void {
             return;
         case "cell.extend":
             runExtend();
+            return;
+        case "cell.numberArg":
+            runNumberArg();
             return;
 
         // --- CardMirror -------------------------------------------------------

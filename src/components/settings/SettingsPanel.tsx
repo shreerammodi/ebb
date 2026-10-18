@@ -46,6 +46,7 @@ import type { ThemeMode } from "@/lib/theme/mode";
 import { isDesktop } from "@/lib/update/adapter";
 import { cn } from "@/lib/utils";
 
+import ArgMarkerSection from "./ArgMarkerSection";
 import FlowsFolderControl from "./FlowsFolderControl";
 import SettingRow from "./SettingRow";
 import UpdateSettings from "./UpdateSettings";
@@ -605,6 +606,7 @@ export default function SettingsPanel() {
                                     description="Where new flows are filed. Existing files stay where they are."
                                     control={<FlowsFolderControl />}
                                 />
+                                <ArgMarkerSection />
                                 {isDesktop() && (
                                     <section
                                         className="mt-4 flex flex-col"

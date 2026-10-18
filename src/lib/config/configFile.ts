@@ -47,6 +47,8 @@ export interface ConfigFileShape {
     insert_paste: boolean;
     /** Typing on a cell adds to its text instead of replacing it. */
     append_edit: boolean;
+    /** The argument number template; empty follows the built-in default. */
+    arg_marker: string;
     /** Enter on the cross-ex sheet alternates between a period's two columns. */
     cx_enter_alternates: boolean;
     scroll_zoom: boolean;
@@ -149,6 +151,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         decision_speeches: s.decisionSpeeches,
         insert_paste: s.insertPaste,
         append_edit: s.appendEdit,
+        arg_marker: s.argMarker,
         cx_enter_alternates: s.cxEnterAlternates,
         scroll_zoom: s.scrollZoom,
         align_speeches: s.alignSpeeches,
@@ -213,6 +216,7 @@ export function toAppConfig(raw: unknown): AppConfig {
         decisionSpeeches: resolveDecisionSpeeches(o.decision_speeches),
         insertPaste: bool(o.insert_paste, false),
         appendEdit: bool(o.append_edit, true),
+        argMarker: typeof o.arg_marker === "string" ? o.arg_marker : "",
         cxEnterAlternates: bool(o.cx_enter_alternates, false),
         scrollZoom: bool(o.scroll_zoom, true),
         alignSpeeches: bool(o.align_speeches, false),

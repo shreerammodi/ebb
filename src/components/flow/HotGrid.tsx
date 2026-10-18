@@ -51,7 +51,7 @@ import {
     spacerCount,
     type SpeechCol,
 } from "@/lib/grid/flowColumns";
-import { getActiveHot, registerHot, setActiveHot } from "@/lib/grid/hotInstance";
+import { getActiveHot, registerHot, setActiveHot, textareaOf } from "@/lib/grid/hotInstance";
 import {
     attachMetaUndo,
     rebaseUndoStacks,
@@ -206,17 +206,6 @@ function reselectMovingBlock(hot: Handsontable): void {
 function pasteCols(hot: Handsontable, { col, width }: PasteShift): GridCol[] {
     const last = Math.min(col + width, hot.countCols());
     return Array.from({ length: Math.max(last - col, 0) }, (_, i) => gridCol(col + i));
-}
-
-/**
- * The box a text editor types into, when the active editor is one. Named on
- * the text editor and on nothing this build's editors share, so it is read
- * off the object rather than the type.
- */
-function textareaOf(editor: Handsontable.editors.BaseEditor): HTMLTextAreaElement | null {
-    if (!("TEXTAREA" in editor)) return null;
-    const box: unknown = editor.TEXTAREA;
-    return box instanceof HTMLTextAreaElement ? box : null;
 }
 
 /**
@@ -1219,6 +1208,16 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             // (Meta+Tab, Meta+N, a save panel) stays held and every arrow adds a
             // selection layer. This event's own flags are the truth.
             if (!e.ctrlKey && !e.metaKey) hot?.getShortcutManager().releasePressedKeys();
+            // A Ctrl/Meta+Enter bound to a command is that command, in a cell
+            // or in its editor. Handsontable answers the chord in both
+            // contexts by filling the selected range with the active cell's
+            // value, which would write one argument over every cell selected.
+            // stopImmediate keeps useKeymap from firing the command again.
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && runBoundCommand(e)) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+            }
             if (hot?.getActiveEditor()?.isOpened()) {
                 // Escape abandons the edit and moves nothing, so nothing else
                 // announces the close. The grid's own handler runs after this

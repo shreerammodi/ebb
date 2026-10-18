@@ -96,3 +96,14 @@ export function focusActiveHot(): boolean {
     active.selectCell(sel?.[0] ?? 0, sel?.[1] ?? activeSpacers);
     return true;
 }
+
+/**
+ * The box a text editor types into, when the active editor is one. Named on
+ * the text editor and on nothing this build's editors share, so it is read
+ * off the object rather than the type.
+ */
+export function textareaOf(editor: Handsontable.editors.BaseEditor): HTMLTextAreaElement | null {
+    if (!("TEXTAREA" in editor)) return null;
+    const box: unknown = editor.TEXTAREA;
+    return box instanceof HTMLTextAreaElement ? box : null;
+}

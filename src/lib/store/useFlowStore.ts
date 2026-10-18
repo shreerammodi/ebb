@@ -131,6 +131,11 @@ export interface FlowState {
      */
     appendEdit: boolean;
     /**
+     * The template Insert argument number writes, in `%Speech%` and
+     * `%Number%` tokens. Empty follows DEFAULT_ARG_MARKER.
+     */
+    argMarker: string;
+    /**
      * On the cross-ex sheet, Enter walks a period's pair of columns in
      * speaking order: from the left column to the right one on the same row,
      * and from the right one to the left one a row down. Off, Enter moves down.
@@ -253,6 +258,7 @@ export interface FlowActions {
     setRfdVim(on: boolean): void;
     setInsertPaste(on: boolean): void;
     setAppendEdit(on: boolean): void;
+    setArgMarker(template: string): void;
     setCxEnterAlternates(on: boolean): void;
     setScrollZoom(on: boolean): void;
     setAlignSpeeches(on: boolean): void;
@@ -382,6 +388,7 @@ interface DisplaySettings {
     decisionSpeeches: number;
     insertPaste: boolean;
     appendEdit: boolean;
+    argMarker: string;
     cxEnterAlternates: boolean;
     scrollZoom: boolean;
     alignSpeeches: boolean;
@@ -433,6 +440,7 @@ function loadDisplaySettings(): DisplaySettings {
         decisionSpeeches: DECISION_SPEECHES_DEFAULT,
         insertPaste: false,
         appendEdit: true,
+        argMarker: "",
         cxEnterAlternates: false,
         scrollZoom: true,
         alignSpeeches: false,
@@ -467,6 +475,7 @@ function loadDisplaySettings(): DisplaySettings {
             decisionSpeeches: resolveDecisionSpeeches(p.decisionSpeeches),
             insertPaste: bool(p.insertPaste, false),
             appendEdit: bool(p.appendEdit, true),
+            argMarker: typeof p.argMarker === "string" ? p.argMarker : "",
             cxEnterAlternates: bool(p.cxEnterAlternates, false),
             scrollZoom: bool(p.scrollZoom, true),
             alignSpeeches: bool(p.alignSpeeches, false),
@@ -512,6 +521,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
         decisionSpeeches: s.decisionSpeeches,
         insertPaste: s.insertPaste,
         appendEdit: s.appendEdit,
+        argMarker: s.argMarker,
         cxEnterAlternates: s.cxEnterAlternates,
         scrollZoom: s.scrollZoom,
         alignSpeeches: s.alignSpeeches,
@@ -620,6 +630,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     decisionPanels: {},
     insertPaste: initialDisplaySettings.insertPaste,
     appendEdit: initialDisplaySettings.appendEdit,
+    argMarker: initialDisplaySettings.argMarker,
     cxEnterAlternates: initialDisplaySettings.cxEnterAlternates,
     scrollZoom: initialDisplaySettings.scrollZoom,
     alignSpeeches: initialDisplaySettings.alignSpeeches,
@@ -962,6 +973,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setInsertPaste: (on) => persistDisplay(set, get, { insertPaste: on }),
 
     setAppendEdit: (on) => persistDisplay(set, get, { appendEdit: on }),
+
+    setArgMarker: (template) => persistDisplay(set, get, { argMarker: template }),
 
     setCxEnterAlternates: (on) => persistDisplay(set, get, { cxEnterAlternates: on }),
 

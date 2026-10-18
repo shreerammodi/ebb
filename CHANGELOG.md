@@ -7,6 +7,15 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Added
+
+- **Insert argument number (Meta+Enter, Ctrl+Enter off Mac).** Writes the
+  next marker, such as "2AC #3", at the start of the cell, counting on from
+  the nearest marker above it in the same column. Pressing it on a cell that
+  already starts with a marker renumbers that marker. Settings > Editor sets
+  what the marker says, with %Speech% and %Number% standing for the speech
+  and the count.
+
 ## [1.5.0] - 2026-11-03
 
 ### Added

@@ -338,6 +338,104 @@ describe("argument extension", () => {
  * Aligning gives a sheet one inert column per speech it does not show, so the
  * same speech lands at the same place on every sheet of the round.
  */
+describe("argument numbers", () => {
+    afterEach(() => {
+        useFlowStore.setState({
+            round: null,
+            activeSheetId: null,
+            splitSheetId: null,
+            argMarker: "",
+        });
+    });
+
+    /** An aff sheet whose 2AC column, grid column 2, already holds two markers. */
+    async function numbered() {
+        const round = makeFlowRound();
+        const sheet = round.sheets[1];
+        sheet.data = [
+            [null, null, "2AC #1 no link"],
+            [null, null, "extends the card"],
+            [null, null, "2AC #2 perm"],
+        ];
+        useFlowStore.getState().loadRound(round, { activeSheetId: sheet.id });
+        useFlowStore.setState({ splitSheetId: null, alignSpeeches: false });
+        render(<HotGrid sheetId={sheet.id} pane={1} />);
+        return mounted();
+    }
+
+    const box = () => document.querySelector<HTMLTextAreaElement>("textarea.handsontableInput")!;
+
+    it("opens the cell on the next marker, counting on from the one above", async () => {
+        const hot = await numbered();
+        hot.selectCell(4, 2);
+
+        act(() => executeCommand("cell.numberArg"));
+
+        expect(hot.getActiveEditor()!.isOpened()).toBe(true);
+        expect(box().value).toBe("2AC #3 ");
+        expect(box().selectionStart).toBe(7);
+        // A cell committed with the marker alone keeps no trailing space.
+        act(() => hot.getActiveEditor()!.finishEditing());
+        expect(hot.getDataAtCell(4, 2)).toBe("2AC #3");
+    });
+
+    it("puts the marker at the head of text already being typed", async () => {
+        const hot = await numbered();
+        typeInto(hot, 3, 2, "non-unique");
+        box().setSelectionRange(10, 10);
+
+        act(() => executeCommand("cell.numberArg"));
+
+        expect(box().value).toBe("2AC #3 non-unique");
+        expect(box().selectionStart).toBe(17);
+    });
+
+    it("follows the template in Settings, adding no space of its own", async () => {
+        const hot = await numbered();
+        useFlowStore.setState({ argMarker: "%Number%." });
+        hot.selectCell(4, 2);
+
+        act(() => executeCommand("cell.numberArg"));
+
+        expect(box().value).toBe("1.");
+    });
+
+    it("renumbers a cell that already opens with a marker", async () => {
+        const hot = await numbered();
+        typeInto(hot, 3, 2, "2AC #9 non-unique");
+        box().setSelectionRange(17, 17);
+
+        act(() => executeCommand("cell.numberArg"));
+
+        expect(box().value).toBe("2AC #3 non-unique");
+        expect(box().selectionStart).toBe(17);
+
+        act(() => executeCommand("cell.numberArg"));
+        expect(box().value).toBe("2AC #3 non-unique");
+    });
+
+    it("answers Meta/Ctrl+Enter in the editor instead of filling the selection", async () => {
+        const hot = await numbered();
+        hot.selectCell(4, 2);
+        hot.getActiveEditor()!.beginEditing();
+
+        const mac = /Mac/.test(navigator.platform);
+        act(() => {
+            box().dispatchEvent(
+                new KeyboardEvent("keydown", {
+                    key: "Enter",
+                    metaKey: mac,
+                    ctrlKey: !mac,
+                    bubbles: true,
+                }),
+            );
+        });
+
+        expect(hot.getActiveEditor()!.isOpened()).toBe(true);
+        expect(box().value).toBe("2AC #3 ");
+    });
+});
+
 describe("speech alignment", () => {
     const round = makeFlowRound();
     // makeFlowRound opens a policy round with the cx sheet first and one aff

@@ -44,6 +44,7 @@ const LETTER_BINDINGS: Record<Chord, CommandId> = (() => {
         [`${mod}+o`]: "cell.insert",
         [`${mod}+Alt+o`]: "cell.insertBelow",
         [`${mod}+e`]: "cell.extend",
+        [`${mod}+Enter`]: "cell.numberArg",
         [`${mod}+E`]: "cell.sendToDoc",
         // Bare Meta+m is the Tauri window's native minimize chord, so the move
         // mode takes the shifted one. eventToChord encodes shift in the letter's

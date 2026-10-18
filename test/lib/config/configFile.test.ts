@@ -20,6 +20,7 @@ const sample: AppConfig = {
     decisionSpeeches: 3,
     insertPaste: true,
     appendEdit: false,
+    argMarker: "%Number%.",
     cxEnterAlternates: true,
     scrollZoom: false,
     alignSpeeches: true,
@@ -54,6 +55,7 @@ describe("configFromState -> toAppConfig round-trip", () => {
         expect(file.sidebar_width).toBe(312);
         expect(file.rfd_vim).toBe(true);
         expect(file.cardmirror_space_arguments).toBe(true);
+        expect(file.arg_marker).toBe("%Number%.");
         expect(file.neg_color).toBeNull();
         expect(file.update.auto_check_enabled).toBe(true);
     });
