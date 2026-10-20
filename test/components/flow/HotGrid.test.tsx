@@ -436,6 +436,66 @@ describe("argument numbers", () => {
     });
 });
 
+describe("skip down", () => {
+    afterEach(() => {
+        useFlowStore.setState({
+            round: null,
+            activeSheetId: null,
+            splitSheetId: null,
+            skipRows: 3,
+        });
+    });
+
+    async function sheet() {
+        const round = makeFlowRound();
+        const s = round.sheets[1];
+        useFlowStore.getState().loadRound(round, { activeSheetId: s.id });
+        useFlowStore.setState({ splitSheetId: null, alignSpeeches: false });
+        render(<HotGrid sheetId={s.id} pane={1} />);
+        return mounted();
+    }
+
+    const press = () => {
+        const mac = /Mac/.test(navigator.platform);
+        const target =
+            document.querySelector<HTMLTextAreaElement>("textarea.handsontableInput") ??
+            document.body;
+        act(() => {
+            target.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                    key: "Enter",
+                    shiftKey: true,
+                    metaKey: mac,
+                    ctrlKey: !mac,
+                    bubbles: true,
+                }),
+            );
+        });
+    };
+
+    it("commits the open edit and moves down the rows set in Settings", async () => {
+        const hot = await sheet();
+        useFlowStore.setState({ skipRows: 4 });
+        typeInto(hot, 1, 2, "no link");
+
+        press();
+
+        expect(hot.getDataAtCell(1, 2)).toBe("no link");
+        expect(hot.getActiveEditor()!.isOpened()).toBe(false);
+        expect(hot.getSelectedLast()!.slice(0, 2)).toEqual([5, 2]);
+    });
+
+    it("stops at the last row", async () => {
+        const hot = await sheet();
+        const last = hot.countRows() - 1;
+        hot.selectCell(last - 1, 0);
+
+        act(() => executeCommand("cell.skipDown"));
+
+        expect(hot.getSelectedLast()![0]).toBe(last);
+    });
+});
+
 describe("speech alignment", () => {
     const round = makeFlowRound();
     // makeFlowRound opens a policy round with the cx sheet first and one aff

@@ -69,6 +69,7 @@ const GROUPS: { label: string; rows: { commandId: CommandId }[] }[] = [
             { commandId: "format.toggleKicked" as CommandId },
             { commandId: "cell.extend" as CommandId },
             { commandId: "cell.numberArg" as CommandId },
+            { commandId: "cell.skipDown" as CommandId },
         ],
     },
     {

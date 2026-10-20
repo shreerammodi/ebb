@@ -15,6 +15,10 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   already starts with a marker renumbers that marker. Settings > Editor sets
   what the marker says, with %Speech% and %Number% standing for the speech
   and the count.
+- **Skip down (Meta+Shift+Enter, Ctrl+Shift+Enter off Mac).** Commits the
+  cell being typed in and moves the cursor down several rows, leaving room for
+  the answers the next speech puts beside it. Settings > Editor sets how many
+  rows, 3 by default.
 
 ## [1.5.0] - 2026-11-03
 

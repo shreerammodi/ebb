@@ -225,6 +225,21 @@ function runNumberArg(): void {
     textareaOf(editor)?.setSelectionRange(pos, pos);
 }
 
+/**
+ * Commits the open edit and moves the cursor down the rows set in Settings,
+ * leaving them empty for the answers the next speech will put beside the
+ * cell. It stops at the last row; a sheet opens with hundreds, so a debater
+ * flowing down one never reaches it.
+ */
+function runSkipDown(): void {
+    const hot = getActiveHot();
+    const sel = hot?.getSelectedLast();
+    if (!hot || !sel) return;
+    commitOpenEdit();
+    const row = Math.min(sel[0] + useFlowStore.getState().skipRows, hot.countRows() - 1);
+    hot.selectCell(row, sel[1]);
+}
+
 function restoreExtensionMeta(grid: Handsontable, targetCol: GridCol, entries: ClassEntry[]): void {
     for (let row = 0; row < grid.countRows(); row++) {
         grid.setCellMeta(row, targetCol, "className", "");
@@ -493,6 +508,9 @@ export function executeCommand(id: CommandId): void {
             return;
         case "cell.numberArg":
             runNumberArg();
+            return;
+        case "cell.skipDown":
+            runSkipDown();
             return;
 
         // --- CardMirror -------------------------------------------------------

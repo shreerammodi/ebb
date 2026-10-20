@@ -23,6 +23,7 @@ import {
     resolveColor,
     resolveDecisionSpeeches,
     resolveSidebarWidth,
+    resolveSkipRows,
     resolveSpeakingWpm,
     resolveZoom,
     useFlowStore,
@@ -49,6 +50,8 @@ export interface ConfigFileShape {
     append_edit: boolean;
     /** The argument number template; empty follows the built-in default. */
     arg_marker: string;
+    /** How many rows Skip down moves the cursor. */
+    skip_rows: number;
     /** Enter on the cross-ex sheet alternates between a period's two columns. */
     cx_enter_alternates: boolean;
     scroll_zoom: boolean;
@@ -152,6 +155,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         insert_paste: s.insertPaste,
         append_edit: s.appendEdit,
         arg_marker: s.argMarker,
+        skip_rows: s.skipRows,
         cx_enter_alternates: s.cxEnterAlternates,
         scroll_zoom: s.scrollZoom,
         align_speeches: s.alignSpeeches,
@@ -217,6 +221,7 @@ export function toAppConfig(raw: unknown): AppConfig {
         insertPaste: bool(o.insert_paste, false),
         appendEdit: bool(o.append_edit, true),
         argMarker: typeof o.arg_marker === "string" ? o.arg_marker : "",
+        skipRows: resolveSkipRows(o.skip_rows),
         cxEnterAlternates: bool(o.cx_enter_alternates, false),
         scrollZoom: bool(o.scroll_zoom, true),
         alignSpeeches: bool(o.align_speeches, false),

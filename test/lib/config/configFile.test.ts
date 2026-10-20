@@ -21,6 +21,7 @@ const sample: AppConfig = {
     insertPaste: true,
     appendEdit: false,
     argMarker: "%Number%.",
+    skipRows: 5,
     cxEnterAlternates: true,
     scrollZoom: false,
     alignSpeeches: true,
@@ -56,12 +57,18 @@ describe("configFromState -> toAppConfig round-trip", () => {
         expect(file.rfd_vim).toBe(true);
         expect(file.cardmirror_space_arguments).toBe(true);
         expect(file.arg_marker).toBe("%Number%.");
+        expect(file.skip_rows).toBe(5);
         expect(file.neg_color).toBeNull();
         expect(file.update.auto_check_enabled).toBe(true);
     });
 
     it("defaults speech alignment off when the file does not name it", () => {
         expect(toAppConfig({}).alignSpeeches).toBe(false);
+    });
+
+    it("clamps a hand-edited skip count and defaults a missing one", () => {
+        expect(toAppConfig({ skip_rows: 500 }).skipRows).toBe(50);
+        expect(toAppConfig({}).skipRows).toBe(3);
     });
 
     it("defaults append mode on when the file does not name it", () => {

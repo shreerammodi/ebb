@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 import ArgMarkerSection from "./ArgMarkerSection";
 import FlowsFolderControl from "./FlowsFolderControl";
 import SettingRow from "./SettingRow";
+import SkipRowsRow from "./SkipRowsRow";
 import UpdateSettings from "./UpdateSettings";
 
 const THEME_OPTIONS: { id: ThemeMode; label: string }[] = [
@@ -589,6 +590,7 @@ export default function SettingsPanel() {
                                         />
                                     }
                                 />
+                                <SkipRowsRow />
                                 <SettingRow
                                     title="Vim keybindings"
                                     description="Applies only to the RFD editor."
