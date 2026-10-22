@@ -13,6 +13,14 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   `.deb`, so an AUR helper installs ebb and `pacman -Syu` keeps it current.
   Update checks in the app stay off for a package-managed install.
 
+### Changed
+
+- **ebb listens for CardMirror only while CardMirror is running.** The local
+  port CardMirror sends cards to opened at every launch, so a debater who never
+  used CardMirror still had ebb serving a port, which antivirus heuristics can
+  read as a backdoor. ebb now opens it within a few seconds of CardMirror
+  starting, and not at all otherwise.
+
 ## [1.4.2] - 2026-10-17
 
 ### Changed

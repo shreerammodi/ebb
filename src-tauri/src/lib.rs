@@ -89,7 +89,8 @@ pub fn run() {
 
             // Loopback endpoint CardMirror sends extracted cards to, and the
             // broker for our own outbound calls (desktop only; see
-            // `bridge.rs`). A failed bind costs the integration, not the app.
+            // `bridge.rs`). Nothing binds until CardMirror is running, and
+            // a failed bind costs the integration, not the app.
             #[cfg(desktop)]
             bridge::start(app.handle());
 

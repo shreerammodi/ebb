@@ -5,6 +5,7 @@
 //! are handed to the renderer over a `bridge:request` event and back through
 //! the `bridge_reply` command. Outbound, Rust reads CardMirror's handshake and
 //! posts to it, so the webview never holds the peer's token or a socket.
+//! The listener does not exist until CardMirror's session file does.
 //!
 //! The session token is all that stands between this port and every other
 //! process on the machine, so it lives in a 0600 file, is compared in constant
@@ -51,6 +52,9 @@ const MAX_HANDSHAKE: u64 = 64 * 1024;
 /// the caller sees its own timeout instead of our error body.
 const RENDERER_TIMEOUT: Duration = Duration::from_millis(2500);
 const OUTBOUND_TIMEOUT: Duration = Duration::from_millis(3000);
+/// How often ebb looks for a running CardMirror, which bounds how long a
+/// CardMirror launch waits before it can reach ebb.
+const PEER_POLL: Duration = Duration::from_secs(5);
 
 // --- Handshake files -----------------------------------------------------------
 
@@ -526,25 +530,43 @@ fn bind_and_publish(app_version: &str) -> Option<(tiny_http::Server, String)> {
     Some((server, token))
 }
 
-/// Binds the loopback listener, publishes the handshake, and serves on its own
-/// thread. Every failure here is non-fatal: without the bridge ebb just has no
-/// CardMirror integration this run.
+/// Whether CardMirror is running. Its session file is written on every launch
+/// and deleted on quit; one a crash left behind reads as running, which costs
+/// a listener nobody calls and nothing more.
+fn peer_running() -> bool {
+    bridge_dir().is_some_and(|dir| dir.join("cardmirror.session.json").is_file())
+}
+
+/// Binds the loopback listener, publishes the handshake, and serves, all on its
+/// own thread and only once CardMirror is running. Until then ebb holds no
+/// listener and writes no handshake files: an unsigned binary serving a local
+/// port is what antivirus heuristics read as a backdoor, so ebb holds one only
+/// while there is a peer to use it. Outbound calls need none of this, since
+/// they read CardMirror's session at call time. Every failure here
+/// is non-fatal: without the bridge ebb just has no CardMirror integration
+/// this run.
 pub fn start(app: &AppHandle) {
     app.manage(BridgeState::default());
-    let app_version = app.package_info().version.to_string();
-    let Some((server, token)) = bind_and_publish(&app_version) else {
-        return;
-    };
     let handle = app.clone();
-    let router = Router::new(token, app_version, move |route, body| {
-        call_renderer(&handle, route, body)
-    });
     if let Err(e) = std::thread::Builder::new()
         .name("cardmirror-bridge".into())
-        .spawn(move || serve(server, router))
+        .spawn(move || {
+            // ponytail: polls a stat every PEER_POLL; a directory watcher if
+            // the delay after a CardMirror launch ever matters.
+            while !peer_running() {
+                std::thread::sleep(PEER_POLL);
+            }
+            let app_version = handle.package_info().version.to_string();
+            let Some((server, token)) = bind_and_publish(&app_version) else {
+                return;
+            };
+            let router = Router::new(token, app_version, move |route, body| {
+                call_renderer(&handle, route, body)
+            });
+            serve(server, router);
+        })
     {
         eprintln!("cardmirror bridge: thread spawn failed: {e}");
-        remove_session();
     }
 }
 
@@ -582,6 +604,25 @@ mod tests {
         let fallback = bridge_dir().expect("platform data dir resolves");
         assert!(fallback.ends_with(DIR_NAME), "{fallback:?}");
         assert_ne!(fallback, dir);
+    }
+
+    #[test]
+    fn the_bridge_waits_for_cardmirror_to_run() {
+        let _guard = ENV_LOCK.lock();
+        let dir = scratch_dir("running");
+        std::env::set_var("CARDMIRROR_BRIDGE_DIR", &dir);
+
+        assert!(!peer_running(), "no directory, no peer");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("ebb.session.json"), "{}").unwrap();
+        assert!(!peer_running(), "ebb's own session is not a peer");
+        std::fs::write(dir.join("cardmirror.json"), "{}").unwrap();
+        assert!(!peer_running(), "installed is not running");
+        std::fs::write(dir.join("cardmirror.session.json"), "{}").unwrap();
+        assert!(peer_running());
+
+        std::env::remove_var("CARDMIRROR_BRIDGE_DIR");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
