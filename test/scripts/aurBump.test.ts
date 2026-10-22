@@ -26,6 +26,17 @@ describe("rewritePkgbuild", () => {
         );
     });
 
+    it("resets pkgrel for a new version and keeps it for the same one", () => {
+        const revised = PKGBUILD.replace("pkgrel=1", "pkgrel=3");
+
+        expect(rewritePkgbuild(revised, { version: "1.5.0", sha256: "abc" })).toContain(
+            "pkgrel=1\n",
+        );
+        expect(rewritePkgbuild(revised, { version: "1.4.2", sha256: "e7dde0f8" })).toContain(
+            "pkgrel=3\n",
+        );
+    });
+
     it("refuses a PKGBUILD it cannot keep true", () => {
         const release = { version: "1.5.0", sha256: "abc" };
 

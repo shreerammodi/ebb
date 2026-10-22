@@ -31,15 +31,20 @@ export function debName(version) {
 
 /**
  * Rewrites the two lines that name a release and leaves the recipe alone.
- * Throws when either line is gone, so a reshaped PKGBUILD fails here instead of
- * committing a version or checksum that describes no download.
+ * A new version also resets pkgrel to 1, since pkgrel counts packaging
+ * revisions of one upstream release; re-running against the version already
+ * named keeps it. Throws when either line is gone, so a reshaped PKGBUILD
+ * fails here instead of committing a version or checksum that describes no
+ * download.
  * @param {string} text
  * @param {{ version: string, sha256: string }} release
  * @returns {string}
  */
 export function rewritePkgbuild(text, { version, sha256 }) {
     if (!/^pkgver=/m.test(text)) throw new Error("PKGBUILD has no pkgver line");
-    const bumped = text.replace(/^pkgver=.*$/m, `pkgver=${version}`);
+    const current = text.match(/^pkgver=(.*)$/m)[1];
+    let bumped = text.replace(/^pkgver=.*$/m, `pkgver=${version}`);
+    if (current !== version) bumped = bumped.replace(/^pkgrel=.*$/m, "pkgrel=1");
 
     if (!/^sha256sums=\(/m.test(text)) throw new Error("PKGBUILD has no sha256sums line");
     const summed = bumped.replace(/^sha256sums=\(.*\)$/m, `sha256sums=('${sha256}')`);
