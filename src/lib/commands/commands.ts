@@ -163,14 +163,19 @@ function runInsertCell(where: "at" | "below"): void {
     const hot = getActiveHot();
     const sel = hot?.getSelectedLast();
     if (!hot || !sel) return;
+    const editor = hot.getActiveEditor?.();
+    if (editor?.isOpened()) editor.finishEditing();
     const col = gridCol(sel[1]);
     const row = where === "below" ? sel[0] + 1 : sel[0];
-    if (row > hot.countRows() - 1) return;
+    if (row >= hot.countRows()) {
+        hot.alter("insert_row_below", hot.countRows() - 1, 1, "auto");
+    }
 
     const before = snapshotClasses(hot, [col]);
     hot.setDataAtCell(insertCellChanges(hot, row, col), STRUCTURED_WRITE);
     attachMetaUndo({ cols: [col], before, after: snapshotClasses(hot, [col]) });
     hot.render();
+    if (where === "below") hot.selectCell(row, col);
     notifyGridMutated();
 
     // A structured write is refused by the afterChange seam precisely so this
