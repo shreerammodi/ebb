@@ -844,45 +844,45 @@ describe("grid commands", () => {
         expect(onMutated).toHaveBeenCalled();
     });
 
-    it("cell.insertBelow blanks the row under the selection", () => {
-        const data = [["a"], ["b"], ["c"], ["d"]];
-        const meta = metaStore();
-        const fakeHot = {
-            getSelectedLast: () => [1, 0],
-            countRows: () => data.length,
-            countCols: () => 1,
-            getDataAtCell: (r: number, c: number) => data[r][c],
-            getCellMeta: meta.getCellMeta,
-            setCellMeta: meta.setCellMeta,
-            setDataAtCell: (changes: [number, number, string | null][]) => {
-                for (const [r, c, v] of changes) data[r][c] = v as string;
-            },
-            render: vi.fn(),
-        };
-        setActiveHot(fakeHot as never, vi.fn(), null, 0);
+    it.each(["occupied", "empty", "last"])(
+        "cell.insertBelow selects a usable blank cell below an %s tail",
+        (tail) => {
+            const data: (string | null)[][] =
+                tail === "last"
+                    ? [["a", "neighbor"]]
+                    : [
+                          ["a", "neighbor"],
+                          [tail === "occupied" ? "b" : null, null],
+                          [null, null],
+                      ];
+            const meta = metaStore();
+            const hot = {
+                getSelectedLast: () => [0, 0],
+                countRows: () => data.length,
+                countCols: () => 2,
+                getDataAtCell: (r: number, c: number) => data[r][c],
+                getCellMeta: meta.getCellMeta,
+                setCellMeta: meta.setCellMeta,
+                setDataAtCell: (changes: [number, number, string | null][]) => {
+                    for (const [r, c, v] of changes) data[r][c] = v;
+                },
+                alter: vi.fn(() => data.push([null, null])),
+                selectCell: vi.fn(),
+                render: vi.fn(),
+            };
+            setActiveHot(hot as never, vi.fn(), null, 0);
 
-        executeCommand("cell.insertBelow");
-        // "b" stays put, row 2 blanked, "c" pushed down ("d" falls off).
-        expect(data.map((row) => row[0])).toEqual(["a", "b", "", "c"]);
-    });
+            executeCommand("cell.insertBelow");
 
-    it("cell.insertBelow on the last row is a no-op", () => {
-        const data = [["a"], ["b"]];
-        const fakeHot = {
-            getSelectedLast: () => [1, 0],
-            countRows: () => data.length,
-            countCols: () => 1,
-            getDataAtCell: (r: number, c: number) => data[r][c],
-            getCellMeta: () => ({}),
-            setCellMeta: vi.fn(),
-            setDataAtCell: vi.fn(),
-            render: vi.fn(),
-        };
-        setActiveHot(fakeHot as never, vi.fn(), null, 0);
-
-        executeCommand("cell.insertBelow");
-        expect(fakeHot.setDataAtCell).not.toHaveBeenCalled();
-    });
+            expect(hot.selectCell).toHaveBeenCalledWith(1, 0);
+            expect(data[0]).toEqual(["a", "neighbor"]);
+            expect(data[1][0]).toBe("");
+            if (tail === "occupied") expect(data[2][0]).toBe("b");
+            if (tail === "last") {
+                expect(hot.alter).toHaveBeenCalledWith("insert_row_below", 0, 1, "auto");
+            } else expect(hot.alter).not.toHaveBeenCalled();
+        },
+    );
 
     it("cell.move opens a session over the selection", () => {
         const data = [["a"], ["b"], ["c"]];
