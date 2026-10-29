@@ -39,7 +39,7 @@ tiny_http = "0.12"
 ureq = { version = "3", default-features = false }
 rand = "0.10"
 subtle = "2"
-parking_lot = "0.12"
+parking_lot = "0.13"
 # Shared editing. iroh dials a peer by public key and hole punches to it, which
 # is the only design that reaches two homes behind NAT. mDNS is a separate
 # crate so the same-room case needs no internet at all; the DNS and DHT lookup
