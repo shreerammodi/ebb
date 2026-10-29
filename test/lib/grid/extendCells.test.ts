@@ -38,6 +38,7 @@ describe("extendRun", () => {
                 [null, null, null, null],
                 [null, null, null, null],
                 [null, null, null, null],
+                [null, null, null, null],
             ],
             {
                 "0,0": `${BOLD_CLASS} ${KICKED_CLASS}`,
@@ -56,16 +57,18 @@ describe("extendRun", () => {
         });
         grid.setDataAtCell(changes);
 
-        expect(grid.col(0)).toEqual(["tag", null, "warrant", null, null, null]);
-        expect(grid.col(1)).toEqual(["neg-a", "neg-c", null, null, null, null]);
-        expect(grid.col(2)).toEqual(["tag", null, "warrant", "dest-a", "dest-b", "dest-c"]);
-        expect(grid.col(3)).toEqual(["neg-b", "neg-d", null, null, null, null]);
+        expect(grid.col(0)).toEqual(["tag", null, "warrant", null, null, null, null]);
+        expect(grid.col(1)).toEqual(["neg-a", "neg-c", null, null, null, null, null]);
+        expect(grid.col(2)).toEqual(["->", "tag", null, "warrant", "dest-a", "dest-b", "dest-c"]);
+        expect(grid.col(3)).toEqual(["neg-b", "neg-d", null, null, null, null, null]);
         expect(grid.classNames["0,0"]).toBe(`${BOLD_CLASS} ${KICKED_CLASS}`);
-        expect(grid.classNames["0,2"]).toBe(BOLD_CLASS);
-        expect(grid.classNames["1,2"]).toBe(GROUP_CLASS);
-        expect(grid.classNames["2,2"]).toBe(HIGHLIGHT_CLASS);
+        expect(grid.classNames["0,2"]).toBeUndefined();
+        expect(grid.sources["0,2"]).toBeUndefined();
+        expect(grid.classNames["1,2"]).toBe(BOLD_CLASS);
+        expect(grid.classNames["2,2"]).toBe(GROUP_CLASS);
+        expect(grid.classNames["3,2"]).toBe(HIGHLIGHT_CLASS);
         expect(grid.sources["0,0"]).toEqual(source);
-        expect(grid.sources["0,2"]).toEqual(source);
+        expect(grid.sources["1,2"]).toEqual(source);
     });
 
     it("reports capacity that preserves an occupied destination tail", () => {
@@ -75,7 +78,15 @@ describe("extendRun", () => {
             [null, null, "c"],
         ]);
 
-        expect(extensionRequiredRows(grid, gridCol(2), 0, 2)).toBe(5);
+        expect(extensionRequiredRows(grid, gridCol(2), 0, 2)).toBe(6);
+    });
+
+    it("reserves space for an arrow and copy at the bottom of an empty destination", () => {
+        const grid = fakeGrid([
+            [null, null, null],
+            ["tag", null, null],
+        ]);
+        expect(extensionRequiredRows(grid, gridCol(2), 1, 1)).toBe(3);
     });
 
     it("preserves destination metadata below its last text when capacity is available", () => {
@@ -88,12 +99,13 @@ describe("extendRun", () => {
                 [null, null, null],
                 [null, null, null],
                 [null, null, null],
+                [null, null, null],
             ],
             { "4,2": HIGHLIGHT_CLASS },
             { "4,2": source },
         );
 
-        expect(extensionRequiredRows(grid, gridCol(2), 0, 2)).toBe(7);
+        expect(extensionRequiredRows(grid, gridCol(2), 0, 2)).toBe(8);
         grid.setDataAtCell(
             extendRun(grid, {
                 sourceCol: gridCol(0),
@@ -103,8 +115,8 @@ describe("extendRun", () => {
             }),
         );
 
-        expect(grid.col(2)).toEqual(["tag", "warrant", "dest", null, null, null, null]);
-        expect(grid.classNames["6,2"]).toBe(HIGHLIGHT_CLASS);
-        expect(grid.sources["6,2"]).toEqual(source);
+        expect(grid.col(2)).toEqual(["->", "tag", "warrant", "dest", null, null, null, null]);
+        expect(grid.classNames["7,2"]).toBe(HIGHLIGHT_CLASS);
+        expect(grid.sources["7,2"]).toEqual(source);
     });
 });

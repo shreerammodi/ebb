@@ -421,11 +421,20 @@ describe("grid commands", () => {
 
         executeCommand("cell.extend");
 
-        expect(data.map((row) => row[2])).toEqual(["tag", null, "warrant", "dest-a", "dest-b"]);
-        expect(data.map((row) => row[0])).toEqual(["tag", null, "warrant", null, null]);
-        expect(meta.at(0, 2).className).toBe(BOLD_CLASS);
-        expect(meta.at(0, 2).source).toEqual(source);
-        expect(hot.selectCells).toHaveBeenCalledWith([[0, 2, 2, 2]]);
+        expect(data.map((row) => row[2])).toEqual([
+            "->",
+            "tag",
+            null,
+            "warrant",
+            "dest-a",
+            "dest-b",
+        ]);
+        expect(data.map((row) => row[0])).toEqual(["tag", null, "warrant", null, null, null]);
+        expect(meta.at(0, 2).className).toBe("");
+        expect(meta.at(0, 2).source).toBeUndefined();
+        expect(meta.at(1, 2).className).toBe(BOLD_CLASS);
+        expect(meta.at(1, 2).source).toEqual(source);
+        expect(hot.selectCells).toHaveBeenCalledWith([[1, 2, 3, 2]]);
         expect(onMutated).toHaveBeenCalledTimes(1);
     });
 
@@ -488,7 +497,8 @@ describe("grid commands", () => {
         expect(
             useFlowStore.getState().round!.sheets.find((sheet) => sheet.id === suppliedId)!.data,
         ).toEqual([
-            ["tag", "aff", "tag"],
+            ["tag", "aff", "->"],
+            [null, null, "tag"],
             [null, null, "destination"],
         ]);
         expect(
@@ -497,7 +507,8 @@ describe("grid commands", () => {
                     .data,
             ),
         ).toEqual([
-            ["tag", "aff", "tag"],
+            ["tag", "aff", "->"],
+            [null, null, "tag"],
             [null, null, "destination"],
         ]);
         expect(
@@ -551,7 +562,7 @@ describe("grid commands", () => {
         executeCommand("cell.extend");
 
         expect(finishEditing).toHaveBeenCalledTimes(1);
-        expect(data.map((row) => row[2])).toEqual(["typed argument", "destination"]);
+        expect(data.map((row) => row[2])).toEqual(["->", "typed argument", "destination"]);
     });
 
     it("adds blank capacity before extending an occupied destination tail", () => {
@@ -571,9 +582,9 @@ describe("grid commands", () => {
 
         executeCommand("cell.extend");
 
-        expect(hot.alter).toHaveBeenCalledWith("insert_row_below", 1, 1, "auto");
-        expect(data.map((row) => row[2])).toEqual(["tag", "warrant", "destination"]);
-        expect(hot.selectCells).toHaveBeenCalledWith([[0, 2, 1, 2]]);
+        expect(hot.alter).toHaveBeenCalledWith("insert_row_below", 1, 2, "auto");
+        expect(data.map((row) => row[2])).toEqual(["->", "tag", "warrant", "destination"]);
+        expect(hot.selectCells).toHaveBeenCalledWith([[1, 2, 2, 2]]);
     });
 
     it("refuses selections with multiple ranges", () => {
@@ -711,6 +722,7 @@ describe("grid commands", () => {
         expect(data).toEqual([
             ["tag", null, "destination"],
             [null, null, null],
+            [null, null, null],
         ]);
         expect(meta.at(0, 0).className).toBe(BOLD_CLASS);
         expect(meta.at(0, 2).className).toBe(HIGHLIGHT_CLASS);
@@ -758,6 +770,7 @@ describe("grid commands", () => {
 
         expect(data).toEqual([
             ["tag", null, "destination"],
+            [null, null, null],
             [null, null, null],
         ]);
         expect(meta.at(0, 2).className).toBe(HIGHLIGHT_CLASS);

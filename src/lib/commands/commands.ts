@@ -256,6 +256,7 @@ export function runExtend(grid = getActiveHot()): void {
 
     const targetCol = toGridCol(modelCol(target), spacers);
     const height = bottom.row - top.row + 1;
+    const insertedHeight = height + 1;
     let redoMeta: { offset: number; meta: CellMeta }[] = [];
     let before: ClassEntry[] | null = null;
     try {
@@ -285,12 +286,12 @@ export function runExtend(grid = getActiveHot()): void {
                 requiresContiguousSuffix: true,
                 row: top.row,
                 beforeUndo: (row) => {
-                    for (let index = 0; index < height; index++) {
+                    for (let index = 0; index < insertedHeight; index++) {
                         recordOp({ kind: "removeCell", sheetId, col: target, row });
                     }
                 },
                 beforeRedo: (row) => {
-                    for (let index = 0; index < height; index++) {
+                    for (let index = 0; index < insertedHeight; index++) {
                         recordOp({ kind: "insertCell", sheetId, col: target, row });
                     }
                 },
@@ -322,14 +323,14 @@ export function runExtend(grid = getActiveHot()): void {
     grid.render();
     context.mutated?.();
 
-    for (let index = 0; index < height; index++) {
+    for (let index = 0; index < insertedHeight; index++) {
         recordOp({ kind: "insertCell", sheetId, col: target, row: top.row });
     }
     const updated = useFlowStore
         .getState()
         .round?.sheets.find((candidate) => candidate.id === sheetId);
     if (updated) {
-        for (let index = 0; index < height; index++) {
+        for (let index = 0; index < insertedHeight; index++) {
             const row = top.row + index;
             recordOp({
                 kind: "cellText",
@@ -340,7 +341,7 @@ export function runExtend(grid = getActiveHot()): void {
             });
         }
         redoMeta = [];
-        for (let index = 0; index < height; index++) {
+        for (let index = 0; index < insertedHeight; index++) {
             const row = top.row + index;
             const meta = updated.meta[`${row},${target}`];
             if (meta && Object.keys(meta).length > 0) {
@@ -350,7 +351,7 @@ export function runExtend(grid = getActiveHot()): void {
         }
     }
 
-    grid.selectCells([[top.row, targetCol, bottom.row, targetCol]]);
+    grid.selectCells([[top.row + 1, targetCol, bottom.row + 1, targetCol]]);
 }
 
 /**

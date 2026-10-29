@@ -35,7 +35,7 @@ export function extensionRequiredRows(
         if ((text != null && text !== "") || meta.className || meta.source) last = row;
     }
 
-    return Math.max(grid.countRows(), last + 1 + height);
+    return Math.max(grid.countRows(), Math.max(last + 1, startRow) + height + 1);
 }
 
 export function extendRun(grid: CellGrid, input: ExtendRunInput): CellChange[] {
@@ -53,13 +53,15 @@ export function extendRun(grid: CellGrid, input: ExtendRunInput): CellChange[] {
         };
     });
 
-    const shifted = shiftSpan(grid, targetCol, startRow, grid.countRows(), height);
+    const shifted = shiftSpan(grid, targetCol, startRow, grid.countRows(), height + 1);
     const copiedChanges = copied.map(({ text, className, source }, index) => {
-        const row = startRow + index;
+        const row = startRow + 1 + index;
         grid.setCellMeta(row, targetCol, "className", className);
         grid.setCellMeta(row, targetCol, "source", source);
         return [row, targetCol, text] as CellChange;
     });
 
-    return [...shifted, ...copiedChanges];
+    grid.setCellMeta(startRow, targetCol, "className", "");
+    grid.setCellMeta(startRow, targetCol, "source", undefined);
+    return [...shifted, [startRow, targetCol, "->"], ...copiedChanges];
 }

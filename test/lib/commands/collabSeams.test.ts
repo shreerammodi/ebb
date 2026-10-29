@@ -116,7 +116,7 @@ describe("an argument extension reaches the replica as one column insertion", ()
         flow.meta = { "0,0": { bold: true, kicked: true, source } };
         useFlowStore.getState().loadRound(round);
         // One trailing blank destination cell is a real rank that the extension
-        // pushes below the three copied cells.
+        // pushes below the arrow and three copied cells.
         recordOp({ kind: "cellText", sheetId, col: 2, row: 0, text: null });
 
         const data = [
@@ -172,9 +172,22 @@ describe("an argument extension reaches the replica as one column insertion", ()
         const projected = projectDoc(getReplica()!, round).sheets.find(
             (candidate) => candidate.id === sheetId,
         )!;
-        expect(projected.data.map((row) => row[2])).toEqual(["perm", "cap bad", "extend", null]);
-        expect(projected.data.map((row) => row[0])).toEqual(["perm", "cap bad", "extend", null]);
-        expect(projected.data.map((row) => row[1])).toEqual(["link", "turn", null, null]);
-        expect(projected.meta["0,2"]).toEqual({ bold: true, source });
+        expect(projected.data.map((row) => row[2])).toEqual([
+            "->",
+            "perm",
+            "cap bad",
+            "extend",
+            null,
+        ]);
+        expect(projected.data.map((row) => row[0])).toEqual([
+            "perm",
+            "cap bad",
+            "extend",
+            null,
+            null,
+        ]);
+        expect(projected.data.map((row) => row[1])).toEqual(["link", "turn", null, null, null]);
+        expect(projected.meta["0,2"]).toBeUndefined();
+        expect(projected.meta["1,2"]).toEqual({ bold: true, source });
     });
 });

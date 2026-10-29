@@ -206,9 +206,11 @@ describe("argument extension", () => {
         hot.selectCells([[0, 0, 1, 0]]);
 
         act(() => executeCommand("cell.extend"));
-        expect(hot.getDataAtCell(0, 2)).toBe("tag");
-        expect(hot.getDataAtCell(2, 2)).toBe("destination");
-        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
+        expect(hot.getDataAtCell(0, 2)).toBe("->");
+        expect(hot.getDataAtCell(1, 2)).toBe("tag");
+        expect(hot.getCellMeta(0, 2).source).toBeUndefined();
+        expect(hot.getDataAtCell(3, 2)).toBe("destination");
+        expect(hot.getCellMeta(1, 2).className).toBe("flow-bold");
         expectReplicaMatchesGrid(sheet.id);
 
         act(() => executeCommand("edit.undo"));
@@ -218,9 +220,11 @@ describe("argument extension", () => {
         expectReplicaMatchesGrid(sheet.id);
 
         act(() => executeCommand("edit.redo"));
-        expect(hot.getDataAtCell(0, 2)).toBe("tag");
-        expect(hot.getDataAtCell(2, 2)).toBe("destination");
-        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
+        expect(hot.getDataAtCell(0, 2)).toBe("->");
+        expect(hot.getDataAtCell(1, 2)).toBe("tag");
+        expect(hot.getCellMeta(0, 2).source).toBeUndefined();
+        expect(hot.getDataAtCell(3, 2)).toBe("destination");
+        expect(hot.getCellMeta(1, 2).className).toBe("flow-bold");
         expectReplicaMatchesGrid(sheet.id);
     });
 
@@ -257,12 +261,14 @@ describe("argument extension", () => {
         };
 
         act(() => executeCommand("cell.extend"));
-        expect(hot.getDataAtCell(1, 2)).toBe("tag");
+        expect(hot.getDataAtCell(1, 2)).toBe("->");
+        expect(hot.getDataAtCell(2, 2)).toBe("tag");
         expectReplicaMatchesGrid(sheet.id);
 
         landRemote({ kind: "insertCell", sheetId: sheet.id, col: 2, row: 0 });
         landRemote({ kind: "insertCell", sheetId: sheet.id, col: 2, row: 0 });
-        expect(hot.getDataAtCell(3, 2)).toBe("tag");
+        expect(hot.getDataAtCell(3, 2)).toBe("->");
+        expect(hot.getDataAtCell(4, 2)).toBe("tag");
         expectReplicaMatchesGrid(sheet.id);
 
         act(() => executeCommand("edit.undo"));
@@ -276,13 +282,14 @@ describe("argument extension", () => {
         expectReplicaMatchesGrid(sheet.id);
 
         act(() => executeCommand("edit.redo"));
-        expect(hot.getDataAtCell(2, 2)).toBe("tag");
-        expect(hot.getDataAtCell(4, 2)).toBe("destination");
-        expect(hot.getCellMeta(2, 2).className).toBe("flow-bold");
+        expect(hot.getDataAtCell(2, 2)).toBe("->");
+        expect(hot.getDataAtCell(3, 2)).toBe("tag");
+        expect(hot.getDataAtCell(5, 2)).toBe("destination");
+        expect(hot.getCellMeta(3, 2).className).toBe("flow-bold");
         const projected = projectDoc(getReplica()!, useFlowStore.getState().round!).sheets.find(
             (candidate) => candidate.id === sheet.id,
         )!;
-        expect(projected.meta["2,2"]).toEqual({ bold: true, source: SRC });
+        expect(projected.meta["3,2"]).toEqual({ bold: true, source: SRC });
         expectReplicaMatchesGrid(sheet.id);
     });
 });
