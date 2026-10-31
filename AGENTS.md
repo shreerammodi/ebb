@@ -198,7 +198,9 @@ Formatting is `oxfmt` (via `npm run format` / `format:check`), not Prettier.
   uses the six narrow commands in `src-tauri/src/flowfile.rs` so the webview
   never holds a general filesystem capability. `src-tauri/src/sidecar.rs` adds
   the two that persist a collaboration replica, and neither of those takes a
-  path either.
+  path either. `src-tauri/src/dragout.rs` adds the one that drags
+  the open flow out to another app as a native file drag; it reads nothing and
+  refuses any path that is not an existing `.ebb` file.
 - **An export is filed where the debater says, never into a downloads folder.**
   Excel export is a workbook the debater hands to a judge or a partner, so it
   ends with a save panel, not with a file appearing somewhere they did not

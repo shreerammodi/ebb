@@ -90,6 +90,27 @@ export async function revealOpenFlow(): Promise<void> {
 }
 
 /**
+ * Drag the open flow out of ebb, into a message or an email. The file on disk
+ * is what travels, so it is written first: the last half-second of edits would
+ * otherwise still be waiting on the autosave debounce. A flow that will not
+ * save is not sent at all, since the copy on disk is not the round on screen.
+ */
+export async function dragOpenFlow(): Promise<void> {
+    const { docPath } = useFlowStore.getState();
+    if (!docPath) return;
+    if (!(await saveOpenFlow())) {
+        toast.error("This flow could not be saved, so it was not sent.");
+        return;
+    }
+    try {
+        const fs = await getFlowFs();
+        await fs.dragOut(docPath);
+    } catch (err) {
+        report("Could not drag that flow", err);
+    }
+}
+
+/**
  * Leave the flow, but only once it is safely written.
  *
  * Closing is the instinctive thing to do when something looks wrong, which is

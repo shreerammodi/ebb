@@ -25,6 +25,9 @@ tauri = { version = "2", features = [] }
 # commands in flowfile.rs rather than a general filesystem API for the webview.
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
+# Starts a native drag of the open flow, so it can be dropped straight into a
+# message or an email. A webview drag cannot hand another app a real file.
+drag = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Plain-text config file sync: notify watches it for external edits, toml_edit

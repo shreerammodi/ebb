@@ -18,6 +18,8 @@ export interface FakeFlowFs extends FlowFs {
     nextDirectory: string | null;
     /** Paths passed to reveal, in order. */
     revealed: string[];
+    /** Paths passed to dragOut, in order. */
+    dragged: string[];
     /** Writes performed, in order, so tests can assert on autosave behavior. */
     writes: string[];
     /** Make the next write of any kind fail with this message. */
@@ -42,6 +44,7 @@ export function installFakeFlowFs(): FakeFlowFs {
         nextSave: null,
         nextDirectory: null,
         revealed: [],
+        dragged: [],
         writes: [],
         failWrites: null,
         conflictOn: null,
@@ -94,6 +97,11 @@ export function installFakeFlowFs(): FakeFlowFs {
 
         reveal: (path) => {
             fs.revealed.push(path);
+            return Promise.resolve();
+        },
+
+        dragOut: (path) => {
+            fs.dragged.push(path);
             return Promise.resolve();
         },
     };

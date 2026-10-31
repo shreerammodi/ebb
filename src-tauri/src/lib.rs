@@ -7,6 +7,7 @@
 mod bridge;
 mod collab;
 mod config;
+mod dragout;
 mod export;
 mod flowfile;
 mod menu;
@@ -138,6 +139,7 @@ pub fn run() {
             collab::machine_name,
             config::read_config,
             config::write_config,
+            dragout::drag_flow_file,
             export::write_export_file,
             flowfile::create_flow_file,
             flowfile::flow_paths,

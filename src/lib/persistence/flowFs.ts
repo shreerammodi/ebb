@@ -45,6 +45,8 @@ export interface FlowFs {
     writeRecents(text: string): Promise<void>;
     /** Show the file in Finder or the system file manager. */
     reveal(path: string): Promise<void>;
+    /** Start an OS drag of the file, so it can be dropped into another app. */
+    dragOut(path: string): Promise<void>;
 }
 
 let cached: FlowFs | null = null;

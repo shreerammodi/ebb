@@ -59,5 +59,7 @@ export function createFlowFs(): FlowFs {
         },
 
         reveal: (path) => revealItemInDir(path),
+
+        dragOut: (path) => invoke<void>("drag_flow_file", { path }),
     };
 }

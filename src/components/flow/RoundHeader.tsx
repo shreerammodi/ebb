@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { segmentedTabClass } from "@/components/ui/segmented-tab";
 import { Tip } from "@/components/ui/tooltip";
 import { showWorkspaceView } from "@/lib/commands/commands";
+import { dragOpenFlow } from "@/lib/commands/fileCommands";
 import { sideLabels } from "@/lib/format/events";
 import { teamCode } from "@/lib/model/teamCode";
 import { stem } from "@/lib/persistence/flowPaths";
 import { useFlowStore, type WorkspaceView } from "@/lib/store/useFlowStore";
+import { isDesktop } from "@/lib/update/adapter";
 
 import ExportMenu from "./ExportMenu";
 import SaveStatus from "./SaveStatus";
@@ -80,9 +82,27 @@ export default function RoundHeader() {
                     Flows
                 </Link>
                 <span aria-hidden="true" className="bg-border h-4 w-px flex-none" />
-                <span className="text-foreground truncate text-sm font-semibold">
-                    {participants}
-                </span>
+                {docPath && isDesktop() ? (
+                    <Tip label="Drag into a message or email to send this flow">
+                        <span
+                            draggable
+                            // The webview's own drag cannot carry a file to
+                            // another app, so the shell starts a native one.
+                            onDragStart={(e) => {
+                                e.preventDefault();
+                                void dragOpenFlow();
+                            }}
+                            className="text-foreground cursor-grab truncate text-sm font-semibold"
+                            data-testid="round-title"
+                        >
+                            {participants}
+                        </span>
+                    </Tip>
+                ) : (
+                    <span className="text-foreground truncate text-sm font-semibold">
+                        {participants}
+                    </span>
+                )}
                 <SaveStatus />
             </div>
 

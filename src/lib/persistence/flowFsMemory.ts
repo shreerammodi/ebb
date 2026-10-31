@@ -171,5 +171,7 @@ export function createFlowFs(): FlowFs {
         },
 
         reveal: () => Promise.resolve(),
+
+        dragOut: () => Promise.resolve(),
     };
 }

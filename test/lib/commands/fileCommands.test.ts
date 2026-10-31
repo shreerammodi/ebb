@@ -13,7 +13,7 @@ vi.mock("@/lib/commands/flowNav", () => ({
     flowRouteFor: (p: string) => `/flow?path=${encodeURIComponent(p)}`,
 }));
 
-import { closeOpenFlow, saveOpenFlow } from "@/lib/commands/fileCommands";
+import { closeOpenFlow, dragOpenFlow, saveOpenFlow } from "@/lib/commands/fileCommands";
 import { makeFlowRound } from "@/lib/model/flow";
 import { serializeFlow } from "@/lib/persistence/flowFile";
 import { useFlowStore } from "@/lib/store/useFlowStore";
@@ -67,6 +67,25 @@ describe("closeOpenFlow", () => {
         expect(useFlowStore.getState().round).not.toBeNull();
         expect(useFlowStore.getState().docPath).toBe("/a.ebb");
         expect(navigateToStart).not.toHaveBeenCalled();
+        expect(toastError).toHaveBeenCalled();
+    });
+});
+
+describe("dragOpenFlow", () => {
+    it("writes the flow before dragging it out", async () => {
+        await dragOpenFlow();
+
+        expect(fs.writes).toContain("/a.ebb");
+        expect(fs.dragged).toEqual(["/a.ebb"]);
+    });
+
+    it("sends nothing when the save fails", async () => {
+        // The file on disk would be missing what is on screen.
+        fs.failWrites = "disk full";
+
+        await dragOpenFlow();
+
+        expect(fs.dragged).toEqual([]);
         expect(toastError).toHaveBeenCalled();
     });
 });
