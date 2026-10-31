@@ -1,40 +1,14 @@
 "use client";
 
 import { X } from "@phosphor-icons/react";
-import { useState } from "react";
 
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tip } from "@/components/ui/tooltip";
 import { sideLabels } from "@/lib/format/events";
-import { parsePairing, type PairingPatch } from "@/lib/model/parsePairing";
 import { teamCode } from "@/lib/model/teamCode";
-import type { Scouting } from "@/lib/model/types";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 import { cn } from "@/lib/utils";
-
-/** Deep-merges a parsed pairing into scouting so a parsed aff never wipes an existing neg debater. */
-function applyPairing(sc: Scouting, patch: PairingPatch): Partial<Scouting> {
-    const out: Partial<Scouting> = {};
-    if (patch.round !== undefined) out.round = patch.round;
-    if (patch.affSchool !== undefined) out.affSchool = patch.affSchool;
-    if (patch.negSchool !== undefined) out.negSchool = patch.negSchool;
-    if (patch.judge !== undefined) out.judge = patch.judge;
-    if (patch.aff) out.aff = { ...sc.aff, ...patch.aff };
-    if (patch.neg) out.neg = { ...sc.neg, ...patch.neg };
-    return out;
-}
-
-/** True when the sheet already holds details a pasted pairing would overwrite. */
-function hasScoutingInfo(sc: Scouting): boolean {
-    const named = [sc.aff.first, sc.aff.second, sc.neg.first, sc.neg.second].some(
-        (d) => d.first.trim() || d.last.trim(),
-    );
-    const filled = [sc.affSchool, sc.negSchool, sc.tournament, sc.round, sc.date, sc.judge].some(
-        (f) => (f ?? "").trim().length > 0,
-    );
-    return named || filled || Boolean(sc.decision?.vote || sc.decision?.rfd?.trim());
-}
 
 export default function InfoPanel() {
     const open = useFlowStore((s) => s.infoOpen);
@@ -47,8 +21,6 @@ function InfoPanelInner() {
     const round = useFlowStore((s) => s.round);
     const setInfoOpen = useFlowStore((s) => s.setInfoOpen);
     const setScouting = useFlowStore((s) => s.setScouting);
-    // A parsed pairing awaiting confirmation before it overwrites existing details.
-    const [pending, setPending] = useState<PairingPatch | null>(null);
 
     if (!round) return null;
     const sc = round.scouting;
@@ -86,50 +58,6 @@ function InfoPanelInner() {
                 </div>
 
                 <div className="max-h-[78vh] overflow-y-auto">
-                    <div className="border-border border-b p-4">
-                        <textarea
-                            data-testid="scout-paste"
-                            placeholder="Paste a Tabroom pairing to autofill"
-                            rows={2}
-                            className="border-input placeholder:text-muted-foreground focus-visible:border-ring w-full resize-y rounded-md border bg-transparent px-3 py-2 text-[13px] transition-[color,box-shadow] outline-none"
-                            onPaste={(e) => {
-                                const patch = parsePairing(e.clipboardData.getData("text"));
-                                if (Object.keys(patch).length === 0) return;
-                                // Confirm before overwriting details already on the sheet.
-                                if (hasScoutingInfo(sc)) setPending(patch);
-                                else setScouting(applyPairing(sc, patch));
-                            }}
-                        />
-                        {pending && (
-                            <div className="border-border bg-accent/40 mt-2 flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-[12px]">
-                                <span className="text-muted-foreground">
-                                    Replace the current round info with this pairing?
-                                </span>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        data-testid="scout-paste-cancel"
-                                        onClick={() => setPending(null)}
-                                        className="text-muted-foreground hover:text-foreground rounded px-2 py-1"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="button"
-                                        data-testid="scout-paste-confirm"
-                                        onClick={() => {
-                                            setScouting(applyPairing(sc, pending));
-                                            setPending(null);
-                                        }}
-                                        className="border-input hover:bg-accent rounded-md border px-2 py-1 font-medium"
-                                    >
-                                        Replace
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4 p-4">
                         <div className="flex flex-col gap-2">
                             <div className="text-aff font-mono text-[9px] font-bold tracking-widest uppercase">

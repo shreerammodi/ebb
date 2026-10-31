@@ -21,6 +21,12 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   read as a backdoor. ebb now opens it within a few seconds of CardMirror
   starting, and not at all otherwise.
 
+### Removed
+
+- **Round Info has no Tabroom paste box.** Debaters copy pairings from too
+  many places for one parser to read reliably, so the box filled fields only
+  some of the time. Type or paste each detail into its own field.
+
 ## [1.4.2] - 2026-10-17
 
 ### Changed
