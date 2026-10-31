@@ -454,6 +454,21 @@ describe("speech alignment", () => {
         expect(hot.getSelectedRangeLast()!.highlight.col).toBe(1);
     });
 
+    it("moves a single cursor after a Meta released in another window", async () => {
+        const hot = await mount(affSheet.id, false);
+        hot.selectCell(0, 0);
+        // Meta goes down here, and its keyup lands in whatever took focus.
+        hot.rootElement.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "Meta", metaKey: true, bubbles: true }),
+        );
+        for (let i = 0; i < 2; i++) {
+            hot.rootElement.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
+            );
+        }
+        expect(hot.getSelected()).toEqual([[2, 0, 2, 0]]);
+    });
+
     it("stops a shift-extend at the sheet's own first column", async () => {
         const hot = await mount(negSheet.id, true);
         // The anchor stays at grid column 3 while the moving edge walks left,

@@ -1150,6 +1150,11 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     const beforeKeyDown = useCallback(
         function (this: unknown, e: KeyboardEvent) {
             const hot = hotRef.current?.hotInstance;
+            // Handsontable remembers Ctrl/Meta from keydown/keyup and never
+            // forgets it on window blur, so a Meta released in another window
+            // (Meta+Tab, Meta+N, a save panel) stays held and every arrow adds a
+            // selection layer. This event's own flags are the truth.
+            if (!e.ctrlKey && !e.metaKey) hot?.getShortcutManager().releasePressedKeys();
             if (hot?.getActiveEditor()?.isOpened()) {
                 // Escape abandons the edit and moves nothing, so nothing else
                 // announces the close. The grid's own handler runs after this
