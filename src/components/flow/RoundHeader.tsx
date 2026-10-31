@@ -9,6 +9,7 @@ import { Tip } from "@/components/ui/tooltip";
 import { showWorkspaceView } from "@/lib/commands/commands";
 import { sideLabels } from "@/lib/format/events";
 import { teamCode } from "@/lib/model/teamCode";
+import { stem } from "@/lib/persistence/flowPaths";
 import { useFlowStore, type WorkspaceView } from "@/lib/store/useFlowStore";
 
 import ExportMenu from "./ExportMenu";
@@ -52,16 +53,17 @@ function ViewTabs() {
 export default function RoundHeader() {
     const scouting = useFlowStore((s) => s.round?.scouting);
     const sides = sideLabels(useFlowStore((s) => s.round?.event));
+    const docPath = useFlowStore((s) => s.docPath);
 
     if (!scouting) return null;
 
-    const affCode =
-        teamCode(scouting.affSchool ?? "", scouting.aff.first, scouting.aff.second) ||
-        sides.aff.label;
-    const negCode =
-        teamCode(scouting.negSchool ?? "", scouting.neg.first, scouting.neg.second) ||
-        sides.neg.label;
-    const participants = `${affCode} vs ${negCode}`;
+    const affCode = teamCode(scouting.affSchool ?? "", scouting.aff.first, scouting.aff.second);
+    const negCode = teamCode(scouting.negSchool ?? "", scouting.neg.first, scouting.neg.second);
+    // With neither team entered, the file name says more than "Aff vs Neg".
+    const participants =
+        !affCode && !negCode && docPath
+            ? stem(docPath)
+            : `${affCode || sides.aff.label} vs ${negCode || sides.neg.label}`;
 
     return (
         <header

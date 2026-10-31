@@ -59,6 +59,20 @@ describe("RoundHeader", () => {
         expect(screen.getByText("Aff vs Neg")).toBeInTheDocument();
     });
 
+    it("shows the file name while neither team is entered", () => {
+        useFlowStore.getState().loadRound(makeFlowRound(), { docPath: "/flows/Glenbrooks R3.ebb" });
+        renderRoundHeader();
+        expect(screen.getByText("Glenbrooks R3")).toBeInTheDocument();
+    });
+
+    it("switches from the file name to team codes once a team is entered", () => {
+        useFlowStore.getState().loadRound(makeFlowRound(), { docPath: "/flows/Glenbrooks R3.ebb" });
+        useFlowStore.getState().setScouting({ affSchool: "Alpha" });
+        renderRoundHeader();
+        expect(screen.queryByText("Glenbrooks R3")).toBeNull();
+        expect(screen.getByText(/vs Neg$/)).toBeInTheDocument();
+    });
+
     it("renders team codes from scouting in aff-vs-neg order", () => {
         setupRound();
         useFlowStore.getState().setScouting({

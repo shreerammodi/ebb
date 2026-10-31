@@ -20,6 +20,9 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   used CardMirror still had ebb serving a port, which antivirus heuristics can
   read as a backdoor. ebb now opens it within a few seconds of CardMirror
   starting, and not at all otherwise.
+- **A flow with no teams entered shows its file name at the top.** The header
+  said "Aff vs Neg" for every new flow, so two open rounds looked the same.
+  The team codes replace the file name when a school or debater is entered.
 
 ### Removed
 
