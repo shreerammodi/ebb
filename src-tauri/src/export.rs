@@ -14,7 +14,7 @@ use crate::flowfile::write_atomic;
 /// Write an export, replacing whatever the user chose to overwrite. The picker
 /// has already asked about that, so a confirmed target is written without a
 /// second opinion.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn write_export_file(path: String, contents: Vec<u8>) -> Result<(), String> {
     write_atomic(Path::new(&path), &contents)
 }

@@ -12,8 +12,15 @@ import { toast } from "sonner";
 import { errorMessage } from "@/lib/errorMessage";
 import { commitOpenEdit } from "@/lib/grid/hotInstance";
 import { getFlowFs } from "@/lib/persistence/flowFs";
-import { pickFlowToOpen, saveFlowAs, saveFlowNow } from "@/lib/persistence/flowSession";
+import {
+    discardUnsaved,
+    overwriteFlow,
+    pickFlowToOpen,
+    saveFlowAs,
+    saveFlowNow,
+} from "@/lib/persistence/flowSession";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+import { askToLeave } from "@/lib/store/useLeaveDialog";
 import { useSaveStatus } from "@/lib/store/useSaveStatus";
 
 import { navigateToFlow, navigateToStart } from "./flowNav";
@@ -111,21 +118,49 @@ export async function dragOpenFlow(): Promise<void> {
 }
 
 /**
- * Leave the flow, but only once it is safely written.
+ * Ask what to do with a round the file did not receive, until the answer
+ * either leaves nothing behind or keeps the flow open. Resolves true when the
+ * caller may leave.
  *
  * Closing is the instinctive thing to do when something looks wrong, which is
- * exactly when the save is failing - a full disk, or an ejected drive holding
- * the flows folder. Discarding the round on the way out would destroy it at the
- * worst possible moment, so a failed write cancels the close and leaves the
- * round on screen where the user can still act on it.
+ * exactly when the save is failing. Discarding the round on the way out would
+ * destroy it at the worst possible moment, so nothing is lost here that the
+ * debater did not choose to lose. Save forces the write: the button says it
+ * writes the existing file, which is the debater settling a conflict too.
+ * A Save As or a retry that fails asks again rather than leaving.
  */
-export async function closeOpenFlow(): Promise<void> {
-    if (!(await saveBeforeLeaving())) {
-        toast.error(
-            "This flow could not be saved, so it is still open. Free up space, reconnect the drive, or use Save As to put it somewhere else.",
-        );
-        return;
+export async function resolveUnsaved(): Promise<boolean> {
+    for (;;) {
+        const { round, docPath } = useFlowStore.getState();
+        if (!round || !docPath) return true;
+        const choice = await askToLeave();
+        if (choice === "cancel") return false;
+        if (choice === "discard") {
+            await discardUnsaved(docPath);
+            return true;
+        }
+        if (choice === "save") {
+            if (await overwriteFlow(docPath, round, useSaveStatus.getState().report)) return true;
+            toast.error("This flow still could not be written there. Try Save As instead.");
+            continue;
+        }
+        try {
+            if (await saveFlowAs(round)) {
+                // The round lives at the new path now, so the old one's
+                // recovery copy would only restore it into a file the
+                // debater moved away from.
+                await discardUnsaved(docPath);
+                return true;
+            }
+        } catch (err) {
+            report("Could not save that flow", err);
+        }
     }
+}
+
+/** Leave the flow, once it is written or the debater has said what to do. */
+export async function closeOpenFlow(): Promise<void> {
+    if (!(await saveBeforeLeaving()) && !(await resolveUnsaved())) return;
     useFlowStore.getState().closeRound();
     navigateToStart();
 }

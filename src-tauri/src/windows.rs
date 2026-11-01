@@ -191,12 +191,21 @@ fn flow_query(path: &str) -> String {
     qs.query().unwrap_or_default().to_string()
 }
 
+/// Raises `window` in front of the debater. Windows ignores a focus request
+/// for a minimized window, so a double-click on a flow already open in one,
+/// or a second launch, would otherwise show nothing at all.
+pub fn bring_forward<R: Runtime>(window: &WebviewWindow<R>) {
+    let _ = window.unminimize();
+    let _ = window.show();
+    let _ = window.set_focus();
+}
+
 /// Opens a new window on the given flow, or focuses the window already
 /// showing it - a debater who double-clicks the same round twice should
 /// land back on the one flow, not a duplicate beside it.
 pub fn open_flow<R: Runtime>(app: &AppHandle<R>, path: &str) -> tauri::Result<WebviewWindow<R>> {
     if let Some(existing) = window_open_on(app, path) {
-        let _ = existing.set_focus();
+        bring_forward(&existing);
         return Ok(existing);
     }
     let route = format!("flow/?{}", flow_query(path));
@@ -215,8 +224,11 @@ fn navigate_to_flow<R: Runtime>(window: &WebviewWindow<R>, path: &str) -> tauri:
 
 /// Opens a new dashboard window. The JS side of `window.new` (Mod+N, the
 /// Window menu, the command palette).
+///
+/// Async because a synchronous command runs on the main thread, and building
+/// a window there deadlocks WebView2 on Windows.
 #[tauri::command]
-pub fn new_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
+pub async fn new_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
     open_dashboard(&app).map(|_| ()).map_err(|e| e.to_string())
 }
 
@@ -336,7 +348,7 @@ pub fn adopt_or_open<R: Runtime>(app: &AppHandle<R>, path: &str) {
     let claimed = claim(&mut BOOTSTRAP.lock(), Instant::now());
     if let Some(window) = claimed.and_then(|label| app.get_webview_window(&label)) {
         if navigate_to_flow(&window, path).is_ok() {
-            let _ = window.set_focus();
+            bring_forward(&window);
             return;
         }
     }

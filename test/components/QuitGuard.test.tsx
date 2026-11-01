@@ -25,10 +25,15 @@ vi.mock("@tauri-apps/api/webviewWindow", () => ({
 }));
 
 const saveBeforeLeaving = vi.fn();
+const resolveUnsaved = vi.fn();
 vi.mock("@/lib/commands/fileCommands", () => ({
     saveBeforeLeaving: () => {
         order.push("save");
         return saveBeforeLeaving();
+    },
+    resolveUnsaved: () => {
+        order.push("ask");
+        return resolveUnsaved();
     },
 }));
 
@@ -50,6 +55,7 @@ import QuitGuard from "@/components/QuitGuard";
 beforeEach(() => {
     invoke.mockReset();
     saveBeforeLeaving.mockReset();
+    resolveUnsaved.mockReset();
     shutdownCollab.mockReset();
     shutdownCollab.mockResolvedValue(undefined);
     toastError.mockReset();
@@ -100,23 +106,37 @@ describe("QuitGuard", () => {
         expect(toastError).not.toHaveBeenCalled();
     });
 
-    it("cancels the exit when the flow could not be written", async () => {
-        // Quitting with a full disk must keep the window, not take the round
-        // down with the process.
+    // The shell closes a window that does not answer in time, so the hold
+    // goes out before the question: a debater reading the dialog must not have
+    // the window closed under them.
+    it("asks before a failed save leaves, holding the deadline first", async () => {
         saveBeforeLeaving.mockResolvedValue(false);
+        resolveUnsaved.mockResolvedValue(true);
 
         await requestQuit();
 
-        await waitFor(() => expect(invoke).toHaveBeenCalledWith("finish_quit", { saved: false }));
-        expect(toastError).toHaveBeenCalled();
+        await waitFor(() => expect(invoke).toHaveBeenCalledWith("finish_quit", { saved: true }));
+        expect(invoke.mock.calls[0]).toEqual(["hold_quit"]);
+        expect(order).toEqual(["save", "report", "ask", "hang up", "report"]);
     });
 
-    it("treats a thrown save as a failure rather than exiting anyway", async () => {
-        saveBeforeLeaving.mockRejectedValue(new Error("boom"));
+    it("cancels the exit, and keeps the partners, when the debater cancels", async () => {
+        saveBeforeLeaving.mockResolvedValue(false);
+        resolveUnsaved.mockResolvedValue(false);
 
         await requestQuit();
 
         await waitFor(() => expect(invoke).toHaveBeenCalledWith("finish_quit", { saved: false }));
-        expect(toastError).toHaveBeenCalled();
+        expect(shutdownCollab).not.toHaveBeenCalled();
+    });
+
+    it("treats a thrown save as a failed one and asks", async () => {
+        saveBeforeLeaving.mockRejectedValue(new Error("boom"));
+        resolveUnsaved.mockResolvedValue(false);
+
+        await requestQuit();
+
+        await waitFor(() => expect(invoke).toHaveBeenCalledWith("finish_quit", { saved: false }));
+        expect(resolveUnsaved).toHaveBeenCalled();
     });
 });

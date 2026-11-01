@@ -60,12 +60,12 @@ fn base_dir() -> Result<PathBuf, String> {
     config_dir().ok_or_else(|| "Could not locate your config directory".to_string())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn read_sidecar(round_id: String) -> Result<Option<String>, String> {
     read_sidecar_in(&base_dir()?, &round_id)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn write_sidecar(round_id: String, contents: String) -> Result<(), String> {
     write_sidecar_in(&base_dir()?, &round_id, &contents)
 }

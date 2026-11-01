@@ -483,12 +483,12 @@ fn post(path: &str, body: &Json) -> Result<Json, String> {
     serde_json::from_str(&text).map_err(|_| "bad-response".to_string())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn cardmirror_jump(source: String) -> Result<Json, String> {
     post("/jump", &json!({ "source": source }))
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn cardmirror_insert(text: String, role: String, new_paragraph: bool) -> Result<Json, String> {
     // ebb never sends omitted text, but the field is part of the insert shape.
     post(

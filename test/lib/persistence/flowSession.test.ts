@@ -6,6 +6,7 @@ import { FLOW_FILE_VERSION, parseFlowFile, serializeFlow } from "@/lib/persisten
 import {
     attachFlowAutosave,
     createFlowFile,
+    discardUnsaved,
     pickFlowToOpen,
     readFlowAt,
     saveFlowAs,
@@ -150,6 +151,63 @@ describe("saveFlowNow", () => {
         expect(await saveFlowNow("/a.ebb", makeFlowRound({}))).toBe(true);
         fs.failWrites = "disk full";
         expect(await saveFlowNow("/a.ebb", makeFlowRound({}))).toBe(false);
+    });
+});
+
+describe("the recovery copy", () => {
+    it("keeps a round the flows folder refused, without calling it saved", async () => {
+        const round = makeFlowRound({});
+        const status = vi.fn();
+        fs.failFlowWrites = "access denied";
+
+        expect(await saveFlowNow("/a.ebb", round, status)).toBe(false);
+        // The file was not written, and the header still says so.
+        expect(status.mock.calls.flat()).toEqual(["saving", "error"]);
+        expect(parseFlowFile(fs.swaps.get("/a.ebb")!).id).toBe(round.id);
+    });
+
+    it("is dropped once the file itself lands", async () => {
+        await saveFlowNow("/a.ebb", makeFlowRound({}));
+        expect(fs.swaps.has("/a.ebb")).toBe(false);
+    });
+
+    it("never makes a conflict safe to leave", async () => {
+        const round = makeFlowRound({});
+        fs.files.set("/a.ebb", serializeFlow(round));
+        await readFlowAt("/a.ebb", fs);
+        fs.conflictOn = "/a.ebb";
+        expect(await saveFlowNow("/a.ebb", round)).toBe(false);
+    });
+
+    it("stays dropped after the debater leaves without saving", async () => {
+        fs.failFlowWrites = "access denied";
+        await saveFlowNow("/a.ebb", makeFlowRound({}));
+        await discardUnsaved("/a.ebb");
+        // A flush on the way out must not write it straight back.
+        await saveFlowNow("/a.ebb", makeFlowRound({}));
+        expect(fs.swaps.has("/a.ebb")).toBe(false);
+    });
+
+    it("is restored on open when the file never received it", async () => {
+        const old = makeFlowRound({});
+        const newer = { ...old, updatedAt: old.updatedAt + 1, title: "newer" };
+        fs.files.set("/a.ebb", serializeFlow(old));
+        fs.swaps.set("/a.ebb", serializeFlow(newer));
+
+        const opened = await readFlowAt("/a.ebb", fs);
+        expect(opened?.recovered).toBe(true);
+        expect(opened?.round.updatedAt).toBe(newer.updatedAt);
+    });
+
+    it("is passed over when it matches the file or was torn mid-write", async () => {
+        const round = makeFlowRound({});
+        fs.files.set("/a.ebb", serializeFlow(round));
+
+        fs.swaps.set("/a.ebb", serializeFlow(round));
+        expect((await readFlowAt("/a.ebb", fs))?.recovered).toBe(false);
+
+        fs.swaps.set("/a.ebb", "{ torn");
+        expect((await readFlowAt("/a.ebb", fs))?.recovered).toBe(false);
     });
 });
 

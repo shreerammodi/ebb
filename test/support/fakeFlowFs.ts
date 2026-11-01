@@ -24,6 +24,15 @@ export interface FakeFlowFs extends FlowFs {
     writes: string[];
     /** Make the next write of any kind fail with this message. */
     failWrites: string | null;
+    /**
+     * Fail flow writes alone, the way a flows folder the OS will not let ebb
+     * write does, while the recovery copy beside the config still lands.
+     */
+    failFlowWrites: string | null;
+    /** Folders that refuse writes, the way Controlled Folder Access does. */
+    blockedDirs: Set<string>;
+    /** Recovery copies, keyed by the flow path they belong to. */
+    swaps: Map<string, string>;
     /** Pretend the file changed underneath ebb: the next guarded write is refused. */
     conflictOn: string | null;
     /** Stamps handed back by readFlow and writeFlow. */
@@ -47,6 +56,9 @@ export function installFakeFlowFs(): FakeFlowFs {
         dragged: [],
         writes: [],
         failWrites: null,
+        failFlowWrites: null,
+        swaps: new Map(),
+        blockedDirs: new Set(),
         conflictOn: null,
         stamps: new Map(),
 
@@ -55,6 +67,8 @@ export function installFakeFlowFs(): FakeFlowFs {
         pickOpenPath: () => Promise.resolve(fs.nextOpen),
         pickSavePath: () => Promise.resolve(fs.nextSave),
         pickDirectory: () => Promise.resolve(fs.nextDirectory),
+
+        probeDir: (dir) => Promise.resolve(fs.blockedDirs.has(dir) ? "blocked" : "ok"),
 
         createFlow: (dir, name, text) => {
             if (fs.failWrites) return Promise.reject(new Error(fs.failWrites));
@@ -75,7 +89,8 @@ export function installFakeFlowFs(): FakeFlowFs {
         },
 
         writeFlow: (path, text, expectedMtimeMs) => {
-            if (fs.failWrites) return Promise.reject(new Error(fs.failWrites));
+            const fail = fs.failWrites ?? fs.failFlowWrites;
+            if (fail) return Promise.reject(new Error(fail));
             // Mirrors the shell: a guarded write over a changed file is refused
             // with the tagged string Tauri rejects with.
             if (fs.conflictOn === path && expectedMtimeMs != null) {
@@ -86,6 +101,19 @@ export function installFakeFlowFs(): FakeFlowFs {
             fs.stamps.set(path, mtimeMs);
             fs.writes.push(path);
             return Promise.resolve(mtimeMs);
+        },
+
+        readSwap: (path) => Promise.resolve(fs.swaps.get(path) ?? null),
+
+        writeSwap: (path, text) => {
+            if (fs.failWrites) return Promise.reject(new Error(fs.failWrites));
+            fs.swaps.set(path, text);
+            return Promise.resolve();
+        },
+
+        clearSwap: (path) => {
+            fs.swaps.delete(path);
+            return Promise.resolve();
         },
 
         readRecents: () => Promise.resolve(fs.files.get("/config/recents.json") ?? null),

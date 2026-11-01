@@ -10,10 +10,12 @@ mod config;
 mod dragout;
 mod export;
 mod flowfile;
+mod folder_access;
 mod menu;
 mod pairing;
 mod shutdown;
 mod sidecar;
+mod swap;
 mod windows;
 
 use tauri::Manager;
@@ -40,9 +42,7 @@ fn handle_open<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<String>)
     }
     if paths.is_empty() {
         match windows::target_window(app) {
-            Some(w) => {
-                let _ = w.set_focus();
-            }
+            Some(w) => windows::bring_forward(&w),
             None => {
                 let _ = windows::open_dashboard(app);
             }
@@ -62,9 +62,17 @@ pub fn run() {
     // Linux launches a second process; this hands its argv to the running
     // one so two copies never autosave over the same file. Every requested
     // path opens its own new window, same as macOS's RunEvent::Opened below.
+    //
+    // On Windows the callback runs inside the main thread's message loop,
+    // and building a window there deadlocks WebView2: the app freezes with a
+    // black window that will not close. Handing the open to its own thread
+    // lets the main thread go back to pumping messages while the window is
+    // built.
     #[cfg(desktop)]
-    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-        handle_open(app, flowfile::flow_paths_in(&argv));
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+        let app = app.clone();
+        let paths = flowfile::flow_paths_in(&argv, std::path::Path::new(&cwd));
+        std::thread::spawn(move || handle_open(&app, paths));
     }));
 
     builder
@@ -109,7 +117,10 @@ pub fn run() {
             // nothing gets the dashboard, marked adoptable in case an open
             // event turns out to arrive after all (see windows.rs).
             let argv = std::env::args().collect::<Vec<_>>();
-            let paths = windows::take_launch_opens(flowfile::flow_paths_in(&argv));
+            let paths = windows::take_launch_opens(flowfile::flow_paths_in(
+                &argv,
+                &std::env::current_dir().unwrap_or_default(),
+            ));
             if paths.is_empty() {
                 let dashboard = windows::open_dashboard(handle)?;
                 windows::mark_bootstrap(dashboard.label());
@@ -147,10 +158,16 @@ pub fn run() {
             flowfile::read_recents,
             flowfile::write_flow_file,
             flowfile::write_recents,
+            folder_access::allow_in_controlled_folders,
+            folder_access::probe_flows_dir,
             menu::rebuild_menu,
             sidecar::read_sidecar,
             sidecar::write_sidecar,
+            swap::clear_swap,
+            swap::read_swap,
+            swap::write_swap,
             shutdown::finish_quit,
+            shutdown::hold_quit,
             system_info,
             windows::close_window,
             windows::new_window,

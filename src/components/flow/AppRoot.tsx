@@ -77,13 +77,14 @@ export default function AppRoot() {
         }
 
         readFlowAt(path)
-            .then((r) => {
+            .then((opened) => {
                 if (!mounted) return;
-                if (!r) {
+                if (!opened) {
                     toast.error(`${basename(path)} no longer exists`);
                     router.replace("/");
                     return;
                 }
+                const r = opened.round;
                 const newFlow = params.get("new") != null;
                 useFlowStore.getState().loadRound(r, { docPath: path, newFlow });
                 // loadRound already seeded the replica from the file, which is
@@ -106,8 +107,14 @@ export default function AppRoot() {
                         // the open down with it.
                         toast.error(errorMessage(err, "Could not reconnect to your partners"));
                     });
-                // The round just came off disk, so it is already saved.
-                autosave.prime();
+                // The round just came off disk, so it is already saved - unless
+                // it came from the recovery copy, which the file never got.
+                // Left unprimed, the load itself is the change autosave writes.
+                if (opened.recovered) {
+                    toast.success(`Recovered unsaved changes to ${basename(path)}`);
+                } else {
+                    autosave.prime();
+                }
                 void noteOpened(path);
                 void reportOpenPath(path);
                 // Drop the one-shot marker so a later refresh loads this flow

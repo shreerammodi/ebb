@@ -11,7 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 
-import type { FlowFs, FlowLocations, FlowSnapshot } from "./flowFs";
+import type { FlowFs, FlowLocations, FlowSnapshot, FolderAccess } from "./flowFs";
 import { EBB_EXT } from "./flowPaths";
 
 /** Picker filters. JSON is offered too so legacy exports stay openable. */
@@ -44,6 +44,8 @@ export function createFlowFs(): FlowFs {
             return picked.toLowerCase().endsWith(EBB_EXT) ? picked : picked + EBB_EXT;
         },
 
+        probeDir: (dir) => invoke<FolderAccess>("probe_flows_dir", { dir }),
+
         createFlow: (dir, name, text) =>
             invoke<string>("create_flow_file", { dir, name, contents: text }),
 
@@ -51,6 +53,12 @@ export function createFlowFs(): FlowFs {
 
         writeFlow: (path, text, expectedMtimeMs = null) =>
             invoke<number>("write_flow_file", { path, contents: text, expectedMtimeMs }),
+
+        readSwap: (path) => invoke<string | null>("read_swap", { path }),
+
+        writeSwap: (path, text) => invoke<void>("write_swap", { path, contents: text }),
+
+        clearSwap: (path) => invoke<void>("clear_swap", { path }),
 
         readRecents: () => invoke<string | null>("read_recents"),
 

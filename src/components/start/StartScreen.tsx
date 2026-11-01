@@ -19,6 +19,7 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 import { getCurrentVersion, isDesktop, useIsDesktop } from "@/lib/update/adapter";
 import { cn } from "@/lib/utils";
 
+import FolderAccessDialog from "./FolderAccessDialog";
 import MigrationDialog from "./MigrationDialog";
 import { useRecentFlows, type RecentEntry } from "./useRecentFlows";
 
@@ -228,6 +229,7 @@ export default function StartScreen() {
                 </p>
             </div>
             <MigrationDialog onMigrated={refresh} />
+            {desktop && <FolderAccessDialog />}
         </main>
     );
 }

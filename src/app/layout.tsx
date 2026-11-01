@@ -11,6 +11,7 @@ import RejoinDialog from "@/components/collab/RejoinDialog";
 import ShareSheet from "@/components/collab/ShareSheet";
 import ConfigFileSync from "@/components/ConfigFileSync";
 import { DesktopMenu } from "@/components/DesktopMenu";
+import LeaveDialog from "@/components/LeaveDialog";
 import MotionRoot from "@/components/MotionRoot";
 import NavigatorHost from "@/components/NavigatorHost";
 import QuitGuard from "@/components/QuitGuard";
@@ -341,6 +342,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <BridgeHost />
                 <NavigatorHost />
                 <QuitGuard />
+                <LeaveDialog />
                 <ThemeSync />
                 <ConfigFileSync />
                 <InviteWatch />

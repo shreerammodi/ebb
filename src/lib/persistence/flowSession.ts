@@ -66,9 +66,13 @@ function remember(path: string, mtimeMs: number): void {
     seen = { path, mtimeMs };
 }
 
-/** Test seam: drop the remembered stamp so suites cannot leak into each other. */
+/**
+ * Test seam: drop the remembered stamp, and any flow left without saving, so
+ * suites cannot leak into each other.
+ */
 export function forgetSeenStamp(): void {
     seen = null;
+    abandoned = null;
 }
 
 // --- Recents bookkeeping -------------------------------------------------------
@@ -81,18 +85,40 @@ export async function noteOpened(path: string, fs?: FlowFs): Promise<void> {
 
 // --- Reading -------------------------------------------------------------------
 
+export interface OpenedFlow {
+    round: FlowRound;
+    /**
+     * The round came from the recovery copy because the file never received
+     * it. The caller leaves autosave unprimed so the round is written back.
+     */
+    recovered: boolean;
+}
+
 /**
  * Read the flow at `path`, or null when the file is gone - an ordinary outcome
  * for a recent entry whose flow was moved or deleted outside ebb. A file that
  * exists but does not parse throws, because that is a real problem the user
  * needs told about rather than a flow quietly vanishing from the list.
+ *
+ * A recovery copy that differs from the file is the newer round: it is only
+ * left behind when a save reached it and not the file. A torn copy does not
+ * parse and is passed over for the file.
  */
-export async function readFlowAt(path: string, fs?: FlowFs): Promise<FlowRound | null> {
+export async function readFlowAt(path: string, fs?: FlowFs): Promise<OpenedFlow | null> {
     const io = fs ?? (await getFlowFs());
     const snapshot = await io.readFlow(path);
     if (snapshot === null) return null;
     remember(path, snapshot.mtimeMs);
-    return parseFlowFile(snapshot.text);
+    if (abandoned === path) abandoned = null;
+    const swap = await io.readSwap(path).catch(() => null);
+    if (swap !== null && swap !== snapshot.text) {
+        try {
+            return { round: parseFlowFile(swap), recovered: true };
+        } catch {
+            // Torn mid-write; the file holds the save before it.
+        }
+    }
+    return { round: parseFlowFile(snapshot.text), recovered: false };
 }
 
 // --- Creating and saving -------------------------------------------------------
@@ -171,18 +197,20 @@ export async function saveFlowAs(round: FlowRound, fs?: FlowFs): Promise<string 
 }
 
 /**
- * Write immediately and report whether the flow reached disk.
+ * Write immediately and report whether the flow file received the round.
  *
  * The boolean matters: a caller that is about to discard the round - closing
- * it, or quitting - must not treat a failed write as done. Backs the manual
- * retry affordance too.
+ * it, or quitting - must not treat a failed write as done, and one about to
+ * hand the file to another app must not send a stale copy. A round that only
+ * reached its recovery copy is not in the file, so it answers false. Backs the
+ * manual retry affordance too.
  */
 export async function saveFlowNow(
     path: string,
     round: FlowRound,
     onStatus?: (status: SaveStatus) => void,
 ): Promise<boolean> {
-    return write(path, round, stampFor(path), onStatus);
+    return write(path, round, false, onStatus);
 }
 
 /**
@@ -195,27 +223,92 @@ export async function overwriteFlow(
     round: FlowRound,
     onStatus?: (status: SaveStatus) => void,
 ): Promise<boolean> {
-    return write(path, round, null, onStatus);
+    return write(path, round, true, onStatus);
 }
 
 async function write(
     path: string,
     round: FlowRound,
-    expectedMtimeMs: number | null,
+    force: boolean,
     onStatus?: (status: SaveStatus) => void,
 ): Promise<boolean> {
     onStatus?.("saving");
-    try {
+    const landed = await persist(path, round, force);
+    onStatus?.(statusOf(landed));
+    return landed === "file";
+}
+
+/** How far one save got. "swap" is the recovery copy without the file. */
+type Landed = "file" | "swap" | "conflict" | "none";
+
+function statusOf(landed: Landed): SaveStatus {
+    if (landed === "file") return "saved";
+    return landed === "conflict" ? "conflict" : "error";
+}
+
+let queue: Promise<unknown> = Promise.resolve();
+
+/**
+ * The flow the debater chose to leave without saving. Saves still queued for
+ * it, and any an unmount flushes afterwards, write nothing, so the recovery
+ * copy that was dropped is not written straight back. Opening the flow again
+ * lifts it.
+ */
+let abandoned: string | null = null;
+
+/**
+ * Leave the flow at `path` as its file last received it: drop the recovery
+ * copy and stop writing it. Runs behind every save already queued.
+ */
+export function discardUnsaved(path: string): Promise<void> {
+    abandoned = path;
+    const job = queue.then(async () => {
+        const io = await getFlowFs();
+        await io.clearSwap(path);
+    });
+    queue = job.catch(() => undefined);
+    return job.catch(() => undefined);
+}
+
+/**
+ * Write the round to its recovery copy, then to the file, then drop the copy.
+ *
+ * Saves run one at a time, in the order they were asked for. The shell runs
+ * file commands off its main thread, so two saves in flight could otherwise
+ * land in either order and leave an older round on disk - and, here, an older
+ * recovery copy than the round the file failed to receive. The stamp is read
+ * when the save runs rather than when it was queued, so it is the one the
+ * save before it left.
+ */
+function persist(path: string, round: FlowRound, force: boolean): Promise<Landed> {
+    const job = queue.then(async (): Promise<Landed> => {
+        if (path === abandoned) return "none";
         const io = await getFlowFs();
         const text = serializeFlow(round);
-        remember(path, await io.writeFlow(path, text, expectedMtimeMs));
-        onStatus?.("saved");
+        const swapped = await io.writeSwap(path, text).then(
+            () => true,
+            () => false,
+        );
+        try {
+            remember(path, await io.writeFlow(path, text, force ? null : stampFor(path)));
+        } catch (err) {
+            if (isConflict(err)) return "conflict";
+            return swapped ? "swap" : "none";
+        }
+        // A copy that outlives this only matches the file, and a copy that
+        // matches is not restored from.
+        void io.clearSwap(path).catch(() => undefined);
+        // Beside each save, and only once the flow itself landed: a sidecar
+        // that outran the file it stamps would be discarded on the next open
+        // anyway.
         void persistReplica(round, text);
-        return true;
-    } catch (err) {
-        onStatus?.(isConflict(err) ? "conflict" : "error");
-        return false;
-    }
+        return "file";
+    });
+    // A save that throws outright reports nothing landed, and must not stall
+    // every save queued behind it.
+    const settled = job.catch((): Landed => "none");
+    queue = settled;
+    return settled;
 }
 
 // --- Autosave --------------------------------------------------------------------
@@ -253,23 +346,10 @@ export function attachFlowAutosave(
 
     function doSave(job: { path: string; round: FlowRound }) {
         const seq = ++saveSeq;
-        const text = serializeFlow(job.round);
         onStatus?.("saving");
-        getFlowFs()
-            .then((io) => io.writeFlow(job.path, text, stampFor(job.path)))
-            .then(
-                (mtimeMs) => {
-                    remember(job.path, mtimeMs);
-                    if (seq === saveSeq) onStatus?.("saved");
-                    // Beside each autosave, and only once the flow itself
-                    // landed: a sidecar that outran the file it stamps would
-                    // be discarded on the next open anyway.
-                    void persistReplica(job.round, text);
-                },
-                (err: unknown) => {
-                    if (seq === saveSeq) onStatus?.(isConflict(err) ? "conflict" : "error");
-                },
-            );
+        void persist(job.path, job.round, false).then((landed) => {
+            if (seq === saveSeq) onStatus?.(statusOf(landed));
+        });
     }
 
     function flush() {

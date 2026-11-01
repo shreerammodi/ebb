@@ -32,8 +32,11 @@ use tauri::{AppHandle, Emitter, Manager, Runtime, WebviewWindow};
 
 use crate::windows;
 
-/// How long a window stays open waiting for its frontend to confirm.
-const FLUSH_TIMEOUT: Duration = Duration::from_secs(3);
+/// How long a window stays open waiting for its frontend to confirm. A save
+/// on Windows can spend a second or more retrying past a scanner's lock at
+/// each of its steps, and may wait behind an autosave already running, so
+/// this is a backstop for a frontend that is gone, not a budget for a write.
+const FLUSH_TIMEOUT: Duration = Duration::from_secs(10);
 
 static NEXT_ATTEMPT: AtomicU64 = AtomicU64::new(0);
 
@@ -51,6 +54,10 @@ struct Attempt {
     /// Labels not yet confirmed.
     pending: HashSet<String>,
     action: Action,
+    /// A window is asking the debater what to do with a round it could not
+    /// save, so the deadline no longer applies: closing under an open
+    /// question would make the choice for them.
+    held: bool,
 }
 
 #[derive(Default)]
@@ -85,6 +92,7 @@ fn claim(labels: &[String], action: Action) -> Option<u64> {
             labels: set.clone(),
             pending: set,
             action,
+            held: false,
         },
     );
     Some(attempt)
@@ -108,7 +116,23 @@ fn resolve_one(label: &str) -> Option<Action> {
 /// Overrides a hung reply for an entire attempt: whatever is still pending
 /// completes as if every remaining window had confirmed.
 fn resolve_timeout(attempt: u64) -> Option<Action> {
-    STATE.lock().attempts.remove(&attempt).map(|a| a.action)
+    let mut state = STATE.lock();
+    if state.attempts.get(&attempt)?.held {
+        return None;
+    }
+    state.attempts.remove(&attempt).map(|a| a.action)
+}
+
+/// Lifts the deadline from the attempt `label` belongs to. The attempt still
+/// ends the ordinary way, when the window answers with `finish_quit`.
+fn hold(label: &str) {
+    let mut state = STATE.lock();
+    let Some(&attempt) = state.owner.get(label) else {
+        return;
+    };
+    if let Some(entry) = state.attempts.get_mut(&attempt) {
+        entry.held = true;
+    }
 }
 
 /// Abandons the attempt `label` belongs to, releasing every label it covers
@@ -201,7 +225,9 @@ pub fn request_close<R: Runtime>(app: &AppHandle<R>, label: &str) {
 /// The frontend's answer, from the window that sent it. `saved` false keeps
 /// that window (and, in a full quit, every other window in the same attempt)
 /// open with the round intact; the frontend is responsible for saying why.
-#[tauri::command]
+// Async so the window is destroyed from outside its own IPC callback, which
+// WebView2 does not expect to be torn down from.
+#[tauri::command(async)]
 pub fn finish_quit<R: Runtime>(app: AppHandle<R>, window: WebviewWindow<R>, saved: bool) {
     let label = window.label().to_string();
     if !saved {
@@ -211,6 +237,13 @@ pub fn finish_quit<R: Runtime>(app: AppHandle<R>, window: WebviewWindow<R>, save
     if let Some(action) = resolve_one(&label) {
         complete(&app, action);
     }
+}
+
+/// The window could not save and is asking the debater what to do, which
+/// takes as long as it takes; its later `finish_quit` carries the answer.
+#[tauri::command]
+pub fn hold_quit<R: Runtime>(window: WebviewWindow<R>) {
+    hold(window.label());
 }
 
 #[cfg(test)]
@@ -347,6 +380,20 @@ mod tests {
         assert!(!in_progress("a"));
         assert!(!in_progress("b"));
         assert!(!in_progress("c"));
+    }
+
+    #[test]
+    fn a_held_attempt_outlives_its_deadline_and_still_finishes() {
+        let _g = fresh();
+        let attempt = claim(&labels(&["a"]), Action::CloseWindow("a".into())).unwrap();
+        hold("a");
+
+        assert!(
+            resolve_timeout(attempt).is_none(),
+            "the question is still open"
+        );
+        assert!(in_progress("a"));
+        assert!(matches!(resolve_one("a"), Some(Action::CloseWindow(_))));
     }
 
     #[test]

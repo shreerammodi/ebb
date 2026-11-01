@@ -17,6 +17,7 @@ import { closeOpenFlow, dragOpenFlow, saveOpenFlow } from "@/lib/commands/fileCo
 import { makeFlowRound } from "@/lib/model/flow";
 import { serializeFlow } from "@/lib/persistence/flowFile";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+import { useLeaveDialog, type LeaveChoice } from "@/lib/store/useLeaveDialog";
 
 import { installFakeFlowFs, type FakeFlowFs } from "../../support/fakeFlowFs";
 
@@ -56,18 +57,59 @@ describe("closeOpenFlow", () => {
         expect(navigateToStart).toHaveBeenCalled();
     });
 
-    it("keeps the round on screen when the save fails", async () => {
-        // Closing is the instinctive move when something looks wrong, which is
-        // exactly when saving is failing. Discarding the round here would
-        // destroy it at the worst possible moment.
-        fs.failWrites = "disk full";
+    /** Close with the flows folder refusing writes, answering the question. */
+    async function closeAnswering(...choices: LeaveChoice[]) {
+        const closing = closeOpenFlow();
+        for (const choice of choices) {
+            await vi.waitFor(() => expect(useLeaveDialog.getState().open).toBe(true));
+            useLeaveDialog.getState().answer(choice);
+        }
+        await closing;
+    }
 
-        await closeOpenFlow();
+    // Closing is the instinctive move when something looks wrong, which is
+    // exactly when saving is failing. Cancel keeps the round where it was.
+    it("keeps the round on screen when the save fails and the debater cancels", async () => {
+        fs.failFlowWrites = "access denied";
 
-        expect(useFlowStore.getState().round).not.toBeNull();
+        await closeAnswering("cancel");
+
         expect(useFlowStore.getState().docPath).toBe("/a.ebb");
         expect(navigateToStart).not.toHaveBeenCalled();
+        expect(fs.swaps.has("/a.ebb")).toBe(true);
+    });
+
+    it("never asks when the file received the round", async () => {
+        await closeOpenFlow();
+        expect(useLeaveDialog.getState().open).toBe(false);
+    });
+
+    it("drops the recovery copy when the debater will not save", async () => {
+        fs.failFlowWrites = "access denied";
+
+        await closeAnswering("discard");
+
+        expect(navigateToStart).toHaveBeenCalled();
+        expect(fs.swaps.has("/a.ebb")).toBe(false);
+    });
+
+    it("asks again when Save still cannot write, and leaves once Save As does", async () => {
+        fs.failFlowWrites = "access denied";
+        fs.nextSave = "/elsewhere/a.ebb";
+        // The fake refuses every flow write while this is set, so Save As has
+        // to be let through by hand once Save has failed.
+        const closing = closeOpenFlow();
+        await vi.waitFor(() => expect(useLeaveDialog.getState().open).toBe(true));
+        useLeaveDialog.getState().answer("save");
+        await vi.waitFor(() => expect(useLeaveDialog.getState().open).toBe(true));
+        fs.failFlowWrites = null;
+        useLeaveDialog.getState().answer("saveAs");
+        await closing;
+
         expect(toastError).toHaveBeenCalled();
+        expect(fs.files.has("/elsewhere/a.ebb")).toBe(true);
+        expect(navigateToStart).toHaveBeenCalled();
+        expect(fs.swaps.has("/a.ebb")).toBe(false);
     });
 });
 

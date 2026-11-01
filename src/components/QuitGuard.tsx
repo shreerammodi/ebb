@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { toast } from "sonner";
 
 import { shutdownCollab } from "@/lib/collab/runtime";
-import { saveBeforeLeaving } from "@/lib/commands/fileCommands";
+import { resolveUnsaved, saveBeforeLeaving } from "@/lib/commands/fileCommands";
 import { isDesktop } from "@/lib/update/adapter";
 import { listenHere } from "@/lib/windowEvents";
 
@@ -13,11 +12,13 @@ import { listenHere } from "@/lib/windowEvents";
  *
  * Quitting or closing the window used to end the process immediately, taking
  * whatever autosave had not yet written with it. Rust now holds the exit and
- * emits `app:flush`; this writes the open flow and reports back. Saying the
- * write failed cancels the exit, so a full disk or an ejected drive keeps the
- * round on screen instead of destroying it on the way out.
+ * emits `app:flush`; this writes the open flow and reports back. When the
+ * write fails, the debater is asked what to do with the round, and cancelling
+ * cancels the exit, so a full disk or an ejected drive keeps the round on
+ * screen instead of destroying it on the way out.
  *
- * The session comes down after the write and before the report. A window that
+ * The session comes down after the write and before the report, and only
+ * when the window is actually leaving. A window that
  * exits without saying so leaves its partners looking at a peer that is gone
  * until QUIC times the connection out, which is tens of seconds of a chip that
  * reads connected. Whether that teardown worked has no bearing on `saved`: a
@@ -40,23 +41,21 @@ export default function QuitGuard() {
             // request; a full quit broadcasts, which reaches this listener too.
             const stop = await listenHere("app:flush", () => {
                 void (async () => {
-                    let saved = false;
-                    try {
-                        saved = await saveBeforeLeaving();
-                    } catch {
-                        saved = false;
+                    let leave = await saveBeforeLeaving().catch(() => false);
+                    if (!leave) {
+                        // The shell closes a window that does not answer in
+                        // time; the debater gets as long as they need.
+                        await invoke("hold_quit");
+                        leave = await resolveUnsaved().catch(() => false);
                     }
-                    if (!saved) {
-                        toast.error(
-                            "This flow could not be saved, so ebb stayed open. Free up space, reconnect the drive, or use Save As to put it somewhere else.",
-                        );
+                    if (leave) {
+                        try {
+                            await shutdownCollab();
+                        } catch {
+                            // Leaving is not conditional on a clean hang-up.
+                        }
                     }
-                    try {
-                        await shutdownCollab();
-                    } catch {
-                        // Leaving is not conditional on a clean hang-up.
-                    }
-                    await invoke("finish_quit", { saved });
+                    await invoke("finish_quit", { saved: leave });
                 })();
             });
 

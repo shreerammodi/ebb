@@ -164,7 +164,9 @@ fn render_toml(existing: Option<&str>, config: &Json) -> Result<String, String> 
 
 // --- Commands ------------------------------------------------------------------
 
-#[tauri::command]
+static WRITE_LOCK: parking_lot::Mutex<()> = parking_lot::Mutex::new(());
+
+#[tauri::command(async)]
 pub fn read_config(state: State<'_, ConfigState>) -> Result<Option<Json>, String> {
     match std::fs::read_to_string(&state.path) {
         Ok(text) => Ok(Some(parse_toml_to_json(&text)?)),
@@ -173,13 +175,17 @@ pub fn read_config(state: State<'_, ConfigState>) -> Result<Option<Json>, String
     }
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn write_config<R: Runtime>(
     app: AppHandle<R>,
     window: WebviewWindow<R>,
     state: State<'_, ConfigState>,
     config: Json,
 ) -> Result<(), String> {
+    // Off the main thread, two windows can write at once, and each reads the
+    // file to merge into: without this the second write drops the first's
+    // change, and the echo record below could name the wrong bytes.
+    let _held = WRITE_LOCK.lock();
     let existing = std::fs::read_to_string(&state.path).ok();
     let rendered = render_toml(existing.as_deref(), &config)?;
     let bytes = rendered.clone().into_bytes();
@@ -191,7 +197,10 @@ pub fn write_config<R: Runtime>(
     if let Some(dir) = state.path.parent() {
         std::fs::create_dir_all(dir).map_err(|e| format!("{e}"))?;
     }
-    std::fs::write(&state.path, &bytes).map_err(|e| format!("{e}"))?;
+    // Atomic, because the watcher reads the file the moment it changes: a
+    // truncate-then-write lets it read an empty file and hand every window
+    // the defaults, which turns Listen for invites off mid-round.
+    crate::flowfile::write_atomic(&state.path, &bytes)?;
     notify_siblings(&app, window.label(), &rendered);
     Ok(())
 }

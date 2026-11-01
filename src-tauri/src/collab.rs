@@ -1576,8 +1576,15 @@ fn short_host(raw: &str) -> String {
 /// carries. Read from the `hostname` binary every desktop platform ships,
 /// rather than pulling in a crate for one string. Empty when it cannot be
 /// read, which the caller shows as no default rather than as an error.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn machine_name() -> String {
+    // Spawning `hostname` from a windowed app flashes a console on Windows,
+    // and its output comes back in the OEM codepage; the environment already
+    // holds the name, as UTF-16.
+    #[cfg(windows)]
+    if let Some(name) = std::env::var_os("COMPUTERNAME") {
+        return short_host(&name.to_string_lossy());
+    }
     let Ok(out) = std::process::Command::new("hostname").output() else {
         return String::new();
     };
@@ -1594,7 +1601,7 @@ pub fn machine_name() -> String {
 /// debater the id a partner saves them under while no socket is open and
 /// nothing has touched the network. Empty when the key can neither be read
 /// nor written, which the caller shows as no id rather than as an error.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn collab_endpoint_id() -> String {
     identity_path()
         .map(|path| endpoint_id_at(&path))

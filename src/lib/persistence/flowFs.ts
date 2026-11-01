@@ -24,6 +24,13 @@ export interface FlowSnapshot {
     mtimeMs: number;
 }
 
+/**
+ * Whether ebb can write a folder. "blocked" is a refused write, which is what
+ * Windows' Controlled Folder Access produces; "unavailable" is anything else,
+ * such as a drive that is gone.
+ */
+export type FolderAccess = "ok" | "blocked" | "unavailable";
+
 export interface FlowFs {
     locations(): Promise<FlowLocations>;
     /** Native open picker. Null when the user cancels. */
@@ -32,6 +39,8 @@ export interface FlowFs {
     pickDirectory(): Promise<string | null>;
     /** Native save picker seeded with a filename. Null when the user cancels. */
     pickSavePath(suggested: string): Promise<string | null>;
+    /** Write and remove a probe file in `dir`, creating the folder if needed. */
+    probeDir(dir: string): Promise<FolderAccess>;
     /** Create without ever overwriting; resolves to the path actually used. */
     createFlow(dir: string, name: string, text: string): Promise<string>;
     /** Null when the file no longer exists, which callers treat as ordinary. */
@@ -41,6 +50,14 @@ export interface FlowFs {
      * to force. Resolves to the new stamp.
      */
     writeFlow(path: string, text: string, expectedMtimeMs?: number | null): Promise<number>;
+    /**
+     * The recovery copy of the flow at `path`, kept beside the config rather
+     * than beside the flow, so it lands even where the flows folder cannot be
+     * written. Null when there is none.
+     */
+    readSwap(path: string): Promise<string | null>;
+    writeSwap(path: string, text: string): Promise<void>;
+    clearSwap(path: string): Promise<void>;
     readRecents(): Promise<string | null>;
     writeRecents(text: string): Promise<void>;
     /** Show the file in Finder or the system file manager. */

@@ -28,7 +28,21 @@ fn flow_to_drag(path: &str) -> Result<PathBuf, String> {
     if !is_flow || !real.is_file() {
         return Err(format!("{} is not a flow", path.display()));
     }
-    Ok(real)
+    Ok(without_verbatim_prefix(real))
+}
+
+/// On Windows `canonicalize` answers with a `\\?\` path, which some drop
+/// targets refuse to accept from a file drag. The plain spelling names the
+/// same file.
+fn without_verbatim_prefix(path: PathBuf) -> PathBuf {
+    let text = path.to_string_lossy();
+    if let Some(rest) = text.strip_prefix(r"\\?\UNC\") {
+        return PathBuf::from(format!(r"\\{rest}"));
+    }
+    if let Some(rest) = text.strip_prefix(r"\\?\") {
+        return PathBuf::from(rest);
+    }
+    path
 }
 
 /// Starts an OS drag of the flow at `path` from this window. Resolves once the
@@ -68,6 +82,17 @@ pub async fn drag_flow_file<R: Runtime>(
 mod tests {
     use super::*;
     use std::fs;
+
+    #[test]
+    fn a_verbatim_path_is_handed_over_in_its_plain_spelling() {
+        let plain = |p: &str| without_verbatim_prefix(PathBuf::from(p));
+        assert_eq!(plain(r"\\?\C:\f\a.ebb"), PathBuf::from(r"C:\f\a.ebb"));
+        assert_eq!(
+            plain(r"\\?\UNC\srv\share\a.ebb"),
+            PathBuf::from(r"\\srv\share\a.ebb")
+        );
+        assert_eq!(plain("/home/a.ebb"), PathBuf::from("/home/a.ebb"));
+    }
 
     fn tmpdir(tag: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!(

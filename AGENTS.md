@@ -198,7 +198,16 @@ Formatting is `oxfmt` (via `npm run format` / `format:check`), not Prettier.
   uses the six narrow commands in `src-tauri/src/flowfile.rs` so the webview
   never holds a general filesystem capability. `src-tauri/src/sidecar.rs` adds
   the two that persist a collaboration replica, and neither of those takes a
-  path either. `src-tauri/src/dragout.rs` adds the one that drags
+  path either. `src-tauri/src/swap.rs` adds the three behind the recovery
+  copy: every save writes the round beside the config before the `.ebb` and
+  drops the copy once the `.ebb` lands, so a flows folder the OS will not let
+  ebb write (Controlled Folder Access guards Documents) still loses nothing,
+  and the next open restores from it. They take the flow's path only to hash
+  it into a filename. `src-tauri/src/folder_access.rs` adds the probe the start
+  screen runs on Windows to catch Controlled Folder Access refusing the flows
+  folder, and the one command that elevates: a UAC prompt adding ebb's own
+  executable, read in Rust and never passed from the webview, to the allowed
+  apps. `src-tauri/src/dragout.rs` adds the one that drags
   the open flow out to another app as a native file drag; it reads nothing and
   refuses any path that is not an existing `.ebb` file.
 - **An export is filed where the debater says, never into a downloads folder.**
@@ -318,6 +327,15 @@ edge case; otherwise leave the code bare.
   exit handshake the same way: closing one window flushes and closes only
   it; quitting (Cmd+Q, or closing the last window) flushes every open window
   and exits only once all of them confirm.
+- **Never build a window from the main thread outside `setup()`.** On
+  Windows, `WebviewWindowBuilder::build` deadlocks WebView2 when it runs in a
+  synchronous command or an event handler: the app freezes with a black
+  window that will not close, and nothing saves. A command that opens a
+  window is `async` (`new_window`), and a handler hands the open to its own
+  thread (the single-instance callback in `lib.rs`). The same goes for any
+  command that waits on the disk, a process or the network: a synchronous
+  `#[tauri::command]` runs on the main thread, so it is
+  `#[tauri::command(async)]` unless it only touches memory.
 - Prefer `git rebase` over `git merge` when integrating changes to maintain a
   linear history.
 

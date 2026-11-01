@@ -160,6 +160,15 @@ export function createFlowFs(): FlowFs {
             return mtimeMs;
         },
 
+        // The flow itself already lives in localStorage here, so a second copy
+        // beside it would fail exactly when the first one does.
+        // A browser has no folder to be refused.
+        probeDir: () => Promise.resolve("ok" as const),
+
+        readSwap: () => Promise.resolve(null),
+        writeSwap: () => Promise.resolve(),
+        clearSwap: () => Promise.resolve(),
+
         readRecents: () =>
             Promise.resolve(
                 typeof localStorage === "undefined" ? null : localStorage.getItem(RECENTS_KEY),

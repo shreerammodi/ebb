@@ -64,11 +64,18 @@ pub fn flow_paths() -> Result<FlowPaths, String> {
 
 // --- Flow files ----------------------------------------------------------------
 
+/// File commands run off the main thread, so two writes can arrive at once,
+/// and two writes to one target share one temp path: each would unlink the
+/// other's half-written temp file and rename it into place.
+// ponytail: one lock for every target; per-path locks if exports ever queue behind autosaves noticeably
+static WRITE_LOCK: parking_lot::Mutex<()> = parking_lot::Mutex::new(());
+
 /// Write via a temp file in the same directory, then rename over the target.
 /// The rename is the atomic step, but only if the bytes are already durable, so
 /// the temp file is synced before it is moved: a crash mid-round can cost the
 /// last debounce interval, never a truncated flow.
 pub(crate) fn write_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {
+    let _held = WRITE_LOCK.lock();
     let dir = path
         .parent()
         .ok_or_else(|| format!("{} has no parent directory", path.display()))?;
@@ -94,15 +101,43 @@ pub(crate) fn write_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {
         f.write_all(contents)?;
         f.sync_all()
     };
-    if let Err(e) = write() {
+    if let Err(e) = retry_while(windows_lock, write) {
         let _ = fs::remove_file(&tmp);
         return Err(format!("Could not save {}: {e}", path.display()));
     }
 
-    fs::rename(&tmp, path).map_err(|e| {
+    retry_while(windows_lock, || fs::rename(&tmp, path)).map_err(|e| {
         let _ = fs::remove_file(&tmp);
         format!("Could not save {}: {e}", path.display())
     })
+}
+
+/// Windows Defender and the search indexer open a file the moment it is
+/// written, and while they hold it a rename over it, or a delete-pending temp
+/// path, fails with access denied or a sharing violation. The hold lasts
+/// milliseconds, so the same step is retried rather than reported: reported,
+/// it fails every autosave in a burst and, on the way out, keeps the window
+/// from closing at all. Elsewhere a permission error is real and is not retried.
+pub(crate) fn windows_lock(e: &std::io::Error) -> bool {
+    // ERROR_ACCESS_DENIED, ERROR_SHARING_VIOLATION, ERROR_LOCK_VIOLATION
+    cfg!(windows) && matches!(e.raw_os_error(), Some(5 | 32 | 33))
+}
+
+/// Runs `op`, retrying with doubling backoff while `transient` says the error
+/// will clear. The waits total about 1.3s, inside the shell's flush deadline.
+pub(crate) fn retry_while<T>(
+    transient: fn(&std::io::Error) -> bool,
+    mut op: impl FnMut() -> std::io::Result<T>,
+) -> std::io::Result<T> {
+    let mut wait = std::time::Duration::from_millis(10);
+    for _ in 0..7 {
+        match op() {
+            Err(e) if transient(&e) => std::thread::sleep(wait),
+            done => return done,
+        }
+        wait *= 2;
+    }
+    op()
 }
 
 /// Modification time in epoch milliseconds. The frontend carries this back on
@@ -142,7 +177,7 @@ pub const CONFLICT: &str = "conflict:";
 /// `None` means the file is gone, which is an ordinary outcome: a recent entry
 /// whose flow was moved or deleted is dropped from the list rather than raised
 /// as an error.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn read_flow_file(path: String) -> Result<Option<FlowSnapshot>, String> {
     /// A flow is pretty-printed JSON of one round; a fat real one is a few MB.
     /// The whole file becomes a String, an IPC copy and a parsed object tree, so
@@ -170,7 +205,7 @@ pub fn read_flow_file(path: String) -> Result<Option<FlowSnapshot>, String> {
 /// The check lives here rather than in a separate stat call so it cannot race
 /// the write. `None` forces the write, which is what "keep mine" does after the
 /// user has been told about a conflict. Resolves to the new stamp.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn write_flow_file(
     path: String,
     contents: String,
@@ -206,7 +241,7 @@ pub fn write_flow_file(
 /// joined round's suggested filename is derived from the host's document. An
 /// absolute `name` would otherwise replace `dir` outright, and a `..` one would
 /// climb out of it, so `dir` is a boundary only once the reduction has run.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn create_flow_file(dir: String, name: String, contents: String) -> Result<String, String> {
     let dir = PathBuf::from(dir);
     fs::create_dir_all(&dir).map_err(|e| format!("Could not create {}: {e}", dir.display()))?;
@@ -215,7 +250,7 @@ pub fn create_flow_file(dir: String, name: String, contents: String) -> Result<S
         .file_name()
         .and_then(|n| n.to_str())
         .ok_or("Not a flow name")?;
-    let stem = name.strip_suffix(&format!(".{EXT}")).unwrap_or(name);
+    let stem = portable_stem(name.strip_suffix(&format!(".{EXT}")).unwrap_or(name));
     if stem.is_empty() {
         return Err("Not a flow name".into());
     }
@@ -245,13 +280,41 @@ pub fn create_flow_file(dir: String, name: String, contents: String) -> Result<S
     Err(format!("Too many flows already named {stem}"))
 }
 
+/// A typed flow name made safe to be a file on every desktop, since a flow
+/// moves between machines. NTFS reads a colon as a stream separator, so
+/// "Round 1: Aff" would become an empty file named "Round 1" with the flow
+/// hidden in a stream that copying and email both drop. The other characters
+/// Windows refuses fail the create outright, a trailing dot or space is
+/// silently stripped by Windows (so the file would not be where ebb thinks),
+/// and a device name such as NUL writes to the device rather than a file.
+fn portable_stem(stem: &str) -> String {
+    let mut out: String = stem
+        .chars()
+        .map(|c| match c {
+            '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*' => '-',
+            c if c.is_control() => '-',
+            c => c,
+        })
+        .collect();
+    out.truncate(out.trim_end_matches(['.', ' ']).len());
+    let device = out.split('.').next().unwrap_or("").to_ascii_uppercase();
+    let reserved = matches!(device.as_str(), "CON" | "PRN" | "AUX" | "NUL")
+        || ((device.starts_with("COM") || device.starts_with("LPT"))
+            && device.len() == 4
+            && device.as_bytes()[3].is_ascii_digit());
+    if reserved {
+        out.push('_');
+    }
+    out
+}
+
 // --- Recent flows ----------------------------------------------------------------
 
 fn recents_path() -> Option<PathBuf> {
     crate::config::config_dir().map(|d| d.join("recents.json"))
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn read_recents() -> Result<Option<String>, String> {
     let Some(path) = recents_path() else {
         return Ok(None);
@@ -263,7 +326,7 @@ pub fn read_recents() -> Result<Option<String>, String> {
     }
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn write_recents(contents: String) -> Result<(), String> {
     let path = recents_path().ok_or("Could not locate your config directory")?;
     write_atomic(&path, contents.as_bytes())
@@ -273,12 +336,17 @@ pub fn write_recents(contents: String) -> Result<(), String> {
 
 /// The openable file paths in a command line, ignoring the executable and any
 /// flags. Used for the launch argv and again for a second instance's argv.
-pub fn flow_paths_in(args: &[String]) -> Vec<String> {
+///
+/// A relative path is resolved against `cwd`, the directory the launch was
+/// made from: a second instance hands its argv to the running process, whose
+/// own working directory is somewhere else entirely.
+pub fn flow_paths_in(args: &[String], cwd: &Path) -> Vec<String> {
     args.iter()
         .skip(1)
         .filter(|a| !a.starts_with('-'))
-        .filter(|a| Path::new(a).is_file())
-        .cloned()
+        .map(|a| cwd.join(a))
+        .filter(|p| p.is_file())
+        .map(|p| p.to_string_lossy().into_owned())
         .collect()
 }
 
@@ -309,6 +377,71 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    #[test]
+    fn a_flow_name_becomes_a_portable_file_name() {
+        assert_eq!(portable_stem("Round 1: Aff"), "Round 1- Aff");
+        assert_eq!(portable_stem("a<b>c\"d|e?f*g"), "a-b-c-d-e-f-g");
+        assert_eq!(portable_stem("trailing. "), "trailing");
+        assert_eq!(portable_stem("nul"), "nul_");
+        assert_eq!(portable_stem("Com1.round"), "Com1.round_");
+        assert_eq!(portable_stem("Console"), "Console");
+        assert_eq!(portable_stem("..."), "");
+    }
+
+    #[test]
+    fn a_relative_launch_path_resolves_against_the_launch_dir() {
+        let dir = tmpdir("relative");
+        fs::write(dir.join("r.ebb"), "{}").unwrap();
+        let args = vec!["ebb".to_string(), "r.ebb".to_string()];
+        let found = flow_paths_in(&args, &dir);
+        assert_eq!(
+            found,
+            vec![dir.join("r.ebb").to_string_lossy().into_owned()]
+        );
+    }
+
+    #[test]
+    fn a_transient_lock_is_retried_until_it_clears() {
+        let mut calls = 0;
+        let out = retry_while(
+            |_| true,
+            || {
+                calls += 1;
+                if calls < 3 {
+                    Err(std::io::Error::from_raw_os_error(32))
+                } else {
+                    Ok(calls)
+                }
+            },
+        );
+        assert_eq!(out.unwrap(), 3);
+    }
+
+    #[test]
+    fn a_lasting_or_real_error_is_reported() {
+        let mut calls = 0;
+        let held = retry_while(
+            |_| true,
+            || -> std::io::Result<()> {
+                calls += 1;
+                Err(std::io::Error::from_raw_os_error(32))
+            },
+        );
+        assert!(held.is_err());
+        assert_eq!(calls, 8, "gives up instead of spinning");
+
+        calls = 0;
+        let real = retry_while(
+            |_| false,
+            || -> std::io::Result<()> {
+                calls += 1;
+                Err(std::io::Error::from_raw_os_error(5))
+            },
+        );
+        assert!(real.is_err());
+        assert_eq!(calls, 1);
     }
 
     #[test]
@@ -476,6 +609,6 @@ mod tests {
             dir.join("absent.ebb").to_string_lossy().into_owned(),
             flow.clone(),
         ];
-        assert_eq!(flow_paths_in(&args), vec![flow]);
+        assert_eq!(flow_paths_in(&args, Path::new("/")), vec![flow]);
     }
 }
