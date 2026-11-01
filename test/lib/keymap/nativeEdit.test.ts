@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { nativeEditActionFor, runNativeEditActionForChord } from "@/lib/keymap/nativeEdit";
 import { isMacPlatform } from "@/lib/platform";
@@ -6,6 +6,15 @@ import { isMacPlatform } from "@/lib/platform";
 const MOD = isMacPlatform() ? "Meta" : "Ctrl";
 
 let execCommand: ReturnType<typeof vi.fn>;
+
+/** Run as if on `platform`, for the chords whose meaning differs by OS. */
+function onPlatform(platform: string): void {
+    vi.spyOn(navigator, "platform", "get").mockReturnValue(platform);
+}
+
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 beforeEach(() => {
     execCommand = vi.fn();
@@ -26,8 +35,17 @@ describe("nativeEditActionFor", () => {
     it("maps the reserved editing chords for this platform", () => {
         expect(nativeEditActionFor(`${MOD}+z`)).toBe("undo");
         expect(nativeEditActionFor(`${MOD}+Z`)).toBe("redo");
-        expect(nativeEditActionFor(`${MOD}+Backspace`)).toBe("deleteToLineStart");
         expect(nativeEditActionFor(`${MOD}+a`)).toBe("selectAll");
+    });
+
+    it("deletes to the line start for Meta+Backspace on a Mac", () => {
+        onPlatform("MacIntel");
+        expect(nativeEditActionFor("Meta+Backspace")).toBe("deleteToLineStart");
+    });
+
+    it("deletes the previous word for Ctrl+Backspace off a Mac", () => {
+        onPlatform("Win32");
+        expect(nativeEditActionFor("Ctrl+Backspace")).toBe("deleteWordBack");
     });
 
     it("leaves clipboard chords and unbound chords alone", () => {
@@ -60,18 +78,29 @@ describe("runNativeEditActionForChord", () => {
     });
 
     it("deletes from the caret to the line start", () => {
+        onPlatform("MacIntel");
         const area = focusTextarea("line1\nline2", 9);
-        expect(runNativeEditActionForChord(`${MOD}+Backspace`, area)).toBe(true);
+        expect(runNativeEditActionForChord("Meta+Backspace", area)).toBe(true);
         expect(area.selectionStart).toBe(6);
         expect(area.selectionEnd).toBe(9);
         expect(execCommand).toHaveBeenCalledWith("delete");
     });
 
     it("still claims delete-to-line-start when there is nothing to delete", () => {
+        onPlatform("MacIntel");
         const area = focusTextarea("line1\nline2", 6);
         // True so callers never fall through to the app command (delete row).
-        expect(runNativeEditActionForChord(`${MOD}+Backspace`, area)).toBe(true);
+        expect(runNativeEditActionForChord("Meta+Backspace", area)).toBe(true);
         expect(execCommand).not.toHaveBeenCalled();
+    });
+
+    it("deletes the previous word and its trailing space on Windows", () => {
+        onPlatform("Win32");
+        const area = focusTextarea("extinction outweighs ", 21);
+        expect(runNativeEditActionForChord("Ctrl+Backspace", area)).toBe(true);
+        expect(area.selectionStart).toBe(11);
+        expect(area.selectionEnd).toBe(21);
+        expect(execCommand).toHaveBeenCalledWith("delete");
     });
 
     it("claims nothing without a focused field", () => {

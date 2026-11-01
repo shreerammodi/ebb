@@ -16,7 +16,7 @@
 import { isMacPlatform } from "@/lib/platform";
 
 import { reservedChords } from "./reserved";
-import { eventToChord } from "./resolve";
+import { eventToChord, isAltGraph } from "./resolve";
 
 /**
  * Native editing chords that must pass through to the browser when the user
@@ -160,6 +160,7 @@ export function selectAllInElement(element: HTMLElement | null): boolean {
  * by the app's keymap). Returns false if the event should be left alone.
  */
 export function shouldIntercept(e: KeyboardEvent): boolean {
+    if (isAltGraph(e)) return false;
     // If it's a native editing chord and the user is typing in a text box,
     // let the browser handle it (select-all, copy, paste, cut, undo, redo, delete word/line back).
     if (isNativeEditingChord(e) && isTextEntryFocus(e.target)) {

@@ -135,6 +135,7 @@ function runBoundCommand(e: KeyboardEvent): boolean {
         ctrlKey: e.ctrlKey,
         altKey: e.altKey,
         shiftKey: e.shiftKey,
+        getModifierState: (key) => e.getModifierState(key),
     });
     if (!commandId) return false;
     executeCommand(commandId);

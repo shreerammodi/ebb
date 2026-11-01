@@ -15,7 +15,7 @@ import {
     isNativeEditingChord,
 } from "./intercept";
 import { runNativeEditActionForChord } from "./nativeEdit";
-import { resolveCommand, eventToChord } from "./resolve";
+import { resolveCommand, eventToChord, isAltGraph } from "./resolve";
 
 /** Returns the keymap currently in effect: flat preset merged with user overrides. */
 export function effectiveKeymap() {
@@ -44,6 +44,7 @@ export function useKeymap(): void {
         }
 
         function onKeyDown(e: KeyboardEvent) {
+            if (isAltGraph(e)) return;
             // In a text-entry field (including the grid's cell editor), only
             // intercept modifier chords; everything else is regular typing or
             // a grid-native gesture Handsontable owns.

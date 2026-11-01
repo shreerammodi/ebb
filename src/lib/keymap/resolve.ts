@@ -4,12 +4,14 @@
  */
 
 import type { CommandId } from "@/lib/commands/registry";
+import { isMacPlatform } from "@/lib/platform";
 
 import type { Chord, Keymap } from "./types";
 
 interface KeyEventLike {
     key: string;
     code?: string;
+    getModifierState?(key: string): boolean;
     metaKey: boolean;
     ctrlKey: boolean;
     altKey: boolean;
@@ -84,9 +86,21 @@ export function eventToChord(e: KeyEventLike): Chord {
 }
 
 /**
+ * Whether this keystroke is AltGr typing a character. Windows reports AltGr
+ * as Ctrl+Alt, so on a Polish or German layout the key that types "ó" or "@"
+ * would otherwise resolve to a Ctrl+Alt binding and the character would never
+ * reach the cell. A Mac's Option key is Alt and nothing else, and its chords
+ * are bindings, so this never answers yes there.
+ */
+export function isAltGraph(e: { getModifierState?(key: string): boolean }): boolean {
+    return !isMacPlatform() && e.getModifierState?.("AltGraph") === true;
+}
+
+/**
  * Returns the CommandId bound to this chord in the flat keymap, or null.
  */
 export function resolveCommand(keymap: Keymap, e: KeyEventLike): CommandId | null {
+    if (isAltGraph(e)) return null;
     const chord = eventToChord(e);
     return keymap.bindings[chord] ?? null;
 }

@@ -83,21 +83,17 @@ describe("dispatchMenuCommand", () => {
         expect(executeCommand).toHaveBeenCalledWith("edit.redo");
     });
 
-    it("row.delete deletes to line start while a text field is focused", () => {
-        const area = focusTextarea("line1\nline2", 9); // caret after "lin" in line2
+    // The Windows menu can take Ctrl+Backspace before the field does. In a
+    // cell editor that must be the word a debater is fixing, not the row.
+    it("row.delete deletes the previous word, never the row, in a field on Windows", () => {
+        const platform = vi.spyOn(navigator, "platform", "get").mockReturnValue("Win32");
+        const editor = focusTextarea("card text", 9);
+        editor.classList.add("handsontableInput");
         dispatchMenuCommand("row.delete");
-        // Selection extends from the start of line2 to the caret, then deletes.
-        expect(area.selectionStart).toBe(6);
-        expect(area.selectionEnd).toBe(9);
+        expect(editor.selectionStart).toBe(5);
         expect(execCommand).toHaveBeenCalledWith("delete");
         expect(executeCommand).not.toHaveBeenCalled();
-    });
-
-    it("row.delete at line start with no selection deletes nothing", () => {
-        focusTextarea("line1\nline2", 6); // caret exactly at start of line2
-        dispatchMenuCommand("row.delete");
-        expect(execCommand).not.toHaveBeenCalled();
-        expect(executeCommand).not.toHaveBeenCalled();
+        platform.mockRestore();
     });
 
     it("row.delete runs the app command without text focus", () => {

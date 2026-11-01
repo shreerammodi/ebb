@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FLAT_KEYMAP } from "@/lib/keymap/presets";
-import { eventToChord, resolveCommand } from "@/lib/keymap/resolve";
+import { eventToChord, isAltGraph, resolveCommand } from "@/lib/keymap/resolve";
 import { isMacPlatform } from "@/lib/platform";
 
 const mod = isMacPlatform() ? "Meta" : "Ctrl";
@@ -179,5 +179,38 @@ describe("resolveCommand (flat keymap)", () => {
 
     it("returns null for an unbound chord", () => {
         expect(resolveCommand(FLAT_KEYMAP, ev("z"))).toBeNull();
+    });
+});
+
+describe("AltGr", () => {
+    const altGr = (platform: string) => {
+        vi.spyOn(navigator, "platform", "get").mockReturnValue(platform);
+        // Windows reports AltGr+O on a Polish layout as Ctrl+Alt with the
+        // composed character, the same chord a Ctrl+Alt binding listens for.
+        return {
+            key: "ó",
+            code: "KeyO",
+            metaKey: false,
+            ctrlKey: true,
+            altKey: true,
+            shiftKey: false,
+            getModifierState: (k: string) => k === "AltGraph",
+        };
+    };
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("types the character instead of running a Ctrl+Alt binding on Windows", () => {
+        const keymap = {
+            ...FLAT_KEYMAP,
+            bindings: { ...FLAT_KEYMAP.bindings, "Ctrl+Alt+o": "cell.insertBelow" },
+        };
+        expect(resolveCommand(keymap as typeof FLAT_KEYMAP, altGr("Win32"))).toBeNull();
+    });
+
+    it("is never assumed on a Mac, where Option chords are bindings", () => {
+        expect(isAltGraph(altGr("MacIntel"))).toBe(false);
     });
 });
