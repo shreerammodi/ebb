@@ -14,7 +14,8 @@ export type FontId =
     | "plex-sans"
     | "cabin"
     | "lato"
-    | "open-sans";
+    | "open-sans"
+    | "geist-sans";
 export type FontCategory = "mono" | "sans";
 
 export interface FontOption {
@@ -71,6 +72,12 @@ export const FONTS: FontOption[] = [
         id: "open-sans",
         label: "Open Sans",
         cssVar: "var(--font-open-sans)",
+        category: "sans",
+    },
+    {
+        id: "geist-sans",
+        label: "Geist Sans",
+        cssVar: "var(--font-geist-sans)",
         category: "sans",
     },
 ];

@@ -11,7 +11,7 @@ import {
 } from "@/lib/fonts/registry";
 
 describe("font registry", () => {
-    it("lists exactly the eight curated fonts in order", () => {
+    it("lists exactly the nine curated fonts in order", () => {
         expect(FONTS.map((f) => f.id)).toEqual([
             "commit-mono",
             "plex-mono",
@@ -21,6 +21,7 @@ describe("font registry", () => {
             "cabin",
             "lato",
             "open-sans",
+            "geist-sans",
         ]);
     });
 
@@ -36,6 +37,7 @@ describe("font registry", () => {
         expect(fontCssVar("cabin")).toBe("var(--font-cabin)");
         expect(fontCssVar("lato")).toBe("var(--font-lato)");
         expect(fontCssVar("open-sans")).toBe("var(--font-open-sans)");
+        expect(fontCssVar("geist-sans")).toBe("var(--font-geist-sans)");
     });
 
     it("recognizes valid ids and rejects others", () => {
