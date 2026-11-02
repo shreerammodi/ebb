@@ -229,14 +229,20 @@ export function collectMeta(hot: Handsontable, spacers = 0): Record<string, Cell
         for (let c = spacers; c < hot.countCols(); c++) {
             const cellMeta = hot.getCellMeta(r, c);
             const m = classNameToMeta((cellMeta.className ?? "") as string);
-            // A blank cell's provenance describes text that is gone, so the
-            // save drops it. This is what retires a stale source a sheet
-            // carried in from before the emptying rule existed.
+            // A blank cell's provenance and extension arrow describe text that
+            // is gone, so the save drops both. This is what retires a stale
+            // claim a sheet carried in from before the emptying rule existed,
+            // or one a partner's delete left in the replica.
             const text = hot.getDataAtCell(r, c);
-            const source =
-                text === null || text === undefined || text === ""
-                    ? undefined
-                    : (cellMeta.source as CellSource | undefined);
+            const blank = text === null || text === undefined || text === "";
+            const source = blank ? undefined : (cellMeta.source as CellSource | undefined);
+            if (blank && m?.extended) {
+                delete m.extended;
+                if (Object.keys(m).length === 0) {
+                    if (source) meta[`${r},${c - spacers}`] = { source };
+                    continue;
+                }
+            }
             const key = `${r},${c - spacers}`;
             if (source) meta[key] = { ...m, source };
             else if (m) meta[key] = m;
@@ -913,7 +919,12 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             // (the selection fill and linked rail, the peer badge), so the
             // extension arrow is a real node. The text renderer rewrites the
             // TD's content every pass, so a reused TD never keeps a stale one.
-            if (TD.classList.contains(EXTENDED_CLASS)) {
+            if (
+                TD.classList.contains(EXTENDED_CLASS) &&
+                value !== null &&
+                value !== undefined &&
+                value !== ""
+            ) {
                 const mark = document.createElement("span");
                 mark.className = "flow-extended-mark";
                 mark.textContent = "->";
@@ -1000,12 +1011,15 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                     named.push([row, at, oldValue, newValue]);
                 }
                 for (const op of textOpsFromChanges(sid, named)) recordOp(op);
-                if (cut) {
-                    for (const [row, col] of cleared) {
-                        const at = toModelCol(gridCol(col), lead);
-                        if (at !== null)
-                            recordOp({ kind: "cellMeta", sheetId: sid, col: at, row, meta: {} });
-                    }
+                // What the clear left behind goes out with the text, so a
+                // partner's grid drops the stale source and arrow too.
+                for (const [row, col] of cleared) {
+                    const at = toModelCol(gridCol(col), lead);
+                    if (at === null) continue;
+                    const left = classNameToMeta(
+                        (hot!.getCellMeta(row, col).className ?? "") as string,
+                    );
+                    recordOp({ kind: "cellMeta", sheetId: sid, col: at, row, meta: left ?? {} });
                 }
             }
             snapshot();

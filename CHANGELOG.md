@@ -16,6 +16,8 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   `->` beside the first copied cell in the later speech, so an extension reads
   apart from new responses. The arrow is a decoration, not text: it adds no
   row, stays out of the editor and a copy, and is saved with the flow.
+  Emptying the cell removes the arrow, so text typed there later is not
+  marked as an extension.
 
 ### Changed
 

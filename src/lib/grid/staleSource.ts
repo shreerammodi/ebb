@@ -13,6 +13,7 @@
  */
 
 import type { CellGrid } from "./cellShift";
+import { EXTENDED_CLASS } from "./codec";
 import { attachMetaUndo, snapshotClasses } from "./metaUndo";
 
 /**
@@ -44,10 +45,29 @@ function isEmpty(value: unknown): boolean {
     return value === null || value === undefined || value === "";
 }
 
+function tokens(className: unknown): string[] {
+    return typeof className === "string" ? className.split(/\s+/).filter(Boolean) : [];
+}
+
+function hasToken(className: unknown, token: string): boolean {
+    return tokens(className).includes(token);
+}
+
+function withoutToken(className: unknown, token: string): string {
+    return tokens(className)
+        .filter((t) => t !== token)
+        .join(" ");
+}
+
 /**
  * Clears stale meta from every cell `changes` emptied, and pairs the clear with
  * the undo action the write just pushed. A direct edit keeps decorations; a cut
  * moves only text, so its source decorations must be removed explicitly.
+ *
+ * The extension arrow goes with the text on either path. Like a source, it is
+ * a claim about where the text came from rather than a decoration the debater
+ * chose, so an emptied cell has nothing left to mark, and text typed there
+ * later is not an extension.
  *
  * Call it from `afterChange`: Handsontable records the undo action on
  * `beforeChange`, so the action this snapshot binds to is already on the stack.
@@ -63,14 +83,23 @@ export function breakEmptiedLinks(
         const col = Number(prop);
         if (!Number.isInteger(col) || !isEmpty(newValue)) continue;
         const meta = grid.getCellMeta(row, col);
-        if (meta.source || (clearDecorations && meta.className)) hits.push([row, col]);
+        const extended = hasToken(meta.className, EXTENDED_CLASS);
+        if (meta.source || extended || (clearDecorations && meta.className)) {
+            hits.push([row, col]);
+        }
     }
     if (hits.length === 0) return hits;
 
     const cols = [...new Set(hits.map(([, col]) => col))];
     const before = snapshotClasses(grid, cols);
     for (const [row, col] of hits) {
-        if (clearDecorations) grid.setCellMeta(row, col, "className", "");
+        const className = grid.getCellMeta(row, col).className;
+        grid.setCellMeta(
+            row,
+            col,
+            "className",
+            clearDecorations ? "" : withoutToken(className, EXTENDED_CLASS),
+        );
         grid.setCellMeta(row, col, "source", undefined);
     }
     attachMetaUndo({ cols, before, after: snapshotClasses(grid, cols) });

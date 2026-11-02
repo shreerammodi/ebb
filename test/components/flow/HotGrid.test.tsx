@@ -127,6 +127,22 @@ describe("collectMeta / applyMeta", () => {
         expect(collectMeta(h)).toEqual(saved);
     });
 
+    it("saves the extension arrow only on a cell that still holds text", () => {
+        const h = makeHot();
+        h.setCellMeta(0, 0, "className", "flow-extended");
+        h.setCellMeta(0, 1, "className", "flow-bold flow-extended");
+        h.setCellMeta(1, 0, "className", "flow-extended");
+        h.setDataAtCell([
+            [0, 1, ""],
+            [1, 0, null],
+        ]);
+
+        expect(collectMeta(h)).toEqual({
+            "0,0": { extended: true },
+            "0,1": { bold: true },
+        });
+    });
+
     it("clears provenance a cell keeps in the outgoing sheet but not the incoming one", () => {
         const h = makeHot();
         h.setCellMeta(0, 0, "className", "flow-bold");
@@ -223,6 +239,35 @@ describe("argument extension", () => {
         expect(hot.getDataAtCell(0, 2)).toBe("tag");
         expect(hot.getDataAtCell(2, 2)).toBe("destination");
         expect(hot.getCellMeta(0, 2).className).toBe("flow-bold flow-extended");
+        expectReplicaMatchesGrid(sheet.id);
+    });
+
+    it("drops the arrow, locally and in the replica, when the extension is deleted", async () => {
+        const round = makeFlowRound();
+        const sheet = round.sheets.find((candidate) => candidate.kind !== "cx")!;
+        sheet.data = [
+            ["tag", "neg", null],
+            [null, null, null],
+        ];
+        sheet.meta = { "0,0": { bold: true } };
+        useFlowStore.getState().loadRound(round, { activeSheetId: sheet.id });
+        useFlowStore.setState({ splitSheetId: null, alignSpeeches: false });
+        render(<HotGrid sheetId={sheet.id} pane={1} />);
+        const hot = await mounted();
+        hot.selectCell(0, 0);
+        act(() => executeCommand("cell.extend"));
+        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold flow-extended");
+
+        act(() => {
+            hot.selectCell(0, 2);
+            hot.emptySelectedCells();
+        });
+
+        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
+        expect(hot.getCell(0, 2)?.querySelector(".flow-extended-mark")).toBeNull();
+        expect(
+            useFlowStore.getState().round!.sheets.find((s) => s.id === sheet.id)!.meta["0,2"],
+        ).toEqual({ bold: true });
         expectReplicaMatchesGrid(sheet.id);
     });
 

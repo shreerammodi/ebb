@@ -109,6 +109,25 @@ describe("breakEmptiedLinks", () => {
         expect(sourceAt(0, 0)).toEqual(SRC);
     });
 
+    it("drops the extension arrow from an emptied cell and keeps its decoration, with undo", () => {
+        hot.setCellMeta(1, 0, "className", "flow-bold flow-extended");
+        hot.selectCell(1, 0);
+        hot.emptySelectedCells();
+
+        expect(hot.getCellMeta(1, 0).className).toBe("flow-bold");
+
+        (hot.getPlugin("undoRedo") as unknown as { undo(): void }).undo();
+        expect(hot.getDataAtCell(1, 0)).toBe("c");
+        expect(hot.getCellMeta(1, 0).className).toBe("flow-bold flow-extended");
+    });
+
+    it("keeps the extension arrow when the user shortens the text", () => {
+        hot.setCellMeta(1, 0, "className", "flow-extended");
+        hot.setDataAtCell(1, 0, "x");
+
+        expect(hot.getCellMeta(1, 0).className).toBe("flow-extended");
+    });
+
     it("ignores a cell that carries no provenance", () => {
         expect(breakEmptiedLinks(hot, [[1, 0, "c", ""]])).toEqual([]);
     });
