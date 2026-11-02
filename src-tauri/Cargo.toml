@@ -42,11 +42,11 @@ tiny_http = "0.12"
 ureq = { version = "3", default-features = false }
 rand = "0.10"
 subtle = "2"
-parking_lot = "0.12"
+parking_lot = "0.13"
 # PowerShell's -EncodedCommand takes base64, which is how the Controlled
 # Folder Access allow passes its script without any shell re-parsing a path.
 # Already in the tree through other crates.
-base64 = "0.22"
+base64 = "0.23"
 # Shared editing. iroh dials a peer by public key and hole punches to it, which
 # is the only design that reaches two homes behind NAT. mDNS is a separate
 # crate so the same-room case needs no internet at all; the DNS and DHT lookup
