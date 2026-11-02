@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
     BOLD_CLASS,
     CARD_CLASS,
+    EXTENDED_CLASS,
     classNameToMeta,
     gridWidth,
     GROUP_CLASS,
@@ -59,6 +60,13 @@ describe("meta <-> className", () => {
             highlight: true,
             kicked: true,
         });
+    });
+
+    it("round-trips the extended tag", () => {
+        expect(metaToClassName({ bold: true, extended: true })).toBe(
+            `${BOLD_CLASS} ${EXTENDED_CLASS}`,
+        );
+        expect(classNameToMeta(EXTENDED_CLASS)).toEqual({ extended: true });
     });
 
     it("toggleClassToken adds and removes without disturbing other tokens", () => {

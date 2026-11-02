@@ -11,6 +11,7 @@ export const HIGHLIGHT_CLASS = "flow-highlight";
 export const CARD_CLASS = "flow-card";
 export const GROUP_CLASS = "flow-group";
 export const KICKED_CLASS = "flow-kicked";
+export const EXTENDED_CLASS = "flow-extended";
 
 /** The boolean decoration keys of CellMeta, excluding its structured fields. */
 type FlagKey = {
@@ -29,6 +30,7 @@ const FLAGS: readonly (readonly [FlagKey, string])[] = [
     ["card", CARD_CLASS],
     ["group", GROUP_CLASS],
     ["kicked", KICKED_CLASS],
+    ["extended", EXTENDED_CLASS],
 ];
 
 export function metaToClassName(m: CellMeta | undefined): string {

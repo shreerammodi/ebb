@@ -134,6 +134,7 @@ function checkCellMeta(value: unknown, path: string): void {
     optBool(m.highlight, `${path}.highlight`);
     optBool(m.card, `${path}.card`);
     optBool(m.group, `${path}.group`);
+    optBool(m.extended, `${path}.extended`);
     if (!optional(m.answers)) {
         const a = obj(m.answers, `${path}.answers`);
         str(a.sheetId, `${path}.answers.sheetId`);

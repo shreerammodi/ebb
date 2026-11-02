@@ -25,7 +25,14 @@ import { rowOfIdentity, type CellRef } from "@/lib/collab/selection";
 import { openSpanOps, replaceSpanOps } from "@/lib/collab/spanOps";
 import { executeCommand } from "@/lib/commands/commands";
 import { shiftMetaDown, type PasteShift } from "@/lib/grid/cellShift";
-import { classNameToMeta, gridWidth, metaToClassName, padGrid, trimGrid } from "@/lib/grid/codec";
+import {
+    classNameToMeta,
+    EXTENDED_CLASS,
+    gridWidth,
+    metaToClassName,
+    padGrid,
+    trimGrid,
+} from "@/lib/grid/codec";
 import {
     gridCol,
     modelCol,
@@ -901,6 +908,16 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 TD.classList.add(SPACER_CLASS);
                 delete TD.dataset.peer;
                 return;
+            }
+            // Both of the TD's pseudo-elements already belong to something
+            // (the selection fill and linked rail, the peer badge), so the
+            // extension arrow is a real node. The text renderer rewrites the
+            // TD's content every pass, so a reused TD never keeps a stale one.
+            if (TD.classList.contains(EXTENDED_CLASS)) {
+                const mark = document.createElement("span");
+                mark.className = "flow-extended-mark";
+                mark.textContent = "->";
+                TD.prepend(mark);
             }
             if (cellIsMoving(hotRef.current?.hotInstance ?? null, row, gridCol(col))) {
                 TD.classList.add("cell-moving");

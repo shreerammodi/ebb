@@ -1,6 +1,6 @@
 import type { CellChange, CellGrid } from "@/lib/grid/cellShift";
 import { shiftSpan } from "@/lib/grid/cellShift";
-import { KICKED_CLASS } from "@/lib/grid/codec";
+import { EXTENDED_CLASS, KICKED_CLASS } from "@/lib/grid/codec";
 import type { GridCol } from "@/lib/grid/colSpace";
 import type { SpeechCol } from "@/lib/grid/flowColumns";
 import type { CellSource } from "@/lib/model/flow";
@@ -47,16 +47,19 @@ export function extendRun(grid: CellGrid, input: ExtendRunInput): CellChange[] {
             text: grid.getDataAtCell(row, sourceCol) as string | null,
             className: ((meta.className ?? "") as string)
                 .split(/\s+/)
-                .filter((token) => token && token !== KICKED_CLASS)
-                .join(" "),
+                .filter((token) => token && token !== KICKED_CLASS && token !== EXTENDED_CLASS),
             source: meta.source as CellSource | undefined,
         };
     });
+    // The marker goes on the run's first argument, where a debater draws the
+    // arrow on paper, so a multi-cell extension carries one marker, not one per line.
+    const head = copied.find(({ text }) => text != null && text !== "");
+    head?.className.push(EXTENDED_CLASS);
 
     const shifted = shiftSpan(grid, targetCol, startRow, grid.countRows(), height);
     const copiedChanges = copied.map(({ text, className, source }, index) => {
         const row = startRow + index;
-        grid.setCellMeta(row, targetCol, "className", className);
+        grid.setCellMeta(row, targetCol, "className", className.join(" "));
         grid.setCellMeta(row, targetCol, "source", source);
         return [row, targetCol, text] as CellChange;
     });

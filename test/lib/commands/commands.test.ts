@@ -10,7 +10,14 @@ import { projectDoc } from "@/lib/collab/doc";
 import { clearReplica, getReplica, seedReplica } from "@/lib/collab/replica";
 import { executeCommand, runExtend } from "@/lib/commands/commands";
 import { COMMANDS, EDITS_ROUND, type CommandId } from "@/lib/commands/registry";
-import { BOLD_CLASS, GROUP_CLASS, HIGHLIGHT_CLASS, KICKED_CLASS, trimGrid } from "@/lib/grid/codec";
+import {
+    BOLD_CLASS,
+    EXTENDED_CLASS,
+    GROUP_CLASS,
+    HIGHLIGHT_CLASS,
+    KICKED_CLASS,
+    trimGrid,
+} from "@/lib/grid/codec";
 import { registerHot, setActiveHot } from "@/lib/grid/hotInstance";
 import { isMovingIn, movingBlock, revertMove } from "@/lib/grid/moveSession";
 import { makeFlowRound, sortedSheets, type FlowRound } from "@/lib/model/flow";
@@ -423,7 +430,7 @@ describe("grid commands", () => {
 
         expect(data.map((row) => row[2])).toEqual(["tag", null, "warrant", "dest-a", "dest-b"]);
         expect(data.map((row) => row[0])).toEqual(["tag", null, "warrant", null, null]);
-        expect(meta.at(0, 2).className).toBe(BOLD_CLASS);
+        expect(meta.at(0, 2).className).toBe(`${BOLD_CLASS} ${EXTENDED_CLASS}`);
         expect(meta.at(0, 2).source).toEqual(source);
         expect(hot.selectCells).toHaveBeenCalledWith([[0, 2, 2, 2]]);
         expect(onMutated).toHaveBeenCalledTimes(1);

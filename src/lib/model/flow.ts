@@ -29,6 +29,8 @@ export interface CellMeta {
     group?: boolean;
     /** Marks the argument dead: kicked, turned away, or never extended. */
     kicked?: boolean;
+    /** Marks the cell as an argument carried forward from an earlier speech. */
+    extended?: boolean;
     /** Reserved for the links phase; nothing reads or writes it yet. */
     answers?: { sheetId: string; row: number; col: number };
     /** Provenance for text handed in by another app; absent for typed cells. */

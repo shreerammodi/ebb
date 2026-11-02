@@ -208,7 +208,9 @@ describe("argument extension", () => {
         act(() => executeCommand("cell.extend"));
         expect(hot.getDataAtCell(0, 2)).toBe("tag");
         expect(hot.getDataAtCell(2, 2)).toBe("destination");
-        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
+        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold flow-extended");
+        expect(hot.getCell(0, 2)?.querySelector(".flow-extended-mark")?.textContent).toBe("->");
+        expect(hot.getCell(1, 2)?.querySelector(".flow-extended-mark")).toBeNull();
         expectReplicaMatchesGrid(sheet.id);
 
         act(() => executeCommand("edit.undo"));
@@ -220,7 +222,7 @@ describe("argument extension", () => {
         act(() => executeCommand("edit.redo"));
         expect(hot.getDataAtCell(0, 2)).toBe("tag");
         expect(hot.getDataAtCell(2, 2)).toBe("destination");
-        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold");
+        expect(hot.getCellMeta(0, 2).className).toBe("flow-bold flow-extended");
         expectReplicaMatchesGrid(sheet.id);
     });
 
@@ -278,11 +280,11 @@ describe("argument extension", () => {
         act(() => executeCommand("edit.redo"));
         expect(hot.getDataAtCell(2, 2)).toBe("tag");
         expect(hot.getDataAtCell(4, 2)).toBe("destination");
-        expect(hot.getCellMeta(2, 2).className).toBe("flow-bold");
+        expect(hot.getCellMeta(2, 2).className).toBe("flow-bold flow-extended");
         const projected = projectDoc(getReplica()!, useFlowStore.getState().round!).sheets.find(
             (candidate) => candidate.id === sheet.id,
         )!;
-        expect(projected.meta["2,2"]).toEqual({ bold: true, source: SRC });
+        expect(projected.meta["2,2"]).toEqual({ bold: true, extended: true, source: SRC });
         expectReplicaMatchesGrid(sheet.id);
     });
 });

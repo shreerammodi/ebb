@@ -378,6 +378,23 @@ html .ht-theme-main {
     );
 }
 
+/* Extension marker: the arrow a debater draws beside an argument carried into
+   a later speech. Drawn, never cell text, so it never reaches the saved data,
+   the editor, or a copy, and it takes no row of its own. The grid draws it as
+   a span from afterRenderer, because both of a grid TD's pseudo-elements are
+   already spoken for; the static tables have no such contention. */
+.handsontable tbody tr td .flow-extended-mark,
+.print-flow td.flow-extended::before,
+.decision-flow td.flow-extended::before {
+    content: "->";
+    margin-right: 0.35em;
+    color: #6b7280;
+    font-weight: normal;
+}
+.decision-flow td.flow-extended::before {
+    color: var(--muted-foreground);
+}
+
 /* The decision view's read-only tables wear the same decorations on the
    app's own surface rather than on paper, so each one is drawn from a token
    or a translucent wash that holds up under both themes. */

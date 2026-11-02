@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { BOLD_CLASS, GROUP_CLASS, HIGHLIGHT_CLASS, KICKED_CLASS } from "@/lib/grid/codec";
+import {
+    BOLD_CLASS,
+    EXTENDED_CLASS,
+    GROUP_CLASS,
+    HIGHLIGHT_CLASS,
+    KICKED_CLASS,
+} from "@/lib/grid/codec";
 import { gridCol } from "@/lib/grid/colSpace";
 import { extendRun, extensionRequiredRows, nextSameSideColumn } from "@/lib/grid/extendCells";
 import type { SpeechCol } from "@/lib/grid/flowColumns";
@@ -61,11 +67,29 @@ describe("extendRun", () => {
         expect(grid.col(2)).toEqual(["tag", null, "warrant", "dest-a", "dest-b", "dest-c"]);
         expect(grid.col(3)).toEqual(["neg-b", "neg-d", null, null, null, null]);
         expect(grid.classNames["0,0"]).toBe(`${BOLD_CLASS} ${KICKED_CLASS}`);
-        expect(grid.classNames["0,2"]).toBe(BOLD_CLASS);
+        expect(grid.classNames["0,2"]).toBe(`${BOLD_CLASS} ${EXTENDED_CLASS}`);
         expect(grid.classNames["1,2"]).toBe(GROUP_CLASS);
         expect(grid.classNames["2,2"]).toBe(HIGHLIGHT_CLASS);
         expect(grid.sources["0,0"]).toEqual(source);
         expect(grid.sources["0,2"]).toEqual(source);
+    });
+
+    it("marks only the run's first argument, re-marking a re-extended one", () => {
+        const grid = fakeGrid(
+            [
+                [null, null, null],
+                ["tag", null, null],
+                ["warrant", null, null],
+                [null, null, null],
+            ],
+            { "1,0": EXTENDED_CLASS, "2,0": EXTENDED_CLASS },
+        );
+
+        extendRun(grid, { sourceCol: gridCol(0), targetCol: gridCol(2), startRow: 0, height: 3 });
+
+        expect(grid.classNames["0,2"]).toBeFalsy();
+        expect(grid.classNames["1,2"]).toBe(EXTENDED_CLASS);
+        expect(grid.classNames["2,2"]).toBeFalsy();
     });
 
     it("reports capacity that preserves an occupied destination tail", () => {

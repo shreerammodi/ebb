@@ -12,6 +12,10 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 - **Arch Linux installs from the AUR.** `ebb-bin` repackages the released Linux
   `.deb`, so an AUR helper installs ebb and `pacman -Syu` keeps it current.
   Update checks in the app stay off for a package-managed install.
+- **An extended argument is marked with an arrow.** Extending an argument draws
+  `->` beside the first copied cell in the later speech, so an extension reads
+  apart from new responses. The arrow is a decoration, not text: it adds no
+  row, stays out of the editor and a copy, and is saved with the flow.
 
 ### Changed
 

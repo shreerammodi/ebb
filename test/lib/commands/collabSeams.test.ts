@@ -175,6 +175,6 @@ describe("an argument extension reaches the replica as one column insertion", ()
         expect(projected.data.map((row) => row[2])).toEqual(["perm", "cap bad", "extend", null]);
         expect(projected.data.map((row) => row[0])).toEqual(["perm", "cap bad", "extend", null]);
         expect(projected.data.map((row) => row[1])).toEqual(["link", "turn", null, null]);
-        expect(projected.meta["0,2"]).toEqual({ bold: true, source });
+        expect(projected.meta["0,2"]).toEqual({ bold: true, extended: true, source });
     });
 });
