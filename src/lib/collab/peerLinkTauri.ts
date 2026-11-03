@@ -203,63 +203,59 @@ export async function createPeerLink(
         return entry.conn;
     }
 
+    // Registered together: each is an IPC round trip, and none depends on another.
     unlisten.push(
-        await shell.listen("collab:peer", (payload) => {
-            const peer = asPeer(payload);
-            if (!peer) return;
-            // Only an inbound connection is announced. A dial reports its own
-            // path in its return value, so nothing here can race it.
-            if (held.has(peer.connId)) return;
-            onPeer?.(makeConn(peer.connId, peer.endpointId, peer.connectionType, peer.relayUrl));
-        }),
-    );
-
-    unlisten.push(
-        await shell.listen("collab:message", (payload) => {
-            const parsed = asMessage(payload);
-            if (!parsed) return;
-            const entry = held.get(parsed.connId);
-            if (!entry) return;
-            for (const cb of entry.onMessage) cb(parsed.msg);
-        }),
-    );
-
-    unlisten.push(
-        await shell.listen("collab:closed", (payload) => {
-            if (payload === null || typeof payload !== "object") return;
-            const p = payload as {
-                connId?: unknown;
-                reason?: unknown;
-                connectionType?: unknown;
-                relayUrl?: unknown;
-            };
-            if (typeof p.connId !== "string") return;
-            const entry = held.get(p.connId);
-            // The one place a drop says why. A timed-out relayed link and a
-            // timed-out direct one are different failures, and the chip
-            // shows neither.
-            if (entry) {
-                const via = typeof p.relayUrl === "string" ? ` via ${p.relayUrl}` : "";
-                console.warn(
-                    `collab: ${entry.conn.id} closed: ${String(p.reason ?? "unknown")} (${String(p.connectionType ?? "unknown")}${via})`,
+        ...(await Promise.all([
+            shell.listen("collab:peer", (payload) => {
+                const peer = asPeer(payload);
+                if (!peer) return;
+                // Only an inbound connection is announced. A dial reports its own
+                // path in its return value, so nothing here can race it.
+                if (held.has(peer.connId)) return;
+                onPeer?.(
+                    makeConn(peer.connId, peer.endpointId, peer.connectionType, peer.relayUrl),
                 );
-            }
-            dropConn(p.connId);
-        }),
-    );
-
-    unlisten.push(
-        await shell.listen("collab:pair", (payload) => {
-            const peer = asPeer(payload);
-            if (!peer) return;
-            if (held.has(peer.connId)) return;
-            // Its own channel, so a guest redeeming a code never reaches the
-            // session's listener, which would read one as a peer arriving with
-            // no hello and hang up on it.
-            onPairPeer?.(
-                makeConn(peer.connId, peer.endpointId, peer.connectionType, peer.relayUrl),
-            );
-        }),
+            }),
+            shell.listen("collab:message", (payload) => {
+                const parsed = asMessage(payload);
+                if (!parsed) return;
+                const entry = held.get(parsed.connId);
+                if (!entry) return;
+                for (const cb of entry.onMessage) cb(parsed.msg);
+            }),
+            shell.listen("collab:closed", (payload) => {
+                if (payload === null || typeof payload !== "object") return;
+                const p = payload as {
+                    connId?: unknown;
+                    reason?: unknown;
+                    connectionType?: unknown;
+                    relayUrl?: unknown;
+                };
+                if (typeof p.connId !== "string") return;
+                const entry = held.get(p.connId);
+                // The one place a drop says why. A timed-out relayed link and a
+                // timed-out direct one are different failures, and the chip
+                // shows neither.
+                if (entry) {
+                    const via = typeof p.relayUrl === "string" ? ` via ${p.relayUrl}` : "";
+                    console.warn(
+                        `collab: ${entry.conn.id} closed: ${String(p.reason ?? "unknown")} (${String(p.connectionType ?? "unknown")}${via})`,
+                    );
+                }
+                dropConn(p.connId);
+            }),
+            shell.listen("collab:pair", (payload) => {
+                const peer = asPeer(payload);
+                if (!peer) return;
+                if (held.has(peer.connId)) return;
+                // Its own channel, so a guest redeeming a code never reaches the
+                // session's listener, which would read one as a peer arriving with
+                // no hello and hang up on it.
+                onPairPeer?.(
+                    makeConn(peer.connId, peer.endpointId, peer.connectionType, peer.relayUrl),
+                );
+            }),
+        ])),
     );
 
     async function dial(target: string, relayUrl?: string | null): Promise<PeerConn> {

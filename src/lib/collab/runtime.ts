@@ -273,14 +273,15 @@ export async function startForRound(
 
     const store = useFlowStore.getState();
     try {
+        const [appVersion, displayName] = await Promise.all([getCurrentVersion(), broadcastName()]);
         session = await startCollabSession({
             createLink: createPeerLinkFor,
             roundId: round.id,
             // The filename is what a debater calls this round everywhere else,
             // so it is what an invite names.
             roundLabel: store.docPath ? basename(store.docPath).replace(/\.ebb$/i, "") : "",
-            appVersion: await getCurrentVersion(),
-            displayName: await broadcastName(),
+            appVersion,
+            displayName,
             doc: () => getReplica() as CollabDoc,
             apply: (incoming) => applyRemoteDoc(round, incoming),
             dial: knownPeers,
@@ -451,6 +452,9 @@ export async function startPairing(round: FlowRound, role: Role): Promise<Hosted
  */
 export async function joinByCode(code: string): Promise<JoinResult | null> {
     if (!collabLive()) return null;
+    // Neither rejects, so starting them beside the bind cannot strand the link.
+    const named = broadcastName();
+    const versioned = getCurrentVersion();
     const link = await createPeerLinkFor({
         discovery: "mdns",
         relay: collabSettings().relay,
@@ -460,7 +464,7 @@ export async function joinByCode(code: string): Promise<JoinResult | null> {
         const paired = await redeemCode({
             port: link,
             code,
-            displayName: await broadcastName(),
+            displayName: await named,
         });
         ticket = paired.ticket;
     } finally {
@@ -469,7 +473,7 @@ export async function joinByCode(code: string): Promise<JoinResult | null> {
     return joinRound({
         ticket,
         createLink: createPeerLinkFor,
-        appVersion: await getCurrentVersion(),
+        appVersion: await versioned,
     });
 }
 

@@ -52,13 +52,13 @@ export function useRecentFlows(): RecentFlows {
 
         void (async () => {
             const fs = await getFlowFs();
-            const { home } = await fs.locations();
-            const recents = await loadRecents(fs);
+            const [{ home }, recents] = await Promise.all([fs.locations(), loadRecents(fs)]);
             const shown = recents.slice(0, RECENTS_SHOWN);
+            const snapshots = await Promise.all(shown.map((r) => fs.readFlow(r.path)));
 
             const resolved: RecentEntry[] = [];
-            for (const recent of shown) {
-                const snapshot = await fs.readFlow(recent.path);
+            for (const [i, recent] of shown.entries()) {
+                const snapshot = snapshots[i];
                 if (snapshot === null) continue;
 
                 let summary = null;

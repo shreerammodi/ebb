@@ -74,9 +74,12 @@ async function findExisting(
     fs: FlowFs,
     roundId: string,
 ): Promise<{ path: string; round: FlowRound } | null> {
-    for (const recent of await loadRecents(fs)) {
+    const recents = await loadRecents(fs);
+    // A read that throws is the same miss as one that parses to another round.
+    const snapshots = await Promise.all(recents.map((r) => fs.readFlow(r.path).catch(() => null)));
+    for (const [i, recent] of recents.entries()) {
         try {
-            const snapshot = await fs.readFlow(recent.path);
+            const snapshot = snapshots[i];
             if (!snapshot) continue;
             const round = parseFlowFile(snapshot.text);
             if (round.id === roundId) return { path: recent.path, round };
@@ -126,11 +129,13 @@ export async function joinRound(deps: JoinDeps): Promise<JoinResult | null> {
                 })
                 .catch(() => {});
         }
-        const name = deps.displayName ?? (await broadcastName());
         // Where the ticket says the host is. Without it the dial has only an
         // EndpointId, which mDNS answers for across a room and nowhere else -
         // so a partner on another network is unreachable by name alone.
-        const conn = await link.dial(host.endpointId, ticket?.relayUrl ?? null);
+        const [name, conn] = await Promise.all([
+            deps.displayName ?? broadcastName(),
+            link.dial(host.endpointId, ticket?.relayUrl ?? null),
+        ]);
 
         const raw = await new Promise<CollabDoc>((resolve, reject) => {
             conn.onMessage((msg: WireMessage) => {

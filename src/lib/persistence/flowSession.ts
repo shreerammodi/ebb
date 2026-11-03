@@ -106,11 +106,13 @@ export interface OpenedFlow {
  */
 export async function readFlowAt(path: string, fs?: FlowFs): Promise<OpenedFlow | null> {
     const io = fs ?? (await getFlowFs());
-    const snapshot = await io.readFlow(path);
+    const [snapshot, swap] = await Promise.all([
+        io.readFlow(path),
+        io.readSwap(path).catch(() => null),
+    ]);
     if (snapshot === null) return null;
     remember(path, snapshot.mtimeMs);
     if (abandoned === path) abandoned = null;
-    const swap = await io.readSwap(path).catch(() => null);
     if (swap !== null && swap !== snapshot.text) {
         try {
             return { round: parseFlowFile(swap), recovered: true };

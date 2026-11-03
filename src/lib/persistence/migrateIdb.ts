@@ -160,8 +160,9 @@ export async function migrateFromIndexedDb(
     // Read every file back before dropping the source. A write that reported
     // success but produced something unparseable is exactly the failure this
     // guards, and it is only detectable from the far side.
-    for (const { path } of written) {
-        const snapshot = await io.readFlow(path);
+    const readBack = await Promise.all(written.map(({ path }) => io.readFlow(path)));
+    for (const [i, { path }] of written.entries()) {
+        const snapshot = readBack[i];
         if (snapshot === null) {
             throw new Error(`Migration wrote ${path} but could not read it back`);
         }
