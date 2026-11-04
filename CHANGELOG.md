@@ -7,6 +7,8 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-03
+
 ### Added
 
 - **Arch Linux installs from the AUR.** `ebb-bin` repackages the released Linux
@@ -18,6 +20,12 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   row, stays out of the editor and a copy, and is saved with the flow.
   Emptying the cell removes the arrow, so text typed there later is not
   marked as an extension.
+- **Drag the round title out to send the flow.** On the desktop, dragging
+  the title in the round header hands the open `.ebb` to another app, so it
+  drops straight into a message or an email. ebb saves the flow first, so
+  the copy that travels matches the screen.
+- **Geist Sans is a flow font.** It ships with ebb like the other fonts, so
+  nothing is downloaded. Pretendard stays the default.
 
 ### Changed
 
@@ -29,12 +37,53 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 - **A flow with no teams entered shows its file name at the top.** The header
   said "Aff vs Neg" for every new flow, so two open rounds looked the same.
   The team codes replace the file name when a school or debater is entered.
+- **Opening a flow and the start screen are faster.** ebb starts disk reads
+  that do not depend on each other at the same time, instead of one after
+  another.
 
 ### Removed
 
 - **Round Info has no Tabroom paste box.** Debaters copy pairings from too
   many places for one parser to read reliably, so the box filled fields only
   some of the time. Type or paste each detail into its own field.
+
+### Fixed
+
+- **ebb no longer freezes on a black window on Windows.** Opening a second
+  `.ebb` while ebb was running, or opening a new window, could deadlock the
+  window so it would not close and stopped saving. Every command that waits
+  on the disk now runs off the window's thread, so a slow save cannot freeze
+  it either.
+- **A round survives a folder that Windows will not let ebb write.** Each
+  save first writes a recovery copy beside ebb's settings, and the next open
+  restores from it. If Controlled Folder Access blocks the flows folder, the
+  start screen offers to allow ebb or to choose another folder. If the flow
+  cannot be written when a window closes, ebb asks whether to save, save
+  elsewhere, discard or cancel, instead of refusing to close.
+- **Saves on Windows retry when another program holds the file.** Windows
+  Defender and the search indexer briefly lock a file after a write, which
+  made a save fail.
+- **A flow name with a colon saves as a normal file on Windows.** "Round 1:
+  Aff" no longer hides the flow in an alternate data stream, and reserved
+  names such as NUL are refused.
+- **Ctrl+Backspace deletes the previous word on Windows and Linux.** It
+  deleted to the start of the line, and it never deletes the row.
+- **AltGr types its character.** On layouts such as Polish or German, an
+  AltGr chord ran a Ctrl+Alt command instead of typing.
+- **Arrow keys no longer leave a trail of selected cells.** A Ctrl or Meta
+  released while another window had focus stayed held in the grid until the
+  next click.
+- **Insert cell below keeps the cursor in the new cell.** On an empty cell,
+  or at the edge of the grid, the cursor landed in the wrong place.
+- **ebb appears under a menu category on Linux.** The desktop entry had no
+  category, so the app sat under none.
+
+### Security
+
+- **The certificate libraries under shared editing are updated.**
+  rustls-webpki 0.103.16, webpki-roots 1.0.11 and webpki-root-certs 1.0.11
+  fix RUSTSEC-2026-0381 to RUSTSEC-2026-0383, and ctutils 0.4.8 fixes
+  RUSTSEC-2026-0385.
 
 ## [1.4.2] - 2026-10-17
 
@@ -980,7 +1029,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.4.2...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/shreerammodi/ebb/compare/v1.4.2...v1.5.0
 [1.4.2]: https://github.com/shreerammodi/ebb/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/shreerammodi/ebb/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/shreerammodi/ebb/compare/v1.3.3...v1.4.0
