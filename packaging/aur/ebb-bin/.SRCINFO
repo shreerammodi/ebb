@@ -1,6 +1,6 @@
 pkgbase = ebb-bin
 	pkgdesc = Keyboard-first, local-first editor for flowing competitive debate rounds
-	pkgver = 1.4.2
+	pkgver = 1.5.0
 	pkgrel = 1
 	url = https://github.com/shreerammodi/ebb
 	install = ebb-bin.install
@@ -13,7 +13,7 @@ pkgbase = ebb-bin
 	conflicts = ebb
 	conflicts = ebb-git
 	options = !debug
-	source = https://github.com/shreerammodi/ebb/releases/download/v1.4.2/ebb_1.4.2_amd64.deb
-	sha256sums = e7dde0f864799d34e03b1f9fbb30eab569d1e6a8d44fddb65cccf23d18818637
+	source = https://github.com/shreerammodi/ebb/releases/download/v1.5.0/ebb_1.5.0_amd64.deb
+	sha256sums = e486a7b0d648828982ee89f404263c3119bcf20f6a9f5943d89711a2f6429ef0
 
 pkgname = ebb-bin

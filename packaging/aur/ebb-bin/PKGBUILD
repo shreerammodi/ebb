@@ -8,7 +8,7 @@
 
 pkgname=ebb-bin
 _pkgname=ebb
-pkgver=1.4.2
+pkgver=1.5.0
 pkgrel=1
 pkgdesc="Keyboard-first, local-first editor for flowing competitive debate rounds"
 arch=('x86_64')
@@ -22,7 +22,7 @@ conflicts=('ebb' 'ebb-git')
 options=('!debug')
 install=ebb-bin.install
 source=("${url}/releases/download/v${pkgver}/${_pkgname}_${pkgver}_amd64.deb")
-sha256sums=('e7dde0f864799d34e03b1f9fbb30eab569d1e6a8d44fddb65cccf23d18818637')
+sha256sums=('e486a7b0d648828982ee89f404263c3119bcf20f6a9f5943d89711a2f6429ef0')
 
 package() {
     # A .deb is an ar archive holding the payload as a second tarball, and
