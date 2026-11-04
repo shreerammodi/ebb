@@ -9,10 +9,8 @@
 </div>
 
 **ebb** is a modern, keyboard-first editor for flowing competitive debate
-rounds. Each flow is a `.ebb` file on your own machine - move it, copy it, back
-it up, or open it by double-clicking, like any other document. New flows are
-filed in `~/Documents/ebb` and saved as you type. ebb is open source under the
-[Mozilla Public License 2.0](https://www.mozilla.org/MPL/2.0/).
+rounds. ebb is open source under the [Mozilla Public License
+2.0](https://www.mozilla.org/MPL/2.0/).
 
 ## Installing
 
