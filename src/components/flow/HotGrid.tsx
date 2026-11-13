@@ -25,6 +25,7 @@ import { rowOfIdentity, type CellRef } from "@/lib/collab/selection";
 import { openSpanOps, replaceSpanOps } from "@/lib/collab/spanOps";
 import { executeCommand } from "@/lib/commands/commands";
 import { shiftMetaDown, type PasteShift } from "@/lib/grid/cellShift";
+import { applyClip, clipMatches, holdClip, type CopyRange } from "@/lib/grid/clipMeta";
 import {
     classNameToMeta,
     EXTENDED_CLASS,
@@ -1087,20 +1088,28 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         [],
     );
 
-    // Insert-paste: the shift_down populate moves text but not decorations, so
-    // the displaced classes are re-laid once the grid has grown. The hook's own
-    // `coords` argument describes the COPY range, not the paste target, so the
-    // target comes from the selection - the same place Handsontable reads it.
+    // A paste moves text but not decorations. Insert-paste's shift_down
+    // populate leaves the displaced classes behind, so they are re-laid once
+    // the grid has grown; a paste of a block copied in this window lays the
+    // block's own classes over the pasted cells. The hook's own `coords`
+    // argument describes the COPY range, not the paste target, so the target
+    // comes from the selection - the same place Handsontable reads it.
     const insertPaste = useFlowStore((s) => s.insertPaste);
-    const pasteShift = useRef<PasteShift | null>(null);
+    const pasteAt = useRef<{ shift: PasteShift; insert: boolean; clip: boolean } | null>(null);
     const pasteClasses = useRef<ClassEntry[]>([]);
+
+    const beforeCopy = useCallback((data: unknown[][], coords: CopyRange[]) => {
+        const hot = hotRef.current?.hotInstance;
+        if (hot) holdClip(hot, coords, data);
+    }, []);
 
     const beforePaste = useCallback(
         (data: unknown[][]) => {
-            pasteShift.current = null;
+            pasteAt.current = null;
             const hot = hotRef.current?.hotInstance;
             const sel = hot?.getSelectedRangeLast();
-            if (!insertPaste || !hot || !sel || data.length === 0) return;
+            const clip = clipMatches(data);
+            if ((!insertPaste && !clip) || !hot || !sel || data.length === 0) return;
             const tl = sel.getTopLeftCorner();
             const br = sel.getBottomRightCorner();
             if (tl.row == null || tl.col == null || br.row == null || br.col == null) return;
@@ -1111,8 +1120,9 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 width: Math.max(data[0].length, br.col - tl.col + 1),
                 height: Math.max(data.length, br.row - tl.row + 1),
             };
-            pasteShift.current = shift;
+            pasteAt.current = { shift, insert: insertPaste, clip };
             pasteClasses.current = snapshotClasses(hot, pasteCols(hot, shift));
+            if (!insertPaste) return;
             // Said before Handsontable moves anything, so the text writes that
             // follow land on rows the replica has already opened. Said as ops,
             // because the alternative is re-deriving the sheet afterwards,
@@ -1132,11 +1142,13 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     );
 
     const afterPaste = useCallback(() => {
-        const shift = pasteShift.current;
-        pasteShift.current = null;
+        const paste = pasteAt.current;
+        pasteAt.current = null;
         const hot = hotRef.current?.hotInstance;
-        if (!hot || !shift) return;
-        shiftMetaDown(hot, shift);
+        if (!hot || !paste) return;
+        const { shift } = paste;
+        if (paste.insert) shiftMetaDown(hot, shift);
+        const laid = paste.clip ? applyClip(hot, shift) : [];
         const cols = pasteCols(hot, shift);
         attachMetaUndo({
             cols,
@@ -1144,10 +1156,30 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             after: snapshotClasses(hot, cols),
         });
         hot.render();
-        // afterChange snapshotted the shifted text while the meta was still
-        // the old layout, so the store needs the settled state. The replica
-        // does not: the opens beforePaste recorded moved each cell with its
-        // own decoration, which is what a cell identity is for.
+        // The opens beforePaste recorded moved each displaced cell with its
+        // own decoration, which is what a cell identity is for; only the
+        // pasted cells' new decorations still have to reach the replica.
+        const sid = currentSheetIdRef.current;
+        if (sid) {
+            for (const [row, col] of laid) {
+                const at = toModelCol(gridCol(col), loadedSpacersRef.current);
+                if (at === null) continue;
+                const meta = hot.getCellMeta(row, col);
+                const source = meta.source as CellSource | undefined;
+                recordOp({
+                    kind: "cellMeta",
+                    sheetId: sid,
+                    col: at,
+                    row,
+                    meta: {
+                        ...classNameToMeta((meta.className ?? "") as string),
+                        ...(source && { source }),
+                    },
+                });
+            }
+        }
+        // afterChange snapshotted the pasted text while the meta was still
+        // the old layout, so the store needs the settled state.
         snapshot();
     }, [snapshot]);
 
@@ -1509,6 +1541,8 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                     afterGetColHeader={afterGetColHeader}
                     afterRenderer={afterRenderer}
                     afterChange={afterChange}
+                    beforeCopy={beforeCopy}
+                    beforeCut={beforeCopy}
                     beforePaste={beforePaste}
                     afterPaste={afterPaste}
                     beforeUndoStackChange={beforeUndoStackChange}
