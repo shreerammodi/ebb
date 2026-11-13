@@ -7,6 +7,8 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-13
+
 ### Added
 
 - **Insert argument number (Meta+Enter, Ctrl+Enter off Mac).** Writes the
@@ -19,6 +21,13 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   cell being typed in and moves the cursor down several rows, leaving room for
   the answers the next speech puts beside it. Settings > Editor sets how many
   rows, 3 by default.
+
+### Fixed
+
+- **A pasted cell keeps its card and formatting.** Copying or cutting a card,
+  bold, highlight, group or kicked cell and pasting it elsewhere in the same
+  window brings the mark along with the text, and a cut no longer strips it
+  from the original. Text copied from another app still pastes plain.
 
 ## [1.5.0] - 2026-11-03
 
@@ -1042,7 +1051,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/shreerammodi/ebb/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/shreerammodi/ebb/compare/v1.4.2...v1.5.0
 [1.4.2]: https://github.com/shreerammodi/ebb/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/shreerammodi/ebb/compare/v1.4.0...v1.4.1
