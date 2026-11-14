@@ -17,8 +17,10 @@ beforeEach(() => {
     document.execCommand = execCommand as unknown as typeof document.execCommand;
     useFlowStore.setState({ keymapOverrides: {} });
     // Flow commands only run on the flow screen; the pre-existing tests below
-    // exercise commands, so they run as if already on that route.
-    window.history.pushState({}, "", "/flow");
+    // exercise commands, so they run as if already on that route. The static
+    // export serves flow/index.html, so this is the pathname the desktop shell
+    // actually opens; `/flow` without the slash is the client router's form.
+    window.history.pushState({}, "", "/flow/");
 });
 
 afterEach(() => {
@@ -200,5 +202,11 @@ describe("dispatchMenuCommand off the flow screen", () => {
         window.history.pushState({}, "", "/flow");
         dispatchMenuCommand("sheet.newAff");
         expect(executeCommand).toHaveBeenCalledWith("sheet.newAff");
+    });
+
+    it("recognizes the trailing-slash route the static export serves", () => {
+        window.history.pushState({}, "", "/flow/");
+        dispatchMenuCommand("sheet.next");
+        expect(executeCommand).toHaveBeenCalledWith("sheet.next");
     });
 });
