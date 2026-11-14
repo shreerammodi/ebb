@@ -813,6 +813,10 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     useEffect(() => {
         if (!revealTarget || revealTarget.sheetId !== sheetId) return;
         const id = requestAnimationFrame(() => {
+            // A jump is taken once. Left in the store, the target would match
+            // again on every later return to this sheet and drag the cursor
+            // back to the hit over the cell the pane remembers.
+            useFlowStore.setState({ revealTarget: null });
             const hot = hotRef.current?.hotInstance;
             if (!hot) return;
             const at = toGridCol(modelCol(revealTarget.col), loadedSpacersRef.current);
@@ -853,6 +857,10 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
         // The rAF defers past the dropdown's focus restore so the grid keeps
         // keyboard focus.
         const id = requestAnimationFrame(() => {
+            // Spent here, after every pane has seeded from it in the commit
+            // that delivered it: a target still in the store would send the
+            // cursor to the top of the speech each time a pane gains focus.
+            useFlowStore.setState({ speechTarget: null });
             const hot = hotRef.current?.hotInstance;
             const sheet = round.sheets.find((s) => s.id === currentSheetIdRef.current);
             if (!hot || !sheet) return;

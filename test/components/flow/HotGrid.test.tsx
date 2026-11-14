@@ -2,7 +2,7 @@ import { act, render, waitFor } from "@testing-library/react";
 import Handsontable from "handsontable/base";
 import { registerAllModules } from "handsontable/registry";
 import { useLayoutEffect } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import HotGrid, { applyMeta, collectMeta } from "@/components/flow/HotGrid";
 import { projectDoc, seedDoc } from "@/lib/collab/doc";
@@ -13,6 +13,7 @@ import { executeCommand } from "@/lib/commands/commands";
 import { closeOpenFlow } from "@/lib/commands/fileCommands";
 import { trimGrid } from "@/lib/grid/codec";
 import { gridCol, toModelCol } from "@/lib/grid/colSpace";
+import { columnsForFlowSheet } from "@/lib/grid/flowColumns";
 import { getActiveHot, getActiveSpacers } from "@/lib/grid/hotInstance";
 import { applyRemote } from "@/lib/grid/remoteBridge";
 import { makeFlowRound, makeFlowSheet, type CellMeta, type CellSource } from "@/lib/model/flow";
@@ -1208,5 +1209,72 @@ describe("a spacer's read-only across a change of pad", () => {
         expect(hot.getCellMeta(0, 0).readOnly).toBe(true);
         expect(hot.getCellMeta(0, 1).readOnly).toBe(true);
         expect(hot.getCellMeta(0, 3).readOnly).toBe(true);
+    });
+});
+
+describe("a jump is taken once", () => {
+    // jsdom has no Web Animations, and the landing flash is not what is held.
+    beforeEach(() => {
+        HTMLElement.prototype.animate = vi.fn();
+    });
+
+    afterEach(() => {
+        Reflect.deleteProperty(HTMLElement.prototype, "animate");
+        useFlowStore.setState({
+            round: null,
+            activeSheetId: null,
+            splitSheetId: null,
+            focusedPane: 1,
+            revealTarget: null,
+            speechTarget: null,
+            alignSpeeches: false,
+        });
+    });
+
+    function Pane() {
+        const sheetId = useFlowStore((s) => s.activeSheetId);
+        return <HotGrid sheetId={sheetId} pane={1} />;
+    }
+
+    /** Long enough for a selection deferred to the next frame to land. */
+    function frame() {
+        return act(() => new Promise<void>((done) => requestAnimationFrame(() => done())));
+    }
+
+    it("returns to the remembered cell, not to the last search hit", async () => {
+        const { aff, neg } = alignedPair();
+        useFlowStore.setState({ alignSpeeches: false });
+        render(<Pane />);
+        const hot = await mounted();
+
+        act(() => useFlowStore.getState().revealCell(neg.id, 5, 1));
+        await waitFor(() => expect(hot.getSelectedLast()).toEqual([5, 1, 5, 1]));
+
+        hot.selectCell(2, 0);
+        act(() => useFlowStore.getState().setActiveSheet(aff.id));
+        await frame();
+        act(() => useFlowStore.getState().setActiveSheet(neg.id));
+        await frame();
+
+        expect(hot.getSelectedLast()).toEqual([2, 0, 2, 0]);
+    });
+
+    it("leaves the cursor alone when focus returns after a speech switch", async () => {
+        const { round, aff, neg } = alignedPair();
+        useFlowStore.setState({ alignSpeeches: false });
+        render(<Pane />);
+        const hot = await mounted();
+
+        const speechId = columnsForFlowSheet(round, aff)[1].id;
+        act(() => useFlowStore.getState().switchSpeech(speechId));
+        await waitFor(() => expect(hot.getSelectedLast()).toEqual([0, 1, 0, 1]));
+
+        hot.selectCell(3, 2);
+        act(() => useFlowStore.setState({ splitSheetId: neg.id, focusedPane: 2 }));
+        await frame();
+        act(() => useFlowStore.setState({ focusedPane: 1 }));
+        await frame();
+
+        expect(hot.getSelectedLast()).toEqual([3, 2, 3, 2]);
     });
 });
