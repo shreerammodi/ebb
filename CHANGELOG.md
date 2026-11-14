@@ -7,6 +7,15 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The menu's flow shortcuts work while a flow is open.** The editor's
+  route ends in a slash, so every flow command fired from a native menu
+  accelerator - stepping between sheets, formatting, inserting cells, renaming,
+  and the rest - was treated as fired off the flow screen and dropped. Ctrl+[
+  and Ctrl+] (Meta+[ and Meta+] on a Mac) step between sheets again, along with
+  the other chords the menu carries.
+
 ## [1.6.0] - 2026-11-13
 
 ### Added
