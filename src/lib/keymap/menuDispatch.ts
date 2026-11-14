@@ -56,9 +56,17 @@ const GLOBAL_COMMANDS = new Set<CommandId>([
     "collab.join",
 ]);
 
-/** True when the current route is not the flow screen and the command is flow-scoped. */
+/**
+ * True when the current route is not the flow screen and the command is flow-scoped.
+ *
+ * The static export serves `flow/index.html`, so the window opens on `/flow/`
+ * (the Rust shell's route carries it, and Next's trailing slash keeps it).
+ * Comparing the pathname without its trailing slashes is what makes that the
+ * same route as the `/flow` the client router writes.
+ */
 function isBlockedOffFlow(id: CommandId): boolean {
-    return window.location.pathname !== FLOW_ROUTE && !GLOBAL_COMMANDS.has(id);
+    const path = window.location.pathname.replace(/\/+$/, "");
+    return path !== FLOW_ROUTE && !GLOBAL_COMMANDS.has(id);
 }
 
 /** The focused element, when it is a text-entry field; null otherwise. */
