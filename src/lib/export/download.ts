@@ -1,5 +1,6 @@
 /** Filename and save helpers shared by the exporters. */
 
+import { stem } from "@/lib/persistence/flowPaths";
 import { isDesktop } from "@/lib/update/adapter";
 
 /** Human date for spreadsheet cells: YYYY-MM-DD (UTC). */
@@ -7,9 +8,14 @@ export function isoDate(ts: number): string {
     return new Date(ts).toISOString().slice(0, 10);
 }
 
-/** e.g. debate-flow-20260602.xlsx */
-export function exportFilename(ts: number, ext: string): string {
-    return `debate-flow-${isoDate(ts).replaceAll("-", "")}.${ext}`;
+/**
+ * An export carries the name of the flow's own file, so the workbook sorts
+ * beside the `.ebb` it came from. A flow with no file yet falls back to its
+ * date, e.g. debate-flow-20260602.xlsx.
+ */
+export function exportFilename(ts: number, ext: string, docPath?: string | null): string {
+    const name = docPath ? stem(docPath) : `debate-flow-${isoDate(ts).replaceAll("-", "")}`;
+    return `${name}.${ext}`;
 }
 
 export const MIME_BY_EXT: Record<string, string> = {

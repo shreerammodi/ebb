@@ -20,6 +20,13 @@ describe("exportFilename", () => {
         const ts = Date.UTC(2026, 5, 2); // 2026-06-02
         expect(exportFilename(ts, "xlsm")).toBe("debate-flow-20260602.xlsm");
     });
+
+    it("takes the flow file's own name when the flow has one", () => {
+        expect(exportFilename(0, "xlsx", "/flows/flow---harvard---round 2.ebb")).toBe(
+            "flow---harvard---round 2.xlsx",
+        );
+        expect(exportFilename(0, "xlsx", "C:\\flows\\Finals v1.2.EBB")).toBe("Finals v1.2.xlsx");
+    });
 });
 
 describe("isoDate", () => {

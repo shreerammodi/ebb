@@ -14,7 +14,7 @@ import { stem } from "@/lib/persistence/flowPaths";
 import { useFlowStore, type WorkspaceView } from "@/lib/store/useFlowStore";
 import { isDesktop } from "@/lib/update/adapter";
 
-import ExportMenu from "./ExportMenu";
+import ExportButton from "./ExportButton";
 import SaveStatus from "./SaveStatus";
 import SpeechSwitcher from "./SpeechSwitcher";
 import ZoomControl from "./ZoomControl";
@@ -143,7 +143,7 @@ export default function RoundHeader() {
                         <Gear className="size-4.5 rotate-[22.5deg]" />
                     </Button>
                 </Tip>
-                <ExportMenu />
+                <ExportButton />
             </div>
         </header>
     );

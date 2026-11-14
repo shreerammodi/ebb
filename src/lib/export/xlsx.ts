@@ -129,11 +129,21 @@ export function fillWorkbook(
     for (const sheet of sortedSheets(round)) addFlowWorksheet(workbook, round, sheet, used);
 }
 
-/** Contacts name the authors of any peer notes on the RFD worksheet. */
-export async function saveXlsx(round: FlowRound, contacts: Contacts = {}): Promise<void> {
+/**
+ * Contacts name the authors of any peer notes on the RFD worksheet. The
+ * flow's path, when it has one, names the workbook.
+ */
+export async function saveXlsx(
+    round: FlowRound,
+    contacts: Contacts = {},
+    docPath?: string | null,
+): Promise<void> {
     const { default: ExcelJS } = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
     fillWorkbook(workbook, round, contacts);
     const out = await workbook.xlsx.writeBuffer();
-    await saveExport(new Uint8Array(out as ArrayBuffer), exportFilename(round.createdAt, "xlsx"));
+    await saveExport(
+        new Uint8Array(out as ArrayBuffer),
+        exportFilename(round.createdAt, "xlsx", docPath),
+    );
 }
