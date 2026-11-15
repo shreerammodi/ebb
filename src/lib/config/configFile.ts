@@ -22,6 +22,7 @@ import {
     bool,
     resolveColor,
     resolveDecisionSpeeches,
+    resolveSidebarPosition,
     resolveSidebarWidth,
     resolveSkipRows,
     resolveSpeakingWpm,
@@ -41,6 +42,8 @@ export interface ConfigFileShape {
     speaking_wpm: number;
     sidebar_collapsed: boolean;
     sidebar_width: number;
+    /** "left" for the resizable column, "top" for the compact ribbon. */
+    sidebar_position: string;
     rfd_open: boolean;
     rfd_vim: boolean;
     /** How many of the round's last speeches the decision view shows per sheet. */
@@ -153,6 +156,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         speaking_wpm: s.speakingWpm,
         sidebar_collapsed: s.sidebarCollapsed,
         sidebar_width: s.sidebarWidth,
+        sidebar_position: s.sidebarPosition,
         rfd_open: s.rfdOpen,
         rfd_vim: s.rfdVim,
         decision_speeches: s.decisionSpeeches,
@@ -221,6 +225,7 @@ export function toAppConfig(raw: unknown): AppConfig {
         speakingWpm: resolveSpeakingWpm(o.speaking_wpm),
         sidebarCollapsed: bool(o.sidebar_collapsed, false),
         sidebarWidth: resolveSidebarWidth(o.sidebar_width),
+        sidebarPosition: resolveSidebarPosition(o.sidebar_position),
         rfdOpen: bool(o.rfd_open, false),
         rfdVim: bool(o.rfd_vim, false),
         decisionSpeeches: resolveDecisionSpeeches(o.decision_speeches),

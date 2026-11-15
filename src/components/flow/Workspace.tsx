@@ -1,13 +1,16 @@
 "use client";
 
+import { CaretUp } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
 import SearchPalette from "@/components/palette/SearchPalette";
+import { Tip } from "@/components/ui/tooltip";
 import { getEvent, sideLabels, speechOrder } from "@/lib/format/events";
 import { useKeymap } from "@/lib/keymap/useKeymap";
 import { speechDuration, speechWordCount } from "@/lib/speechTime";
 import { useFlowStore } from "@/lib/store/useFlowStore";
+import { cn } from "@/lib/utils";
 
 import DecisionView from "./DecisionView";
 import InfoPanel from "./InfoPanel";
@@ -16,6 +19,7 @@ import RfdDrawer from "./RfdDrawer";
 import RoundHeader from "./RoundHeader";
 import SheetTitleBar from "./SheetTitleBar";
 import Sidebar from "./Sidebar";
+import TopSidebar from "./TopSidebar";
 
 // Handsontable touches window at import time; keep it out of prerendering.
 const HotGrid = dynamic(() => import("./HotGrid"), { ssr: false });
@@ -55,7 +59,15 @@ export default function Workspace() {
     const rfdOpen = useFlowStore((s) => s.rfdOpen);
     const view = useFlowStore((s) => s.workspaceView);
     const roundId = useFlowStore((s) => s.round?.id);
+    const sidebarPosition = useFlowStore((s) => s.sidebarPosition);
+    const sidebarCollapsed = useFlowStore((s) => s.sidebarCollapsed);
+    const setSidebarCollapsed = useFlowStore((s) => s.setSidebarCollapsed);
     const sides = sideLabels(round?.event);
+
+    const top = sidebarPosition === "top";
+    // The ribbon carries the sheet title in a single pane, so the title bar
+    // only stays when it is the left column, split into tabs, or collapsed.
+    const showPaneTitle = !top || sidebarCollapsed || splitSheetId != null;
 
     const sheetOf = (id: string | null) => round?.sheets.find((s) => s.id === id);
     const titleOf = (id: string | null) => sheetOf(id)?.title ?? "";
@@ -70,72 +82,107 @@ export default function Workspace() {
                     <DecisionView key={roundId} />
                 ) : (
                     <>
-                        <Sidebar />
+                        {!top && <Sidebar />}
                         <main
                             // isolate: trap Handsontable's frozen-header clone layers (z-index up
                             // to ~1060) in their own stacking context so they can't punch through
                             // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
-                            className="no-print relative isolate flex min-w-0 flex-1 overflow-hidden pb-7"
+                            className={cn(
+                                "no-print relative isolate flex min-w-0 flex-1 overflow-hidden pb-7",
+                                top && "flex-col",
+                            )}
                             data-testid="workspace-content"
                         >
-                            {activeSheetId ? (
-                                <>
-                                    {/* Same element/position in single and split mode so toggling
+                            {top && !sidebarCollapsed && <TopSidebar />}
+                            <div className="flex min-h-0 flex-1">
+                                {activeSheetId ? (
+                                    <>
+                                        {/* Same element/position in single and split mode so toggling
                                     split never remounts pane 1's live HotGrid. */}
-                                    <div
-                                        data-testid="pane-1"
-                                        className="flex min-w-0 flex-1 flex-col overflow-hidden"
-                                    >
-                                        <SheetTitleBar
-                                            sheetId={activeSheetId}
-                                            title={titleOf(activeSheetId)}
-                                            side={sideOf(activeSheetId)}
-                                            tabLabel={splitSheetId ? "Tab 1" : undefined}
-                                            focused={splitSheetId ? focusedPane === 1 : undefined}
-                                        />
-                                        <div className="min-h-0 flex-1">
-                                            <HotGrid key="pane1" sheetId={activeSheetId} pane={1} />
-                                        </div>
-                                    </div>
-                                    {splitSheetId && (
-                                        <>
-                                            <div className="border-border w-px shrink-0 border-l" />
-                                            <div
-                                                data-testid="pane-2"
-                                                className="flex min-w-0 flex-1 flex-col overflow-hidden"
-                                            >
+                                        <div
+                                            data-testid="pane-1"
+                                            className="flex min-w-0 flex-1 flex-col overflow-hidden"
+                                        >
+                                            {showPaneTitle && (
                                                 <SheetTitleBar
-                                                    sheetId={splitSheetId}
-                                                    title={titleOf(splitSheetId)}
-                                                    side={sideOf(splitSheetId)}
-                                                    tabLabel="Tab 2"
-                                                    focused={focusedPane === 2}
+                                                    sheetId={activeSheetId}
+                                                    title={titleOf(activeSheetId)}
+                                                    side={sideOf(activeSheetId)}
+                                                    tabLabel={splitSheetId ? "Tab 1" : undefined}
+                                                    focused={
+                                                        splitSheetId ? focusedPane === 1 : undefined
+                                                    }
+                                                    action={
+                                                        top && sidebarCollapsed ? (
+                                                            <Tip
+                                                                label="Show sheet list"
+                                                                command="sidebar.toggle"
+                                                                side="bottom"
+                                                            >
+                                                                <button
+                                                                    type="button"
+                                                                    aria-label="Show sheet list"
+                                                                    onClick={() =>
+                                                                        setSidebarCollapsed(false)
+                                                                    }
+                                                                    className="text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-colors"
+                                                                    data-testid="expand-top-sidebar"
+                                                                >
+                                                                    <CaretUp size={14} />
+                                                                </button>
+                                                            </Tip>
+                                                        ) : undefined
+                                                    }
                                                 />
-                                                <div className="min-h-0 flex-1">
-                                                    <HotGrid
-                                                        key="pane2"
-                                                        sheetId={splitSheetId}
-                                                        pane={2}
-                                                    />
-                                                </div>
+                                            )}
+                                            <div className="min-h-0 flex-1">
+                                                <HotGrid
+                                                    key="pane1"
+                                                    sheetId={activeSheetId}
+                                                    pane={1}
+                                                />
                                             </div>
-                                        </>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="text-muted-foreground w-full p-6 text-[13px]">
-                                    No sheet selected. Choose one from the sidebar, or add a sheet
-                                    with{" "}
-                                    <span className="text-foreground font-medium">
-                                        + {sides.aff.label}
-                                    </span>{" "}
-                                    /{" "}
-                                    <span className="text-foreground font-medium">
-                                        + {sides.neg.label}
-                                    </span>
-                                    .
-                                </div>
-                            )}
+                                        </div>
+                                        {splitSheetId && (
+                                            <>
+                                                <div className="border-border w-px shrink-0 border-l" />
+                                                <div
+                                                    data-testid="pane-2"
+                                                    className="flex min-w-0 flex-1 flex-col overflow-hidden"
+                                                >
+                                                    <SheetTitleBar
+                                                        sheetId={splitSheetId}
+                                                        title={titleOf(splitSheetId)}
+                                                        side={sideOf(splitSheetId)}
+                                                        tabLabel="Tab 2"
+                                                        focused={focusedPane === 2}
+                                                    />
+                                                    <div className="min-h-0 flex-1">
+                                                        <HotGrid
+                                                            key="pane2"
+                                                            sheetId={splitSheetId}
+                                                            pane={2}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-muted-foreground w-full p-6 text-[13px]">
+                                        No sheet selected. Choose one from the sidebar, or add a
+                                        sheet with{" "}
+                                        <span className="text-foreground font-medium">
+                                            + {sides.aff.label}
+                                        </span>{" "}
+                                        /{" "}
+                                        <span className="text-foreground font-medium">
+                                            + {sides.neg.label}
+                                        </span>
+                                        .
+                                    </div>
+                                )}
+                            </div>
                             <SpeechTimeStatus />
                         </main>
                     </>

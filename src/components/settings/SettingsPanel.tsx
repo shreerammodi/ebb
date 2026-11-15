@@ -40,7 +40,7 @@ import { restoreMenuAccelerators, suspendMenuAccelerators } from "@/lib/keymap/u
 import { useSettingsShortcut } from "@/lib/keymap/useSettingsShortcut";
 import type { Side } from "@/lib/model/types";
 import { isMacPlatform } from "@/lib/platform";
-import { useFlowStore } from "@/lib/store/useFlowStore";
+import { type SidebarPosition, useFlowStore } from "@/lib/store/useFlowStore";
 import { DEFAULT_SIDE_COLORS } from "@/lib/theme/applySideColors";
 import type { ThemeMode } from "@/lib/theme/mode";
 import { isDesktop } from "@/lib/update/adapter";
@@ -56,6 +56,11 @@ const THEME_OPTIONS: { id: ThemeMode; label: string }[] = [
     { id: "light", label: "Light" },
     { id: "dark", label: "Dark" },
     { id: "system", label: "System" },
+];
+
+const SIDEBAR_POSITION_OPTIONS: { id: SidebarPosition; label: string }[] = [
+    { id: "left", label: "Left" },
+    { id: "top", label: "Top" },
 ];
 
 /** CardMirror's insert types, in the words its own document editor uses:
@@ -118,6 +123,8 @@ export default function SettingsPanel() {
     const setFlowFont = useFlowStore((s) => s.setFlowFont);
     const theme = useFlowStore((s) => s.theme);
     const setTheme = useFlowStore((s) => s.setTheme);
+    const sidebarPosition = useFlowStore((s) => s.sidebarPosition);
+    const setSidebarPosition = useFlowStore((s) => s.setSidebarPosition);
     const affColor = useFlowStore((s) => s.affColor);
     const negColor = useFlowStore((s) => s.negColor);
     const setSideColor = useFlowStore((s) => s.setSideColor);
@@ -355,6 +362,45 @@ export default function SettingsPanel() {
                                                             className="accent-sel"
                                                         />
                                                         {t.label}
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    }
+                                />
+                                <SettingRow
+                                    title="Sidebar"
+                                    description="Left keeps the resizable sheet column. Top turns it into a ribbon above the grid, sized to its tabs."
+                                    control={
+                                        <div
+                                            role="radiogroup"
+                                            aria-label="Sidebar position"
+                                            className="flex items-center gap-1"
+                                        >
+                                            {SIDEBAR_POSITION_OPTIONS.map((option) => {
+                                                const checked = option.id === sidebarPosition;
+                                                return (
+                                                    <label
+                                                        key={option.id}
+                                                        className={cn(
+                                                            "flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-[13px] transition-colors",
+                                                            checked
+                                                                ? "bg-accent text-foreground"
+                                                                : "text-muted-foreground hover:bg-accent/50",
+                                                        )}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name="sidebar-position"
+                                                            value={option.id}
+                                                            checked={checked}
+                                                            onChange={() =>
+                                                                setSidebarPosition(option.id)
+                                                            }
+                                                            data-testid={`sidebar-position-${option.id}`}
+                                                            className="accent-sel"
+                                                        />
+                                                        {option.label}
                                                     </label>
                                                 );
                                             })}

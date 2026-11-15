@@ -346,6 +346,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     const gridZoom = useFlowStore((s) => s.gridZoom);
     const sidebarCollapsed = useFlowStore((s) => s.sidebarCollapsed);
     const sidebarWidth = useFlowStore((s) => s.sidebarWidth);
+    const sidebarPosition = useFlowStore((s) => s.sidebarPosition);
     // Inert leading columns: one per speech this sheet does not show. They are
     // real grid columns, so a grid column index is not a cell index while the
     // count is above zero, and every value crossing to the model converts.
@@ -612,7 +613,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     useLayoutEffect(() => {
         if (!mountedRef.current) return;
         hotRef.current?.hotInstance?.refreshDimensions();
-    }, [gridZoom, sidebarCollapsed, sidebarWidth, splitSheetId]);
+    }, [gridZoom, sidebarCollapsed, sidebarWidth, sidebarPosition, splitSheetId]);
     useLayoutEffect(() => {
         mountedRef.current = true;
         return () => {

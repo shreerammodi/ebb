@@ -102,6 +102,8 @@ export interface FlowState {
     infoOpen: boolean;
     sidebarCollapsed: boolean;
     sidebarWidth: number;
+    /** Whether the sheet list is the left column or the top ribbon. */
+    sidebarPosition: SidebarPosition;
     /** RFD drawer open/closed; persisted like sidebarCollapsed. */
     rfdOpen: boolean;
     /** Vim keybindings in the RFD editor; persisted like sidebarCollapsed. */
@@ -315,6 +317,7 @@ export interface FlowActions {
     setInfoOpen(open: boolean): void;
     setSidebarCollapsed(collapsed: boolean): void;
     setSidebarWidth(width: number): void;
+    setSidebarPosition(position: SidebarPosition): void;
     setRfdOpen(open: boolean): void;
     setWorkspaceView(view: WorkspaceView): void;
     /** Shows or hides one sheet's panel in the decision view. */
@@ -411,6 +414,7 @@ interface DisplaySettings {
     speakingWpm: number;
     sidebarCollapsed: boolean;
     sidebarWidth: number;
+    sidebarPosition: SidebarPosition;
     rfdOpen: boolean;
     rfdVim: boolean;
     decisionSpeeches: number;
@@ -459,6 +463,13 @@ export function resolveSidebarWidth(value: unknown): number {
         : SIDEBAR_WIDTH_DEFAULT;
 }
 
+/** Where the sheet list lives. Anything but the ribbon's word is the column. */
+export type SidebarPosition = "left" | "top";
+
+export function resolveSidebarPosition(value: unknown): SidebarPosition {
+    return value === "top" ? "top" : "left";
+}
+
 function loadDisplaySettings(): DisplaySettings {
     const fallback: DisplaySettings = {
         flowFont: DEFAULT_FONT_ID,
@@ -466,6 +477,7 @@ function loadDisplaySettings(): DisplaySettings {
         speakingWpm: DEFAULT_SPEAKING_WPM,
         sidebarCollapsed: false,
         sidebarWidth: SIDEBAR_WIDTH_DEFAULT,
+        sidebarPosition: "left",
         rfdOpen: false,
         rfdVim: false,
         decisionSpeeches: DECISION_SPEECHES_DEFAULT,
@@ -504,6 +516,7 @@ function loadDisplaySettings(): DisplaySettings {
             speakingWpm: resolveSpeakingWpm(p.speakingWpm),
             sidebarCollapsed: bool(p.sidebarCollapsed, false),
             sidebarWidth: resolveSidebarWidth(p.sidebarWidth),
+            sidebarPosition: resolveSidebarPosition(p.sidebarPosition),
             rfdOpen: bool(p.rfdOpen, false),
             rfdVim: bool(p.rfdVim, false),
             decisionSpeeches: resolveDecisionSpeeches(p.decisionSpeeches),
@@ -553,6 +566,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
         speakingWpm: s.speakingWpm,
         sidebarCollapsed: s.sidebarCollapsed,
         sidebarWidth: s.sidebarWidth,
+        sidebarPosition: s.sidebarPosition,
         rfdOpen: s.rfdOpen,
         rfdVim: s.rfdVim,
         decisionSpeeches: s.decisionSpeeches,
@@ -663,6 +677,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     infoOpen: false,
     sidebarCollapsed: initialDisplaySettings.sidebarCollapsed,
     sidebarWidth: initialDisplaySettings.sidebarWidth,
+    sidebarPosition: initialDisplaySettings.sidebarPosition,
     rfdOpen: initialDisplaySettings.rfdOpen,
     rfdVim: initialDisplaySettings.rfdVim,
     decisionSpeeches: initialDisplaySettings.decisionSpeeches,
@@ -1103,6 +1118,14 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setSidebarCollapsed: (collapsed) => persistDisplay(set, get, { sidebarCollapsed: collapsed }),
     setSidebarWidth: (width) =>
         persistDisplay(set, get, { sidebarWidth: resolveSidebarWidth(width) }),
+    setSidebarPosition: (position) => {
+        // Choosing a layout means seeing it; a list collapsed in the other
+        // layout must not hide the form the debater just asked for.
+        persistDisplay(set, get, {
+            sidebarPosition: resolveSidebarPosition(position),
+            sidebarCollapsed: false,
+        });
+    },
     setRfdOpen: (open) => persistDisplay(set, get, { rfdOpen: open }),
     setWorkspaceView(view) {
         set({ workspaceView: view });

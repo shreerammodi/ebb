@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { focusActiveHot } from "@/lib/grid/hotInstance";
 import { useFlowStore } from "@/lib/store/useFlowStore";
@@ -18,12 +18,15 @@ export default function SheetTitleBar({
     side,
     tabLabel,
     focused,
+    action,
 }: {
     sheetId: string;
     title: string;
     side: "aff" | "neg";
     tabLabel?: string;
     focused?: boolean;
+    /** A control pinned to the strip's trailing edge, such as "show sheets". */
+    action?: ReactNode;
 }) {
     const renameSheet = useFlowStore((s) => s.renameSheet);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +98,7 @@ export default function SheetTitleBar({
                     {title}
                 </span>
             )}
+            {action && <div className="ml-1 flex shrink-0 items-center">{action}</div>}
         </div>
     );
 }

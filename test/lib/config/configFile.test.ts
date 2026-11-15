@@ -15,6 +15,7 @@ const sample: AppConfig = {
     speakingWpm: 175,
     sidebarCollapsed: true,
     sidebarWidth: 312,
+    sidebarPosition: "top",
     rfdOpen: false,
     rfdVim: true,
     decisionSpeeches: 3,
@@ -56,6 +57,7 @@ describe("configFromState -> toAppConfig round-trip", () => {
         expect(file.default_zoom).toBe(1.25);
         expect(file.speaking_wpm).toBe(175);
         expect(file.sidebar_width).toBe(312);
+        expect(file.sidebar_position).toBe("top");
         expect(file.rfd_vim).toBe(true);
         expect(file.cardmirror_space_arguments).toBe(true);
         expect(file.arg_marker).toBe("%Number%.");
@@ -155,6 +157,13 @@ describe("toAppConfig validation", () => {
         expect(toAppConfig({ sidebar_width: 900 }).sidebarWidth).toBe(420);
         expect(toAppConfig({ sidebar_width: "wide" }).sidebarWidth).toBe(220);
         expect(toAppConfig({}).sidebarWidth).toBe(220);
+    });
+
+    it("accepts the top sidebar and falls back to the left column", () => {
+        expect(toAppConfig({ sidebar_position: "top" }).sidebarPosition).toBe("top");
+        expect(toAppConfig({ sidebar_position: "left" }).sidebarPosition).toBe("left");
+        expect(toAppConfig({ sidebar_position: "right" }).sidebarPosition).toBe("left");
+        expect(toAppConfig({}).sidebarPosition).toBe("left");
     });
 
     it("drops keymap entries for unknown commands or non-string chords", () => {

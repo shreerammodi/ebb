@@ -7,6 +7,14 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Added
+
+- **The sheet list can sit above the grid.** Settings > Display > Sidebar
+  switches between the resizable left column and a compact top ribbon. The
+  ribbon is sized to its tabs, and in a single pane it doubles as the sheet
+  title bar, so the flow grid gains the sidebar's width without losing height.
+  The choice is saved with the other display settings and in `config.toml`.
+
 ### Fixed
 
 - **The menu's flow shortcuts work while a flow is open.** The editor's
