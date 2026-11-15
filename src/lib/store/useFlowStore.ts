@@ -463,11 +463,11 @@ export function resolveSidebarWidth(value: unknown): number {
         : SIDEBAR_WIDTH_DEFAULT;
 }
 
-/** Where the sheet list lives. Anything but the ribbon's word is the column. */
-export type SidebarPosition = "left" | "top";
+/** Where the sheet list lives: the resizable column, or a ribbon along an edge. */
+export type SidebarPosition = "left" | "top" | "bottom";
 
 export function resolveSidebarPosition(value: unknown): SidebarPosition {
-    return value === "top" ? "top" : "left";
+    return value === "top" || value === "bottom" ? value : "left";
 }
 
 function loadDisplaySettings(): DisplaySettings {

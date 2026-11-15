@@ -61,6 +61,7 @@ const THEME_OPTIONS: { id: ThemeMode; label: string }[] = [
 const SIDEBAR_POSITION_OPTIONS: { id: SidebarPosition; label: string }[] = [
     { id: "left", label: "Left" },
     { id: "top", label: "Top" },
+    { id: "bottom", label: "Bottom" },
 ];
 
 /** CardMirror's insert types, in the words its own document editor uses:
@@ -370,7 +371,7 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Sidebar"
-                                    description="Left keeps the resizable sheet column. Top turns it into a ribbon above the grid, sized to its tabs."
+                                    description="Left keeps the resizable sheet column. Top or bottom turns it into a ribbon along that edge, sized to its tabs."
                                     control={
                                         <div
                                             role="radiogroup"

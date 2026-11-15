@@ -42,7 +42,7 @@ export interface ConfigFileShape {
     speaking_wpm: number;
     sidebar_collapsed: boolean;
     sidebar_width: number;
-    /** "left" for the resizable column, "top" for the compact ribbon. */
+    /** "left" for the resizable column, "top"/"bottom" for the ribbon. */
     sidebar_position: string;
     rfd_open: boolean;
     rfd_vim: boolean;

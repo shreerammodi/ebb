@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretUp } from "@phosphor-icons/react";
+import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { LazyMotion, Reorder, m } from "motion/react";
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { toast } from "sonner";
@@ -22,14 +22,15 @@ const EMPTY_SHEETS: FlowSheet[] = [];
 const DRAG_SLOP = 4;
 
 /**
- * The sheet list as a ribbon above the grid rather than a column beside it.
+ * The sheet list as a ribbon along the grid's top or bottom edge rather than a
+ * column beside it.
  *
  * It is a card sized to its contents, so the stretch of empty layout a short
- * round leaves after its last tab is simply not drawn. In a single pane it
- * also stands in for the pane's title bar - the active tab is the title - so
- * choosing the ribbon costs the grid no height at all.
+ * round leaves after its last tab is simply not drawn. At the top, a single
+ * pane also lets it stand in for the pane's title bar - the active tab is the
+ * title - so that placement costs the grid no height at all.
  */
-export default function TopSidebar() {
+export default function SheetRibbon({ position }: { position: "top" | "bottom" }) {
     const sheets = useFlowStore((s) => s.round?.sheets ?? EMPTY_SHEETS);
     const sides = sideLabels(useFlowStore((s) => s.round?.event));
 
@@ -132,7 +133,7 @@ export default function TopSidebar() {
     }
 
     return (
-        <div className="no-print flex h-8 shrink-0 items-center px-1" data-testid="top-sidebar">
+        <div className="no-print flex h-8 shrink-0 items-center px-1" data-testid="sheet-ribbon">
             {/* The width is the content's: adding a sheet grows the rail,
                 deleting one cuts the empty end away, and layout animates the
                 edge between the two. */}
@@ -224,15 +225,19 @@ export default function TopSidebar() {
                     <InviteChip />
                     <SessionChip />
                     <ShareButton />
-                    <Tip label="Hide sheet list" command="sidebar.toggle" side="bottom">
+                    <Tip
+                        label="Hide sheet list"
+                        command="sidebar.toggle"
+                        side={position === "top" ? "bottom" : "top"}
+                    >
                         <button
                             type="button"
                             aria-label="Hide sheet list"
                             onClick={() => setSidebarCollapsed(true)}
                             className="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded p-0.5 transition-colors"
-                            data-testid="collapse-top-sidebar"
+                            data-testid="collapse-sheet-ribbon"
                         >
-                            <CaretUp size={13} />
+                            {position === "top" ? <CaretUp size={13} /> : <CaretDown size={13} />}
                         </button>
                     </Tip>
                 </div>

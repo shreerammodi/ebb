@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretUp } from "@phosphor-icons/react";
+import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 
 import KeybindingsCheatsheet from "@/components/palette/KeybindingsCheatsheet";
@@ -17,9 +17,9 @@ import InfoPanel from "./InfoPanel";
 import PrintView from "./PrintView";
 import RfdDrawer from "./RfdDrawer";
 import RoundHeader from "./RoundHeader";
+import SheetRibbon from "./SheetRibbon";
 import SheetTitleBar from "./SheetTitleBar";
 import Sidebar from "./Sidebar";
-import TopSidebar from "./TopSidebar";
 
 // Handsontable touches window at import time; keep it out of prerendering.
 const HotGrid = dynamic(() => import("./HotGrid"), { ssr: false });
@@ -65,7 +65,9 @@ export default function Workspace() {
     const sides = sideLabels(round?.event);
 
     const top = sidebarPosition === "top";
-    // The ribbon carries the sheet title in a single pane, so the title bar
+    const bottom = sidebarPosition === "bottom";
+    const ribbon = top || bottom;
+    // A top ribbon carries the sheet title in a single pane, so the title bar
     // only stays when it is the left column, split into tabs, or collapsed.
     const showPaneTitle = !top || sidebarCollapsed || splitSheetId != null;
 
@@ -82,18 +84,18 @@ export default function Workspace() {
                     <DecisionView key={roundId} />
                 ) : (
                     <>
-                        {!top && <Sidebar />}
+                        {!ribbon && <Sidebar />}
                         <main
                             // isolate: trap Handsontable's frozen-header clone layers (z-index up
                             // to ~1060) in their own stacking context so they can't punch through
                             // dialog/dropdown/sheet overlays (z-50) that dim the rest of the screen.
                             className={cn(
                                 "no-print relative isolate flex min-w-0 flex-1 overflow-hidden pb-7",
-                                top && "flex-col",
+                                ribbon && "flex-col",
                             )}
                             data-testid="workspace-content"
                         >
-                            {top && !sidebarCollapsed && <TopSidebar />}
+                            {top && !sidebarCollapsed && <SheetRibbon position="top" />}
                             <div className="flex min-h-0 flex-1">
                                 {activeSheetId ? (
                                     <>
@@ -113,11 +115,11 @@ export default function Workspace() {
                                                         splitSheetId ? focusedPane === 1 : undefined
                                                     }
                                                     action={
-                                                        top && sidebarCollapsed ? (
+                                                        ribbon && sidebarCollapsed ? (
                                                             <Tip
                                                                 label="Show sheet list"
                                                                 command="sidebar.toggle"
-                                                                side="bottom"
+                                                                side={top ? "bottom" : "top"}
                                                             >
                                                                 <button
                                                                     type="button"
@@ -126,9 +128,13 @@ export default function Workspace() {
                                                                         setSidebarCollapsed(false)
                                                                     }
                                                                     className="text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-colors"
-                                                                    data-testid="expand-top-sidebar"
+                                                                    data-testid="expand-sheet-ribbon"
                                                                 >
-                                                                    <CaretUp size={14} />
+                                                                    {top ? (
+                                                                        <CaretUp size={14} />
+                                                                    ) : (
+                                                                        <CaretDown size={14} />
+                                                                    )}
                                                                 </button>
                                                             </Tip>
                                                         ) : undefined
@@ -183,6 +189,7 @@ export default function Workspace() {
                                     </div>
                                 )}
                             </div>
+                            {bottom && !sidebarCollapsed && <SheetRibbon position="bottom" />}
                             <SpeechTimeStatus />
                         </main>
                     </>

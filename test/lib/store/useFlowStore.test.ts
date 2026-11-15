@@ -17,12 +17,15 @@ beforeEach(() => {
 });
 
 describe("sidebar position", () => {
-    it("persists the chosen position and only accepts left or top", () => {
+    it("persists the chosen position and only accepts a known edge", () => {
         useFlowStore.getState().setSidebarPosition("top");
         expect(useFlowStore.getState().sidebarPosition).toBe("top");
         expect(window.localStorage.getItem("ebb-display-settings")).toContain(
             '"sidebarPosition":"top"',
         );
+
+        useFlowStore.getState().setSidebarPosition("bottom");
+        expect(useFlowStore.getState().sidebarPosition).toBe("bottom");
 
         useFlowStore.getState().setSidebarPosition("left");
         expect(useFlowStore.getState().sidebarPosition).toBe("left");
@@ -35,6 +38,10 @@ describe("sidebar position", () => {
 
         useFlowStore.setState({ sidebarCollapsed: true });
         useFlowStore.getState().setSidebarPosition("left");
+        expect(useFlowStore.getState().sidebarCollapsed).toBe(false);
+
+        useFlowStore.setState({ sidebarCollapsed: true });
+        useFlowStore.getState().setSidebarPosition("bottom");
         expect(useFlowStore.getState().sidebarCollapsed).toBe(false);
     });
 });

@@ -159,8 +159,9 @@ describe("toAppConfig validation", () => {
         expect(toAppConfig({}).sidebarWidth).toBe(220);
     });
 
-    it("accepts the top sidebar and falls back to the left column", () => {
+    it("accepts a ribbon edge and falls back to the left column", () => {
         expect(toAppConfig({ sidebar_position: "top" }).sidebarPosition).toBe("top");
+        expect(toAppConfig({ sidebar_position: "bottom" }).sidebarPosition).toBe("bottom");
         expect(toAppConfig({ sidebar_position: "left" }).sidebarPosition).toBe("left");
         expect(toAppConfig({ sidebar_position: "right" }).sidebarPosition).toBe("left");
         expect(toAppConfig({}).sidebarPosition).toBe("left");
