@@ -242,6 +242,18 @@ html .ht-theme-main {
        every descendant of this wrapper the light value in dark mode. */
     --spacer: oklch(0.955 0.003 286.3);
 }
+/* Handsontable sizes the header overlay against a scrollbar width it measures
+   once, from a probe div it appends to <body>. The probe sits outside
+   .ht-theme-main, so the theme's --ht-scrollbar-* colors never resolve on it
+   and its scrollbar-color falls back to auto, while .wtHolder carries real
+   colors. WebKit draws those as two different kinds of scrollbar (overlay vs
+   classic), the probe reads 0, and the header runs over the body's scrollbar
+   gutter, out of line with its column. Coloring the probe makes it draw the
+   same kind of scrollbar the grid does (html-prefixed to outrank the stock
+   sheet); the colors themselves are never seen. */
+html .htScrollbarTest {
+    scrollbar-color: gray transparent;
+}
 /* Header ink stays put on hover and while its column is selected; the theme
    otherwise recolors hovered and highlighted th. */
 .handsontable th.hd-aff,
