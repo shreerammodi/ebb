@@ -75,6 +75,7 @@ export default function RoundHeader() {
             <div className="ribbon:gap-3 flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                 <Link
                     href="/"
+                    replace
                     className="text-muted-foreground hover:text-foreground flex flex-none items-center gap-1.5 text-[13px]"
                     data-testid="back-to-flows"
                 >

@@ -6,8 +6,8 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import { FLOWS_DIR, installFakeFlowFs, type FakeFlowFs } from "../../support/fakeFlowFs";
 
-const push = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+const replace = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 
 import NewFlowDialog from "@/components/start/NewFlowDialog";
 
@@ -15,7 +15,7 @@ let fs: FakeFlowFs;
 
 beforeEach(() => {
     fs = installFakeFlowFs();
-    push.mockReset();
+    replace.mockReset();
     useFlowStore.setState({ newFlowOpen: true });
 });
 /** Base UI moves focus into the popup after mount; keys typed before land nowhere. */
@@ -27,7 +27,7 @@ async function openDialog() {
 }
 
 async function createdPath(): Promise<string> {
-    await waitFor(() => expect(push).toHaveBeenCalled());
+    await waitFor(() => expect(replace).toHaveBeenCalled());
     const paths = [...fs.files.keys()].filter((p) => p.startsWith(FLOWS_DIR + "/"));
     expect(paths).toHaveLength(1);
     return paths[0];

@@ -27,7 +27,7 @@ export function useCreateFlow(): (event?: EventId, firstSide?: Side, name?: stri
     return useCallback(
         (event: EventId = "policy", firstSide: Side = "aff", name?: string) => {
             void createFlowFile(makeFlowRound({ event, firstSide }), undefined, name)
-                .then((path) => router.push(`${flowRouteFor(path)}&new=1`))
+                .then((path) => router.replace(`${flowRouteFor(path)}&new=1`))
                 .catch((err: unknown) => {
                     toast.error(errorMessage(err, "Could not create that flow"));
                 });

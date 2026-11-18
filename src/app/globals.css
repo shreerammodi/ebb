@@ -168,6 +168,13 @@
     box-sizing: border-box;
 }
 
+/* A horizontal scroll that runs out at the grid's edge chains up to the
+   viewport, where the browser reads it as a history swipe. The viewport takes
+   this from the root element, not from body. */
+html {
+    overscroll-behavior: none;
+}
+
 body {
     background: var(--background);
     color: var(--foreground);

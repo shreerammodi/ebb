@@ -61,7 +61,7 @@ export default function StartScreen() {
         void getCurrentVersion().then(setVersion);
     }, []);
 
-    const open = useCallback((path: string) => router.push(flowRouteFor(path)), [router]);
+    const open = useCallback((path: string) => router.replace(flowRouteFor(path)), [router]);
 
     // An invitation leads, because it is the one row that expires: the partner
     // who sent it is already flowing. Every invite is its own row, and the key

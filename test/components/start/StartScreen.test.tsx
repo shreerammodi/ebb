@@ -11,8 +11,8 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
 
 import { FLOWS_DIR, HOME, installFakeFlowFs, type FakeFlowFs } from "../../support/fakeFlowFs";
 
-const push = vi.fn();
-const stableRouter = { push };
+const replace = vi.fn();
+const stableRouter = { replace };
 vi.mock("next/navigation", () => ({ useRouter: () => stableRouter }));
 
 const joined: unknown[] = [];
@@ -55,7 +55,7 @@ function seedRecents(paths: string[]) {
 
 beforeEach(() => {
     fs = installFakeFlowFs();
-    push.mockReset();
+    replace.mockReset();
     localStorage.setItem("ebb-idb-migrated", "1");
     useFlowStore.setState({ newFlowOpen: false, settingsOpen: false });
 });
@@ -132,7 +132,9 @@ describe("StartScreen", () => {
 
         await userEvent.keyboard("2");
 
-        expect(push).toHaveBeenCalledWith(`/flow?path=${encodeURIComponent(`${FLOWS_DIR}/b.ebb`)}`);
+        expect(replace).toHaveBeenCalledWith(
+            `/flow?path=${encodeURIComponent(`${FLOWS_DIR}/b.ebb`)}`,
+        );
     });
 
     it("opens the New flow prompt on n", async () => {
@@ -155,7 +157,9 @@ describe("StartScreen", () => {
         // Three actions, then the single recent.
         await userEvent.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}{Enter}");
 
-        expect(push).toHaveBeenCalledWith(`/flow?path=${encodeURIComponent(`${FLOWS_DIR}/a.ebb`)}`);
+        expect(replace).toHaveBeenCalledWith(
+            `/flow?path=${encodeURIComponent(`${FLOWS_DIR}/a.ebb`)}`,
+        );
     });
 
     it("links out to the docs, the repo, and the author", () => {
