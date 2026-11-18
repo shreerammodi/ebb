@@ -1279,7 +1279,7 @@ describe("a jump is taken once", () => {
 
     function Pane() {
         const sheetId = useFlowStore((s) => s.activeSheetId);
-        return <HotGrid sheetId={sheetId} pane={1} />;
+        return sheetId ? <HotGrid sheetId={sheetId} pane={1} /> : null;
     }
 
     /** Long enough for a selection deferred to the next frame to land. */
