@@ -7,6 +7,8 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-11-18
+
 ### Added
 
 - **The sheet list can sit above or below the grid.** Settings > Display >
@@ -1151,7 +1153,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/shreerammodi/ebb/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/shreerammodi/ebb/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/shreerammodi/ebb/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/shreerammodi/ebb/compare/v1.4.2...v1.5.0
