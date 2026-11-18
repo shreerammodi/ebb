@@ -9,6 +9,11 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ### Added
 
+- **You can now show every cell in bold.** Turn on Bold cells under Settings
+  then Display and the whole flow, on screen and in print, reads in bold. It
+  changes only how the flow looks on your machine: nothing is written into the
+  file, so a partner and an Excel export still see the bolding you applied by
+  hand and nothing else.
 - **An edit you make to a cell that came from CardMirror can now update the
   text in the document it came from.** Retype the cell and the card reads what
   you wrote; the teal rail is how you tell which cells those are. It is off

@@ -36,6 +36,7 @@ export default function AppRoot() {
     const path = params.get("path");
     const round = useFlowStore((s) => s.round);
     const flowFont = useFlowStore((s) => s.flowFont);
+    const boldCells = useFlowStore((s) => s.boldCells);
     const affColor = useFlowStore((s) => s.affColor);
     const negColor = useFlowStore((s) => s.negColor);
     const [loaded, setLoaded] = useState(false);
@@ -43,6 +44,10 @@ export default function AppRoot() {
     useEffect(() => {
         applyFlowFont(flowFont);
     }, [flowFont]);
+
+    useEffect(() => {
+        document.documentElement.toggleAttribute("data-flow-bold", boldCells);
+    }, [boldCells]);
 
     useEffect(() => {
         applySideColors({ aff: affColor, neg: negColor });

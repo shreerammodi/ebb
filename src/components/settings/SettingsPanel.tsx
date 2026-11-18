@@ -151,6 +151,8 @@ export default function SettingsPanel() {
     const setAlignSpeeches = useFlowStore((s) => s.setAlignSpeeches);
     const tooltips = useFlowStore((s) => s.tooltips);
     const setTooltips = useFlowStore((s) => s.setTooltips);
+    const boldCells = useFlowStore((s) => s.boldCells);
+    const setBoldCells = useFlowStore((s) => s.setBoldCells);
     const defaultGridZoom = useFlowStore((s) => s.defaultGridZoom);
     const setDefaultGridZoom = useFlowStore((s) => s.setDefaultGridZoom);
     const speakingWpm = useFlowStore((s) => s.speakingWpm);
@@ -442,6 +444,18 @@ export default function SettingsPanel() {
                                             onCheckedChange={setTooltips}
                                             data-testid="tooltips-toggle"
                                             aria-label="Tooltips"
+                                        />
+                                    }
+                                />
+                                <SettingRow
+                                    title="Bold cells"
+                                    description="Show every cell in bold. Changes only how the flow looks here, not the file."
+                                    control={
+                                        <Switch
+                                            checked={boldCells}
+                                            onCheckedChange={setBoldCells}
+                                            data-testid="bold-cells-toggle"
+                                            aria-label="Bold cells"
                                         />
                                     }
                                 />

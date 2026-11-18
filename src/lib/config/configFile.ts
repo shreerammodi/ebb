@@ -57,6 +57,7 @@ export interface ConfigFileShape {
     scroll_zoom: boolean;
     align_speeches: boolean;
     tooltips: boolean;
+    bold_cells: boolean;
     /** Master switch for the CardMirror integration. */
     cardmirror_enabled: boolean;
     /** Whether tags and analytics in one CardMirror send are separated by blank rows. */
@@ -163,6 +164,7 @@ export function configFromState(s: AppConfig): ConfigFileShape {
         scroll_zoom: s.scrollZoom,
         align_speeches: s.alignSpeeches,
         tooltips: s.tooltips,
+        bold_cells: s.boldCells,
         cardmirror_enabled: s.cardmirrorEnabled,
         cardmirror_space_arguments: s.cardmirrorSpaceArguments,
         cardmirror_text_type: s.cardmirrorTextType,
@@ -230,6 +232,7 @@ export function toAppConfig(raw: unknown): AppConfig {
         scrollZoom: bool(o.scroll_zoom, true),
         alignSpeeches: bool(o.align_speeches, false),
         tooltips: bool(o.tooltips, true),
+        boldCells: bool(o.bold_cells, false),
         cardmirrorEnabled: bool(o.cardmirror_enabled, true),
         cardmirrorSpaceArguments: bool(o.cardmirror_space_arguments, false),
         cardmirrorTextType: resolveCardMirrorTextType(o.cardmirror_text_type),

@@ -320,6 +320,14 @@ html .htScrollbarTest {
 .flow-bold {
     font-weight: 700;
 }
+/* Bold cells setting: the grid and its inline editor inherit the theme's
+   weight, and the print table carries its own cells. */
+html[data-flow-bold] .ht-theme-main {
+    --ht-font-weight: 700;
+}
+html[data-flow-bold] .print-flow td {
+    font-weight: 700;
+}
 /* Outranks the theme's even/odd row striping (.handsontable tr.ht__row_even td).
    Solid yellow on the light-locked sheet; dark ink stays legible. */
 .handsontable tbody tr td.flow-highlight {

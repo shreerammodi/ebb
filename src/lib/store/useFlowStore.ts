@@ -154,6 +154,12 @@ export interface FlowState {
     alignSpeeches: boolean;
     /** Hover tips on buttons and controls; off renders the trigger bare. */
     tooltips: boolean;
+    /**
+     * Every cell renders bold on screen and in print. A display preference
+     * only: no cell's own `bold` is written, so the flow file and a partner's
+     * view are unchanged.
+     */
+    boldCells: boolean;
     /** Master switch for the CardMirror bridge; off leaves every route dead. */
     cardmirrorEnabled: boolean;
     /** Blank rows separate tags and analytics within a CardMirror column send. */
@@ -274,6 +280,7 @@ export interface FlowActions {
     setScrollZoom(on: boolean): void;
     setAlignSpeeches(on: boolean): void;
     setTooltips(on: boolean): void;
+    setBoldCells(on: boolean): void;
     setCardmirrorEnabled(on: boolean): void;
     setCardmirrorSpaceArguments(on: boolean): void;
     setCardmirrorTextType(type: CardMirrorTextType): void;
@@ -415,6 +422,7 @@ interface DisplaySettings {
     scrollZoom: boolean;
     alignSpeeches: boolean;
     tooltips: boolean;
+    boldCells: boolean;
     cardmirrorEnabled: boolean;
     cardmirrorSpaceArguments: boolean;
     cardmirrorTextType: CardMirrorTextType;
@@ -469,6 +477,7 @@ function loadDisplaySettings(): DisplaySettings {
         scrollZoom: true,
         alignSpeeches: false,
         tooltips: true,
+        boldCells: false,
         cardmirrorEnabled: true,
         cardmirrorSpaceArguments: false,
         cardmirrorTextType: "analytic",
@@ -506,6 +515,7 @@ function loadDisplaySettings(): DisplaySettings {
             scrollZoom: bool(p.scrollZoom, true),
             alignSpeeches: bool(p.alignSpeeches, false),
             tooltips: bool(p.tooltips, true),
+            boldCells: bool(p.boldCells, false),
             cardmirrorEnabled: bool(p.cardmirrorEnabled, true),
             cardmirrorSpaceArguments: bool(p.cardmirrorSpaceArguments, false),
             cardmirrorTextType: resolveCardMirrorTextType(p.cardmirrorTextType),
@@ -554,6 +564,7 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
         scrollZoom: s.scrollZoom,
         alignSpeeches: s.alignSpeeches,
         tooltips: s.tooltips,
+        boldCells: s.boldCells,
         cardmirrorEnabled: s.cardmirrorEnabled,
         cardmirrorSpaceArguments: s.cardmirrorSpaceArguments,
         cardmirrorTextType: s.cardmirrorTextType,
@@ -665,6 +676,7 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     scrollZoom: initialDisplaySettings.scrollZoom,
     alignSpeeches: initialDisplaySettings.alignSpeeches,
     tooltips: initialDisplaySettings.tooltips,
+    boldCells: initialDisplaySettings.boldCells,
     cardmirrorEnabled: initialDisplaySettings.cardmirrorEnabled,
     cardmirrorSpaceArguments: initialDisplaySettings.cardmirrorSpaceArguments,
     cardmirrorTextType: initialDisplaySettings.cardmirrorTextType,
@@ -1016,6 +1028,8 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setAlignSpeeches: (on) => persistDisplay(set, get, { alignSpeeches: on }),
 
     setTooltips: (on) => persistDisplay(set, get, { tooltips: on }),
+
+    setBoldCells: (on) => persistDisplay(set, get, { boldCells: on }),
 
     setCardmirrorEnabled: (on) => persistDisplay(set, get, { cardmirrorEnabled: on }),
 

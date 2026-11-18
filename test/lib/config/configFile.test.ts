@@ -26,6 +26,7 @@ const sample: AppConfig = {
     scrollZoom: false,
     alignSpeeches: true,
     tooltips: false,
+    boldCells: true,
     cardmirrorEnabled: false,
     cardmirrorSpaceArguments: true,
     cardmirrorTextType: "tag",

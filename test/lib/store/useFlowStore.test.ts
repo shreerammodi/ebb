@@ -104,6 +104,13 @@ describe("loadRound", () => {
         expect(window.localStorage.getItem("ebb-display-settings")).toContain('"tooltips":false');
     });
 
+    it("persists boldCells through setBoldCells, defaulting off", () => {
+        expect(useFlowStore.getState().boldCells).toBe(false);
+        useFlowStore.getState().setBoldCells(true);
+        expect(useFlowStore.getState().boldCells).toBe(true);
+        expect(window.localStorage.getItem("ebb-display-settings")).toContain('"boldCells":true');
+    });
+
     it("persists a clamped speaking speed", () => {
         useFlowStore.getState().setSpeakingWpm(180.4);
         expect(useFlowStore.getState().speakingWpm).toBe(180);
