@@ -21,11 +21,19 @@ vi.mock("@/lib/collab/peerLink", async (importOriginal) => ({
     createPeerLinkFor: (config: PeerLinkConfig) => transport.link!(config),
 }));
 
+import { seedDoc } from "@/lib/collab/doc";
+import { hostPairing } from "@/lib/collab/pairing";
 import { createMemoryNet, memoryPairId, type MemoryNet } from "@/lib/collab/peerLinkMemory";
 import { clearReplica } from "@/lib/collab/replica";
 import { forgetRoundPeers, knownRoundRelays } from "@/lib/collab/roundPeers";
 import { endSession, joinByCode, startPairing } from "@/lib/collab/runtime";
+import { startCollabSession } from "@/lib/collab/session";
+import { setSidecarFs } from "@/lib/collab/sidecarFs";
+import { createSidecarFs } from "@/lib/collab/sidecarFsMemory";
+import { encodeTicket } from "@/lib/collab/ticket";
 import { makeFlowRound, type FlowRound } from "@/lib/model/flow";
+import { setFlowFs } from "@/lib/persistence/flowFs";
+import { createFlowFs } from "@/lib/persistence/flowFsMemory";
 import { useCollabStore } from "@/lib/store/useCollabStore";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
@@ -136,6 +144,45 @@ describe("startPairing", () => {
         // that both sides reach one name from one code.
         expect(memoryPairId(hosted!.code)).toBeTruthy();
         await hosted!.stop();
+    });
+});
+
+describe("joinByCode", () => {
+    afterEach(() => {
+        setFlowFs(null);
+        setSidecarFs(null);
+    });
+
+    it("dials the host from the endpoint that redeemed the code", async () => {
+        setFlowFs(createFlowFs());
+        setSidecarFs(createSidecarFs());
+        const doc = seedDoc(round);
+        const host = (await startCollabSession({
+            createLink: net.create(SAM),
+            roundId: round.id,
+            appVersion: "0.11.0",
+            doc: () => doc,
+            apply: () => [],
+        }))!;
+        const hosted = await hostPairing({
+            port: host.pairing(),
+            code: "TESTAA01",
+            once: true,
+            mintTicket: async () => encodeTicket(await host.share("editor")),
+            onGuest: () => {},
+        });
+
+        const joined = await joinByCode("TESTAA01");
+        expect(joined?.hostEndpointId).toBe(SAM);
+        // A stop before the dial is the endpoint closing between the code and
+        // the ticket, which leaves the join to dial the host from a cold one.
+        const dialled = net.calls.findIndex((c) => c.op === "dial" && c.endpointId === SAM);
+        const released = net.calls.findIndex((c) => c.op === "stop" && c.endpointId === ME);
+        expect(dialled).toBeGreaterThan(-1);
+        expect(released).toBeGreaterThan(dialled);
+
+        await hosted.stop();
+        await host.stop();
     });
 });
 

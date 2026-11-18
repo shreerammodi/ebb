@@ -14,8 +14,11 @@
  * that key, and an address a peer reports is one it could have made up.
  *
  * A partner code admits one person. It is spent when the ticket goes out and
- * not when a guest dials, so a dial that fails part way leaves the code alive
- * for that same partner to try again.
+ * not when a guest dials, and it is spent on that guest rather than outright:
+ * the ticket is only the first of the dials a join makes, so a partner whose
+ * join failed after it types the same code again and is answered again. The
+ * connection names them by a key iroh proved, so nobody else can be the same
+ * guest.
  */
 
 import { HANDSHAKE_MS, type PairingPort, type PeerConn } from "./peerLink";
@@ -79,7 +82,8 @@ const NO_ANSWER = "That code did not answer. Check it and try again.";
 
 export async function hostPairing(deps: HostPairingDeps): Promise<HostPairing> {
     const schedule = deps.schedule ?? defaultSchedule;
-    let spent = false;
+    /** The one guest a partner code was spent on, who may still redeem it. */
+    let spentOn: string | null = null;
     /** A ticket being minted right now, so two dials cannot both take it. */
     let minting = false;
     let stopped = false;
@@ -96,8 +100,8 @@ export async function hostPairing(deps: HostPairingDeps): Promise<HostPairing> {
     function answer(conn: PeerConn): void {
         let greeted = false;
         // A dialler that opens a connection and says nothing is refused by
-        // nothing below, so the clock is what bounds it. A spent code is not
-        // refused here either: a close before the far side has finished
+        // nothing below, so the clock is what bounds it. A code spent on
+        // somebody else is not refused here either: a close before the far side has finished
         // wiring up its handlers is a link that vanishes rather than one that
         // says no, and the guest is owed the second.
         const ungreeted = schedule(() => {
@@ -107,7 +111,7 @@ export async function hostPairing(deps: HostPairingDeps): Promise<HostPairing> {
             if (greeted || msg.type !== "pairHello") return;
             greeted = true;
             ungreeted();
-            if (stopped || spent || minting) {
+            if (stopped || minting || (spentOn !== null && spentOn !== conn.id)) {
                 conn.close();
                 return;
             }
@@ -123,7 +127,7 @@ export async function hostPairing(deps: HostPairingDeps): Promise<HostPairing> {
                     // Spent as the ticket goes out. A mint that threw leaves
                     // the code alive, which is what lets the one partner it
                     // was made for try again.
-                    if (deps.once) spent = true;
+                    if (deps.once) spentOn = conn.id;
                     conn.send({
                         type: "pairAck",
                         ticket,

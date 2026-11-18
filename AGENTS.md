@@ -153,7 +153,12 @@ Formatting is `oxfmt` (via `npm run format` / `format:check`), not Prettier.
       `test/lib/collab/runtimePairing.test.ts` holds both routes to the off
       case under a positive control. A code dies at the first of: the sheet
       closing, the session ending, ten minutes, or - for a partner code - the
-      ticket going out.
+      ticket going out. That last one kills it for everyone but the guest
+      the ticket went to, named by the EndpointId iroh proved: the ticket is
+      the first of three dials a join makes, and a partner whose join failed
+      after it has to be able to type the same code again. `joinByCode`
+      holds its pairing link across the ticket join for the same reason, so
+      the two share one bind instead of dialling the host from a cold one.
     - **A collab command that waits on the network must be `async`.** Tauri
       runs a `#[tauri::command]` declared without it on the main thread, and a
       bind, a dial, a hang-up and a stop all wait on the network - which on

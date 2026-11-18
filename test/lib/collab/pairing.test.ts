@@ -105,6 +105,27 @@ describe("hostPairing", () => {
         await host.stop();
     });
 
+    it("answers the partner a code was spent on when their join has to start over", async () => {
+        const timer = clock();
+        const host = await hostPairing({
+            port: await link(ALEX),
+            code: CODE,
+            once: true,
+            mintTicket: async () => TICKET,
+            onGuest: () => {},
+            schedule: timer.schedule,
+        });
+        await redeemCode({ port: await link(SAM), code: CODE, schedule: timer.schedule });
+        await expect(
+            redeemCode({ port: await link(SAM), code: CODE, schedule: timer.schedule }),
+        ).resolves.toMatchObject({ ticket: TICKET });
+        // Still one person's code.
+        await expect(
+            redeemCode({ port: await link(KIM), code: CODE, schedule: timer.schedule }),
+        ).rejects.toThrow();
+        await host.stop();
+    });
+
     it("lets a view-only code admit everyone who has it", async () => {
         const timer = clock();
         const host = await hostPairing({

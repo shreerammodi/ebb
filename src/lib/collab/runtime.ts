@@ -63,7 +63,7 @@ import {
     type PendingPeer,
     type SavedByPeer,
 } from "./session";
-import { encodeTicket } from "./ticket";
+import { encodeTicket, parseTicket } from "./ticket";
 import type { CollabDoc, Role } from "./types";
 
 let session: CollabSession | null = null;
@@ -446,35 +446,38 @@ export async function startPairing(round: FlowRound, role: Role): Promise<Hosted
 /**
  * Redeems a code and opens the round it names.
  *
- * The pairing link is taken out and given back around the exchange alone: what
- * opens the round is the ticket, over the join path that already exists, so a
- * code is a different way to the same door and not a second door.
+ * What opens the round is the ticket, over the join path that already exists,
+ * so a code is a different way to the same door and not a second door. The
+ * pairing link is held until that join is over: the shell counts holds on one
+ * endpoint, so the join's own link is a second share of a bind that is already
+ * homed on a relay. Letting go in between closes the endpoint and makes the
+ * join dial the host from a cold one, which is a second chance for a slow
+ * network to fail a join whose code is already spent.
  */
 export async function joinByCode(code: string): Promise<JoinResult | null> {
     if (!collabLive()) return null;
     // Neither rejects, so starting them beside the bind cannot strand the link.
     const named = broadcastName();
     const versioned = getCurrentVersion();
-    const link = await createPeerLinkFor({
-        discovery: "mdns",
-        relay: collabSettings().relay,
-    });
-    let ticket: string;
+    const relay = collabSettings().relay;
+    const link = await createPeerLinkFor({ discovery: "mdns", relay });
     try {
         const paired = await redeemCode({
             port: link,
             code,
             displayName: await named,
         });
-        ticket = paired.ticket;
+        // One bind has one answer to relaying. A host that turned it off is
+        // joined from an endpoint bound without it, so this one goes first.
+        if (relay && parseTicket(paired.ticket)?.relay === false) await link.stop();
+        return await joinRound({
+            ticket: paired.ticket,
+            createLink: createPeerLinkFor,
+            appVersion: await versioned,
+        });
     } finally {
         await link.stop();
     }
-    return joinRound({
-        ticket,
-        createLink: createPeerLinkFor,
-        appVersion: await versioned,
-    });
 }
 
 /**
