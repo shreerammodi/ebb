@@ -133,6 +133,16 @@ const EDIT_KEYS: Record<string, true> = { Backspace: true, Delete: true, F2: tru
 const LOCK_HINT_MS = 2_000;
 
 /**
+ * Whether a dialog holds the keyboard. A selection the pane makes on its own
+ * - loading a sheet, following a partner's insert - takes DOM focus with it
+ * by default, and taken from an open palette it leaves the palette on screen
+ * while every keystroke lands in a cell behind it.
+ */
+function overlayHoldsFocus(): boolean {
+    return document.activeElement?.closest("[role='dialog']") != null;
+}
+
+/**
  * Runs the command this chord is bound to and reports whether one existed.
  * What to swallow is the caller's business: a grid answer this displaces is
  * a different one for a bare key than for a Ctrl/Meta chord.
@@ -530,7 +540,14 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 // The fifth argument is what keeps the viewport still. Its
                 // default is true, and the difference is invisible until a
                 // partner types on a sheet the debater has scrolled away from.
-                hot.selectCell(plan.selectRow, sel[1], plan.selectRow, sel[1], false);
+                hot.selectCell(
+                    plan.selectRow,
+                    sel[1],
+                    plan.selectRow,
+                    sel[1],
+                    false,
+                    !overlayHoldsFocus(),
+                );
                 if (typed !== null) {
                     // The cell it was holding back lands now, while it is
                     // closed: landed after the reopen, the grid's own write
@@ -737,7 +754,8 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
             resetMetaUndo();
         }
         const v = viewCache.current.get(sheet.id) ?? { row: 0, col: modelCol(0) };
-        hot.selectCell(v.row, toGridCol(v.col, lead));
+        const at = toGridCol(v.col, lead);
+        hot.selectCell(v.row, at, v.row, at, true, !overlayHoldsFocus());
         setReady(true);
     }, [sheetId, firstSide, spacers, snapshot]);
 
@@ -1229,6 +1247,12 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     const beforeKeyDown = useCallback(
         function (this: unknown, e: KeyboardEvent) {
             const hot = hotRef.current?.hotInstance;
+            /** Whether this Tab has no column left to move to in its direction. */
+            const tabsOut = (grid: Handsontable, ev: KeyboardEvent): boolean => {
+                if (ev.key !== "Tab") return false;
+                const col = grid.getSelectedRangeLast()?.highlight.col;
+                return col === (ev.shiftKey ? loadedSpacersRef.current : grid.countCols() - 1);
+            };
             // Handsontable remembers Ctrl/Meta from keydown/keyup and never
             // forgets it on window blur, so a Meta released in another window
             // (Meta+Tab, Meta+N, a save panel) stays held and every arrow adds a
@@ -1250,6 +1274,19 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 // one in the same dispatch, and the flush waits behind it so
                 // it finds the editor gone.
                 if (e.key === "Escape") queueMicrotask(flushDeferred);
+                // Tab commits the edit and steps sideways, and at an edge
+                // column there is no step to take: Handsontable deselects and
+                // lets the browser tab focus out of the grid, which wraps to
+                // the header's link back to the start screen, where the next
+                // Enter leaves the round. The edit is committed here instead
+                // and the cursor stays on its cell.
+                if (hot && tabsOut(hot, e)) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    hot.getActiveEditor()?.finishEditing();
+                    flushDeferred();
+                    return false;
+                }
                 return;
             }
 
@@ -1358,10 +1395,7 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 // tabbable element (a sidebar sheet, or past the grid
                 // entirely). stopImmediate is what also keeps the chord off
                 // useKeymap's window listener.
-                const tabOut =
-                    e.key === "Tab" &&
-                    (e.shiftKey ? edge.col === pad : edge.col === hot.countCols() - 1);
-                if (tabOut) {
+                if (tabsOut(hot, e)) {
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     return false;

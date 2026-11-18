@@ -524,6 +524,25 @@ describe("speech alignment", () => {
         });
     }
 
+    // Cmd+P can land before the grid has mounted, and a partner can write
+    // while the palette is up; neither may pull the keyboard out of it.
+    it("leaves the keyboard with an open dialog when it loads behind one", async () => {
+        const dialog = document.createElement("div");
+        dialog.setAttribute("role", "dialog");
+        const input = document.createElement("input");
+        dialog.append(input);
+        document.body.append(dialog);
+        input.focus();
+        try {
+            const hot = await mount(affSheet.id, false);
+            await waitFor(() => expect(hot.getSelectedLast()).toBeDefined());
+            expect(document.activeElement).toBe(input);
+            expect(hot.isListening()).toBe(false);
+        } finally {
+            dialog.remove();
+        }
+    });
+
     it("leads a neg sheet with the speech that opens the round", async () => {
         const hot = await mount(negSheet.id, true);
         expect(hot.countCols()).toBe(7);
@@ -777,6 +796,33 @@ describe("speech alignment", () => {
             });
             hot.rootElement.dispatchEvent(e);
             expect(e.defaultPrevented).toBe(true);
+            expect(hot.getSelectedRangeLast()!.highlight.col).toBe(col);
+        }
+    });
+
+    // Left to Handsontable, the Tab deselects and lets the browser move focus
+    // out of the grid, onto the header's link back to the start screen.
+    it("keeps Tab in the grid at either edge while a cell is being typed in", async () => {
+        const hot = await mount(negSheet.id, true);
+        const last = hot.countCols() - 1;
+        for (const [col, shiftKey] of [
+            [last, false],
+            [1, true],
+        ] as const) {
+            hot.selectCell(0, col);
+            const editor = hot.getActiveEditor()!;
+            editor.beginEditing();
+            editor.setValue("typed");
+            const e = new KeyboardEvent("keydown", {
+                key: "Tab",
+                shiftKey,
+                bubbles: true,
+                cancelable: true,
+            });
+            hot.rootElement.dispatchEvent(e);
+            expect(e.defaultPrevented).toBe(true);
+            expect(editor.isOpened()).toBe(false);
+            expect(hot.getDataAtCell(0, col)).toBe("typed");
             expect(hot.getSelectedRangeLast()!.highlight.col).toBe(col);
         }
     });
