@@ -37,6 +37,24 @@ function setupRound() {
 describe("SearchPalette", () => {
     beforeEach(() => resetStore());
 
+    it("keeps Ctrl+N and Ctrl+P from reaching the window keymap", async () => {
+        setupRound();
+        render(<SearchPalette />);
+        const reached: string[] = [];
+        const onKeyDown = (e: KeyboardEvent) => reached.push(e.key);
+        window.addEventListener("keydown", onKeyDown);
+        try {
+            screen.getByTestId("search-palette-input").focus();
+            await userEvent.keyboard("{Control>}n{/Control}");
+            expect(screen.getByTestId("sp-row-1")).toHaveAttribute("aria-selected", "true");
+            await userEvent.keyboard("{Control>}p{/Control}");
+            expect(screen.getByTestId("sp-row-0")).toHaveAttribute("aria-selected", "true");
+            expect(reached.filter((k) => k === "n" || k === "p")).toEqual([]);
+        } finally {
+            window.removeEventListener("keydown", onKeyDown);
+        }
+    });
+
     it("renders nothing when closed", () => {
         setupRound();
         useFlowStore.getState().setQuickSwitcherOpen(false);

@@ -142,13 +142,18 @@ function SearchPaletteInner() {
         }
         const down = e.key === "ArrowDown" || (e.ctrlKey && e.key === "n");
         const up = e.key === "ArrowUp" || (e.ctrlKey && e.key === "p");
+        // Stopped as well as prevented: off macOS, Ctrl+N and Ctrl+P are New
+        // Window and the palette's own chord in the window keymap, so a walk
+        // down the list would also open a second window on the start screen.
         if (down) {
             e.preventDefault();
+            e.stopPropagation();
             setSelectedIndex((i) => Math.min(i + 1, Math.max(rows.length - 1, 0)));
             return;
         }
         if (up) {
             e.preventDefault();
+            e.stopPropagation();
             setSelectedIndex((i) => Math.max(i - 1, 0));
             return;
         }
