@@ -7,6 +7,8 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-17
+
 ### Added
 
 - **You can now show every cell in bold.** Turn on Bold cells under Settings
@@ -57,6 +59,35 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
   for everything that went out, or is too old to say what it made, the send
   still happens and nothing is linked - a cell pointing at the wrong line in
   your file would be worse than a cell pointing at none.
+
+### Changed
+
+- **An exported workbook takes the name of the flow.** A flow saved as
+  `harvard round 2.ebb` exports as `harvard round 2.xlsx`; a flow with no file
+  yet keeps the dated name. Excel is the only export format, so the Export
+  button opens the save panel directly instead of a one-item menu.
+
+### Fixed
+
+- **A back gesture no longer drops you out of a round.** A trackpad swipe, a
+  mouse's back button, or a back chord used to land on the start screen
+  mid-round.
+- **Keyboard focus stays where you left it.** Tab at an edge column while
+  typing in a cell commits the edit and keeps the cursor on its cell instead
+  of leaving the grid, and a sheet loading or a partner's insert no longer
+  pulls focus out of an open dialog or the palette.
+- **Ctrl+N and Ctrl+P in the palette only walk the result list.** Off macOS
+  they also opened a second window or wiped the query.
+- **Speech headers stay aligned with their columns beside a scrollbar.**
+- **A search jump and a speech switch happen once.** Returning to a sheet you
+  last reached from the search palette no longer pulls the cursor back to the
+  hit, and in a split a pane gaining focus after a speech switch no longer
+  sends the cursor to the top of that speech.
+- **The start screen no longer flickers as the desktop app launches.**
+- **A pairing code survives a join that fails part way.** A partner whose join
+  failed after the code was accepted can type the same code again instead of
+  asking for a new one, and the join itself is more likely to land between
+  two networks.
 
 ## [1.6.0] - 2026-11-13
 
@@ -1102,7 +1133,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/shreerammodi/ebb/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/shreerammodi/ebb/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/shreerammodi/ebb/compare/v1.4.2...v1.5.0
 [1.4.2]: https://github.com/shreerammodi/ebb/compare/v1.4.1...v1.4.2
