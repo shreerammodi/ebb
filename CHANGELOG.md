@@ -7,6 +7,14 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Security
+
+- **The DNS parser behind local discovery is updated.** Shared editing finds
+  peers on the same network through a library that had five reported ways for
+  a malformed message to crash it or make it use too much memory. ebb only
+  runs that code while shared editing is on. The update is hickory-proto
+  0.26.3.
+
 ## [1.8.0] - 2026-11-18
 
 ### Added
