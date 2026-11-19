@@ -624,19 +624,33 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
     // Mod+scroll zooms only the grid. Native listener (not React onWheel) so the
     // preventDefault sticks and the browser's own page zoom never fires. Trackpad
     // pinch also arrives as ctrl+wheel, so both modifiers count.
+    //
+    // Any other wheel over the cells is kept from Handsontable, which would
+    // cancel it and replay it as `scrollTop += deltaY` on the main thread. In
+    // WebKit that races the compositor's own trackpad scroll, and once tall
+    // cells make a render slow the sheet jumps back and forth. Left alone the
+    // body holder scrolls natively, and its scroll event still syncs the
+    // header. The header clone keeps Handsontable's handling: it has no
+    // scrollbar of its own.
     useEffect(() => {
         const el = wrapRef.current;
         if (!el) return;
         const onWheel = (e: WheelEvent) => {
-            if (!e.ctrlKey && !e.metaKey) return;
+            if (!e.ctrlKey && !e.metaKey) {
+                if ((e.target as Element | null)?.closest?.(".ht_master .wtHolder")) {
+                    e.stopPropagation();
+                }
+                return;
+            }
             // Still swallow the gesture when zoom is off, so it goes inert rather
             // than falling through to the browser's own page zoom.
             e.preventDefault();
             if (!useFlowStore.getState().scrollZoom) return;
             useFlowStore.getState().zoomGrid(e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
         };
-        el.addEventListener("wheel", onWheel, { passive: false });
-        return () => el.removeEventListener("wheel", onWheel);
+        // Capture, so this runs before Handsontable's listener on its root.
+        el.addEventListener("wheel", onWheel, { passive: false, capture: true });
+        return () => el.removeEventListener("wheel", onWheel, { capture: true });
     }, []);
 
     // The focused pane owns the singleton so commands (undo, bold, rows) hit it.
@@ -736,6 +750,12 @@ export default memo(function HotGrid({ sheetId, pane }: { sheetId: string; pane:
                 ...headerSettings(sheet, cols, lead + width),
             });
             applyMeta(hot, sheet.meta, prevMeta, lead, prevLead);
+            // updateSettings swaps data through updateData, and autoRowSize
+            // re-measures only on loadData, so every row off screen would
+            // keep the one-line default. The grid positions rows above the
+            // viewport by those heights, and a tall cell scrolling past them
+            // jerks the sheet by the difference.
+            hot.getPlugin("autoRowSize").recalculateAllRowsHeight();
         });
         // The grid now carries the new sheet and pad. Retain that context even
         // while this pane is unfocused: its context menu is bound to this grid,
