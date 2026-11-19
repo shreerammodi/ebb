@@ -7,6 +7,17 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-11-18
+
+### Fixed
+
+- **Scrolling past long cells is smooth again.** A cell holding a whole card
+  could make the flow jump up and down as it scrolled past, snapping back
+  toward the cell instead of gliding. ebb now measures every row when a sheet
+  opens rather than only the ones on screen, and the grid scrolls with the
+  trackpad or wheel the way the rest of the system does. The view only snaps
+  to a cell when you move to one with the arrow keys, click, or type.
+
 ### Security
 
 - **The DNS parser behind local discovery is updated.** Shared editing finds
@@ -1161,7 +1172,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/shreerammodi/ebb/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/shreerammodi/ebb/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/shreerammodi/ebb/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/shreerammodi/ebb/compare/v1.5.0...v1.6.0
