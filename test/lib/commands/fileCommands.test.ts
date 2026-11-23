@@ -13,7 +13,15 @@ vi.mock("@/lib/commands/flowNav", () => ({
     flowRouteFor: (p: string) => `/flow?path=${encodeURIComponent(p)}`,
 }));
 
-import { closeOpenFlow, dragOpenFlow, saveOpenFlow } from "@/lib/commands/fileCommands";
+const saveXlsx = vi.fn();
+vi.mock("@/lib/export/xlsx", () => ({ saveXlsx: (...a: unknown[]) => saveXlsx(...a) }));
+
+import {
+    closeOpenFlow,
+    dragOpenFlow,
+    exportOpenFlow,
+    saveOpenFlow,
+} from "@/lib/commands/fileCommands";
 import { makeFlowRound } from "@/lib/model/flow";
 import { serializeFlow } from "@/lib/persistence/flowFile";
 import { useFlowStore } from "@/lib/store/useFlowStore";
@@ -45,6 +53,28 @@ describe("saveOpenFlow", () => {
     it("counts an empty editor as safe", async () => {
         useFlowStore.setState({ round: null, docPath: null });
         expect(await saveOpenFlow()).toBe(true);
+    });
+});
+
+describe("exportOpenFlow", () => {
+    it("exports the open round under its file's name", async () => {
+        saveXlsx.mockReset().mockResolvedValue(undefined);
+        await exportOpenFlow();
+        const { round } = useFlowStore.getState();
+        expect(saveXlsx).toHaveBeenCalledWith(round, expect.anything(), "/a.ebb");
+    });
+
+    it("toasts a failure rather than throwing", async () => {
+        saveXlsx.mockReset().mockRejectedValue(new Error("no space"));
+        await exportOpenFlow();
+        expect(toastError).toHaveBeenCalledWith("Export failed: no space");
+    });
+
+    it("does nothing with no flow open", async () => {
+        saveXlsx.mockReset();
+        useFlowStore.setState({ round: null, docPath: null });
+        await exportOpenFlow();
+        expect(saveXlsx).not.toHaveBeenCalled();
     });
 });
 

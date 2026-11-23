@@ -1,5 +1,5 @@
 /**
- * Document-level commands: open, save, save as, reveal, close.
+ * Document-level commands: open, save, save as, export, reveal, close.
  *
  * These are the only commands that are asynchronous and that can fail in a way
  * the user needs told about, so unlike the editor commands they surface a toast
@@ -10,6 +10,7 @@
 import { toast } from "sonner";
 
 import { errorMessage } from "@/lib/errorMessage";
+import { saveXlsx } from "@/lib/export/xlsx";
 import { commitOpenEdit } from "@/lib/grid/hotInstance";
 import { getFlowFs } from "@/lib/persistence/flowFs";
 import {
@@ -82,6 +83,17 @@ export async function saveOpenFlowAs(): Promise<void> {
         toast.success(`Saved to ${path}`);
     } catch (err) {
         report("Could not save that flow", err);
+    }
+}
+
+/** Excel is the only export, so this goes straight to the save panel. */
+export async function exportOpenFlow(): Promise<void> {
+    const { round, contacts, docPath } = useFlowStore.getState();
+    if (!round) return;
+    try {
+        await saveXlsx(round, contacts, docPath);
+    } catch (err) {
+        toast.error(`Export failed: ${errorMessage(err, "unknown error")}`);
     }
 }
 

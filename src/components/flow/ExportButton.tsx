@@ -1,13 +1,10 @@
 "use client";
 
 import { Export } from "@phosphor-icons/react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tooltip";
-import { errorMessage } from "@/lib/errorMessage";
-import { saveXlsx } from "@/lib/export/xlsx";
-import { useFlowStore } from "@/lib/store/useFlowStore";
+import { exportOpenFlow } from "@/lib/commands/fileCommands";
 
 /**
  * Excel is the only export, so the button goes straight to the save panel
@@ -15,16 +12,6 @@ import { useFlowStore } from "@/lib/store/useFlowStore";
  * writes one wherever the user wants it.
  */
 export default function ExportButton() {
-    async function exportExcel() {
-        const { round, contacts, docPath } = useFlowStore.getState();
-        if (!round) return;
-        try {
-            await saveXlsx(round, contacts, docPath);
-        } catch (err) {
-            toast.error(`Export failed: ${errorMessage(err, "unknown error")}`);
-        }
-    }
-
     return (
         <Tip label="Export to Excel">
             <Button
@@ -32,7 +19,7 @@ export default function ExportButton() {
                 size="sm"
                 aria-label="Export"
                 data-testid="export-btn"
-                onClick={exportExcel}
+                onClick={() => void exportOpenFlow()}
             >
                 <Export className="size-4" />
                 <span className="ribbon:inline hidden">Export</span>
