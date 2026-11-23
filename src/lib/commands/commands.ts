@@ -53,6 +53,7 @@ import { openShareSheet, showShareCode, showShareFailure } from "@/lib/store/use
 import { runEnd, runInvite, runJoin, runShare, type CollabCommandDeps } from "./collabCommands";
 import {
     closeOpenFlow,
+    exportOpenFlow,
     openFlowFromPicker,
     revealOpenFlow,
     saveOpenFlow,
@@ -641,6 +642,9 @@ export function executeCommand(id: CommandId): void {
             return;
         case "flow.reveal":
             void revealOpenFlow();
+            return;
+        case "flow.export":
+            void exportOpenFlow();
             return;
         case "flow.close":
             void closeOpenFlow();

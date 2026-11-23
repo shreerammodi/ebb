@@ -15,6 +15,7 @@ export type CommandId =
     | "flow.save"
     | "flow.saveAs"
     | "flow.reveal"
+    | "flow.export"
     | "flow.close"
     | "edit.undo"
     | "edit.redo"
@@ -94,6 +95,11 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
     "flow.save": { id: "flow.save", label: "Save flow" },
     "flow.saveAs": { id: "flow.saveAs", label: "Save flow as" },
     "flow.reveal": { id: "flow.reveal", label: "Show flow in file manager" },
+    "flow.export": {
+        id: "flow.export",
+        label: "Export to Excel",
+        keywords: "xlsx spreadsheet workbook judge",
+    },
     "flow.close": { id: "flow.close", label: "Close flow" },
     "edit.undo": { id: "edit.undo", label: "Undo" },
     "edit.redo": { id: "edit.redo", label: "Redo" },
@@ -219,6 +225,7 @@ export const EDITS_ROUND: Record<CommandId, boolean> = {
     "flow.save": false,
     "flow.saveAs": false,
     "flow.reveal": false,
+    "flow.export": false,
     "flow.close": false,
     "edit.undo": true,
     "edit.redo": true,
@@ -307,6 +314,7 @@ export const GRID_SCOPED: Record<CommandId, boolean> = {
     "flow.save": false,
     "flow.saveAs": false,
     "flow.reveal": false,
+    "flow.export": false,
     "flow.close": false,
     "edit.undo": false,
     "edit.redo": false,
