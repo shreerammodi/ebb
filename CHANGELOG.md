@@ -7,6 +7,14 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-11-26
+
+### Fixed
+
+- **The web version updates to this release.** The 1.9.0 web build failed to
+  install its dependencies, so the site stayed on 1.8.1. The desktop app was
+  not affected.
+
 ## [1.9.0] - 2026-11-26
 
 ### Added
@@ -1197,7 +1205,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.9.1...HEAD
+[1.9.1]: https://github.com/shreerammodi/ebb/compare/v1.9.0...v1.9.1
 [1.9.0]: https://github.com/shreerammodi/ebb/compare/v1.8.1...v1.9.0
 [1.8.1]: https://github.com/shreerammodi/ebb/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/shreerammodi/ebb/compare/v1.7.0...v1.8.0
