@@ -7,6 +7,25 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-11-26
+
+### Added
+
+- **Export to Excel is in the command palette.** It writes the same workbook
+  as the Export button in the ribbon.
+- **Each window is titled after its flow.** A window showing a flow reads
+  "<file name> - ebb", and one on the start screen reads "ebb", so windows
+  can be told apart in the taskbar and the Window menu.
+
+### Changed
+
+- **The sheet ribbon is tidier.** At the top of the grid it joins the round
+  header as one bar. Its controls share one text size, the add buttons and
+  the selection count form one group, and switching or hovering tabs no
+  longer shifts the row.
+- **Setting descriptions are shorter.** Each one says what the setting does,
+  and descriptions that only repeated the title are gone.
+
 ### Removed
 
 - **Skip down.** The command, its Meta+Shift+Enter (Ctrl+Shift+Enter off
@@ -1178,7 +1197,8 @@ flow one round together without a server of ours in the middle.
 
 - Initial tagged release.
 
-[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/shreerammodi/ebb/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/shreerammodi/ebb/compare/v1.8.1...v1.9.0
 [1.8.1]: https://github.com/shreerammodi/ebb/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/shreerammodi/ebb/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/shreerammodi/ebb/compare/v1.6.0...v1.7.0
