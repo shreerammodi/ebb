@@ -58,12 +58,7 @@ export default function ShareButton() {
                     onOpenChange={(open) => showPopup(open ? "share" : null)}
                 >
                     <DropdownMenuTrigger asChild>
-                        <Button
-                            type="button"
-                            size="xs"
-                            variant="outline"
-                            data-testid="sidebar-share"
-                        >
+                        <Button type="button" size="xs" variant="ghost" data-testid="sidebar-share">
                             <ShareNetwork />
                             Invite
                             <CaretDown className="size-3 opacity-60" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CaretDown, CaretUp, X } from "@phosphor-icons/react";
 import { LazyMotion, Reorder, m } from "motion/react";
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { toast } from "sonner";
@@ -142,38 +142,38 @@ export default function SheetRibbon({ position }: { position: "top" | "bottom" }
                 aria-label="Sheets"
                 className="border-border bg-card flex h-[30px] max-w-full min-w-0 items-center gap-0.5 rounded-md border px-1 shadow-sm"
             >
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-aff text-aff h-6 shrink-0 rounded px-1.5 text-[10px]"
-                    onClick={() => addGroup("aff")}
-                    data-testid="add-aff"
-                >
-                    + {sides.aff.label}
-                </Button>
-                <input
-                    type="number"
-                    min={1}
-                    inputMode="numeric"
-                    value={bulkCount}
-                    onChange={(e) => setBulkCount(e.target.value)}
-                    placeholder="1"
-                    aria-label="Bulk add sheets"
-                    data-testid="bulk-add-count"
-                    data-editing-field
-                    className="border-input text-foreground h-6 w-7 shrink-0 [appearance:textfield] rounded border bg-transparent px-0.5 text-center text-[10px] outline-none focus:placeholder-transparent [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                />
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-neg text-neg h-6 shrink-0 rounded px-1.5 text-[10px]"
-                    onClick={() => addGroup("neg")}
-                    data-testid="add-neg"
-                >
-                    + {sides.neg.label}
-                </Button>
+                {/* One segmented control rather than three boxes: the count is
+                    a modifier on either add, so it sits between them. */}
+                <div className="border-input flex h-6 shrink-0 items-center overflow-hidden rounded-md border text-xs">
+                    <button
+                        type="button"
+                        className="text-aff hover:bg-accent h-full px-2 font-medium transition-colors"
+                        onClick={() => addGroup("aff")}
+                        data-testid="add-aff"
+                    >
+                        + {sides.aff.label}
+                    </button>
+                    <input
+                        type="number"
+                        min={1}
+                        inputMode="numeric"
+                        value={bulkCount}
+                        onChange={(e) => setBulkCount(e.target.value)}
+                        placeholder="1"
+                        aria-label="Bulk add sheets"
+                        data-testid="bulk-add-count"
+                        data-editing-field
+                        className="border-input text-foreground placeholder:text-muted-foreground focus:bg-accent h-full w-7 [appearance:textfield] border-x bg-transparent text-center outline-none focus:placeholder-transparent [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <button
+                        type="button"
+                        className="text-neg hover:bg-accent h-full px-2 font-medium transition-colors"
+                        onClick={() => addGroup("neg")}
+                        data-testid="add-neg"
+                    >
+                        + {sides.neg.label}
+                    </button>
+                </div>
 
                 <span aria-hidden className="bg-border mx-0.5 h-4 w-px shrink-0" />
 
@@ -230,15 +230,17 @@ export default function SheetRibbon({ position }: { position: "top" | "bottom" }
                         command="sidebar.toggle"
                         side={position === "top" ? "bottom" : "top"}
                     >
-                        <button
+                        <Button
                             type="button"
+                            size="xs"
+                            variant="ghost"
                             aria-label="Hide sheet list"
                             onClick={() => setSidebarCollapsed(true)}
-                            className="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded p-0.5 transition-colors"
+                            className="text-muted-foreground w-6 px-0"
                             data-testid="collapse-sheet-ribbon"
                         >
-                            {position === "top" ? <CaretUp size={13} /> : <CaretDown size={13} />}
-                        </button>
+                            {position === "top" ? <CaretUp /> : <CaretDown />}
+                        </Button>
                     </Tip>
                 </div>
             </m.nav>
@@ -353,7 +355,7 @@ function SheetChip({
                 onBlur={() => onCommit(value.trim() || sheet.title)}
                 data-editing-field
                 aria-label={`Rename ${sheet.title}`}
-                className="border-border bg-card text-foreground h-6 w-28 rounded border px-1.5 text-[11px] outline-none"
+                className="border-ring bg-card text-foreground h-6 w-28 rounded-md border px-2 text-xs outline-none"
                 data-testid={`rename-input-${sheet.id}`}
             />
         );
@@ -371,21 +373,23 @@ function SheetChip({
                 data-testid={`sheet-${sheet.id}`}
                 data-selected={selected ? "true" : undefined}
                 className={cn(
-                    "flex h-6 max-w-44 items-center gap-1 rounded border px-1.5 text-[11px] transition-colors",
+                    // Every state shares one weight and one box, so switching
+                    // sheets never changes a tab's width and the row holds still.
+                    "flex h-6 max-w-44 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors",
                     // The active tab keeps the heavier treatment inside a
                     // range, so the anchor stays legible in the block rather
                     // than dissolving into it.
                     active
-                        ? "border-border bg-accent text-foreground font-semibold"
+                        ? "bg-accent text-foreground ring-border ring-1 ring-inset"
                         : selected
-                          ? "border-transparent bg-accent/60 text-foreground"
-                          : "text-muted-foreground hover:bg-accent/50 border-transparent",
+                          ? "bg-accent/60 text-foreground"
+                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                 )}
             >
                 <span
                     aria-hidden
                     className={cn(
-                        "h-3 w-0.5 shrink-0 rounded-full",
+                        "size-1.5 shrink-0 rounded-full",
                         side === "aff" ? "bg-aff" : "bg-neg",
                     )}
                 />
@@ -417,9 +421,11 @@ function SheetChip({
                             e.stopPropagation();
                             onDelete();
                         }}
-                        className="text-muted-foreground hover:text-destructive ml-0.5 hidden cursor-pointer rounded px-0.5 text-[11px] group-focus-within:block group-hover:block"
+                        // Overlaid on the tab's end rather than inserted beside
+                        // it, so hovering across the row reflows nothing.
+                        className="text-muted-foreground hover:text-destructive bg-accent absolute top-1/2 right-1 flex size-4 -translate-y-1/2 cursor-pointer items-center justify-center rounded-sm opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
                     >
-                        ×
+                        <X size={10} weight="bold" />
                     </button>
                 </Tip>
             )}
