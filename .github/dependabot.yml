@@ -34,15 +34,19 @@ updates:
           - dependency-name: eslint
             update-types: ["version-update:semver-major"]
           # vitest 5 declares `Assertion<R extends void | Promise<void>, T>`,
-          # while @testing-library/jest-dom (7.0.1, latest) augments it as
-          # `Assertion<T>`. Declaration merging across a differing type
-          # parameter list is an error inside the .d.ts, which skipLibCheck
-          # swallows, so the augmentation is dropped and every jest-dom matcher
-          # disappears from the type surface while still working at runtime:
-          # `vitest run` stays green and `next build` fails the typecheck on
-          # 200+ assertions. Stay on 4.x until jest-dom augments the two-
-          # parameter interface.
+          # while @testing-library/jest-dom 7 augments it as `Assertion<T>`.
+          # Declaration merging across a differing type parameter list is an
+          # error inside the .d.ts, which skipLibCheck swallows, so the
+          # augmentation is dropped and every jest-dom matcher disappears from
+          # the type surface while still working at runtime: `vitest run`
+          # stays green and `next build` fails the typecheck on 200+
+          # assertions. jest-dom 8 augments the two-parameter interface but
+          # peers on vitest 5 only, and `npm install` (which Vercel runs)
+          # refuses it beside vitest 4 even though `npm ci` does not. The two
+          # majors move together, by hand, in one change.
           - dependency-name: vitest
+            update-types: ["version-update:semver-major"]
+          - dependency-name: "@testing-library/jest-dom"
             update-types: ["version-update:semver-major"]
 
     # The Rust half of the tree is the half that terminates bytes off the
