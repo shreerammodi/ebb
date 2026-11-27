@@ -1,7 +1,7 @@
 "use client";
 
 import { CaretDown, CaretUp, X } from "@phosphor-icons/react";
-import { LazyMotion, Reorder, m } from "motion/react";
+import { LazyMotion, Reorder } from "motion/react";
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { toast } from "sonner";
 
@@ -25,10 +25,11 @@ const DRAG_SLOP = 4;
  * The sheet list as a ribbon along the grid's top or bottom edge rather than a
  * column beside it.
  *
- * It is a card sized to its contents, so the stretch of empty layout a short
- * round leaves after its last tab is simply not drawn. At the top, a single
- * pane also lets it stand in for the pane's title bar - the active tab is the
- * title - so that placement costs the grid no height at all.
+ * It is a flush strip on the header's surface rather than a floating card, so
+ * at the top it reads as the header's second row with one rule beneath it,
+ * and at the bottom as one rule above. At the top, a single pane also lets it
+ * stand in for the pane's title bar - the active tab is the title - so that
+ * placement costs the grid no height at all.
  */
 export default function SheetRibbon({ position }: { position: "top" | "bottom" }) {
     const sheets = useFlowStore((s) => s.round?.sheets ?? EMPTY_SHEETS);
@@ -133,14 +134,13 @@ export default function SheetRibbon({ position }: { position: "top" | "bottom" }
     }
 
     return (
-        <div className="no-print flex h-8 shrink-0 items-center px-1" data-testid="sheet-ribbon">
-            {/* The width is the content's: adding a sheet grows the rail,
-                deleting one cuts the empty end away, and layout animates the
-                edge between the two. */}
-            <m.nav
-                layout
+        <div className="no-print shrink-0" data-testid="sheet-ribbon">
+            <nav
                 aria-label="Sheets"
-                className="border-border bg-card flex h-[30px] max-w-full min-w-0 items-center gap-0.5 rounded-md border px-1 shadow-sm"
+                className={cn(
+                    "border-border bg-card ribbon:px-4 flex h-9 min-w-0 items-center gap-0.5 px-3",
+                    position === "top" ? "border-b" : "border-t",
+                )}
             >
                 {/* One segmented control rather than three boxes: the count is
                     a modifier on either add, so it sits between them. */}
@@ -177,7 +177,7 @@ export default function SheetRibbon({ position }: { position: "top" | "bottom" }
 
                 <span aria-hidden className="bg-border mx-0.5 h-4 w-px shrink-0" />
 
-                <div className="flex min-w-0 [scrollbar-width:none] items-center gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+                <div className="flex min-w-0 flex-1 [scrollbar-width:none] items-center gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
                     {cxSheet && (
                         <SheetChip
                             sheet={cxSheet}
@@ -243,7 +243,7 @@ export default function SheetRibbon({ position }: { position: "top" | "bottom" }
                         </Button>
                     </Tip>
                 </div>
-            </m.nav>
+            </nav>
         </div>
     );
 }

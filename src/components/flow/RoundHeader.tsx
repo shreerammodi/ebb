@@ -13,6 +13,7 @@ import { teamCode } from "@/lib/model/teamCode";
 import { stem } from "@/lib/persistence/flowPaths";
 import { useFlowStore, type WorkspaceView } from "@/lib/store/useFlowStore";
 import { isDesktop } from "@/lib/update/adapter";
+import { cn } from "@/lib/utils";
 
 import ExportButton from "./ExportButton";
 import SaveStatus from "./SaveStatus";
@@ -56,6 +57,15 @@ export default function RoundHeader() {
     const scouting = useFlowStore((s) => s.round?.scouting);
     const sides = sideLabels(useFlowStore((s) => s.round?.event));
     const docPath = useFlowStore((s) => s.docPath);
+    // A top ribbon continues the header's surface, so the rule moves to the
+    // ribbon's lower edge and the two read as one bar.
+    const ribbonBelow = useFlowStore(
+        (s) =>
+            s.workspaceView === "flow" &&
+            s.sidebarPosition === "top" &&
+            !s.sidebarCollapsed &&
+            (s.round?.sheets.length ?? 0) > 0,
+    );
 
     if (!scouting) return null;
 
@@ -69,7 +79,10 @@ export default function RoundHeader() {
 
     return (
         <header
-            className="border-border bg-card ribbon:gap-4 ribbon:px-4 flex h-12 flex-none items-center gap-2 border-b px-3"
+            className={cn(
+                "bg-card ribbon:gap-4 ribbon:px-4 flex h-12 flex-none items-center gap-2 border-b px-3",
+                ribbonBelow ? "border-transparent" : "border-border",
+            )}
             data-testid="round-header"
         >
             <div className="ribbon:gap-3 flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
