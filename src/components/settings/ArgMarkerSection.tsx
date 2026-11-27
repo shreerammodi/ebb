@@ -26,7 +26,7 @@ export default function ArgMarkerSection() {
             </div>
             <SettingRow
                 title="Marker text"
-                description='Type %Speech% where the speech name goes and %Number% where the count goes, followed by whatever separates the marker from the argument. "%Number%. " gives 1. and 2. Without %Number%, the count goes on the end. Leave empty for the default.'
+                description="The format for argument markers; %Speech% denotes where the speech name goes and %Number% denotes where the count goes. Without %Number%, the count goes on the end. Leave empty for the default."
                 control={
                     <Input
                         value={argMarker}

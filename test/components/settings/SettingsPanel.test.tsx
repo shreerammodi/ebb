@@ -448,7 +448,6 @@ describe("SettingsPanel", () => {
 
             const copy = screen.getByTestId("collab-section").textContent ?? "";
             expect(copy).not.toContain("until you share or join a round");
-            expect(copy).toContain("Listen for invites");
         });
 
         it("hides the relay row until shared editing is switched on", async () => {

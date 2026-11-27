@@ -26,7 +26,7 @@ export default function SkipRowsRow() {
     return (
         <SettingRow
             title="Skip down"
-            description="How many rows Skip down moves the cursor, leaving room for the answers the next speech puts beside an argument."
+            description="How many rows skip down moves the cursor."
             control={
                 <div className="flex items-center gap-1">
                     <Input

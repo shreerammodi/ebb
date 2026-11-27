@@ -32,10 +32,7 @@ export default function ContactList() {
     const entries = Object.entries(contacts);
 
     return (
-        <SettingRow
-            title="Contacts"
-            description="Peers you have shared with. Inviting one adds them by name."
-        >
+        <SettingRow title="Contacts">
             {entries.length === 0 ? (
                 <p className="text-muted-foreground text-[12px]" data-testid="contact-list-empty">
                     No partners saved yet. Add one below, or save one after a shared flow session.

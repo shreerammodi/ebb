@@ -371,7 +371,6 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Sidebar"
-                                    description="Left keeps the resizable sheet column. Top or bottom turns it into a ribbon along that edge, sized to its tabs."
                                     control={
                                         <div
                                             role="radiogroup"
@@ -458,9 +457,9 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Scroll to zoom"
-                                    description={`Zoom the flow grid by holding ${
+                                    description={`Enables zooming the flow grid by holding ${
                                         isMacPlatform() ? "Cmd" : "Ctrl"
-                                    } and scrolling, or pinching on a trackpad. Turn off to leave the wheel alone.`}
+                                    } and scrolling, or pinching on a trackpad.`}
                                     control={
                                         <Switch
                                             checked={scrollZoom}
@@ -472,7 +471,7 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Visually align speeches"
-                                    description="Line every sheet up on the round's speaking order, so a speech keeps one place on screen as you move between sheets. Speeches which are not accessible for that sheet type are grayed out."
+                                    description="Adds padding so that each sheet lines up visually and columns don't shift around."
                                     control={
                                         <Switch
                                             checked={alignSpeeches}
@@ -484,7 +483,6 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Tooltips"
-                                    description="Hover hints on buttons and controls. Turn off to hide them."
                                     control={
                                         <Switch
                                             checked={tooltips}
@@ -496,7 +494,7 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Bold cells"
-                                    description="Show every cell in bold. Changes only how the flow looks here, not the file."
+                                    description="Visually bolds all cells."
                                     control={
                                         <Switch
                                             checked={boldCells}
@@ -508,7 +506,6 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Flow font"
-                                    description="Used for the sheet editor."
                                     control={
                                         <>
                                             <Select
@@ -619,7 +616,7 @@ export default function SettingsPanel() {
                             <div className="flex flex-col">
                                 <SettingRow
                                     title="Insert paste"
-                                    description="With insert paste on, pasted cells push the text already in those columns down instead of writing over it."
+                                    description="With insert paste on, pasted cells push the cells already in those columns down instead of writing over them."
                                     control={
                                         <Switch
                                             checked={insertPaste}
@@ -631,7 +628,7 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Append mode"
-                                    description="With append mode on, typing on a cell that already has text adds to the end of it instead of writing over it."
+                                    description="With append mode on, typing on a cell that already has text adds to the end of it instead of deleting existing content."
                                     control={
                                         <Switch
                                             checked={appendEdit}
@@ -643,7 +640,7 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Cross-ex Enter"
-                                    description="With cross-ex Enter on, Enter on the cross-ex sheet moves from a question to its answer, and from an answer to the next question a row down."
+                                    description="Enter on the cross-ex sheet moves from a question to its answer, and from an answer to the next question a row down."
                                     control={
                                         <Switch
                                             checked={cxEnterAlternates}
@@ -668,7 +665,7 @@ export default function SettingsPanel() {
                                 />
                                 <SettingRow
                                     title="Flows folder"
-                                    description="Where new flows are filed. Existing files stay where they are."
+                                    description="Where new flows are saved; does not affect existing flows."
                                     control={<FlowsFolderControl />}
                                 />
                                 <ArgMarkerSection />
@@ -749,7 +746,7 @@ export default function SettingsPanel() {
                                                 />
                                                 <SettingRow
                                                     title="Push edits to CardMirror"
-                                                    description="Editing a cell that came from CardMirror rewrites that text in the document. A cell you typed yourself is never sent."
+                                                    description="Editing a cell that came from CardMirror rewrites that text in the document."
                                                     control={
                                                         <Switch
                                                             checked={cardmirrorPushEdits}
@@ -769,7 +766,7 @@ export default function SettingsPanel() {
                             <div className="flex flex-col" data-testid="collab-section">
                                 <SettingRow
                                     title="Shared editing"
-                                    description="Enables collaboration features, off by default. Off, nothing reaches the network. On, sharing or joining a round does, and so does Listen for invites."
+                                    description="Enables collaboration features, off by default."
                                     control={
                                         <Switch
                                             checked={collabEnabled}
@@ -795,7 +792,6 @@ export default function SettingsPanel() {
                                         />
                                         <SettingRow
                                             title="Listen for invites"
-                                            description="Keeps an endpoint open the whole time ebb is running so a saved contact can share a round with you."
                                             control={
                                                 <Switch
                                                     checked={collabListenEnabled}
@@ -807,7 +803,6 @@ export default function SettingsPanel() {
                                         />
                                         <SettingRow
                                             title="Show viewer cursors"
-                                            description="Marks the cell a view-only peer is looking at. Off hides them, leaving only the cells a partner is editing."
                                             control={
                                                 <Switch
                                                     checked={collabShowViewers}
