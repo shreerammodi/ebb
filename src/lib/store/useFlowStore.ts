@@ -137,8 +137,6 @@ export interface FlowState {
      * `%Number%` tokens. Empty follows DEFAULT_ARG_MARKER.
      */
     argMarker: string;
-    /** How many rows Skip down moves the cursor. */
-    skipRows: number;
     /**
      * On the cross-ex sheet, Enter walks a period's pair of columns in
      * speaking order: from the left column to the right one on the same row,
@@ -277,7 +275,6 @@ export interface FlowActions {
     setInsertPaste(on: boolean): void;
     setAppendEdit(on: boolean): void;
     setArgMarker(template: string): void;
-    setSkipRows(rows: number): void;
     setCxEnterAlternates(on: boolean): void;
     setScrollZoom(on: boolean): void;
     setAlignSpeeches(on: boolean): void;
@@ -348,9 +345,6 @@ export const ZOOM_STEP = 0.1;
 export const DEFAULT_SPEAKING_WPM = 150;
 export const SPEAKING_WPM_MIN = 1;
 export const SPEAKING_WPM_MAX = 1000;
-export const SKIP_ROWS_DEFAULT = 3;
-export const SKIP_ROWS_MIN = 1;
-export const SKIP_ROWS_MAX = 50;
 
 /** Clamps to the zoom bounds and snaps to whole percents so steps never drift. */
 export function clampZoom(zoom: number): number {
@@ -379,12 +373,6 @@ export function resolveSpeakingWpm(value: unknown): number {
     return typeof value === "number" && Number.isFinite(value)
         ? Math.min(SPEAKING_WPM_MAX, Math.max(SPEAKING_WPM_MIN, Math.round(value)))
         : DEFAULT_SPEAKING_WPM;
-}
-
-export function resolveSkipRows(value: unknown): number {
-    return typeof value === "number" && Number.isFinite(value)
-        ? Math.min(SKIP_ROWS_MAX, Math.max(SKIP_ROWS_MIN, Math.round(value)))
-        : SKIP_ROWS_DEFAULT;
 }
 
 function loadKeymapOverrides(): Record<string, string> {
@@ -421,7 +409,6 @@ interface DisplaySettings {
     insertPaste: boolean;
     appendEdit: boolean;
     argMarker: string;
-    skipRows: number;
     cxEnterAlternates: boolean;
     scrollZoom: boolean;
     alignSpeeches: boolean;
@@ -484,7 +471,6 @@ function loadDisplaySettings(): DisplaySettings {
         insertPaste: false,
         appendEdit: true,
         argMarker: "",
-        skipRows: SKIP_ROWS_DEFAULT,
         cxEnterAlternates: false,
         scrollZoom: true,
         alignSpeeches: false,
@@ -523,7 +509,6 @@ function loadDisplaySettings(): DisplaySettings {
             insertPaste: bool(p.insertPaste, false),
             appendEdit: bool(p.appendEdit, true),
             argMarker: typeof p.argMarker === "string" ? p.argMarker : "",
-            skipRows: resolveSkipRows(p.skipRows),
             cxEnterAlternates: bool(p.cxEnterAlternates, false),
             scrollZoom: bool(p.scrollZoom, true),
             alignSpeeches: bool(p.alignSpeeches, false),
@@ -573,7 +558,6 @@ function displaySettingsOf(s: FlowState): DisplaySettings {
         insertPaste: s.insertPaste,
         appendEdit: s.appendEdit,
         argMarker: s.argMarker,
-        skipRows: s.skipRows,
         cxEnterAlternates: s.cxEnterAlternates,
         scrollZoom: s.scrollZoom,
         alignSpeeches: s.alignSpeeches,
@@ -686,7 +670,6 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     insertPaste: initialDisplaySettings.insertPaste,
     appendEdit: initialDisplaySettings.appendEdit,
     argMarker: initialDisplaySettings.argMarker,
-    skipRows: initialDisplaySettings.skipRows,
     cxEnterAlternates: initialDisplaySettings.cxEnterAlternates,
     scrollZoom: initialDisplaySettings.scrollZoom,
     alignSpeeches: initialDisplaySettings.alignSpeeches,
@@ -1033,8 +1016,6 @@ export const useFlowStore = create<FlowStore>()((set, get) => ({
     setAppendEdit: (on) => persistDisplay(set, get, { appendEdit: on }),
 
     setArgMarker: (template) => persistDisplay(set, get, { argMarker: template }),
-
-    setSkipRows: (rows) => persistDisplay(set, get, { skipRows: resolveSkipRows(rows) }),
 
     setCxEnterAlternates: (on) => persistDisplay(set, get, { cxEnterAlternates: on }),
 

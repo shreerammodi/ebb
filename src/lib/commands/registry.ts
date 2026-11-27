@@ -32,7 +32,6 @@ export type CommandId =
     | "cell.move"
     | "cell.extend"
     | "cell.numberArg"
-    | "cell.skipDown"
     | "cell.jumpToSource"
     | "cell.sendToDoc"
     | "sheet.next"
@@ -126,11 +125,6 @@ export const COMMANDS: Record<CommandId, CommandDef> = {
         id: "cell.numberArg",
         label: "Insert argument number",
         keywords: "marker count numbering line up",
-    },
-    "cell.skipDown": {
-        id: "cell.skipDown",
-        label: "Skip down",
-        keywords: "rows room space jump leave blank",
     },
     "cell.jumpToSource": {
         id: "cell.jumpToSource",
@@ -242,8 +236,6 @@ export const EDITS_ROUND: Record<CommandId, boolean> = {
     "cell.move": true,
     "cell.extend": true,
     "cell.numberArg": true,
-    // Moving the cursor changes nothing, so a viewer may skip too.
-    "cell.skipDown": false,
     "cell.jumpToSource": false,
     "cell.sendToDoc": false,
     "sheet.next": false,
@@ -331,7 +323,6 @@ export const GRID_SCOPED: Record<CommandId, boolean> = {
     "cell.move": true,
     "cell.extend": true,
     "cell.numberArg": true,
-    "cell.skipDown": true,
     "cell.jumpToSource": true,
     "cell.sendToDoc": true,
     "sheet.next": false,

@@ -7,6 +7,12 @@ format, and this project obeys [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Removed
+
+- **Skip down.** The command, its Meta+Shift+Enter (Ctrl+Shift+Enter off
+  Mac) binding, and the Skip down setting in Settings > Editor are gone. A
+  rebinding or row count saved for it is ignored.
+
 ## [1.8.1] - 2026-11-18
 
 ### Fixed
