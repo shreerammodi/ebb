@@ -62,9 +62,13 @@ pub fn note_close(label: &str) {
 static OPEN_PATHS: LazyLock<Mutex<HashMap<String, String>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-/// Records which flow `label` shows, or that it shows none.
+/// Records which flow `label` shows, or that it shows none, and titles the
+/// window after it so a debater can tell windows apart in the taskbar and the
+/// Window menu.
 #[tauri::command]
 pub fn report_open_path<R: Runtime>(window: WebviewWindow<R>, path: Option<String>) {
+    // Best-effort: an untitled window still edits its flow.
+    let _ = window.set_title(&title_for(path.as_deref()));
     let mut paths = OPEN_PATHS.lock();
     match path {
         Some(p) => {
@@ -73,6 +77,26 @@ pub fn report_open_path<R: Runtime>(window: WebviewWindow<R>, path: Option<Strin
         None => {
             paths.remove(window.label());
         }
+    }
+}
+
+/// "<flow> - ebb" for the flow's filename without its `.ebb`, or the app's name
+/// alone when none is open.
+/// Paths arrive verbatim from the OS, so either separator ends a segment.
+fn title_for(path: Option<&str>) -> String {
+    let Some(path) = path else {
+        return TITLE.to_string();
+    };
+    let name = path.rsplit(['/', '\\']).next().unwrap_or(path);
+    let stem = if name.to_ascii_lowercase().ends_with(".ebb") {
+        &name[..name.len() - 4]
+    } else {
+        name
+    };
+    if stem.is_empty() {
+        TITLE.to_string()
+    } else {
+        format!("{stem} - {TITLE}")
     }
 }
 
@@ -358,6 +382,18 @@ pub fn adopt_or_open<R: Runtime>(app: &AppHandle<R>, path: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_window_is_titled_after_its_flow() {
+        assert_eq!(
+            title_for(Some("/Users/d/Flows/Lynbrook AB vs CME.ebb")),
+            "Lynbrook AB vs CME - ebb"
+        );
+        assert_eq!(title_for(Some("C:\\Flows\\Round 3.EBB")), "Round 3 - ebb");
+        assert_eq!(title_for(Some("notes.txt")), "notes.txt - ebb");
+        assert_eq!(title_for(Some("/Flows/.ebb")), TITLE);
+        assert_eq!(title_for(None), TITLE);
+    }
 
     fn allowed(raw: &str, dev: bool) -> bool {
         navigable_in(&Url::parse(raw).expect("parse"), dev)
