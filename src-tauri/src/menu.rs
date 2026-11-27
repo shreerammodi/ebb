@@ -159,7 +159,11 @@ pub fn build<R: Runtime>(
     // fallback for a command the map does not name.
     let view_menu = SubmenuBuilder::new(app, "View")
         .item(&cmd("sheet.next", "Next Sheet", "CmdOrCtrl+BracketRight")?)
-        .item(&cmd("sheet.prev", "Previous Sheet", "CmdOrCtrl+BracketLeft")?)
+        .item(&cmd(
+            "sheet.prev",
+            "Previous Sheet",
+            "CmdOrCtrl+BracketLeft",
+        )?)
         .item(&cmd(
             "sheet.moveUp",
             "Move Sheet Up",
