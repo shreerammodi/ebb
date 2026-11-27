@@ -2,6 +2,7 @@
 
 import {
     ArrowsClockwise,
+    DownloadSimple,
     type Icon,
     Keyboard,
     Palette,
@@ -9,11 +10,9 @@ import {
     UsersThree,
     X,
 } from "@phosphor-icons/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
-import ContactList from "@/components/collab/ContactList";
-import DisplayNameRow from "@/components/collab/DisplayNameRow";
-import MyEndpointId from "@/components/collab/MyEndpointId";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -27,29 +26,36 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tip } from "@/components/ui/tooltip";
 import type { CardMirrorTextType } from "@/lib/bridge/cardmirror";
+import { copyText, selectNode } from "@/lib/clipboard";
+import { addContact, type Contacts, isEndpointId, removeContact } from "@/lib/collab/contacts";
+import { machineName, myEndpointId } from "@/lib/collab/machineName";
 import {
     CARDMIRROR_COMMANDS,
     COLLAB_COMMANDS,
     COMMANDS,
     type CommandId,
 } from "@/lib/commands/registry";
+import { errorMessage } from "@/lib/errorMessage";
 import { FONTS, DEFAULT_FONT_ID, type FontId } from "@/lib/fonts/registry";
+import { DEFAULT_ARG_MARKER, formatArgMarker } from "@/lib/grid/argNumber";
 import { buildChordMap } from "@/lib/keymap/displayChord";
 import { eventToChord } from "@/lib/keymap/resolve";
 import { restoreMenuAccelerators, suspendMenuAccelerators } from "@/lib/keymap/useDesktopMenu";
 import { useSettingsShortcut } from "@/lib/keymap/useSettingsShortcut";
 import type { Side } from "@/lib/model/types";
+import { getFlowFs } from "@/lib/persistence/flowFs";
+import { displayPath } from "@/lib/persistence/flowPaths";
 import { isMacPlatform } from "@/lib/platform";
+import { useCollabStore } from "@/lib/store/useCollabStore";
 import { type SidebarPosition, useFlowStore } from "@/lib/store/useFlowStore";
 import { DEFAULT_SIDE_COLORS } from "@/lib/theme/applySideColors";
 import type { ThemeMode } from "@/lib/theme/mode";
-import { isDesktop } from "@/lib/update/adapter";
+import { getCurrentVersion, getSystemInfo, isDesktop } from "@/lib/update/adapter";
+import type { UpdateUiState } from "@/lib/update/useAutoUpdate";
 import { cn } from "@/lib/utils";
 
-import ArgMarkerSection from "./ArgMarkerSection";
-import FlowsFolderControl from "./FlowsFolderControl";
+import { useUpdate } from "../update/UpdateProvider";
 import SettingRow from "./SettingRow";
-import UpdateSettings from "./UpdateSettings";
 
 const THEME_OPTIONS: { id: ThemeMode; label: string }[] = [
     { id: "light", label: "Light" },
@@ -892,5 +898,532 @@ export default function SettingsPanel() {
                 </div>
             </DialogContent>
         </Dialog>
+    );
+}
+
+// --- Setting rows ---------------------------------------------------------------
+
+/**
+ * Picks the folder new flows are filed in.
+ *
+ * The resolved path is always shown, default or not, because "where do my
+ * rounds go" should never require guessing. Reset clears the override rather
+ * than writing the current default in, so a flow folder that follows the
+ * platform keeps following it.
+ */
+export function FlowsFolderControl() {
+    const flowsDir = useFlowStore((s) => s.flowsDir);
+    const setFlowsDir = useFlowStore((s) => s.setFlowsDir);
+    const [resolved, setResolved] = useState("");
+    const [home, setHome] = useState("");
+
+    useEffect(() => {
+        let mounted = true;
+        void getFlowFs()
+            .then((fs) => fs.locations())
+            .then(({ flowsDir: fallback, home: h }) => {
+                if (!mounted) return;
+                setResolved(fallback);
+                setHome(h);
+            });
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    async function choose() {
+        try {
+            const fs = await getFlowFs();
+            const dir = await fs.pickDirectory();
+            if (dir) setFlowsDir(dir);
+        } catch (err) {
+            toast.error(errorMessage(err, "Could not choose that folder"));
+        }
+    }
+
+    const shown = flowsDir ?? resolved;
+
+    return (
+        <div className="flex min-w-0 items-center justify-end gap-2">
+            <code
+                data-testid="flows-folder-path"
+                title={shown}
+                className="text-muted-foreground max-w-[16rem] truncate font-mono text-xs"
+            >
+                {shown ? displayPath(shown, home) : "..."}
+            </code>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void choose()}
+                data-testid="flows-folder-choose"
+            >
+                Change
+            </Button>
+            {flowsDir && (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setFlowsDir(null)}
+                    data-testid="flows-folder-reset"
+                >
+                    Reset
+                </Button>
+            )}
+        </div>
+    );
+}
+
+/**
+ * What Insert argument number writes. The marker is written exactly as typed,
+ * so the preview sets each one against sample text: a trailing space or
+ * separator is invisible in the field and only shows where the argument
+ * starts. It uses a 2AC column because Settings has no round to ask.
+ */
+export function ArgMarkerSection() {
+    const argMarker = useFlowStore((s) => s.argMarker);
+    const setArgMarker = useFlowStore((s) => s.setArgMarker);
+
+    return (
+        <section className="mt-4 flex flex-col" data-testid="arg-marker-section">
+            <div className="mb-1 flex items-center gap-2">
+                <h3 className="text-muted-foreground text-[11px] font-bold tracking-widest uppercase">
+                    Argument numbers
+                </h3>
+                <span className="bg-border/60 h-px flex-1" />
+            </div>
+            <SettingRow
+                title="Marker text"
+                description="The format for argument markers; %Speech% denotes where the speech name goes and %Number% denotes where the count goes. Without %Number%, the count goes on the end. Leave empty for the default."
+                control={
+                    <Input
+                        value={argMarker}
+                        onChange={(e) => setArgMarker(e.target.value)}
+                        placeholder={DEFAULT_ARG_MARKER}
+                        aria-label="Argument marker text"
+                        data-testid="arg-marker"
+                        className="h-8 w-52"
+                    />
+                }
+            >
+                <div
+                    className="text-muted-foreground flex flex-col text-[12px] whitespace-pre"
+                    data-testid="arg-marker-preview"
+                >
+                    {[1, 2].map((n) => (
+                        <span key={n}>
+                            <span className="text-foreground">
+                                {formatArgMarker(argMarker, "2AC", n)}
+                            </span>
+                            argument
+                        </span>
+                    ))}
+                </div>
+            </SettingRow>
+        </section>
+    );
+}
+
+/** Rust's `std::env::consts` names, spelled the way people say them. */
+const OS_LABELS: Record<string, string> = {
+    macos: "macOS",
+    windows: "Windows",
+    linux: "Linux",
+};
+const ARCH_LABELS: Record<string, string> = {
+    aarch64: "arm64",
+    x86_64: "x86-64",
+};
+
+/** Why the install button is disabled, shown as its hover tooltip. */
+function idleTooltip(state: UpdateUiState): string {
+    switch (state.status) {
+        case "checking":
+            return "Checking for updates…";
+        case "downloading":
+            return "Downloading the update…";
+        case "error":
+            return "Couldn't check for updates.";
+        default:
+            return "Already on the latest version.";
+    }
+}
+
+/**
+ * Desktop-only update controls. The single "Install latest update" button is
+ * the whole story: greyed with an "already latest" tooltip until a newer
+ * version has been downloaded, then green and clickable to install + relaunch.
+ * A newer version arrives either from the background poller (auto-check) or the
+ * explicit "Check for updates" button. Only rendered inside the Tauri shell
+ * (the settings panel gates the category on `isDesktop()`).
+ */
+export function UpdateSettings() {
+    const config = useFlowStore((s) => s.updateConfig);
+    const setUpdateConfig = useFlowStore((s) => s.setUpdateConfig);
+    const { state, checkNow, installAndRestart } = useUpdate();
+    const [install, setInstall] = useState<{ version: string; platform: string } | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        void Promise.all([getCurrentVersion(), getSystemInfo()]).then(([version, system]) => {
+            if (cancelled) return;
+            const [os, arch] = system ?? [];
+            setInstall({
+                version,
+                platform: os
+                    ? `${OS_LABELS[os] ?? os} (${arch ? (ARCH_LABELS[arch] ?? arch) : "unknown"})`
+                    : "Unknown",
+            });
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const busy = state.status === "checking" || state.status === "downloading";
+    const ready = state.status === "ready";
+
+    // Native `disabled` swallows pointer events, so the tooltip never opens.
+    // Keep the button interactive, mark it aria-disabled, and no-op the click.
+    const installButton = (
+        <Button
+            type="button"
+            size="sm"
+            variant={ready ? "default" : "secondary"}
+            aria-disabled={!ready}
+            onClick={ready ? () => void installAndRestart() : undefined}
+            data-testid="install-update"
+            className={cn(
+                ready
+                    ? "bg-green-600 text-white hover:bg-green-600/90 dark:bg-green-600 dark:hover:bg-green-600/80"
+                    : "cursor-not-allowed opacity-60",
+            )}
+        >
+            <DownloadSimple />
+            Install latest update
+        </Button>
+    );
+
+    return (
+        <div className="flex flex-col">
+            <SettingRow
+                title="Check for updates automatically"
+                description="Downloads happen silently; installing always waits for your confirmation."
+                control={
+                    <Switch
+                        checked={config.autoCheckEnabled}
+                        onCheckedChange={(v) => setUpdateConfig({ autoCheckEnabled: v })}
+                        data-testid="toggle-autoCheck"
+                        aria-label="Check for updates automatically"
+                    />
+                }
+            />
+
+            <SettingRow
+                title="Software updates"
+                control={
+                    <>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void checkNow()}
+                            disabled={busy}
+                            data-testid="check-updates"
+                        >
+                            {state.status === "downloading"
+                                ? "Downloading…"
+                                : busy
+                                  ? "Checking…"
+                                  : "Check for updates"}
+                        </Button>
+                        {ready ? (
+                            installButton
+                        ) : (
+                            <Tip label={idleTooltip(state)}>{installButton}</Tip>
+                        )}
+                    </>
+                }
+            />
+
+            {install && (
+                <div data-testid="install-info" className="flex flex-col">
+                    <SettingRow
+                        title="Version"
+                        control={
+                            <span className="text-foreground text-[13px] tabular-nums">
+                                {install.version}
+                            </span>
+                        }
+                    />
+                    <SettingRow
+                        title="Platform"
+                        control={
+                            <span className="text-foreground text-[13px]">{install.platform}</span>
+                        }
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * The name a shared round carries. Left empty, the machine's own name is
+ * broadcast, which is why the field shows it as a placeholder rather than
+ * filling it in: a hostname written here would be saved to the config file and
+ * follow this laptop's name onto every machine that file syncs to.
+ */
+export function DisplayNameRow() {
+    const collabName = useFlowStore((s) => s.collabName);
+    const setCollabName = useFlowStore((s) => s.setCollabName);
+    const [host, setHost] = useState("");
+
+    useEffect(() => {
+        let live = true;
+        void machineName().then((name) => {
+            if (live) setHost(name);
+        });
+        return () => {
+            live = false;
+        };
+    }, []);
+
+    return (
+        <SettingRow
+            title="Your name"
+            description="What a partner sees when you share a round with them. They can rename you on their side."
+            control={
+                <Input
+                    value={collabName}
+                    onChange={(e) => setCollabName(e.target.value)}
+                    placeholder={host || "This machine"}
+                    aria-label="Your name"
+                    data-testid="collab-name"
+                    className="h-8 w-52"
+                />
+            }
+        />
+    );
+}
+
+/**
+ * This machine's own EndpointId, so a partner can save it before either of you
+ * has a round to share. It is the public half of the identity file, read off
+ * the disk rather than off a bound endpoint, so showing it puts nothing on the
+ * network.
+ */
+export function MyEndpointId() {
+    const endpointId = useCollabStore((s) => s.endpointId);
+    const text = useRef<HTMLParagraphElement>(null);
+
+    useEffect(() => {
+        void myEndpointId().then((id) => {
+            if (id) useCollabStore.getState().setEndpointId(id);
+        });
+    }, []);
+
+    async function copy() {
+        if (!endpointId) return;
+        if (await copyText(endpointId)) {
+            toast.success("Your ID is copied.");
+            return;
+        }
+        selectNode(text.current);
+        toast.error("Could not reach the clipboard. Press Cmd+C to copy your ID.");
+    }
+
+    return (
+        <SettingRow
+            title="Your ID"
+            description="Send this to a partner and they can add you as a contact to easily share flows. Flows still need to be shared manually."
+            control={
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!endpointId}
+                    onClick={copy}
+                    data-testid="my-id-copy"
+                >
+                    Copy
+                </Button>
+            }
+        >
+            <p
+                ref={text}
+                data-testid="my-id"
+                className="border-border bg-muted/40 text-muted-foreground rounded-md border p-2 font-mono text-[12px] break-all select-all"
+            >
+                {endpointId ?? "Reading your identity..."}
+            </p>
+        </SettingRow>
+    );
+}
+
+/** An EndpointId is a long key; a row shows the first eight characters. */
+const SHORT_ID = 8;
+
+/**
+ * The saved peers, edited in place, and the form that adds one.
+ *
+ * Two partners on the way to a tournament have no round to share yet, so a
+ * contact is not only something a finished session leaves behind: each of them
+ * sends the other the ID above and types it in here. The pair is then dialable
+ * with no ticket for every round after.
+ *
+ * A row is a name and a key and nothing else. What a partner may do belongs to
+ * the round they are invited to and is chosen at the invitation, so there is
+ * nothing to grade here.
+ */
+export function ContactList() {
+    const contacts = useFlowStore((s) => s.contacts);
+    const setContacts = useFlowStore((s) => s.setContacts);
+
+    // Insertion order, so a rename never moves the row out from under the
+    // cursor typing it.
+    const entries = Object.entries(contacts);
+
+    return (
+        <SettingRow title="Contacts">
+            {entries.length === 0 ? (
+                <p className="text-muted-foreground text-[12px]" data-testid="contact-list-empty">
+                    No partners saved yet. Add one below, or save one after a shared flow session.
+                </p>
+            ) : (
+                <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+                    {entries.map(([endpointId, contact]) => {
+                        const short = endpointId.slice(0, SHORT_ID);
+                        const shown = contact.name.trim() === "" ? short : contact.name;
+                        return (
+                            <li
+                                key={endpointId}
+                                data-testid={`contact-row-${endpointId}`}
+                                className="flex items-center gap-2"
+                            >
+                                <Input
+                                    value={contact.name}
+                                    onChange={(e) =>
+                                        setContacts(
+                                            addContact(contacts, endpointId, {
+                                                ...contact,
+                                                name: e.target.value,
+                                            }),
+                                        )
+                                    }
+                                    // A nameless entry is unreadable to the config
+                                    // parser, so an emptied field falls back to the
+                                    // short id rather than losing the peer.
+                                    onBlur={() => {
+                                        if (contact.name.trim() !== "") return;
+                                        setContacts(
+                                            addContact(contacts, endpointId, {
+                                                ...contact,
+                                                name: short,
+                                            }),
+                                        );
+                                    }}
+                                    aria-label={`Name for ${shown}`}
+                                    data-testid={`contact-name-${endpointId}`}
+                                    className="h-8 min-w-0 flex-1"
+                                />
+                                <span
+                                    title={endpointId}
+                                    className="text-muted-foreground shrink-0 font-mono text-[11px]"
+                                >
+                                    {short}
+                                </span>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="xs"
+                                    aria-label={`Remove ${shown}`}
+                                    data-testid={`contact-remove-${endpointId}`}
+                                    onClick={() => setContacts(removeContact(contacts, endpointId))}
+                                >
+                                    Remove
+                                </Button>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+            <AddContact contacts={contacts} onAdd={setContacts} />
+        </SettingRow>
+    );
+}
+
+/**
+ * Adds a partner from the ID they sent. The shape is checked here so a typo is
+ * caught at the form rather than at a dial that fails with nothing to point
+ * at; whether the key is real is still the transport's answer.
+ */
+function AddContact({
+    contacts,
+    onAdd,
+}: {
+    contacts: Contacts;
+    onAdd: (contacts: Contacts) => void;
+}) {
+    const [endpointId, setEndpointId] = useState("");
+    const [name, setName] = useState("");
+    const id = endpointId.trim();
+    const known = id in contacts;
+    const shaped = isEndpointId(id);
+    const ready = shaped && !known && name.trim() !== "";
+
+    function add() {
+        if (!ready) return;
+        onAdd(addContact(contacts, id, { name: name.trim() }));
+        setEndpointId("");
+        setName("");
+    }
+
+    return (
+        <div className="mt-3 flex flex-col gap-1.5" data-testid="add-contact">
+            <div className="flex items-center gap-2">
+                <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") add();
+                    }}
+                    placeholder="Name"
+                    aria-label="Partner name"
+                    data-testid="add-contact-name"
+                    className="h-8 w-32 shrink-0"
+                />
+                <Input
+                    value={endpointId}
+                    onChange={(e) => setEndpointId(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") add();
+                    }}
+                    placeholder="Their ID"
+                    aria-label="Partner ID"
+                    data-testid="add-contact-id"
+                    className="h-8 min-w-0 flex-1 font-mono text-[12px]"
+                />
+                <Button
+                    type="button"
+                    size="xs"
+                    disabled={!ready}
+                    onClick={add}
+                    data-testid="add-contact-save"
+                >
+                    Add
+                </Button>
+            </div>
+            {id !== "" && !shaped && (
+                <p className="text-destructive text-[11px]" data-testid="add-contact-error">
+                    That is not an ID. Ask them for the one under Your ID in their settings.
+                </p>
+            )}
+            {known && (
+                <p className="text-muted-foreground text-[11px]" data-testid="add-contact-known">
+                    {contacts[id]?.name} is already saved under that ID.
+                </p>
+            )}
+        </div>
     );
 }

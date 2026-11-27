@@ -8,17 +8,19 @@
  * so shortcut tests click the Keyboard nav item before asserting.
  */
 
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act } from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UpdateProvider } from "@/components/update/UpdateProvider";
+import type { Contacts } from "@/lib/collab/contacts";
 import { COMMANDS } from "@/lib/commands/registry";
 import { FONTS, DEFAULT_FONT_ID } from "@/lib/fonts/registry";
 import { effectiveKeymap } from "@/lib/keymap/effective";
 import { isMacPlatform } from "@/lib/platform";
+import { useCollabStore } from "@/lib/store/useCollabStore";
 import { useFlowStore } from "@/lib/store/useFlowStore";
 
 // Force desktop so the Updates category is present. Only the exported isDesktop
@@ -34,10 +36,33 @@ vi.mock("@/lib/keymap/useDesktopMenu", () => ({
     restoreMenuAccelerators: vi.fn(),
 }));
 
-import SettingsPanel from "@/components/settings/SettingsPanel";
+const { machineName, myEndpointId, toastSuccess, toastError } = vi.hoisted(() => ({
+    machineName: vi.fn(async () => "smodi-mbp"),
+    myEndpointId: vi.fn(async () => ""),
+    toastSuccess: vi.fn(),
+    toastError: vi.fn(),
+}));
+
+vi.mock("@/lib/collab/machineName", async (importActual) => ({
+    ...(await importActual<typeof import("@/lib/collab/machineName")>()),
+    machineName,
+    myEndpointId,
+}));
+
+vi.mock("sonner", async (importActual) => ({
+    ...(await importActual<typeof import("sonner")>()),
+    toast: { success: toastSuccess, error: toastError },
+}));
+
+import SettingsPanel, {
+    ContactList,
+    DisplayNameRow,
+    FlowsFolderControl,
+    MyEndpointId,
+} from "@/components/settings/SettingsPanel";
 import { restoreMenuAccelerators, suspendMenuAccelerators } from "@/lib/keymap/useDesktopMenu";
 
-import { installFakeFlowFs } from "../../support/fakeFlowFs";
+import { FLOWS_DIR, installFakeFlowFs, type FakeFlowFs } from "../../support/fakeFlowFs";
 
 function renderSettingsPanel() {
     return render(
@@ -601,5 +626,330 @@ describe("SettingsPanel", () => {
         const keymap = effectiveKeymap(parsed.keymapOverrides);
         expect(keymap.bindings["g"]).toBe("sheet.next");
         expect(keymap.bindings["]"]).toBeUndefined();
+    });
+});
+
+describe("FlowsFolderControl", () => {
+    let fs: FakeFlowFs;
+
+    beforeEach(() => {
+        fs = installFakeFlowFs();
+        useFlowStore.setState({ flowsDir: null });
+    });
+
+    it("shows the resolved default when nothing is configured", async () => {
+        render(<FlowsFolderControl />);
+        // Shortened against home, since that is what the user recognizes.
+        await waitFor(() =>
+            expect(screen.getByTestId("flows-folder-path")).toHaveTextContent("~/Documents/ebb"),
+        );
+    });
+
+    it("shows the configured folder instead once one is set", async () => {
+        useFlowStore.setState({ flowsDir: "/Volumes/usb/rounds" });
+        render(<FlowsFolderControl />);
+        await waitFor(() =>
+            expect(screen.getByTestId("flows-folder-path")).toHaveTextContent(
+                "/Volumes/usb/rounds",
+            ),
+        );
+    });
+
+    it("stores the folder the picker returns", async () => {
+        fs.nextDirectory = "/Volumes/usb/rounds";
+        render(<FlowsFolderControl />);
+
+        await userEvent.click(screen.getByTestId("flows-folder-choose"));
+
+        await waitFor(() => expect(useFlowStore.getState().flowsDir).toBe("/Volumes/usb/rounds"));
+    });
+
+    it("keeps the current folder when the picker is cancelled", async () => {
+        useFlowStore.setState({ flowsDir: "/Volumes/usb/rounds" });
+        fs.nextDirectory = null;
+        render(<FlowsFolderControl />);
+
+        await userEvent.click(screen.getByTestId("flows-folder-choose"));
+
+        expect(useFlowStore.getState().flowsDir).toBe("/Volumes/usb/rounds");
+    });
+
+    it("clears the override rather than pinning today's default", async () => {
+        useFlowStore.setState({ flowsDir: "/Volumes/usb/rounds" });
+        render(<FlowsFolderControl />);
+
+        await userEvent.click(screen.getByTestId("flows-folder-reset"));
+
+        expect(useFlowStore.getState().flowsDir).toBeNull();
+        await waitFor(() =>
+            expect(screen.getByTestId("flows-folder-path")).toHaveTextContent("~/Documents/ebb"),
+        );
+    });
+
+    it("offers no reset while following the default", async () => {
+        render(<FlowsFolderControl />);
+        await waitFor(() =>
+            expect(screen.getByTestId("flows-folder-path")).not.toBeEmptyDOMElement(),
+        );
+        expect(screen.queryByTestId("flows-folder-reset")).not.toBeInTheDocument();
+        expect(FLOWS_DIR).toContain("Documents/ebb");
+    });
+});
+
+/**
+ *
+ * Uses the real Zustand store: a contact is only ever edited through it, and
+ * the whole table is replaced on every keystroke, so the rows the edit did not
+ * touch are as much of the assertion as the row it did.
+ */
+describe("ContactList", () => {
+    const ALEX = "alexendpointid0000000000";
+    const RIN = "rinendpointid00000000000";
+
+    const TWO: Contacts = {
+        [ALEX]: { name: "Alex" },
+        [RIN]: { name: "Rin" },
+    };
+
+    beforeEach(() => {
+        window.localStorage.clear();
+        useFlowStore.setState({ contacts: {} });
+    });
+
+    it("says where a contact comes from when none is saved", () => {
+        render(<ContactList />);
+        const empty = screen.getByTestId("contact-list-empty");
+        expect(empty).toHaveTextContent("No partners saved yet");
+        expect(empty).toHaveTextContent("after a shared flow session");
+    });
+
+    it("renames one contact and leaves the other alone", async () => {
+        useFlowStore.setState({ contacts: TWO });
+        render(<ContactList />);
+
+        const field = screen.getByTestId(`contact-name-${ALEX}`);
+        await userEvent.clear(field);
+        await userEvent.type(field, "Alexis");
+
+        expect(useFlowStore.getState().contacts).toEqual({
+            [ALEX]: { name: "Alexis" },
+            [RIN]: { name: "Rin" },
+        });
+    });
+
+    // What a partner may do is decided at the invitation, for that round only,
+    // so a saved contact carries no grade to set here.
+    it("offers no grade on a row at all", () => {
+        useFlowStore.setState({ contacts: TWO });
+        render(<ContactList />);
+
+        const row = screen.getByTestId(`contact-row-${ALEX}`);
+        expect(screen.queryByTestId(`contact-role-${ALEX}`)).toBeNull();
+        expect(within(row).queryByRole("combobox")).toBeNull();
+    });
+
+    it("removes exactly the contact asked for", async () => {
+        useFlowStore.setState({ contacts: TWO });
+        render(<ContactList />);
+
+        await userEvent.click(screen.getByTestId(`contact-remove-${ALEX}`));
+
+        expect(useFlowStore.getState().contacts).toEqual({ [RIN]: { name: "Rin" } });
+        expect(screen.queryByTestId(`contact-row-${ALEX}`)).toBeNull();
+        expect(screen.getByTestId(`contact-row-${RIN}`)).toBeInTheDocument();
+    });
+
+    it("shows the first eight characters of the EndpointId, and the whole one on hover", () => {
+        useFlowStore.setState({ contacts: TWO });
+        render(<ContactList />);
+
+        const row = screen.getByTestId(`contact-row-${ALEX}`);
+        expect(within(row).getByTitle(ALEX)).toHaveTextContent(ALEX.slice(0, 8));
+    });
+
+    // A nameless entry is dropped when the config file is read back, which
+    // would take the EndpointId with it.
+    it("keeps a peer whose name is emptied, falling back to the short id", async () => {
+        useFlowStore.setState({ contacts: TWO });
+        render(<ContactList />);
+
+        await userEvent.clear(screen.getByTestId(`contact-name-${ALEX}`));
+        expect(useFlowStore.getState().contacts[ALEX].name).toBe("");
+
+        await userEvent.tab();
+        expect(useFlowStore.getState().contacts[ALEX].name).toBe(ALEX.slice(0, 8));
+    });
+
+    describe("adding a partner by hand", () => {
+        const ID = "b".repeat(64);
+
+        it("saves a partner nobody has shared with yet", async () => {
+            render(<ContactList />);
+
+            await userEvent.type(screen.getByTestId("add-contact-name"), "Rin");
+            await userEvent.type(screen.getByTestId("add-contact-id"), ID);
+            await userEvent.click(screen.getByTestId("add-contact-save"));
+
+            expect(useFlowStore.getState().contacts[ID]).toEqual({ name: "Rin" });
+        });
+
+        it("empties the form so a second partner does not inherit the first", async () => {
+            render(<ContactList />);
+
+            await userEvent.type(screen.getByTestId("add-contact-name"), "Rin");
+            await userEvent.type(screen.getByTestId("add-contact-id"), ID);
+            await userEvent.click(screen.getByTestId("add-contact-save"));
+
+            expect(screen.getByTestId("add-contact-name")).toHaveValue("");
+            expect(screen.getByTestId("add-contact-id")).toHaveValue("");
+        });
+
+        it("refuses a name with no id, and an id with no name", async () => {
+            render(<ContactList />);
+            expect(screen.getByTestId("add-contact-save")).toBeDisabled();
+
+            await userEvent.type(screen.getByTestId("add-contact-name"), "Rin");
+            expect(screen.getByTestId("add-contact-save")).toBeDisabled();
+
+            await userEvent.clear(screen.getByTestId("add-contact-name"));
+            await userEvent.type(screen.getByTestId("add-contact-id"), ID);
+            expect(screen.getByTestId("add-contact-save")).toBeDisabled();
+        });
+
+        it("says so when what was pasted is not an id at all", async () => {
+            render(<ContactList />);
+
+            await userEvent.type(screen.getByTestId("add-contact-name"), "Rin");
+            await userEvent.type(screen.getByTestId("add-contact-id"), "ebb1:whatever");
+            expect(screen.getByTestId("add-contact-error")).toBeTruthy();
+            expect(screen.getByTestId("add-contact-save")).toBeDisabled();
+        });
+
+        it("refuses to add a second entry over a partner already saved", async () => {
+            useFlowStore.setState({ contacts: { [ID]: { name: "Rin" } } });
+            render(<ContactList />);
+
+            await userEvent.type(screen.getByTestId("add-contact-name"), "Rin again");
+            await userEvent.type(screen.getByTestId("add-contact-id"), ID);
+            expect(screen.getByTestId("add-contact-known")).toHaveTextContent("Rin");
+            expect(screen.getByTestId("add-contact-save")).toBeDisabled();
+        });
+    });
+});
+
+/**
+ *
+ * The hostname is shown as a placeholder and never as a value: a value would
+ * be saved, and the config file it is saved to syncs between machines.
+ */
+describe("DisplayNameRow", () => {
+    beforeEach(() => {
+        window.localStorage.clear();
+        machineName.mockClear();
+        useFlowStore.setState({ collabName: "" });
+    });
+
+    it("offers the machine's name as a placeholder, leaving the setting empty", async () => {
+        render(<DisplayNameRow />);
+
+        await waitFor(() =>
+            expect(screen.getByTestId("collab-name")).toHaveAttribute("placeholder", "smodi-mbp"),
+        );
+        expect(screen.getByTestId("collab-name")).toHaveValue("");
+        expect(useFlowStore.getState().collabName).toBe("");
+    });
+
+    it("keeps the field usable when the shell has no name to give", async () => {
+        machineName.mockResolvedValueOnce("");
+        render(<DisplayNameRow />);
+
+        await waitFor(() =>
+            expect(screen.getByTestId("collab-name")).toHaveAttribute(
+                "placeholder",
+                "This machine",
+            ),
+        );
+    });
+
+    it("saves what the debater types", async () => {
+        render(<DisplayNameRow />);
+
+        await userEvent.type(screen.getByTestId("collab-name"), "Rin");
+        expect(useFlowStore.getState().collabName).toBe("Rin");
+    });
+
+    it("shows a name already set instead of the placeholder", () => {
+        useFlowStore.setState({ collabName: "Rin" });
+        render(<DisplayNameRow />);
+
+        expect(screen.getByTestId("collab-name")).toHaveValue("Rin");
+    });
+});
+
+/**
+ *
+ * The row exists so a partner can be handed an identity before either side
+ * has a round, which is why it reads the id off the identity file rather than
+ * off a bound endpoint: showing it must not put ebb on the network.
+ */
+describe("MyEndpointId", () => {
+    const ID = "c".repeat(64);
+
+    beforeEach(() => {
+        toastSuccess.mockClear();
+        toastError.mockClear();
+        myEndpointId.mockClear();
+        myEndpointId.mockResolvedValue("");
+        useCollabStore.setState({ endpointId: null });
+    });
+
+    it("has nothing to copy until the shell answers", () => {
+        render(<MyEndpointId />);
+        expect(screen.getByTestId("my-id-copy")).toBeDisabled();
+        expect(screen.getByTestId("my-id").textContent).not.toContain("c");
+    });
+
+    it("asks the identity file, not an endpoint, and shows what comes back", async () => {
+        myEndpointId.mockResolvedValue(ID);
+        render(<MyEndpointId />);
+        await act(async () => {});
+
+        expect(myEndpointId).toHaveBeenCalled();
+        expect(screen.getByTestId("my-id").textContent).toBe(ID);
+        expect(screen.getByTestId("my-id-copy")).not.toBeDisabled();
+    });
+
+    it("shows the id a live session reports", () => {
+        render(<MyEndpointId />);
+        act(() => useCollabStore.getState().setEndpointId(ID));
+
+        expect(screen.getByTestId("my-id").textContent).toBe(ID);
+        expect(screen.getByTestId("my-id-copy")).not.toBeDisabled();
+    });
+
+    it("copies the whole id, not the short form a row shows", async () => {
+        const writeText = vi.fn(async () => {});
+        vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });
+        useCollabStore.setState({ endpointId: ID });
+        render(<MyEndpointId />);
+
+        await userEvent.click(screen.getByTestId("my-id-copy"));
+        expect(writeText).toHaveBeenCalledWith(ID);
+        expect(toastSuccess).toHaveBeenCalled();
+        vi.unstubAllGlobals();
+    });
+
+    it("selects the id when the webview refuses the write", async () => {
+        const writeText = vi.fn(async () => {
+            throw new Error("The request is not allowed by the user agent");
+        });
+        vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });
+        useCollabStore.setState({ endpointId: ID });
+        render(<MyEndpointId />);
+
+        await userEvent.click(screen.getByTestId("my-id-copy"));
+        expect(toastError.mock.calls[0]?.[0]).toMatch(/Cmd\+C/);
+        expect(window.getSelection()?.toString()).toBe(ID);
+        vi.unstubAllGlobals();
     });
 });
